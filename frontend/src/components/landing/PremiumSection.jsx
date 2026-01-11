@@ -12,6 +12,8 @@ const fallbackImages = [
 const PremiumSection = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [privateContent, setPrivateContent] = useState([]);
+  const [loading, setLoading] = useState(true);
   const sectionRef = useRef(null);
 
   useEffect(() => {
@@ -22,6 +24,31 @@ const PremiumSection = () => {
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const data = await api.getPrivateContent({ limit: 3 });
+        setPrivateContent(data);
+      } catch (error) {
+        console.error('Failed to fetch private content:', error);
+        // Fallback to mock images
+        setPrivateContent(fallbackImages.map((img, i) => ({
+          id: `fallback-${i}`,
+          image_url: img,
+          is_locked: true,
+          unlock_price: 50 + i * 25
+        })));
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchContent();
+  }, []);
+
+  const lockedImages = privateContent.length > 0 
+    ? privateContent.map(c => c.image_url)
+    : fallbackImages;
 
   const benefits = [
     { icon: Crown, label: 'Priority Access' },
