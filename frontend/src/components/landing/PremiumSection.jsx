@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Heart, Lock, Sparkle, Crown, Star } from '@phosphor-icons/react';
+import { Heart, Lock, Sparkle, Crown, Star, SpinnerGap } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
+import api from '../../services/api';
 
-const lockedImages = [
+const fallbackImages = [
   "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80",
   "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80",
   "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80",
