@@ -176,8 +176,8 @@ Password: TestPass123!
 - [x] User profile page  
 - [x] Settings page
 - [x] Low balance warning on booking flow
+- [x] Client verification gate
 - [ ] Paystack payment integration (waiting for API keys)
-- [ ] Client verification gate
 
 ### P2 - Medium Priority
 - [ ] Talent portal (profile management)
