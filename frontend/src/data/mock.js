@@ -73,7 +73,7 @@ export const popularTalents = [
     id: 8,
     name: "Kemi Ogundimu",
     age: 25,
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
+    image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80",
     location: "Ibadan",
     startingPrice: 110000
   }
