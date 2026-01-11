@@ -14,13 +14,13 @@ const Footer = () => {
     {
       links: [
         { name: 'Collection', href: '#talent' },
-        { name: 'All Talent', href: '#talent' },
+        { name: 'Contact Us', href: '#' },
       ]
     },
     {
       links: [
         { name: 'Private Content', href: '#premium' },
-        { name: 'Contact Us', href: '#' },
+        { name: 'Support', href: '#' },
       ]
     },
   ];
