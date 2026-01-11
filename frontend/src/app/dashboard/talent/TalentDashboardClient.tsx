@@ -34,11 +34,11 @@ interface TalentMedia {
   created_at: string
 }
 
-interface BookingWithClient extends Booking {
+interface BookingWithClient extends Omit<Booking, 'client'> {
   client: {
     display_name: string
     avatar_url: string | null
-  }
+  } | null
 }
 
 interface TalentDashboardClientProps {
