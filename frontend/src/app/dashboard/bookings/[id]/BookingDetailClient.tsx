@@ -152,7 +152,7 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
         {/* Status Banner */}
         <div className={`flex items-center gap-3 p-4 rounded-xl border ${status.color}`}>
           <StatusIcon size={24} />
-          <div>
+          <div className="flex-1">
             <p className="font-semibold">{status.label}</p>
             {booking.status === 'payment_pending' && (
               <p className="text-sm opacity-80">Complete payment to confirm your booking</p>
@@ -161,6 +161,14 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
               <p className="text-sm opacity-80">Identity verification required before meeting</p>
             )}
           </div>
+          {booking.status === 'verification_pending' && isClient && (
+            <Link
+              href={`/dashboard/verify?booking=${booking.id}`}
+              className="px-4 py-2 rounded-full bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors"
+            >
+              Verify Now
+            </Link>
+          )}
         </div>
 
         {error && (
