@@ -183,7 +183,7 @@ export function TalentDashboardClient({
     .filter(b => b.status === 'completed')
     .reduce((sum, b) => sum + b.total_price, 0)
   
-  const pendingBookings = bookings.filter(b => b.status === 'pending').length
+  const pendingBookings = bookings.filter(b => b.status === 'payment_pending' || b.status === 'verification_pending').length
   const completedBookings = bookings.filter(b => b.status === 'completed').length
 
   const tabs = [
