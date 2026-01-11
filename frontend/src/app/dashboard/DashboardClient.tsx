@@ -58,7 +58,7 @@ export function DashboardClient({ user, profile, wallet }: DashboardClientProps)
   }
 
   return (
-    <div className="min-h-screen bg-black flex">
+    <div className="min-h-screen bg-black flex pt-16 lg:pt-0">
       {/* Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-white/5 border-r border-white/10">
         {/* Logo */}
