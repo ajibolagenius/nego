@@ -140,10 +140,17 @@ const TalentSection = () => {
         }`} style={{ transitionDelay: '0.2s' }}>
           
           {/* Masonry-style Talent Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-5">
-            {popularTalents.map((talent, index) => (
-              <TalentCard key={talent.id} talent={talent} index={index} isVisible={isVisible} />
-            ))}
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <SpinnerGap size={40} weight="bold" className="text-[#df2531] animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-5">
+              {talents.map((talent, index) => (
+                <TalentCard key={talent.id} talent={talent} index={index} isVisible={isVisible} />
+              ))}
+            </div>
+          )}
           </div>
         </div>
       </div>
