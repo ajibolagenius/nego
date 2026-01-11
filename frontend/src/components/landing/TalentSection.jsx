@@ -114,13 +114,7 @@ const TalentSection = () => {
           {/* Masonry-style Talent Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-5">
             {popularTalents.map((talent, index) => (
-              <div 
-                key={talent.id} 
-                className={index % 5 === 0 ? 'row-span-1' : ''}
-                style={{ marginTop: index % 3 === 1 ? '20px' : index % 3 === 2 ? '40px' : '0' }}
-              >
-                <TalentCard talent={talent} index={index} isVisible={isVisible} />
-              </div>
+              <TalentCard key={talent.id} talent={talent} index={index} isVisible={isVisible} />
             ))}
           </div>
         </div>
