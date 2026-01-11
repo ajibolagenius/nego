@@ -1,40 +1,45 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
 import { popularTalents } from '../../data/mock';
 
 const TalentCard = ({ talent, index, isVisible }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
     <div 
-      className={`group relative bg-[#1a1a2e]/50 rounded-xl md:rounded-2xl overflow-hidden border border-white/5 hover:border-fuchsia-500/30 transition-all duration-500 bento-item img-zoom ${
+      className={`group relative bg-white/5 rounded-xl md:rounded-2xl overflow-hidden border border-white/5 hover:border-[#df2531]/30 transition-all duration-500 bento-item img-zoom cursor-pointer ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
       }`}
-      style={{ transitionDelay: `${index * 100}ms` }}
+      style={{ transitionDelay: `${index * 80}ms` }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="aspect-[3/4] overflow-hidden">
         <img
           src={talent.image}
-          alt={talent.name}
-          className="w-full h-full object-cover"
+          alt={talent.location}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent opacity-80" />
+        <div className={`absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent transition-opacity duration-500 ${isHovered ? 'opacity-90' : 'opacity-70'}`} />
       </div>
 
-      {/* Content */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
-        <h3 className="text-white font-semibold text-base md:text-lg" style={{ fontFamily: "'Playfair', serif" }}>
-          {talent.name}
-        </h3>
-        <p className="text-fuchsia-400 text-xs md:text-sm">{talent.age} years old</p>
-        <div className="flex items-center gap-1 text-gray-400 text-xs mt-1">
-          <MapPin className="w-3 h-3" />
-          <span>{talent.location}</span>
+      {/* Location Only */}
+      <div className={`absolute bottom-0 left-0 right-0 p-3 md:p-4 transition-all duration-500 ${isHovered ? 'translate-y-0' : 'translate-y-1'}`}>
+        <div className={`flex items-center gap-1.5 transition-all duration-500 ${isHovered ? 'text-[#df2531]' : 'text-white/70'}`}>
+          <MapPin size={14} weight="duotone" />
+          <span className="text-sm font-medium">{talent.location}</span>
         </div>
       </div>
 
-      {/* Hover Overlay */}
-      <div className="absolute inset-0 bg-fuchsia-500/0 group-hover:bg-fuchsia-500/10 transition-colors duration-500" />
+      {/* Hover Overlay Effect */}
+      <div className={`absolute inset-0 bg-[#df2531]/0 group-hover:bg-[#df2531]/10 transition-colors duration-500`} />
+      
+      {/* Corner accent on hover */}
+      <div className={`absolute top-0 right-0 w-16 h-16 transition-all duration-500 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-[#df2531]/30 to-transparent" />
+      </div>
     </div>
   );
 };
@@ -61,10 +66,10 @@ const TalentSection = () => {
   }, []);
 
   return (
-    <section ref={sectionRef} id="talent" className="relative py-16 md:py-24 lg:py-32 bg-[#0a0a0f] overflow-hidden">
+    <section ref={sectionRef} id="talent" className="relative py-16 md:py-24 lg:py-32 bg-black overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-b from-purple-900/10 via-transparent to-purple-900/10" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-b from-[#df2531]/5 via-transparent to-[#df2531]/5" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -79,14 +84,14 @@ const TalentSection = () => {
             POPULAR TALENT
           </h2>
           <Button 
-            className="bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 hover:from-fuchsia-600 hover:to-fuchsia-700 text-white font-medium px-5 md:px-6 py-2 rounded-full transition-all duration-300 text-sm hover:scale-105 active:scale-95"
+            className="bg-[#df2531] hover:bg-[#c41f2a] text-white font-medium px-5 md:px-6 py-2 rounded-full transition-all duration-300 text-sm hover:scale-105 active:scale-95"
           >
             See All
           </Button>
         </div>
 
         {/* Glass Container */}
-        <div className={`bg-gradient-to-br from-purple-900/20 to-fuchsia-900/10 backdrop-blur-sm rounded-2xl md:rounded-3xl p-4 md:p-6 lg:p-8 border border-white/5 transition-all duration-700 ${
+        <div className={`bg-white/5 backdrop-blur-sm rounded-2xl md:rounded-3xl p-4 md:p-6 lg:p-8 border border-white/10 transition-all duration-700 ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`} style={{ transitionDelay: '0.2s' }}>
           {/* Talent Grid */}
