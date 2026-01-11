@@ -1,20 +1,23 @@
 -- Seed Demo Talent Data for Nego
--- Run this AFTER creating a talent account via the app, OR use service role to insert directly
+-- This script bypasses the foreign key constraint to insert demo data
 
--- First, let's create some demo talent profiles
--- Note: In production, talents would register and be verified
+-- IMPORTANT: Run this with service_role key (in Supabase SQL Editor)
 
--- Insert demo talents directly (using service role)
--- These are placeholder UUIDs - in real use, these would be actual auth user IDs
+-- Step 1: Temporarily disable the trigger and constraints
+ALTER TABLE profiles DISABLE TRIGGER ALL;
+ALTER TABLE wallets DISABLE TRIGGER ALL;
+ALTER TABLE talent_menus DISABLE TRIGGER ALL;
+ALTER TABLE media DISABLE TRIGGER ALL;
 
+-- Step 2: Insert demo talents
 DO $$
 DECLARE
-    talent1_id UUID := gen_random_uuid();
-    talent2_id UUID := gen_random_uuid();
-    talent3_id UUID := gen_random_uuid();
-    talent4_id UUID := gen_random_uuid();
-    talent5_id UUID := gen_random_uuid();
-    talent6_id UUID := gen_random_uuid();
+    talent1_id UUID := 'a1111111-1111-1111-1111-111111111111';
+    talent2_id UUID := 'a2222222-2222-2222-2222-222222222222';
+    talent3_id UUID := 'a3333333-3333-3333-3333-333333333333';
+    talent4_id UUID := 'a4444444-4444-4444-4444-444444444444';
+    talent5_id UUID := 'a5555555-5555-5555-5555-555555555555';
+    talent6_id UUID := 'a6666666-6666-6666-6666-666666666666';
     
     dinner_id UUID;
     event_id UUID;
@@ -28,6 +31,12 @@ BEGIN
     SELECT id INTO travel_id FROM service_types WHERE name = 'Travel Companion';
     SELECT id INTO private_id FROM service_types WHERE name = 'Private Meeting';
     SELECT id INTO photo_id FROM service_types WHERE name = 'Photo Session';
+
+    -- Delete existing demo data (if re-running)
+    DELETE FROM media WHERE talent_id IN (talent1_id, talent2_id, talent3_id, talent4_id, talent5_id, talent6_id);
+    DELETE FROM talent_menus WHERE talent_id IN (talent1_id, talent2_id, talent3_id, talent4_id, talent5_id, talent6_id);
+    DELETE FROM wallets WHERE user_id IN (talent1_id, talent2_id, talent3_id, talent4_id, talent5_id, talent6_id);
+    DELETE FROM profiles WHERE id IN (talent1_id, talent2_id, talent3_id, talent4_id, talent5_id, talent6_id);
 
     -- Insert talent profiles
     INSERT INTO profiles (id, role, display_name, location, bio, avatar_url, is_verified, status, starting_price) VALUES
@@ -98,6 +107,29 @@ BEGIN
     (talent2_id, 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&q=80', 'image', true, 75),
 
     (talent3_id, 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&q=80', 'image', false, 0),
-    (talent3_id, 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80', 'image', true, 50);
+    (talent3_id, 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80', 'image', true, 50),
+    
+    (talent4_id, 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&q=80', 'image', false, 0),
+    (talent4_id, 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&q=80', 'image', false, 0),
+    
+    (talent5_id, 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&q=80', 'image', false, 0),
+    (talent5_id, 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=80', 'image', true, 60),
+    
+    (talent6_id, 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=80', 'image', false, 0),
+    (talent6_id, 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80', 'image', false, 0);
 
+    RAISE NOTICE 'Demo data inserted successfully!';
 END $$;
+
+-- Step 3: Re-enable triggers
+ALTER TABLE profiles ENABLE TRIGGER ALL;
+ALTER TABLE wallets ENABLE TRIGGER ALL;
+ALTER TABLE talent_menus ENABLE TRIGGER ALL;
+ALTER TABLE media ENABLE TRIGGER ALL;
+
+-- Verify the data was inserted
+SELECT 'Profiles' as table_name, count(*) as count FROM profiles WHERE role = 'talent'
+UNION ALL
+SELECT 'Talent Menus', count(*) FROM talent_menus
+UNION ALL
+SELECT 'Media', count(*) FROM media;
