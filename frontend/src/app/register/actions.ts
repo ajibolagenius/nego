@@ -1,11 +1,23 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export async function updateProfileRole(userId: string, role: 'client' | 'talent', fullName: string) {
-  const supabase = await createClient()
+  // Use service role key to bypass RLS for this critical operation
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return []
+        },
+        setAll() {},
+      },
+    }
+  )
   
-  // Use service role key for this operation to bypass RLS
   const { error } = await supabase
     .from('profiles')
     .update({ 
