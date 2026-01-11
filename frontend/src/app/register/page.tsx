@@ -42,63 +42,46 @@ export default function RegisterPage() {
 
       // Check if user was created and session established
       if (data.user && data.session) {
-        console.log('[Register] User created with session:', data.user.id)
         // Wait a bit for the trigger to create the profile
-        await new Promise(resolve => setTimeout(resolve, 1500))
+        await new Promise(resolve => setTimeout(resolve, 1000))
         
-        console.log('[Register] Updating profile role via API...')
-        // Update the profile via API route (uses service role)
-        const response = await fetch('/api/profile/update-role', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: data.user.id,
+        // Update the profile with the correct role (user is authenticated now)
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
             role: role,
-            fullName: name,
-          }),
-        })
+            full_name: name,
+            display_name: name 
+          })
+          .eq('id', data.user.id)
         
-        const result = await response.json()
-        console.log('[Register] API response:', result)
+        if (updateError) {
+          console.error('Profile update error:', updateError)
+        }
         
-        // Give time for the update to propagate
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        console.log('[Register] Redirecting to dashboard...')
-        // Session is established, redirect to dashboard
+        // Redirect to dashboard
         window.location.href = '/dashboard'
       } else if (data.user && !data.session) {
-        // Email confirmation might be required
-        // But since it's disabled in Supabase, try to sign in immediately
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        // Email confirmation might be required - try sign in
+        const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
         })
         
         if (signInError) {
-          // If sign in fails, show a message
           setError('Account created. Please sign in.')
           router.push('/login')
-        } else if (signInData.user) {
-          // Wait for profile to be created by trigger
-          await new Promise(resolve => setTimeout(resolve, 1500))
-          
-          // Update the profile via API route
-          await fetch('/api/profile/update-role', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: signInData.user.id,
-              role: role,
-              fullName: name,
-            }),
-          })
-          
-          // Give time for the update to propagate
-          await new Promise(resolve => setTimeout(resolve, 500))
-          
+        } else {
           window.location.href = '/dashboard'
         }
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred'
+      setError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred'
