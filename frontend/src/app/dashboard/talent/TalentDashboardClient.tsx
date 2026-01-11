@@ -52,7 +52,8 @@ interface TalentDashboardClientProps {
 }
 
 const statusColors: Record<string, { bg: string; text: string; icon: Icon }> = {
-  pending: { bg: 'bg-amber-500/10', text: 'text-amber-400', icon: Hourglass },
+  payment_pending: { bg: 'bg-amber-500/10', text: 'text-amber-400', icon: Hourglass },
+  verification_pending: { bg: 'bg-amber-500/10', text: 'text-amber-400', icon: Hourglass },
   confirmed: { bg: 'bg-blue-500/10', text: 'text-blue-400', icon: CheckCircle },
   completed: { bg: 'bg-green-500/10', text: 'text-green-400', icon: CheckCircle },
   cancelled: { bg: 'bg-red-500/10', text: 'text-red-400', icon: XCircle },
