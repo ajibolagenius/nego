@@ -1,0 +1,313 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { 
+  ArrowLeft, Calendar, Clock, MapPin, CheckCircle, 
+  SpinnerGap, WarningCircle, CreditCard, ShieldCheck,
+  Receipt, Coin, CaretRight
+} from '@phosphor-icons/react'
+import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
+import type { Profile, Wallet, BookingStatus } from '@/types/database'
+
+interface BookingWithTalent {
+  id: string
+  client_id: string
+  talent_id: string
+  total_price: number
+  services_snapshot: { service_name: string; price: number }[]
+  status: BookingStatus
+  scheduled_at: string
+  notes: string | null
+  created_at: string
+  talent: Pick<Profile, 'id' | 'display_name' | 'avatar_url' | 'location'>
+}
+
+interface BookingDetailClientProps {
+  booking: BookingWithTalent
+  wallet: Wallet | null
+  userId: string
+}
+
+const statusConfig: Record<BookingStatus, { label: string; color: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = {
+  payment_pending: { label: 'Payment Pending', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30', icon: CreditCard },
+  verification_pending: { label: 'Verification Required', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30', icon: ShieldCheck },
+  confirmed: { label: 'Confirmed', color: 'text-green-400 bg-green-500/10 border-green-500/30', icon: CheckCircle },
+  completed: { label: 'Completed', color: 'text-white/60 bg-white/5 border-white/10', icon: CheckCircle },
+  cancelled: { label: 'Cancelled', color: 'text-red-400 bg-red-500/10 border-red-500/30', icon: WarningCircle },
+}
+
+export function BookingDetailClient({ booking, wallet, userId }: BookingDetailClientProps) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const isClient = booking.client_id === userId
+  const status = statusConfig[booking.status]
+  const StatusIcon = status.icon
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+    }).format(price)
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-NG', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  }
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('en-NG', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  const handlePayment = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const supabase = createClient()
+
+      // In real app, this would integrate with Paystack
+      // For now, we'll simulate payment by updating status
+
+      // Check wallet balance (if using coins)
+      // For demo, we'll just update the booking status
+      
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({ status: 'verification_pending' })
+        .eq('id', booking.id)
+
+      if (updateError) throw updateError
+
+      // Refresh the page
+      router.refresh()
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Payment failed'
+      setError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCancel = async () => {
+    if (!confirm('Are you sure you want to cancel this booking?')) return
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const supabase = createClient()
+
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({ status: 'cancelled' })
+        .eq('id', booking.id)
+
+      if (updateError) throw updateError
+
+      router.refresh()
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to cancel'
+      setError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-black">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
+        <div className="max-w-2xl mx-auto px-4 py-4">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => router.back()}
+              className="text-white/60 hover:text-white transition-colors"
+            >
+              <ArrowLeft size={24} />
+            </button>
+            <div>
+              <h1 className="text-lg font-bold text-white">Booking Details</h1>
+              <p className="text-white/50 text-sm">#{booking.id.slice(0, 8)}</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        {/* Status Banner */}
+        <div className={`flex items-center gap-3 p-4 rounded-xl border ${status.color}`}>
+          <StatusIcon size={24} />
+          <div>
+            <p className="font-semibold">{status.label}</p>
+            {booking.status === 'payment_pending' && (
+              <p className="text-sm opacity-80">Complete payment to confirm your booking</p>
+            )}
+            {booking.status === 'verification_pending' && (
+              <p className="text-sm opacity-80">Identity verification required before meeting</p>
+            )}
+          </div>
+        </div>
+
+        {error && (
+          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Talent Card */}
+        <Link 
+          href={`/talent/${booking.talent.id}`}
+          className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/10 hover:border-white/20 transition-colors"
+        >
+          <div className="relative w-16 h-16 rounded-full overflow-hidden">
+            <Image
+              src={booking.talent.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80'}
+              alt={booking.talent.display_name || 'Talent'}
+              fill
+              className="object-cover"
+            />
+          </div>
+          <div className="flex-1">
+            <p className="text-white font-semibold">{booking.talent.display_name}</p>
+            <p className="text-white/50 text-sm flex items-center gap-1">
+              <MapPin size={14} />
+              {booking.talent.location}
+            </p>
+          </div>
+          <CaretRight size={20} className="text-white/40" />
+        </Link>
+
+        {/* Date & Time */}
+        <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+          <h3 className="text-white/50 text-sm mb-3">Scheduled For</h3>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-white">
+              <Calendar size={18} className="text-[#df2531]" />
+              <span>{formatDate(booking.scheduled_at)}</span>
+            </div>
+            <div className="flex items-center gap-2 text-white">
+              <Clock size={18} className="text-[#df2531]" />
+              <span>{formatTime(booking.scheduled_at)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Services */}
+        <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+          <h3 className="text-white/50 text-sm mb-3">Services</h3>
+          <div className="space-y-3">
+            {booking.services_snapshot.map((service, i) => (
+              <div key={i} className="flex justify-between text-white">
+                <span>{service.service_name}</span>
+                <span>{formatPrice(service.price)}</span>
+              </div>
+            ))}
+            <div className="border-t border-white/10 pt-3 flex justify-between text-white font-bold text-lg">
+              <span>Total</span>
+              <span>{formatPrice(booking.total_price)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Notes */}
+        {booking.notes && (
+          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+            <h3 className="text-white/50 text-sm mb-2">Notes</h3>
+            <p className="text-white">{booking.notes}</p>
+          </div>
+        )}
+
+        {/* Actions */}
+        {booking.status === 'payment_pending' && isClient && (
+          <div className="space-y-4">
+            {/* Wallet Balance */}
+            <div className="flex items-center justify-between p-4 bg-[#df2531]/10 rounded-xl border border-[#df2531]/20">
+              <div className="flex items-center gap-3">
+                <Coin size={24} weight="duotone" className="text-[#df2531]" />
+                <div>
+                  <p className="text-white/50 text-xs">Your Balance</p>
+                  <p className="text-white font-bold">{wallet?.balance || 0} coins</p>
+                </div>
+              </div>
+              <Link href="/dashboard/wallet" className="text-[#df2531] text-sm hover:underline">
+                Top up
+              </Link>
+            </div>
+
+            <Button
+              onClick={handlePayment}
+              disabled={loading}
+              className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-4 rounded-xl disabled:opacity-50"
+            >
+              {loading ? (
+                <SpinnerGap size={20} className="animate-spin" />
+              ) : (
+                <>
+                  <CreditCard size={20} className="mr-2" />
+                  Pay {formatPrice(booking.total_price)}
+                </>
+              )}
+            </Button>
+
+            <button
+              onClick={handleCancel}
+              disabled={loading}
+              className="w-full py-3 text-white/50 hover:text-red-400 transition-colors text-sm"
+            >
+              Cancel Booking
+            </button>
+          </div>
+        )}
+
+        {booking.status === 'verification_pending' && isClient && (
+          <div className="space-y-4">
+            <div className="bg-blue-500/10 rounded-xl p-6 border border-blue-500/20 text-center">
+              <ShieldCheck size={48} className="text-blue-400 mx-auto mb-4" />
+              <h3 className="text-white font-bold text-lg mb-2">Verification Required</h3>
+              <p className="text-white/60 text-sm mb-4">
+                Before your meeting, we need to verify your identity for safety.
+                This helps protect both you and the talent.
+              </p>
+              <Button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl">
+                Start Verification
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {booking.status === 'confirmed' && (
+          <div className="bg-green-500/10 rounded-xl p-6 border border-green-500/20 text-center">
+            <CheckCircle size={48} weight="fill" className="text-green-400 mx-auto mb-4" />
+            <h3 className="text-white font-bold text-lg mb-2">Booking Confirmed!</h3>
+            <p className="text-white/60 text-sm">
+              Your booking is confirmed. Contact details will be shared closer to the date.
+            </p>
+          </div>
+        )}
+
+        {/* Receipt */}
+        <div className="pt-4 border-t border-white/10">
+          <button className="flex items-center gap-2 text-white/50 hover:text-white text-sm">
+            <Receipt size={18} />
+            Download Receipt
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
