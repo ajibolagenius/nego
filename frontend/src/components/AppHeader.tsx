@@ -73,6 +73,7 @@ export function AppHeader({ initialUser }: AppHeaderProps) {
 
   const isLandingPage = pathname === '/'
   const isAuthPage = pathname === '/login' || pathname === '/register'
+  const isDashboardPage = pathname?.startsWith('/dashboard')
 
   // Navigation links for landing page
   const landingNavLinks = [
@@ -90,8 +91,11 @@ export function AppHeader({ initialUser }: AppHeaderProps) {
     { name: 'Wallet', href: '/dashboard/wallet', icon: Wallet },
   ]
 
+  // Hide header on dashboard pages on large screens (dashboard has its own sidebar)
+  const hideOnLargeScreens = isDashboardPage ? 'lg:hidden' : ''
+
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${hideOnLargeScreens} ${
       isScrolled || !isLandingPage ? 'bg-black/90 backdrop-blur-xl border-b border-white/5 py-2' : 'bg-transparent py-4'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
