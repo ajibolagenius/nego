@@ -70,6 +70,8 @@ const TalentCard = ({ talent, index, isVisible }) => {
 
 const TalentSection = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const [talents, setTalents] = useState([]);
+  const [loading, setLoading] = useState(true);
   const sectionRef = useRef(null);
 
   useEffect(() => {
@@ -79,6 +81,31 @@ const TalentSection = () => {
     );
     if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const fetchTalents = async () => {
+      try {
+        const data = await api.getTalents({ limit: 8 });
+        // Transform API data to match component expectations
+        const transformedTalents = data.talents.map(t => ({
+          id: t.id,
+          name: t.name,
+          age: t.age,
+          image: t.image,
+          location: t.location,
+          startingPrice: t.starting_price
+        }));
+        setTalents(transformedTalents);
+      } catch (error) {
+        console.error('Failed to fetch talents:', error);
+        // Fallback to mock data
+        setTalents(mockTalents);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTalents();
   }, []);
 
   return (
