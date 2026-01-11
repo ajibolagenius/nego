@@ -112,40 +112,52 @@ const PremiumSection = () => {
           <div className={`transition-all duration-700 ${
             isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
           }`} style={{ transitionDelay: '0.3s' }}>
-            <div className="grid grid-cols-3 gap-4">
-              {lockedImages.map((image, index) => (
-                <div 
-                  key={index}
-                  className={`relative aspect-[3/4] rounded-xl md:rounded-2xl overflow-hidden border-2 border-[#df2531]/30 group cursor-pointer transition-all duration-500 hover:border-[#df2531] ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                  }`}
-                  style={{ 
-                    transitionDelay: `${0.4 + index * 0.15}s`,
-                    transform: index === 1 ? 'translateY(-20px)' : 'translateY(0)'
-                  }}
-                  onMouseEnter={() => setHoveredCard(index)}
-                  onMouseLeave={() => setHoveredCard(null)}
-                >
-                  <img
-                    src={image}
-                    alt={`Locked content ${index + 1}`}
-                    className="w-full h-full object-cover blur-md transition-all duration-500 group-hover:blur-sm group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center transition-all duration-500 group-hover:bg-[#df2531]/20">
-                    <div className={`relative transition-all duration-500 ${hoveredCard === index ? 'scale-110' : 'scale-100'}`}>
-                      <Heart size={32} weight="duotone" className="text-white" />
-                      <Lock size={14} weight="fill" className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <SpinnerGap size={40} weight="bold" className="text-[#df2531] animate-spin" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-4">
+                {lockedImages.map((image, index) => (
+                  <div 
+                    key={index}
+                    data-testid={`locked-content-${index}`}
+                    className={`relative aspect-[3/4] rounded-xl md:rounded-2xl overflow-hidden border-2 border-[#df2531]/30 group cursor-pointer transition-all duration-500 hover:border-[#df2531] ${
+                      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                    }`}
+                    style={{ 
+                      transitionDelay: `${0.4 + index * 0.15}s`,
+                      transform: index === 1 ? 'translateY(-20px)' : 'translateY(0)'
+                    }}
+                    onMouseEnter={() => setHoveredCard(index)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                  >
+                    <img
+                      src={image}
+                      alt={`Locked content ${index + 1}`}
+                      className="w-full h-full object-cover blur-md transition-all duration-500 group-hover:blur-sm group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center transition-all duration-500 group-hover:bg-[#df2531]/20">
+                      <div className={`relative transition-all duration-500 ${hoveredCard === index ? 'scale-110' : 'scale-100'}`}>
+                        <Heart size={32} weight="duotone" className="text-white" />
+                        <Lock size={14} weight="fill" className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                      </div>
+                    </div>
+                    
+                    {/* Hover label with price */}
+                    <div className={`absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent transition-all duration-500 ${
+                      hoveredCard === index ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                    }`}>
+                      <p className="text-white text-xs font-medium text-center">
+                        {privateContent[index]?.unlock_price 
+                          ? `${privateContent[index].unlock_price} coins to unlock`
+                          : 'Unlock to View'}
+                      </p>
                     </div>
                   </div>
-                  
-                  {/* Hover label */}
-                  <div className={`absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent transition-all duration-500 ${
-                    hoveredCard === index ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                  }`}>
-                    <p className="text-white text-xs font-medium text-center">Unlock to View</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            )}
             </div>
           </div>
         </div>
