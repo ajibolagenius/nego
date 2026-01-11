@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { 
   ArrowLeft, User, PencilSimple, Plus, Trash, Image as ImageIcon,
-  Currency, CalendarCheck, Clock, Eye, EyeSlash, Star,
+  CurrencyDollar, CalendarCheck, Clock, Eye, EyeSlash, Star,
   CaretRight, Coin, CheckCircle, XCircle, Hourglass, X,
   Camera, MapPin, Sparkle, Receipt, ChartLine
 } from '@phosphor-icons/react'
