@@ -102,7 +102,7 @@ export function AppHeader({ initialUser }: AppHeaderProps) {
             className="flex items-center group"
             onClick={() => setActiveLink('home')}
           >
-            <span className="text-xl md:text-2xl font-bold transition-all duration-300 group-hover:scale-105">
+            <span className="text-xl md:text-2xl logo-font transition-all duration-300 group-hover:scale-105">
               <span className="text-white">NEGO</span>
               <span className="text-[#df2531] transition-all duration-300 group-hover:animate-pulse">.</span>
             </span>
