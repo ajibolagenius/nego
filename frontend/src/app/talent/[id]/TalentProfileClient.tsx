@@ -439,17 +439,35 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
               </div>
 
               {/* Wallet Balance */}
-              <div className="flex items-center justify-between p-4 bg-[#df2531]/10 rounded-xl border border-[#df2531]/20">
-                <div className="flex items-center gap-3">
-                  <Coin size={24} weight="duotone" className="text-[#df2531]" />
-                  <div>
-                    <p className="text-white/50 text-xs">Your Balance</p>
-                    <p className="text-white font-bold">{wallet?.balance || 0} coins</p>
+              <div className={`p-4 rounded-xl border ${
+                hasInsufficientBalance 
+                  ? 'bg-amber-500/10 border-amber-500/20' 
+                  : 'bg-[#df2531]/10 border-[#df2531]/20'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Coin size={24} weight="duotone" className={hasInsufficientBalance ? 'text-amber-400' : 'text-[#df2531]'} />
+                    <div>
+                      <p className="text-white/50 text-xs">Your Balance</p>
+                      <p className={`font-bold ${hasInsufficientBalance ? 'text-amber-400' : 'text-white'}`}>
+                        {userBalance} coins
+                      </p>
+                    </div>
                   </div>
+                  <Link href="/dashboard/wallet" className={`text-sm hover:underline ${
+                    hasInsufficientBalance ? 'text-amber-400' : 'text-[#df2531]'
+                  }`}>
+                    Top up
+                  </Link>
                 </div>
-                <Link href="/dashboard/wallet" className="text-[#df2531] text-sm hover:underline">
-                  Top up
-                </Link>
+                {hasInsufficientBalance && (
+                  <div className="mt-3 pt-3 border-t border-amber-500/20 flex items-center gap-2">
+                    <Warning size={16} className="text-amber-400" />
+                    <p className="text-amber-400 text-sm">
+                      You need <span className="font-bold">{totalPrice - userBalance}</span> more coins
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -457,13 +475,19 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
             <div className="p-6 border-t border-white/10">
               <Button
                 onClick={handleBooking}
-                disabled={loading}
-                className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-4 rounded-xl disabled:opacity-50"
+                disabled={loading || hasInsufficientBalance}
+                className={`w-full font-bold py-4 rounded-xl disabled:opacity-50 ${
+                  hasInsufficientBalance 
+                    ? 'bg-white/10 text-white/50 cursor-not-allowed' 
+                    : 'bg-[#df2531] hover:bg-[#c41f2a] text-white'
+                }`}
               >
                 {loading ? (
                   <SpinnerGap size={20} className="animate-spin" />
+                ) : hasInsufficientBalance ? (
+                  'Insufficient Balance'
                 ) : (
-                  `Confirm & Pay ${formatPrice(totalPrice)}`
+                  `Confirm & Pay ${totalPrice} coins`
                 )}
               </Button>
               <p className="text-white/40 text-xs text-center mt-3">
