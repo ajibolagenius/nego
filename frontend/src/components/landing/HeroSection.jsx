@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CaretLeft, CaretRight, ArrowDown } from '@phosphor-icons/react';
+import { CaretLeft, CaretRight, HandWaving } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
 
 const heroImages = [
