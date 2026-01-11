@@ -383,9 +383,9 @@ export function TalentDashboardClient({
                 <div>
                   <p className="text-white/50 text-sm">Profile Status</p>
                   <p className={`text-lg font-bold capitalize ${
-                    profile?.status === 'verified' ? 'text-green-400' : 'text-amber-400'
+                    profile?.is_verified ? 'text-green-400' : 'text-amber-400'
                   }`}>
-                    {profile?.status || 'pending'}
+                    {profile?.is_verified ? 'verified' : 'pending verification'}
                   </p>
                 </div>
               </div>
