@@ -49,21 +49,19 @@ const HeroSection = () => {
           </div>
         ))}
         
-        {/* Dark gradient overlays for blending */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0f]/90 via-[#0a0a0f]/60 to-[#0a0a0f]/90" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-[#0a0a0f]/80" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f]/70 via-transparent to-[#0a0a0f]" />
-        {/* Purple/Fuchsia duotone overlay */}
-        <div className="absolute inset-0 bg-purple-900/20 mix-blend-overlay" />
-        <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-900/15 via-transparent to-purple-900/20" />
+        {/* Lighter gradient overlays - more visible background */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0f]/80 via-transparent to-[#0a0a0f]/60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f]/60 via-transparent to-[#0a0a0f]/90" />
+        {/* Subtle purple tint */}
+        <div className="absolute inset-0 bg-purple-900/10 mix-blend-overlay" />
       </div>
 
-      {/* Gradient Effects */}
+      {/* Subtle Gradient Effects */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-purple-600/15 rounded-full blur-[200px]" />
-        <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-fuchsia-600/10 rounded-full blur-[180px]" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[200px]" />
         {/* Bottom mist effect */}
-        <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-purple-800/30 via-fuchsia-600/10 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-purple-900/20 to-transparent" />
       </div>
 
       {/* Main Content - Centered */}
