@@ -64,7 +64,7 @@ export function DashboardClient({ user, profile, wallet }: DashboardClientProps)
         {/* Logo */}
         <div className="p-6 border-b border-white/10">
           <Link href="/" className="flex items-center">
-            <span className="text-2xl font-bold">
+            <span className="text-2xl logo-font">
               <span className="text-white">NEGO</span>
               <span className="text-[#df2531]">.</span>
             </span>

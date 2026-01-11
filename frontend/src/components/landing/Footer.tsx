@@ -55,7 +55,7 @@ export function Footer() {
           {/* Logo & Description Block */}
           <div className={`col-span-2 md:col-span-4 lg:col-span-4 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <Link href="/" className="inline-block mb-6 group">
-              <span className="text-3xl font-bold transition-transform duration-300 inline-block group-hover:scale-105">
+              <span className="text-3xl logo-font transition-transform duration-300 inline-block group-hover:scale-105">
                 <span className="text-white">NEGO</span>
                 <span className="text-[#df2531]">.</span>
               </span>

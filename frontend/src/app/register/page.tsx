@@ -79,7 +79,7 @@ export default function RegisterPage() {
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <Link href="/" className="flex justify-center mb-8">
-          <span className="text-3xl font-bold">
+          <span className="text-3xl logo-font">
             <span className="text-white">NEGO</span>
             <span className="text-[#df2531]">.</span>
           </span>
