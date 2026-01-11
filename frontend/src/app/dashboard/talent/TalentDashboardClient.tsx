@@ -497,24 +497,24 @@ export function TalentDashboardClient({
                     className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10"
                   >
                     <div className="w-10 h-10 rounded-full bg-[#df2531]/10 flex items-center justify-center text-xl">
-                      {item.service.icon}
+                      {item.service_type?.icon}
                     </div>
                     
                     <div className="flex-1">
-                      <p className="text-white font-medium">{item.service.name}</p>
+                      <p className="text-white font-medium">{item.service_type?.name}</p>
                       <p className="text-white/50 text-sm">{item.price} coins</p>
                     </div>
                     
                     <button
-                      onClick={() => handleToggleAvailability(item.id, item.is_available)}
+                      onClick={() => handleToggleAvailability(item.id, item.is_active)}
                       className={`p-2 rounded-lg transition-colors ${
-                        item.is_available 
+                        item.is_active 
                           ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20' 
                           : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
                       }`}
-                      title={item.is_available ? 'Available - Click to hide' : 'Hidden - Click to show'}
+                      title={item.is_active ? 'Available - Click to hide' : 'Hidden - Click to show'}
                     >
-                      {item.is_available ? <Eye size={20} /> : <EyeSlash size={20} />}
+                      {item.is_active ? <Eye size={20} /> : <EyeSlash size={20} />}
                     </button>
                     
                     <button
