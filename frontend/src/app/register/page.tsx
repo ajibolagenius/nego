@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Eye, EyeSlash, Envelope, Lock, User, SpinnerGap, GoogleLogo, UserCircle, Briefcase } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { updateProfileRole } from './actions'
 
 type UserRole = 'client' | 'talent'
 
