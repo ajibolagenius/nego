@@ -2,6 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { VerifyClient } from './VerifyClient'
 
+export const metadata = {
+  title: 'Verify Identity - Nego',
+  description: 'Complete identity verification for your booking',
+}
+
 interface VerifyPageProps {
   searchParams: Promise<{ booking?: string }>
 }

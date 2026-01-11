@@ -2,6 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { TalentDashboardClient } from './TalentDashboardClient'
 
+export const metadata = {
+  title: 'Talent Dashboard - Nego',
+  description: 'Manage your services and bookings on Nego',
+}
+
 export default async function TalentDashboardPage() {
   const supabase = await createClient()
   

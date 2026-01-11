@@ -2,6 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { FavoritesClient } from './FavoritesClient'
 
+export const metadata = {
+  title: 'Favorites - Nego',
+  description: 'Your saved talents on Nego',
+}
+
 export default async function FavoritesPage() {
   const supabase = await createClient()
   
