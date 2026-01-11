@@ -2,6 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { WalletClient } from './WalletClient'
 
+export const metadata = {
+  title: 'Wallet - Nego',
+  description: 'Manage your coins and transactions on Nego',
+}
+
 export default async function WalletPage() {
   const supabase = await createClient()
   

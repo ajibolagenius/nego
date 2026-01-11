@@ -2,6 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { BrowseClient } from './BrowseClient'
 
+export const metadata = {
+  title: 'Browse Talent - Nego',
+  description: 'Discover and connect with verified talent on Nego',
+}
+
 export default async function BrowsePage() {
   const supabase = await createClient()
   

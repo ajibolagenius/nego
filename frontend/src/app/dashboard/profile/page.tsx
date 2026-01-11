@@ -2,6 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ProfileClient } from './ProfileClient'
 
+export const metadata = {
+  title: 'Profile - Nego',
+  description: 'Manage your profile on Nego',
+}
+
 export default async function ProfilePage() {
   const supabase = await createClient()
   
