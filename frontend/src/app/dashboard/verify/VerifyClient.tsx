@@ -13,12 +13,12 @@ import { Button } from '@/components/ui/button'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Booking, Verification } from '@/types/database'
 
-interface BookingWithTalent extends Booking {
+interface BookingWithTalent extends Omit<Booking, 'talent'> {
   talent: {
     display_name: string
     avatar_url: string | null
     location: string | null
-  }
+  } | null
 }
 
 interface VerifyClientProps {
