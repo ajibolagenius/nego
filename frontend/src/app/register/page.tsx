@@ -72,17 +72,10 @@ export default function RegisterPage() {
           router.push('/login')
         } else if (signInData.user) {
           // Wait for profile to be created by trigger
-          await new Promise(resolve => setTimeout(resolve, 500))
+          await new Promise(resolve => setTimeout(resolve, 800))
           
-          // Update the profile with the correct role
-          await supabase
-            .from('profiles')
-            .update({ 
-              role: role,
-              full_name: name,
-              display_name: name 
-            })
-            .eq('id', signInData.user.id)
+          // Update the profile with the correct role using server action
+          await updateProfileRole(signInData.user.id, role, name)
           
           // Give time for the update to propagate
           await new Promise(resolve => setTimeout(resolve, 300))
