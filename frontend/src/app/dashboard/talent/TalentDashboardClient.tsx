@@ -102,12 +102,12 @@ export function TalentDashboardClient({
     setIsSaving(true)
     try {
       const { error } = await supabase
-        .from('talent_services')
+        .from('talent_menus')
         .insert({
           talent_id: user.id,
-          service_id: newServiceId,
+          service_type_id: newServiceId,
           price: parseInt(newServicePrice),
-          is_available: true,
+          is_active: true,
         })
       
       if (error) throw error
@@ -129,7 +129,7 @@ export function TalentDashboardClient({
     
     try {
       const { error } = await supabase
-        .from('talent_services')
+        .from('talent_menus')
         .delete()
         .eq('id', serviceId)
       
@@ -144,8 +144,8 @@ export function TalentDashboardClient({
   const handleToggleAvailability = async (serviceId: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
-        .from('talent_services')
-        .update({ is_available: !currentStatus })
+        .from('talent_menus')
+        .update({ is_active: !currentStatus })
         .eq('id', serviceId)
       
       if (error) throw error
@@ -176,7 +176,7 @@ export function TalentDashboardClient({
 
   // Available services that aren't already in menu
   const availableServices = allServices.filter(
-    s => !menu.some(m => m.service_id === s.id)
+    s => !menu.some(m => m.service_type_id === s.id)
   )
 
   // Stats
