@@ -154,10 +154,11 @@ Password: TestPass123!
 - [x] E2E testing passed
 
 ### P1 - High Priority
-- [ ] Wallet page (view balance, transactions)
+- [x] Wallet page (view balance, packages, transactions)
+- [x] Talent dashboard (services, gallery, bookings management)
 - [ ] Favorites list
 - [ ] User profile page
-- [ ] Paystack payment integration
+- [ ] Paystack payment integration (waiting for API keys)
 - [ ] Client verification gate
 
 ### P2 - Medium Priority
