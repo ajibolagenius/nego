@@ -44,11 +44,15 @@ export default function RegisterPage() {
       if (data.user && data.session) {
         console.log('[Register] User created with session:', data.user.id)
         // Wait a bit for the trigger to create the profile
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        
+        // Re-authenticate to ensure session is properly established
+        const { data: { session: currentSession } } = await supabase.auth.getSession()
+        console.log('[Register] Current session:', currentSession?.user?.id)
         
         console.log('[Register] Updating profile role directly...')
         // Update the profile with the correct role directly (user is authenticated)
-        const { error: updateError } = await supabase
+        const { data: updateData, error: updateError } = await supabase
           .from('profiles')
           .update({ 
             role: role,
@@ -56,11 +60,12 @@ export default function RegisterPage() {
             display_name: name 
           })
           .eq('id', data.user.id)
+          .select()
         
         if (updateError) {
           console.error('[Register] Profile update failed:', updateError)
         } else {
-          console.log('[Register] Profile updated successfully')
+          console.log('[Register] Profile updated successfully:', updateData)
         }
         
         // Give time for the update to propagate
