@@ -30,18 +30,19 @@ export default async function TalentDashboardPage() {
 
   // Fetch talent services (menu)
   const { data: menu } = await supabase
-    .from('talent_services')
+    .from('talent_menus')
     .select(`
       *,
-      service:services(*)
+      service_type:service_types(*)
     `)
     .eq('talent_id', user.id)
     .order('created_at', { ascending: true })
 
   // Fetch all available services for adding new ones
   const { data: allServices } = await supabase
-    .from('services')
+    .from('service_types')
     .select('*')
+    .eq('is_active', true)
     .order('name', { ascending: true })
 
   // Fetch talent media
