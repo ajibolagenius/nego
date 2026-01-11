@@ -82,14 +82,6 @@ export default function RegisterPage() {
       setLoading(false)
     }
   }
-      }
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleGoogleSignup = async () => {
     setLoading(true)
