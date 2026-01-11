@@ -113,7 +113,7 @@ const HeroSection = () => {
             </span>
             <span className="block overflow-hidden">
               <span className={`inline-block transition-transform duration-1000 ${isVisible ? 'translate-y-0' : 'translate-y-full'}`} style={{ transitionDelay: '0.7s' }}>
-                NEGOTIATE?
+                NEGOTIATED?
               </span>
             </span>
           </h1>
