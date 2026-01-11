@@ -12,16 +12,16 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
-import type { Profile, Wallet, Service, Booking } from '@/types/database'
+import type { Profile, Wallet, ServiceType, Booking } from '@/types/database'
 
 interface TalentMenu {
   id: string
   talent_id: string
-  service_id: string
+  service_type_id: string
   price: number
-  is_available: boolean
+  is_active: boolean
   created_at: string
-  service: Service
+  service_type: ServiceType
 }
 
 interface TalentMedia {
