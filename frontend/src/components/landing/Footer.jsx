@@ -51,7 +51,7 @@ const Footer = () => {
               <a href="#home" className="inline-block">
                 <span className="text-3xl font-bold">
                   <span className="text-white">NEGO</span>
-                  <span className="text-fuchsia-500">.AI</span>
+                  <span className="text-fuchsia-500">.</span>
                 </span>
               </a>
             </div>
