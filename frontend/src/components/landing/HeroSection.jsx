@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
 
 const heroImages = [
@@ -38,7 +38,7 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <section ref={sectionRef} id="home" className="relative h-screen bg-[#0a0a0f] overflow-hidden">
+    <section ref={sectionRef} id="home" className="relative h-screen bg-black overflow-hidden">
       {/* Background Images Slider */}
       <div className="absolute inset-0">
         {heroImages.map((image, index) => (
@@ -57,30 +57,30 @@ const HeroSection = () => {
         ))}
         
         {/* Lighter gradient overlays - more visible background */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0f]/80 via-transparent to-[#0a0a0f]/60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0f]/60 via-transparent to-[#0a0a0f]/90" />
-        {/* Subtle purple tint */}
-        <div className="absolute inset-0 bg-purple-900/10 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/90" />
+        {/* Red tint overlay */}
+        <div className="absolute inset-0 bg-[#df2531]/5 mix-blend-overlay" />
       </div>
 
       {/* Subtle Gradient Effects */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-purple-600/10 rounded-full blur-[150px] md:blur-[200px]" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-[#df2531]/10 rounded-full blur-[150px] md:blur-[200px]" />
         {/* Bottom mist effect */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 md:h-32 bg-gradient-to-t from-purple-900/20 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 md:h-32 bg-gradient-to-t from-[#df2531]/10 to-transparent" />
       </div>
 
       {/* Main Content - Centered */}
       <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="text-center z-10 max-w-4xl px-4">
           <p 
-            className={`text-fuchsia-400 tracking-[0.2em] md:tracking-[0.3em] uppercase text-xs md:text-sm font-semibold mb-4 md:mb-6 transition-all duration-700 ${
+            className={`text-[#df2531] tracking-[0.2em] md:tracking-[0.3em] uppercase text-xs md:text-sm font-semibold mb-4 md:mb-6 transition-all duration-700 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
             style={{ transitionDelay: '0.2s' }}
           >
-            Meet Your Newest <span className="text-fuchsia-300">Elite Escort</span>
+            Meet Your Newest <span className="text-[#df2531]/80">Elite Escort</span>
           </p>
           
           <h1 
@@ -94,7 +94,7 @@ const HeroSection = () => {
           </h1>
 
           <p 
-            className={`text-gray-300 text-base md:text-lg lg:text-xl max-w-md md:max-w-xl mx-auto leading-relaxed mb-8 md:mb-10 transition-all duration-700 ${
+            className={`text-white/70 text-base md:text-lg lg:text-xl max-w-md md:max-w-xl mx-auto leading-relaxed mb-8 md:mb-10 transition-all duration-700 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
             style={{ transitionDelay: '0.6s' }}
@@ -109,7 +109,7 @@ const HeroSection = () => {
             style={{ transitionDelay: '0.8s' }}
           >
             <Button 
-              className="bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 hover:from-fuchsia-600 hover:to-fuchsia-700 text-white font-bold px-8 md:px-10 py-5 md:py-6 rounded-full text-sm md:text-base shadow-lg shadow-fuchsia-500/30 transition-all duration-300 hover:shadow-fuchsia-500/50 hover:scale-105 active:scale-95"
+              className="bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold px-8 md:px-10 py-5 md:py-6 rounded-full text-sm md:text-base shadow-lg shadow-[#df2531]/30 transition-all duration-300 hover:shadow-[#df2531]/50 hover:scale-105 active:scale-95"
             >
               Negotiate
             </Button>
@@ -124,11 +124,11 @@ const HeroSection = () => {
         </span>
         <div className="w-16 md:w-28 h-[2px] bg-white/20 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-white rounded-full transition-all duration-500"
+            className="h-full bg-[#df2531] rounded-full transition-all duration-500"
             style={{ width: `${((currentSlide + 1) / totalSlides) * 100}%` }}
           />
         </div>
-        <span className="text-gray-500 text-xs md:text-sm">
+        <span className="text-white/50 text-xs md:text-sm">
           {String(totalSlides).padStart(2, '0')}
         </span>
       </div>
@@ -139,13 +139,13 @@ const HeroSection = () => {
           onClick={prevSlide}
           className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white/10 transition-all duration-300 bg-white/5 active:scale-95"
         >
-          <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
+          <CaretLeft size={20} weight="duotone" />
         </button>
         <button 
           onClick={nextSlide}
-          className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white/10 transition-all duration-300 bg-gradient-to-r from-blue-500/20 to-purple-500/20 active:scale-95"
+          className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white/10 transition-all duration-300 bg-[#df2531]/20 active:scale-95"
         >
-          <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+          <CaretRight size={20} weight="duotone" />
         </button>
       </div>
 
@@ -157,7 +157,7 @@ const HeroSection = () => {
             onClick={() => setCurrentSlide(index)}
             className={`h-2 rounded-full transition-all duration-300 ${
               index === currentSlide 
-                ? 'bg-fuchsia-500 w-6' 
+                ? 'bg-[#df2531] w-6' 
                 : 'bg-white/30 hover:bg-white/50 w-2'
             }`}
           />
