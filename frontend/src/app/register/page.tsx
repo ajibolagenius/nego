@@ -27,7 +27,7 @@ export default function RegisterPage() {
 
     try {
       const supabase = createClient()
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -40,8 +40,28 @@ export default function RegisterPage() {
 
       if (error) throw error
 
-      router.push('/dashboard')
-      router.refresh()
+      // Check if user was created and session established
+      if (data.user && data.session) {
+        // Session is established, redirect to dashboard
+        router.push('/dashboard')
+        router.refresh()
+      } else if (data.user && !data.session) {
+        // Email confirmation might be required
+        // But since it's disabled in Supabase, try to sign in immediately
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
+        
+        if (signInError) {
+          // If sign in fails, show a message
+          setError('Account created. Please sign in.')
+          router.push('/login')
+        } else {
+          router.push('/dashboard')
+          router.refresh()
+        }
+      }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred'
       setError(errorMessage)
