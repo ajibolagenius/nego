@@ -134,11 +134,17 @@ const HeroSection = () => {
             style={{ transitionDelay: '1s' }}
           >
             <Button 
-              className="group bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold px-8 md:px-10 py-5 md:py-6 rounded-full text-sm md:text-base shadow-lg shadow-[#df2531]/30 transition-all duration-300 hover:shadow-[#df2531]/50 hover:scale-105 active:scale-95"
+              className="group relative bg-[#df2531] text-white font-bold px-10 md:px-12 py-5 md:py-6 rounded-full text-sm md:text-base overflow-hidden transition-all duration-500 hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(223,37,49,0.4)] hover:shadow-[0_0_50px_rgba(223,37,49,0.6)]"
             >
-              <span className="flex items-center gap-2">
-                Negotiate
-                <ArrowDown size={18} weight="bold" className="transition-transform duration-300 group-hover:translate-y-1" />
+              {/* Animated background shimmer */}
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              
+              {/* Button content */}
+              <span className="relative flex items-center gap-3">
+                <span>Negotiate</span>
+                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 group-hover:bg-white/30 transition-all duration-300 group-hover:rotate-12">
+                  <HandWaving size={18} weight="fill" className="transition-transform duration-300 group-hover:scale-110" />
+                </span>
               </span>
             </Button>
           </div>
