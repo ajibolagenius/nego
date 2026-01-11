@@ -43,11 +43,14 @@ export default function RegisterPage() {
 
       // Check if user was created and session established
       if (data.user && data.session) {
+        console.log('[Register] User created with session:', data.user.id)
         // Wait a bit for the trigger to create the profile
         await new Promise(resolve => setTimeout(resolve, 800))
         
+        console.log('[Register] Calling updateProfileRole...')
         // Update the profile with the correct role using server action
         const result = await updateProfileRole(data.user.id, role, name)
+        console.log('[Register] updateProfileRole result:', result)
         
         if (!result.success) {
           console.error('Profile update failed:', result.error)
@@ -56,6 +59,7 @@ export default function RegisterPage() {
         // Give time for the update to propagate
         await new Promise(resolve => setTimeout(resolve, 300))
         
+        console.log('[Register] Redirecting to dashboard...')
         // Session is established, redirect to dashboard
         window.location.href = '/dashboard'
       } else if (data.user && !data.session) {
