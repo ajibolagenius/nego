@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { 
   House, User, Wallet, CalendarCheck, Heart, Gear, SignOut, 
   MagnifyingGlass, Bell, Coin, ArrowRight, SpinnerGap, MapPin,
-  Plus, CaretRight
+  Plus, CaretRight, Briefcase
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -28,9 +28,20 @@ const mockTalents = [
   { id: '4', display_name: 'Grace', avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80', location: 'Lagos', status: 'online', starting_price: 100000 },
 ]
 
-const navItems = [
+// Navigation items for clients
+const clientNavItems = [
   { icon: House, label: 'Home', href: '/dashboard', active: true },
   { icon: Heart, label: 'Favorites', href: '/dashboard/favorites' },
+  { icon: CalendarCheck, label: 'Bookings', href: '/dashboard/bookings' },
+  { icon: Wallet, label: 'Wallet', href: '/dashboard/wallet' },
+  { icon: User, label: 'Profile', href: '/dashboard/profile' },
+  { icon: Gear, label: 'Settings', href: '/dashboard/settings' },
+]
+
+// Navigation items for talents
+const talentNavItems = [
+  { icon: House, label: 'Home', href: '/dashboard', active: true },
+  { icon: Briefcase, label: 'Talent Dashboard', href: '/dashboard/talent' },
   { icon: CalendarCheck, label: 'Bookings', href: '/dashboard/bookings' },
   { icon: Wallet, label: 'Wallet', href: '/dashboard/wallet' },
   { icon: User, label: 'Profile', href: '/dashboard/profile' },
@@ -40,6 +51,9 @@ const navItems = [
 export function DashboardClient({ user, profile, wallet }: DashboardClientProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  
+  const isTalent = profile?.role === 'talent'
+  const navItems = isTalent ? talentNavItems : clientNavItems
 
   const handleLogout = async () => {
     setLoading(true)
