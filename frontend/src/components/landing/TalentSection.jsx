@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Heart, Eye, ArrowRight } from '@phosphor-icons/react';
+import { MapPin, Heart, Eye, ArrowRight, SpinnerGap } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
-import { popularTalents } from '../../data/mock';
+import api from '../../services/api';
+import { popularTalents as mockTalents } from '../../data/mock';
 
 const TalentCard = ({ talent, index, isVisible }) => {
   const [isHovered, setIsHovered] = useState(false);
