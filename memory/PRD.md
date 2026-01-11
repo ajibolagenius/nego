@@ -103,7 +103,8 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 | `/dashboard/bookings/[id]` | ✅ | Booking details |
 | `/talent/[id]` | ✅ | Talent profile & booking |
 | `/dashboard/profile` | 🔴 | Not implemented |
-| `/dashboard/wallet` | 🔴 | Not implemented |
+| `/dashboard/wallet` | ✅ | Wallet with balance, packages, transactions |
+| `/dashboard/talent` | ✅ | Talent dashboard (services, gallery, bookings) |
 | `/dashboard/favorites` | 🔴 | Not implemented |
 | `/dashboard/settings` | 🔴 | Not implemented |
 | `/terms` | ✅ | Terms & Conditions |
