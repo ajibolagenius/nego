@@ -310,17 +310,47 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
         {/* Booking Summary - Fixed Bottom */}
         {selectedServices.length > 0 && (
           <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 p-4 z-50">
-            <div className="max-w-4xl mx-auto flex items-center justify-between">
-              <div>
-                <p className="text-white/50 text-sm">{selectedServices.length} service(s) selected</p>
-                <p className="text-white text-xl font-bold">{formatPrice(totalPrice)}</p>
+            <div className="max-w-4xl mx-auto">
+              {/* Low Balance Warning */}
+              {hasInsufficientBalance && (
+                <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                  <Warning size={20} weight="duotone" className="text-amber-400 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-amber-400 text-sm font-medium">Insufficient Balance</p>
+                    <p className="text-amber-400/70 text-xs">You need {totalPrice - userBalance} more coins to book</p>
+                  </div>
+                  <Link 
+                    href="/dashboard/wallet" 
+                    className="px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium hover:bg-amber-500/30 transition-colors"
+                  >
+                    Top Up
+                  </Link>
+                </div>
+              )}
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-white/50 text-sm">{selectedServices.length} service(s) selected</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white text-xl font-bold">{totalPrice} coins</p>
+                    <span className="text-white/40">•</span>
+                    <p className={`text-sm ${hasInsufficientBalance ? 'text-amber-400' : 'text-green-400'}`}>
+                      Balance: {userBalance} coins
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setShowBookingModal(true)}
+                  disabled={hasInsufficientBalance}
+                  className={`font-bold px-8 py-3 rounded-xl ${
+                    hasInsufficientBalance 
+                      ? 'bg-white/10 text-white/50 cursor-not-allowed' 
+                      : 'bg-[#df2531] hover:bg-[#c41f2a] text-white'
+                  }`}
+                >
+                  {hasInsufficientBalance ? 'Insufficient Balance' : 'Book Now'}
+                </Button>
               </div>
-              <Button
-                onClick={() => setShowBookingModal(true)}
-                className="bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold px-8 py-3 rounded-xl"
-              >
-                Book Now
-              </Button>
             </div>
           </div>
         )}
