@@ -8,7 +8,7 @@ import {
   ArrowLeft, User, PencilSimple, Plus, Trash, Image as ImageIcon,
   CurrencyDollar, CalendarCheck, Clock, Eye, EyeSlash, Star,
   CaretRight, Coin, CheckCircle, XCircle, Hourglass, X,
-  Camera, MapPin, Sparkle, Receipt, ChartLine
+  Camera, MapPin, Sparkle, Receipt, ChartLine, Icon
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
