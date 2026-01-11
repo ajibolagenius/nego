@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { 
   ArrowLeft, MapPin, Star, Heart, Share, Circle,
   Check, Calendar, Clock, SpinnerGap, X, ShieldCheck,
-  ForkKnife, CalendarCheck, Airplane, Lock, Camera, Coin
+  ForkKnife, CalendarCheck, Airplane, Lock, Camera, Coin, Warning
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
