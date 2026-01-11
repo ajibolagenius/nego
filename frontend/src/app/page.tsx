@@ -1,5 +1,4 @@
 import { 
-  Header, 
   HeroSection, 
   AboutSection, 
   TalentSection, 
@@ -10,7 +9,6 @@ import {
 export default function Home() {
   return (
     <main className="min-h-screen bg-black">
-      <Header />
       <HeroSection />
       <AboutSection />
       <TalentSection />

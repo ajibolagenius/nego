@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import "./globals.css"
+import { AppHeader } from "@/components/AppHeader"
 
 export const metadata: Metadata = {
   title: "Nego - Premium Managed Talent Marketplace",
@@ -13,7 +14,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body className="antialiased bg-black min-h-screen">
+        <AppHeader />
         {children}
       </body>
     </html>
