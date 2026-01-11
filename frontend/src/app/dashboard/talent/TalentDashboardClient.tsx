@@ -188,7 +188,7 @@ export function TalentDashboardClient({
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: ChartLine },
-    { id: 'services', label: 'Services', icon: Currency },
+    { id: 'services', label: 'Services', icon: CurrencyDollar },
     { id: 'media', label: 'Gallery', icon: ImageIcon },
     { id: 'bookings', label: 'Bookings', icon: CalendarCheck },
   ]
