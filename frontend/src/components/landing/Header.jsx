@@ -9,7 +9,6 @@ const Header = () => {
     { name: 'Home', href: '#home', active: true },
     { name: 'About us', href: '#about' },
     { name: 'Collection', href: '#talent' },
-    { name: 'All Talent', href: '#talent' },
     { name: 'Private Content', href: '#premium' },
   ];
 
@@ -21,7 +20,7 @@ const Header = () => {
           <a href="#home" className="flex items-center">
             <span className="text-2xl font-bold">
               <span className="text-white">NEGO</span>
-              <span className="text-fuchsia-500">.AI</span>
+              <span className="text-fuchsia-500">.</span>
             </span>
           </a>
 
