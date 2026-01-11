@@ -4,6 +4,8 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export async function updateProfileRole(userId: string, role: 'client' | 'talent', fullName: string) {
+  console.log('[updateProfileRole] Starting update for:', { userId, role, fullName })
+  
   // Use service role key to bypass RLS for this critical operation
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +20,7 @@ export async function updateProfileRole(userId: string, role: 'client' | 'talent
     }
   )
   
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .update({ 
       role: role,
@@ -26,11 +28,13 @@ export async function updateProfileRole(userId: string, role: 'client' | 'talent
       display_name: fullName 
     })
     .eq('id', userId)
+    .select()
   
   if (error) {
-    console.error('Error updating profile role:', error)
+    console.error('[updateProfileRole] Error:', error)
     return { success: false, error: error.message }
   }
   
+  console.log('[updateProfileRole] Success:', data)
   return { success: true }
 }
