@@ -151,7 +151,6 @@ const TalentSection = () => {
               ))}
             </div>
           )}
-          </div>
         </div>
       </div>
     </section>
