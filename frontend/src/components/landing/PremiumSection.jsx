@@ -158,7 +158,6 @@ const PremiumSection = () => {
                 ))}
               </div>
             )}
-            )}
           </div>
         </div>
       </div>
