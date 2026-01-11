@@ -172,8 +172,10 @@ Password: TestPass123!
 ### P1 - High Priority
 - [x] Wallet page (view balance, packages, transactions)
 - [x] Talent dashboard (services, gallery, bookings management)
-- [ ] Favorites list
-- [ ] User profile page
+- [x] Favorites list
+- [x] User profile page  
+- [x] Settings page
+- [x] Low balance warning on booking flow
 - [ ] Paystack payment integration (waiting for API keys)
 - [ ] Client verification gate
 
