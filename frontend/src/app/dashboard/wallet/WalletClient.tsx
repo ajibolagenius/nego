@@ -87,6 +87,13 @@ export function WalletClient({ user, profile, wallet, transactions }: WalletClie
     }).format(price)
   }
 
+  const formatCoins = (coins: number) => {
+    return `${new Intl.NumberFormat('en-NG', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(coins)} coins`
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-NG', {
       month: 'short',

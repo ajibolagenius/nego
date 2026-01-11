@@ -51,11 +51,10 @@ export function FavoritesClient({ user, profile, talents }: FavoritesClientProps
 
   const formatPrice = (price: number | null) => {
     if (!price) return 'Contact for price'
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
+    return `${new Intl.NumberFormat('en-NG', {
       minimumFractionDigits: 0,
-    }).format(price)
+      maximumFractionDigits: 0,
+    }).format(price)} coins`
   }
 
   if (!isLoaded) {
