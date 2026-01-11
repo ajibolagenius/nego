@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { 
   ArrowLeft, Coin, Plus, ArrowUpRight, ArrowDownLeft, 
   Clock, CheckCircle, XCircle, Sparkle, ShoppingCart,
-  Gift, CreditCard, Receipt, CaretRight
+  Gift, CreditCard, Receipt, CaretRight, Icon
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -58,7 +58,7 @@ const coinPackages = [
   },
 ]
 
-const transactionIcons: Record<string, React.ComponentType<{ size?: number; className?: string; weight?: string }>> = {
+const transactionIcons: Record<string, Icon> = {
   purchase: Plus,
   booking: ShoppingCart,
   unlock: Gift,
