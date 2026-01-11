@@ -123,6 +123,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 | `/dashboard/talent` | ✅ | Talent dashboard (services, gallery, bookings) |
 | `/dashboard/favorites` | ✅ | Favorites list with localStorage persistence |
 | `/dashboard/settings` | ✅ | Account, notifications, privacy settings |
+| `/dashboard/verify` | ✅ | Client identity verification gate |
 | `/terms` | ✅ | Terms & Conditions |
 | `/privacy` | ✅ | Privacy Policy |
 | `/cookies` | ✅ | Cookie Policy |
