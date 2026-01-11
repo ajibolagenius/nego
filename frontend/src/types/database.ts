@@ -34,6 +34,9 @@ export interface ServiceType {
   description: string | null
 }
 
+// Alias for ServiceType
+export type Service = ServiceType
+
 export interface TalentMenu {
   id: string
   talent_id: string
