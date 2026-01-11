@@ -25,7 +25,7 @@ const AboutSection = () => {
             </p>
             
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-tight">
-              WHAT IS <span className="text-fuchsia-400">NEGO.AI</span>
+              WHAT IS <span className="text-fuchsia-400">NEGO</span>
             </h2>
 
             <p className="text-gray-400 text-base leading-relaxed max-w-lg">
