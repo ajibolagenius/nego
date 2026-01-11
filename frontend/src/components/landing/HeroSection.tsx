@@ -106,17 +106,17 @@ export function HeroSection() {
           </p>
           
           <h1 
-            className={`text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-black text-white leading-[0.9] tracking-tight mb-6 md:mb-8 transition-all duration-700 ${
+            className={`text-[clamp(2.5rem,8vw,9rem)] font-black text-white leading-[0.95] tracking-tight mb-6 md:mb-8 transition-all duration-700 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
             style={{ transitionDelay: '0.4s' }}
           >
-            <span className="block overflow-hidden">
+            <span className="block">
               <span className={`inline-block transition-transform duration-1000 ${isVisible ? 'translate-y-0' : 'translate-y-full'}`} style={{ transitionDelay: '0.5s' }}>
                 HAVE YOU
               </span>
             </span>
-            <span className="block overflow-hidden">
+            <span className="block">
               <span className={`inline-block transition-transform duration-1000 ${isVisible ? 'translate-y-0' : 'translate-y-full'}`} style={{ transitionDelay: '0.7s' }}>
                 NEGOTIATED?
               </span>
