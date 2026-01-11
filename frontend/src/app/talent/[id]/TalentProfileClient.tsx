@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, ServiceType, TalentMenu, Media, Wallet } from '@/types/database'
+import type { Icon } from '@phosphor-icons/react'
 
 interface TalentWithDetails extends Profile {
   talent_menus: (TalentMenu & { service_type: ServiceType })[]
@@ -25,7 +26,7 @@ interface TalentProfileClientProps {
   userId: string
 }
 
-const serviceIcons: Record<string, React.ComponentType<{ size?: number; weight?: string; className?: string }>> = {
+const serviceIcons: Record<string, Icon> = {
   'utensils': ForkKnife,
   'calendar': CalendarCheck,
   'plane': Airplane,
