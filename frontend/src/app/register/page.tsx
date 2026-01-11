@@ -42,8 +42,11 @@ export default function RegisterPage() {
 
       // Check if user was created and session established
       if (data.user && data.session) {
+        // Wait a bit for the trigger to create the profile
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
         // Update the profile with the correct role (in case trigger didn't capture it)
-        await supabase
+        const { error: updateError } = await supabase
           .from('profiles')
           .update({ 
             role: role,
@@ -52,9 +55,15 @@ export default function RegisterPage() {
           })
           .eq('id', data.user.id)
         
+        if (updateError) {
+          console.error('Profile update error:', updateError)
+        }
+        
+        // Give time for the update to propagate
+        await new Promise(resolve => setTimeout(resolve, 300))
+        
         // Session is established, redirect to dashboard
-        router.push('/dashboard')
-        router.refresh()
+        window.location.href = '/dashboard'
       } else if (data.user && !data.session) {
         // Email confirmation might be required
         // But since it's disabled in Supabase, try to sign in immediately
@@ -68,6 +77,9 @@ export default function RegisterPage() {
           setError('Account created. Please sign in.')
           router.push('/login')
         } else if (signInData.user) {
+          // Wait for profile to be created by trigger
+          await new Promise(resolve => setTimeout(resolve, 500))
+          
           // Update the profile with the correct role
           await supabase
             .from('profiles')
@@ -78,8 +90,10 @@ export default function RegisterPage() {
             })
             .eq('id', signInData.user.id)
           
-          router.push('/dashboard')
-          router.refresh()
+          // Give time for the update to propagate
+          await new Promise(resolve => setTimeout(resolve, 300))
+          
+          window.location.href = '/dashboard'
         }
       }
     } catch (err: unknown) {
