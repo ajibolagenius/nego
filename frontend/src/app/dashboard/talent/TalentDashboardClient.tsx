@@ -45,7 +45,7 @@ interface TalentDashboardClientProps {
   user: SupabaseUser
   profile: Profile | null
   menu: TalentMenu[]
-  allServices: Service[]
+  allServices: ServiceType[]
   media: TalentMedia[]
   bookings: BookingWithClient[]
   wallet: Wallet | null
