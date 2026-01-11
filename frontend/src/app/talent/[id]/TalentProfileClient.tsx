@@ -51,6 +51,9 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
     .filter(s => selectedServices.includes(s.id))
     .reduce((sum, s) => sum + s.price, 0)
 
+  const userBalance = wallet?.balance || 0
+  const hasInsufficientBalance = totalPrice > userBalance && selectedServices.length > 0
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
