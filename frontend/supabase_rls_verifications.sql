@@ -5,7 +5,7 @@
 ALTER TABLE verifications ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can insert their own verifications (for bookings they made)
-CREATE POLICY "Users can insert verifications for their bookings"
+CREATE POLICY insert_own_verifications
 ON verifications
 FOR INSERT
 WITH CHECK (
@@ -17,7 +17,7 @@ WITH CHECK (
 );
 
 -- Policy: Users can view verifications for their bookings (as client or talent)
-CREATE POLICY "Users can view verifications for their bookings"
+CREATE POLICY select_own_verifications
 ON verifications
 FOR SELECT
 USING (
@@ -29,7 +29,7 @@ USING (
 );
 
 -- Policy: Users can update their own verifications
-CREATE POLICY "Users can update their own verifications"
+CREATE POLICY update_own_verifications
 ON verifications
 FOR UPDATE
 USING (
@@ -44,24 +44,21 @@ USING (
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can insert their own transactions
-CREATE POLICY "Users can insert own transactions"
+CREATE POLICY insert_own_transactions
 ON transactions
 FOR INSERT
 WITH CHECK (auth.uid() = user_id);
 
 -- Policy: Users can view their own transactions
-CREATE POLICY "Users can view own transactions"
+CREATE POLICY select_own_transactions
 ON transactions
 FOR SELECT
 USING (auth.uid() = user_id);
 
 -- Ensure wallets table allows updates for own wallet
-DROP POLICY IF EXISTS "Users can update own wallet" ON wallets;
-CREATE POLICY "Users can update own wallet"
+DROP POLICY IF EXISTS update_own_wallet ON wallets;
+CREATE POLICY update_own_wallet
 ON wallets
 FOR UPDATE
 USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
-
--- Optional: Create storage bucket for verifications (run in Storage section)
--- INSERT INTO storage.buckets (id, name, public) VALUES ('verifications', 'verifications', false);
