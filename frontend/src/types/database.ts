@@ -76,6 +76,18 @@ export interface Media {
   created_at: string
 }
 
+export type TransactionType = 'purchase' | 'unlock' | 'booking' | 'refund' | 'payout'
+
+export interface Transaction {
+  id: string
+  user_id: string
+  amount: number
+  type: TransactionType
+  reference_id: string | null
+  description: string | null
+  created_at: string
+}
+
 // API Response types
 export interface TalentWithMenu extends Profile {
   menu: TalentMenu[]
