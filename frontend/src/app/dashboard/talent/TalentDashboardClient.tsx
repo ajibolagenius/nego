@@ -242,7 +242,7 @@ export function TalentDashboardClient({
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h2 className="text-2xl font-bold text-white">{profile?.display_name || 'Your Name'}</h2>
-              {profile?.status === 'verified' && (
+              {profile?.is_verified && (
                 <div className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
                   Verified
                 </div>
