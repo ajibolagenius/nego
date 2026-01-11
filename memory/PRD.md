@@ -118,11 +118,11 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 | `/dashboard/browse` | ✅ | Browse all talents |
 | `/dashboard/bookings/[id]` | ✅ | Booking details |
 | `/talent/[id]` | ✅ | Talent profile & booking |
-| `/dashboard/profile` | 🔴 | Not implemented |
+| `/dashboard/profile` | ✅ | Profile with stats, edit functionality |
 | `/dashboard/wallet` | ✅ | Wallet with balance, packages, transactions |
 | `/dashboard/talent` | ✅ | Talent dashboard (services, gallery, bookings) |
-| `/dashboard/favorites` | 🔴 | Not implemented |
-| `/dashboard/settings` | 🔴 | Not implemented |
+| `/dashboard/favorites` | ✅ | Favorites list with localStorage persistence |
+| `/dashboard/settings` | ✅ | Account, notifications, privacy settings |
 | `/terms` | ✅ | Terms & Conditions |
 | `/privacy` | ✅ | Privacy Policy |
 | `/cookies` | ✅ | Cookie Policy |
