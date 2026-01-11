@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Heart, Lock } from 'lucide-react';
+import { Heart, Lock } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
 
 const PremiumSection = () => {
@@ -24,11 +24,11 @@ const PremiumSection = () => {
   }, []);
 
   return (
-    <section ref={sectionRef} id="premium" className="relative py-16 md:py-24 lg:py-32 bg-[#0a0a0f] overflow-hidden">
+    <section ref={sectionRef} id="premium" className="relative py-16 md:py-24 lg:py-32 bg-black overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0">
-        <div className="absolute top-1/4 right-1/4 w-64 md:w-96 h-64 md:h-96 bg-purple-600/15 rounded-full blur-[120px] md:blur-[150px]" />
-        <div className="absolute bottom-0 left-0 right-0 h-48 md:h-64 bg-gradient-to-t from-purple-900/20 to-transparent" />
+        <div className="absolute top-1/4 right-1/4 w-64 md:w-96 h-64 md:h-96 bg-[#df2531]/10 rounded-full blur-[120px] md:blur-[150px]" />
+        <div className="absolute bottom-0 left-0 right-0 h-48 md:h-64 bg-gradient-to-t from-[#df2531]/10 to-transparent" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -38,7 +38,7 @@ const PremiumSection = () => {
             isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'
           }`}>
             <div className="space-y-3 md:space-y-4">
-              <p className="text-amber-400 tracking-[0.2em] md:tracking-[0.3em] uppercase text-xs font-medium">
+              <p className="text-[#df2531]/80 tracking-[0.2em] md:tracking-[0.3em] uppercase text-xs font-medium">
                 Get Premium Account
               </p>
               <h2 
@@ -49,7 +49,7 @@ const PremiumSection = () => {
               </h2>
             </div>
 
-            <p className="text-gray-400 text-base md:text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
+            <p className="text-white/60 text-base md:text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
               Get exclusive access to premium profiles, private galleries, and priority booking. 
               Premium members enjoy verified talent content, early access to new talent, 
               and dedicated support for the ultimate experience.
@@ -57,7 +57,7 @@ const PremiumSection = () => {
 
             <div className={`transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '0.3s' }}>
               <Button 
-                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold px-8 md:px-10 py-5 md:py-6 rounded-full text-base md:text-lg shadow-lg shadow-amber-500/30 transition-all duration-300 hover:shadow-amber-500/50 hover:scale-105 active:scale-95"
+                className="bg-[#df2531] hover:bg-[#c41f2a] text-white font-semibold px-8 md:px-10 py-5 md:py-6 rounded-full text-base md:text-lg shadow-lg shadow-[#df2531]/30 transition-all duration-300 hover:shadow-[#df2531]/50 hover:scale-105 active:scale-95"
               >
                 Get Now
               </Button>
@@ -80,8 +80,7 @@ const PremiumSection = () => {
               </div>
 
               {/* Locked Cards Around */}
-              {/* Left Card */}
-              <div className={`absolute -left-4 sm:-left-8 lg:-left-16 top-1/4 w-24 sm:w-28 lg:w-40 aspect-[3/4] rounded-xl overflow-hidden border-2 border-amber-500/30 transform -rotate-12 hover:rotate-0 transition-all duration-500 bento-item ${
+              <div className={`absolute -left-4 sm:-left-8 lg:-left-16 top-1/4 w-24 sm:w-28 lg:w-40 aspect-[3/4] rounded-xl overflow-hidden border-2 border-[#df2531]/30 transform -rotate-12 hover:rotate-0 transition-all duration-500 bento-item ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`} style={{ transitionDelay: '0.4s' }}>
                 <img
@@ -89,16 +88,15 @@ const PremiumSection = () => {
                   alt="Locked content"
                   className="w-full h-full object-cover blur-md"
                 />
-                <div className="absolute inset-0 bg-purple-900/60 flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                   <div className="relative">
-                    <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-white fill-white" />
-                    <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    <Heart size={32} weight="duotone" className="text-white" />
+                    <Lock size={14} weight="duotone" className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                   </div>
                 </div>
               </div>
 
-              {/* Right Top Card */}
-              <div className={`absolute -right-2 sm:-right-4 lg:-right-12 top-6 sm:top-8 w-20 sm:w-24 lg:w-36 aspect-[3/4] rounded-xl overflow-hidden border-2 border-amber-500/30 transform rotate-6 hover:rotate-0 transition-all duration-500 bento-item ${
+              <div className={`absolute -right-2 sm:-right-4 lg:-right-12 top-6 sm:top-8 w-20 sm:w-24 lg:w-36 aspect-[3/4] rounded-xl overflow-hidden border-2 border-[#df2531]/30 transform rotate-6 hover:rotate-0 transition-all duration-500 bento-item ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`} style={{ transitionDelay: '0.5s' }}>
                 <img
@@ -106,16 +104,15 @@ const PremiumSection = () => {
                   alt="Locked content"
                   className="w-full h-full object-cover blur-md"
                 />
-                <div className="absolute inset-0 bg-purple-900/60 flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                   <div className="relative">
-                    <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-white fill-white" />
-                    <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    <Heart size={32} weight="duotone" className="text-white" />
+                    <Lock size={14} weight="duotone" className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                   </div>
                 </div>
               </div>
 
-              {/* Right Bottom Card */}
-              <div className={`absolute -right-3 sm:-right-6 lg:-right-14 bottom-1/4 w-24 sm:w-28 lg:w-40 aspect-[3/4] rounded-xl overflow-hidden border-2 border-amber-500/30 transform rotate-12 hover:rotate-0 transition-all duration-500 bento-item ${
+              <div className={`absolute -right-3 sm:-right-6 lg:-right-14 bottom-1/4 w-24 sm:w-28 lg:w-40 aspect-[3/4] rounded-xl overflow-hidden border-2 border-[#df2531]/30 transform rotate-12 hover:rotate-0 transition-all duration-500 bento-item ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`} style={{ transitionDelay: '0.6s' }}>
                 <img
@@ -123,10 +120,10 @@ const PremiumSection = () => {
                   alt="Locked content"
                   className="w-full h-full object-cover blur-md"
                 />
-                <div className="absolute inset-0 bg-purple-900/60 flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                   <div className="relative">
-                    <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-white fill-white" />
-                    <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    <Heart size={32} weight="duotone" className="text-white" />
+                    <Lock size={14} weight="duotone" className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                   </div>
                 </div>
               </div>
