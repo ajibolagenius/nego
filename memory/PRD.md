@@ -48,11 +48,17 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ## Implemented Features
 
 ### Landing Page ✅
+- Global AppHeader (auth-aware, responsive)
 - Hero section with 5-image slider and Ken Burns effect
-- About section with bento grid layout
+- About section with flexible bento grid layout
 - Talent preview section (6 talents from DB)
 - Premium content section with locked images
-- Footer with navigation
+- Footer with navigation and legal links
+
+### Legal Pages ✅
+- Terms & Conditions (/terms)
+- Privacy Policy (/privacy)
+- Cookie Policy (/cookies)
 
 ### Authentication ✅
 - Login page (email + Google OAuth ready)
@@ -100,8 +106,9 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 | `/dashboard/wallet` | 🔴 | Not implemented |
 | `/dashboard/favorites` | 🔴 | Not implemented |
 | `/dashboard/settings` | 🔴 | Not implemented |
-| `/terms` | 🔴 | Not implemented |
-| `/privacy` | 🔴 | Not implemented |
+| `/terms` | ✅ | Terms & Conditions |
+| `/privacy` | ✅ | Privacy Policy |
+| `/cookies` | ✅ | Cookie Policy |
 
 ---
 
@@ -156,7 +163,7 @@ Password: TestPass123!
 - [ ] Talent portal (profile management)
 - [ ] Booking management for talents
 - [ ] Admin dashboard
-- [ ] Terms & Privacy pages
+- [x] Terms & Privacy pages (Completed Jan 2026)
 
 ### P3 - Nice to Have
 - [ ] Real-time notifications
