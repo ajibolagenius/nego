@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CaretLeft, CaretRight, Play, ArrowDown } from '@phosphor-icons/react';
+import { CaretLeft, CaretRight, ArrowDown } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
 
 const heroImages = [
@@ -88,85 +88,59 @@ const HeroSection = () => {
         ))}
       </div>
 
-      {/* Main Content - Masonry-inspired layout */}
-      <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full items-center">
-          {/* Main Content Block */}
-          <div className="lg:col-span-7 space-y-6">
-            <p 
-              className={`text-[#df2531] tracking-[0.2em] uppercase text-xs md:text-sm font-semibold transition-all duration-700 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              }`}
-              style={{ transitionDelay: '0.2s' }}
-            >
-              Meet Your Newest <span className="text-[#df2531]/70">Elite Escort</span>
-            </p>
-            
-            <h1 
-              className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-white leading-[0.9] tracking-tight transition-all duration-700 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-              style={{ transitionDelay: '0.4s', fontFamily: "'Playfair', serif" }}
-            >
-              <span className="block overflow-hidden">
-                <span className={`inline-block transition-transform duration-1000 ${isVisible ? 'translate-y-0' : 'translate-y-full'}`} style={{ transitionDelay: '0.5s' }}>
-                  HAVE YOU
-                </span>
+      {/* Main Content - Single Column Centered */}
+      <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="text-center z-10 max-w-4xl px-4">
+          <p 
+            className={`text-[#df2531] tracking-[0.2em] md:tracking-[0.3em] uppercase text-xs md:text-sm font-semibold mb-4 md:mb-6 transition-all duration-700 ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+            style={{ transitionDelay: '0.2s' }}
+          >
+            Meet Your Newest <span className="text-[#df2531]/70">Elite Escort</span>
+          </p>
+          
+          <h1 
+            className={`text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-black text-white leading-[0.9] tracking-tight mb-6 md:mb-8 transition-all duration-700 ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            }`}
+            style={{ transitionDelay: '0.4s', fontFamily: "'Playfair', serif" }}
+          >
+            <span className="block overflow-hidden">
+              <span className={`inline-block transition-transform duration-1000 ${isVisible ? 'translate-y-0' : 'translate-y-full'}`} style={{ transitionDelay: '0.5s' }}>
+                HAVE YOU
               </span>
-              <span className="block overflow-hidden">
-                <span className={`inline-block transition-transform duration-1000 ${isVisible ? 'translate-y-0' : 'translate-y-full'}`} style={{ transitionDelay: '0.7s' }}>
-                  NEGOTIATE?
-                </span>
+            </span>
+            <span className="block overflow-hidden">
+              <span className={`inline-block transition-transform duration-1000 ${isVisible ? 'translate-y-0' : 'translate-y-full'}`} style={{ transitionDelay: '0.7s' }}>
+                NEGOTIATE?
               </span>
-            </h1>
+            </span>
+          </h1>
 
-            <p 
-              className={`text-white/60 text-base md:text-lg max-w-md leading-relaxed transition-all duration-700 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-              }`}
-              style={{ transitionDelay: '0.8s' }}
+          <p 
+            className={`text-white/60 text-base md:text-lg lg:text-xl max-w-md md:max-w-xl mx-auto leading-relaxed mb-8 md:mb-10 transition-all duration-700 ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+            }`}
+            style={{ transitionDelay: '0.8s' }}
+          >
+            Refined, flirtatious, and habit‑forming. One evening together won't be enough.
+          </p>
+
+          <div
+            className={`transition-all duration-700 ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+            }`}
+            style={{ transitionDelay: '1s' }}
+          >
+            <Button 
+              className="group bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold px-8 md:px-10 py-5 md:py-6 rounded-full text-sm md:text-base shadow-lg shadow-[#df2531]/30 transition-all duration-300 hover:shadow-[#df2531]/50 hover:scale-105 active:scale-95"
             >
-              Refined, flirtatious, and habit‑forming. One evening together won't be enough.
-            </p>
-
-            <div
-              className={`flex items-center gap-4 transition-all duration-700 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-              }`}
-              style={{ transitionDelay: '1s' }}
-            >
-              <Button 
-                className="group bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold px-8 py-5 rounded-full shadow-lg shadow-[#df2531]/30 transition-all duration-300 hover:shadow-[#df2531]/50 hover:scale-105 active:scale-95"
-              >
-                <span className="flex items-center gap-2">
-                  Negotiate
-                  <ArrowDown size={18} weight="bold" className="transition-transform duration-300 group-hover:translate-y-1" />
-                </span>
-              </Button>
-              
-              <button className="group flex items-center gap-3 text-white/70 hover:text-white transition-colors duration-300">
-                <span className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center group-hover:border-[#df2531] group-hover:bg-[#df2531]/10 transition-all duration-300">
-                  <Play size={18} weight="fill" className="ml-0.5" />
-                </span>
-                <span className="text-sm font-medium">Watch Video</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Side Stats Block - Masonry style */}
-          <div className={`hidden lg:flex lg:col-span-5 flex-col gap-4 transition-all duration-700 ${
-            isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
-          }`} style={{ transitionDelay: '1.2s' }}>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-500 hover:-translate-y-1">
-                <p className="text-3xl font-black text-white" style={{ fontFamily: "'Playfair', serif" }}>500+</p>
-                <p className="text-white/50 text-sm">Elite Talent</p>
-              </div>
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-500 hover:-translate-y-1 mt-6">
-                <p className="text-3xl font-black text-white" style={{ fontFamily: "'Playfair', serif" }}>99%</p>
-                <p className="text-white/50 text-sm">Satisfaction</p>
-              </div>
-            </div>
+              <span className="flex items-center gap-2">
+                Negotiate
+                <ArrowDown size={18} weight="bold" className="transition-transform duration-300 group-hover:translate-y-1" />
+              </span>
+            </Button>
           </div>
         </div>
       </div>
