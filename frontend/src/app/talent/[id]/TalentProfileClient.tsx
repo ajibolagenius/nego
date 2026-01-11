@@ -81,6 +81,12 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
       return
     }
 
+    // Check balance before proceeding
+    if (hasInsufficientBalance) {
+      setError('Insufficient balance. Please top up your wallet.')
+      return
+    }
+
     setLoading(true)
     setError('')
 
@@ -92,13 +98,24 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
         .filter(s => selectedServices.includes(s.id))
         .map(s => ({
           service_id: s.id,
-          service_name: s.service_type?.name,
+          service_name: s.service?.name || s.service_type?.name,
           price: s.price
         }))
 
       const scheduledAt = new Date(`${bookingDate}T${bookingTime}`)
 
-      // Create booking
+      // Deduct coins from wallet first
+      const { error: walletError } = await supabase
+        .from('wallets')
+        .update({ 
+          balance: userBalance - totalPrice,
+          escrow_balance: (wallet?.escrow_balance || 0) + totalPrice
+        })
+        .eq('user_id', userId)
+
+      if (walletError) throw walletError
+
+      // Create booking with verification_pending status (payment done via coins)
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
@@ -106,17 +123,39 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
           talent_id: talent.id,
           total_price: totalPrice,
           services_snapshot: servicesSnapshot,
-          status: 'payment_pending',
+          status: 'verification_pending',
           scheduled_at: scheduledAt.toISOString(),
           notes: bookingNotes || null
         })
         .select()
         .single()
 
-      if (bookingError) throw bookingError
+      if (bookingError) {
+        // Rollback wallet if booking fails
+        await supabase
+          .from('wallets')
+          .update({ 
+            balance: userBalance,
+            escrow_balance: wallet?.escrow_balance || 0
+          })
+          .eq('user_id', userId)
+        throw bookingError
+      }
 
-      // Redirect to booking confirmation/payment
-      router.push(`/dashboard/bookings/${booking.id}`)
+      // Create transaction record
+      await supabase
+        .from('transactions')
+        .insert({
+          user_id: userId,
+          amount: -totalPrice,
+          type: 'booking',
+          reference_id: booking.id,
+          description: `Booking with ${talent.display_name}`
+        })
+
+      // Close modal and redirect to verification page
+      setShowBookingModal(false)
+      router.push(`/dashboard/verify?booking=${booking.id}`)
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create booking'
       setError(errorMessage)
