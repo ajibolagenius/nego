@@ -95,7 +95,7 @@ export function HeroSection() {
 
       {/* Main Content */}
       <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <div className="text-center z-10 max-w-4xl px-4">
+        <div className="text-center z-10 w-full max-w-4xl mx-auto">
           <p 
             className={`text-[#df2531] tracking-[0.2em] md:tracking-[0.3em] uppercase text-xs md:text-sm font-semibold mb-4 md:mb-6 transition-all duration-700 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -106,17 +106,17 @@ export function HeroSection() {
           </p>
           
           <h1 
-            className={`text-[clamp(2.5rem,8vw,9rem)] font-black text-white leading-[0.95] tracking-tight mb-6 md:mb-8 transition-all duration-700 ${
+            className={`text-[clamp(2.5rem,8vw,9rem)] font-black text-white leading-[0.95] tracking-tight mb-6 md:mb-8 transition-all duration-700 text-center ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
             style={{ transitionDelay: '0.4s' }}
           >
-            <span className="block">
+            <span className="block text-center">
               <span className={`inline-block transition-transform duration-1000 ${isVisible ? 'translate-y-0' : 'translate-y-full'}`} style={{ transitionDelay: '0.5s' }}>
                 HAVE YOU
               </span>
             </span>
-            <span className="block">
+            <span className="block text-center">
               <span className={`inline-block transition-transform duration-1000 ${isVisible ? 'translate-y-0' : 'translate-y-full'}`} style={{ transitionDelay: '0.7s' }}>
                 NEGOTIATED?
               </span>
