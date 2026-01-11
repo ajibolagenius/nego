@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { 
   ArrowLeft, Bell, Moon, Sun, Globe, ShieldCheck, Lock,
-  Trash, SignOut, CaretRight, Toggle, Eye, EyeSlash,
+  Trash, SignOut, CaretRight, Eye, EyeSlash,
   Envelope, Phone, Warning
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
