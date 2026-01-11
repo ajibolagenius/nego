@@ -6,32 +6,34 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navLinks = [
-    { name: 'Home', href: '#home' },
-    { name: 'About', href: '#about' },
-    { name: 'Talent', href: '#talent' },
-    { name: 'Services', href: '#services' },
-    { name: 'Premium', href: '#premium' },
+    { name: 'Home', href: '#home', active: true },
+    { name: 'About us', href: '#about' },
+    { name: 'Collection', href: '#talent' },
+    { name: 'All Talent', href: '#talent' },
+    { name: 'Private Content', href: '#premium' },
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-white/5">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-transparent">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <a href="#home" className="flex items-center space-x-2">
-            <span className="text-2xl md:text-3xl font-bold">
+          <a href="#home" className="flex items-center">
+            <span className="text-2xl font-bold">
               <span className="text-white">NEGO</span>
-              <span className="text-amber-400">.</span>
+              <span className="text-fuchsia-500">.AI</span>
             </span>
           </a>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Centered */}
           <nav className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
-                className="text-gray-300 hover:text-white transition-colors duration-200 text-sm font-medium tracking-wide"
+                className={`transition-colors duration-200 text-sm font-medium ${
+                  link.active ? 'text-white' : 'text-gray-400 hover:text-white'
+                }`}
               >
                 {link.name}
               </a>
@@ -39,12 +41,14 @@ const Header = () => {
           </nav>
 
           {/* CTA Button */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center">
             <Button 
-              className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold px-6 py-2 rounded-full flex items-center gap-2 shadow-lg shadow-amber-500/25 transition-all duration-300 hover:shadow-amber-500/40"
+              className="bg-[#1a1a2e] hover:bg-[#252540] text-white font-medium px-5 py-2.5 rounded-full flex items-center gap-2 border border-white/10 transition-all duration-300"
             >
-              <Coins className="w-4 h-4" />
-              Buy Coins
+              <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
+                <Coins className="w-3 h-3 text-white" />
+              </div>
+              Buy Tokens
             </Button>
           </div>
 
@@ -73,10 +77,12 @@ const Header = () => {
               ))}
               <div className="px-6 py-4">
                 <Button 
-                  className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold px-6 py-2 rounded-full flex items-center justify-center gap-2"
+                  className="w-full bg-[#1a1a2e] text-white font-medium px-5 py-2.5 rounded-full flex items-center justify-center gap-2 border border-white/10"
                 >
-                  <Coins className="w-4 h-4" />
-                  Buy Coins
+                  <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
+                    <Coins className="w-3 h-3 text-white" />
+                  </div>
+                  Buy Tokens
                 </Button>
               </div>
             </nav>
