@@ -55,11 +55,10 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
   const hasInsufficientBalance = totalPrice > userBalance && selectedServices.length > 0
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
+    return `${new Intl.NumberFormat('en-NG', {
       minimumFractionDigits: 0,
-    }).format(price)
+      maximumFractionDigits: 0,
+    }).format(price)} coins`
   }
 
   const toggleService = (serviceId: string) => {

@@ -2,6 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { BookingDetailClient } from './BookingDetailClient'
 
+export const metadata = {
+  title: 'Booking Details - Nego',
+  description: 'View your booking details on Nego',
+}
+
 interface PageProps {
   params: Promise<{ id: string }>
 }
