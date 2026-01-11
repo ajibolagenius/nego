@@ -1,141 +1,162 @@
-import React, { useState } from 'react';
-import { Globe, InstagramLogo, PaperPlaneTilt } from '@phosphor-icons/react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Globe, InstagramLogo, DiscordLogo, TwitterLogo, ArrowUp, MapPin, Phone, Envelope } from '@phosphor-icons/react';
 
 const Footer = () => {
-  const [email, setEmail] = useState('');
+  const [isVisible, setIsVisible] = useState(false);
+  const footerRef = useRef(null);
 
-  const navColumns = [
-    {
-      links: [
-        { name: 'Home', href: '#home' },
-        { name: 'About us', href: '#about' },
-      ]
-    },
-    {
-      links: [
-        { name: 'Collection', href: '#talent' },
-        { name: 'Contact Us', href: '#' },
-      ]
-    },
-    {
-      links: [
-        { name: 'Private Content', href: '#premium' },
-        { name: 'Support', href: '#' },
-      ]
-    },
-  ];
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+      { threshold: 0.1 }
+    );
+    if (footerRef.current) observer.observe(footerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Newsletter signup:', email);
-    setEmail('');
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  return (
-    <footer className="relative bg-black overflow-hidden border-t border-white/5">
-      {/* Main Footer Content */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-12 lg:py-16">
-        <div className="flex flex-col lg:flex-row justify-between gap-8 lg:gap-20">
-          {/* Left Side - Logo and Navigation */}
-          <div className="flex flex-col sm:flex-row gap-8 lg:gap-16">
-            {/* Logo */}
-            <div className="flex-shrink-0">
-              <a href="#home" className="inline-block">
-                <span className="text-2xl md:text-3xl font-bold" style={{ fontFamily: "'Playfair', serif" }}>
-                  <span className="text-white">NEGO</span>
-                  <span className="text-[#df2531]">.</span>
-                </span>
-              </a>
-            </div>
+  const navLinks = [
+    { name: 'Home', href: '#home' },
+    { name: 'About us', href: '#about' },
+    { name: 'Collection', href: '#talent' },
+    { name: 'Private Content', href: '#premium' },
+  ];
 
-            {/* Navigation Columns */}
-            <nav className="flex gap-8 sm:gap-12 lg:gap-16">
-              {navColumns.map((column, colIndex) => (
-                <div key={colIndex} className="flex flex-col gap-3 md:gap-4">
-                  {column.links.map((link) => (
-                    <a
-                      key={link.name}
-                      href={link.href}
-                      className="text-white/50 hover:text-white transition-colors duration-200 text-sm"
-                    >
-                      {link.name}
-                    </a>
-                  ))}
-                </div>
+  const legalLinks = [
+    { name: 'Terms & Conditions', href: '#' },
+    { name: 'Privacy Policy', href: '#' },
+    { name: 'Cookie Policy', href: '#' },
+  ];
+
+  const socials = [
+    { icon: Globe, href: '#', label: 'Website' },
+    { icon: TwitterLogo, href: '#', label: 'Twitter' },
+    { icon: DiscordLogo, href: '#', label: 'Discord' },
+    { icon: InstagramLogo, href: '#', label: 'Instagram' },
+  ];
+
+  return (
+    <footer ref={footerRef} className="relative bg-black border-t border-white/5 overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0">
+        <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#df2531]/5 rounded-full blur-[150px] transition-all duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`} />
+      </div>
+
+      {/* Main Footer - Masonry Grid */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 lg:py-20">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-8 md:gap-10">
+          
+          {/* Logo & Description Block */}
+          <div className={`col-span-2 md:col-span-4 lg:col-span-4 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <a href="#home" className="inline-block mb-6 group">
+              <span className="text-3xl font-bold transition-transform duration-300 inline-block group-hover:scale-105" style={{ fontFamily: "'Playfair', serif" }}>
+                <span className="text-white">NEGO</span>
+                <span className="text-[#df2531]">.</span>
+              </span>
+            </a>
+            <p className="text-white/40 text-sm leading-relaxed mb-6 max-w-xs">
+              The premier managed marketplace connecting discerning clients with verified, elite talent. Excellence with discretion.
+            </p>
+            
+            {/* Social Links */}
+            <div className="flex items-center gap-3">
+              {socials.map((social, index) => (
+                <a 
+                  key={index}
+                  href={social.href}
+                  aria-label={social.label}
+                  className={`w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white/50 hover:text-[#df2531] hover:border-[#df2531]/50 hover:bg-[#df2531]/10 transition-all duration-300 hover:scale-110 ${
+                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                  }`}
+                  style={{ transitionDelay: `${0.2 + index * 0.1}s` }}
+                >
+                  <social.icon size={18} weight="duotone" />
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Navigation Links */}
+          <div className={`col-span-1 md:col-span-2 lg:col-span-2 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '0.2s' }}>
+            <h4 className="text-white font-semibold mb-4 text-sm">Navigation</h4>
+            <nav className="flex flex-col gap-3">
+              {navLinks.map((link, index) => (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  className="text-white/40 hover:text-white text-sm transition-all duration-300 hover:translate-x-1"
+                >
+                  {link.name}
+                </a>
               ))}
             </nav>
           </div>
 
-          {/* Right Side - Newsletter */}
-          <div className="flex flex-col gap-3 md:gap-4">
-            <p className="text-[#df2531] font-medium italic text-sm md:text-base">
-              Subscribe to our newsletter:
-            </p>
-            <form onSubmit={handleSubmit} className="relative">
-              <div className="flex items-center bg-white/5 border border-white/10 rounded-full overflow-hidden pl-4 md:pl-5 pr-1 py-1">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="example@email.com"
-                  className="bg-transparent text-white/80 placeholder-white/30 outline-none text-sm w-36 sm:w-48 lg:w-56"
-                />
-                <button
-                  type="submit"
-                  className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#df2531] hover:bg-[#c41f2a] flex items-center justify-center transition-all duration-300 flex-shrink-0 hover:scale-105 active:scale-95"
+          {/* Legal Links */}
+          <div className={`col-span-1 md:col-span-2 lg:col-span-2 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '0.3s' }}>
+            <h4 className="text-white font-semibold mb-4 text-sm">Legal</h4>
+            <nav className="flex flex-col gap-3">
+              {legalLinks.map((link) => (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  className="text-white/40 hover:text-white text-sm transition-all duration-300 hover:translate-x-1"
                 >
-                  <PaperPlaneTilt size={16} weight="duotone" className="text-white" />
-                </button>
+                  {link.name}
+                </a>
+              ))}
+            </nav>
+          </div>
+
+          {/* Contact Block */}
+          <div className={`col-span-2 md:col-span-4 lg:col-span-4 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '0.4s' }}>
+            <h4 className="text-white font-semibold mb-4 text-sm">Get in Touch</h4>
+            <div className="space-y-3">
+              <a href="mailto:hello@nego.com" className="flex items-center gap-3 text-white/40 hover:text-[#df2531] transition-colors duration-300 group">
+                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-[#df2531]/10 transition-colors duration-300">
+                  <Envelope size={14} weight="duotone" />
+                </div>
+                <span className="text-sm">hello@nego.com</span>
+              </a>
+              <a href="tel:+1234567890" className="flex items-center gap-3 text-white/40 hover:text-[#df2531] transition-colors duration-300 group">
+                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-[#df2531]/10 transition-colors duration-300">
+                  <Phone size={14} weight="duotone" />
+                </div>
+                <span className="text-sm">+1 (234) 567-890</span>
+              </a>
+              <div className="flex items-center gap-3 text-white/40">
+                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                  <MapPin size={14} weight="duotone" />
+                </div>
+                <span className="text-sm">Lagos, Nigeria</span>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Divider */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      </div>
-
       {/* Bottom Bar */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 md:py-6">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          {/* Copyright */}
-          <p className="text-[#df2531] text-xs md:text-sm">
-            ©{new Date().getFullYear()} Nego | All Rights Reserved
-          </p>
+      <div className="relative border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            {/* Copyright */}
+            <p className={`text-[#df2531] text-sm transition-all duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+              ©{new Date().getFullYear()} Nego. All Rights Reserved.
+            </p>
 
-          {/* Legal Links */}
-          <div className="flex items-center gap-4 sm:gap-6 md:gap-8">
-            <a href="#" className="text-white/50 hover:text-white text-xs md:text-sm transition-colors">
-              Terms & Conditions
-            </a>
-            <a href="#" className="text-white/50 hover:text-white text-xs md:text-sm transition-colors">
-              Privacy Policy
-            </a>
-          </div>
-
-          {/* Social Links */}
-          <div className="flex items-center gap-2 md:gap-3">
-            <span className="text-white/50 text-xs md:text-sm hidden sm:inline">Our Socials:</span>
-            <div className="flex items-center gap-2">
-              <a href="#" className="w-8 h-8 md:w-9 md:h-9 rounded-full border border-[#df2531]/50 flex items-center justify-center hover:bg-[#df2531]/20 transition-all duration-300 hover:scale-110">
-                <Globe size={16} weight="duotone" className="text-[#df2531]" />
-              </a>
-              <a href="#" className="w-8 h-8 md:w-9 md:h-9 rounded-full border border-[#df2531]/50 flex items-center justify-center hover:bg-[#df2531]/20 transition-all duration-300 hover:scale-110">
-                <svg className="w-4 h-4 text-[#df2531]" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                </svg>
-              </a>
-              <a href="#" className="w-8 h-8 md:w-9 md:h-9 rounded-full border border-[#df2531]/50 flex items-center justify-center hover:bg-[#df2531]/20 transition-all duration-300 hover:scale-110">
-                <svg className="w-4 h-4 text-[#df2531]" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/>
-                </svg>
-              </a>
-              <a href="#" className="w-8 h-8 md:w-9 md:h-9 rounded-full border border-[#df2531]/50 flex items-center justify-center hover:bg-[#df2531]/20 transition-all duration-300 hover:scale-110">
-                <InstagramLogo size={16} weight="duotone" className="text-[#df2531]" />
-              </a>
-            </div>
+            {/* Back to top button */}
+            <button
+              onClick={scrollToTop}
+              className={`group flex items-center gap-2 text-white/40 hover:text-[#df2531] transition-all duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+            >
+              <span className="text-sm">Back to top</span>
+              <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center group-hover:border-[#df2531] group-hover:bg-[#df2531]/10 transition-all duration-300">
+                <ArrowUp size={14} weight="bold" className="transition-transform duration-300 group-hover:-translate-y-0.5" />
+              </div>
+            </button>
           </div>
         </div>
       </div>
