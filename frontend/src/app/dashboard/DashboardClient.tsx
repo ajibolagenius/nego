@@ -64,11 +64,10 @@ export function DashboardClient({ user, profile, wallet }: DashboardClientProps)
   }
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
+    return `${new Intl.NumberFormat('en-NG', {
       minimumFractionDigits: 0,
-    }).format(price)
+      maximumFractionDigits: 0,
+    }).format(price)} coins`
   }
 
   return (
