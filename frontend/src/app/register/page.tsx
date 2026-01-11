@@ -46,27 +46,20 @@ export default function RegisterPage() {
         // Wait a bit for the trigger to create the profile
         await new Promise(resolve => setTimeout(resolve, 1500))
         
-        // Re-authenticate to ensure session is properly established
-        const { data: { session: currentSession } } = await supabase.auth.getSession()
-        console.log('[Register] Current session:', currentSession?.user?.id)
-        
-        console.log('[Register] Updating profile role directly...')
-        // Update the profile with the correct role directly (user is authenticated)
-        const { data: updateData, error: updateError } = await supabase
-          .from('profiles')
-          .update({ 
+        console.log('[Register] Updating profile role via API...')
+        // Update the profile via API route (uses service role)
+        const response = await fetch('/api/profile/update-role', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: data.user.id,
             role: role,
-            full_name: name,
-            display_name: name 
-          })
-          .eq('id', data.user.id)
-          .select()
+            fullName: name,
+          }),
+        })
         
-        if (updateError) {
-          console.error('[Register] Profile update failed:', updateError)
-        } else {
-          console.log('[Register] Profile updated successfully:', updateData)
-        }
+        const result = await response.json()
+        console.log('[Register] API response:', result)
         
         // Give time for the update to propagate
         await new Promise(resolve => setTimeout(resolve, 500))
