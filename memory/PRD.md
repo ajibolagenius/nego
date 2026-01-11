@@ -89,6 +89,22 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 - Wallet balance display
 - Booking detail page with payment status
 
+### Wallet Page ✅
+- Beautiful gradient balance card (coins display)
+- 4 coin packages (₦5,000 - ₦35,000)
+- Bonus coins on larger packages
+- Transaction history with icons
+- "How to earn/spend" info cards
+- Paystack integration ready (awaiting API keys)
+
+### Talent Dashboard ✅
+- Profile overview with stats (earnings, bookings)
+- Bio editing functionality
+- Services management (add/remove/toggle visibility)
+- Gallery tab for media management
+- Recent bookings list with status
+- Quick tips for better profile
+
 ---
 
 ## Routes
