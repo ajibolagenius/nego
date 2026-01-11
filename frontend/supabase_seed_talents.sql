@@ -1,13 +1,8 @@
 -- Seed Demo Talent Data for Nego
--- This script bypasses the foreign key constraint to insert demo data
+-- This script temporarily removes the FK constraint to insert demo data
 
--- IMPORTANT: Run this with service_role key (in Supabase SQL Editor)
-
--- Step 1: Temporarily disable the trigger and constraints
-ALTER TABLE profiles DISABLE TRIGGER ALL;
-ALTER TABLE wallets DISABLE TRIGGER ALL;
-ALTER TABLE talent_menus DISABLE TRIGGER ALL;
-ALTER TABLE media DISABLE TRIGGER ALL;
+-- Step 1: Drop the foreign key constraint temporarily
+ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_id_fkey;
 
 -- Step 2: Insert demo talents
 DO $$
@@ -57,75 +52,54 @@ BEGIN
     (talent6_id, 0);
 
     -- Insert talent menus (services and prices)
-    -- Talent 1: Adaeze
     INSERT INTO talent_menus (talent_id, service_type_id, price, is_active) VALUES
     (talent1_id, dinner_id, 120000, true),
     (talent1_id, event_id, 200000, true),
     (talent1_id, travel_id, 500000, true),
-    (talent1_id, private_id, 300000, true);
-
-    -- Talent 2: Chidinma
-    INSERT INTO talent_menus (talent_id, service_type_id, price, is_active) VALUES
+    (talent1_id, private_id, 300000, true),
     (talent2_id, dinner_id, 180000, true),
     (talent2_id, event_id, 350000, true),
     (talent2_id, travel_id, 800000, true),
-    (talent2_id, photo_id, 150000, true);
-
-    -- Talent 3: Folake
-    INSERT INTO talent_menus (talent_id, service_type_id, price, is_active) VALUES
+    (talent2_id, photo_id, 150000, true),
     (talent3_id, dinner_id, 150000, true),
     (talent3_id, event_id, 250000, true),
-    (talent3_id, private_id, 350000, true);
-
-    -- Talent 4: Grace
-    INSERT INTO talent_menus (talent_id, service_type_id, price, is_active) VALUES
+    (talent3_id, private_id, 350000, true),
     (talent4_id, dinner_id, 100000, true),
     (talent4_id, event_id, 180000, true),
-    (talent4_id, photo_id, 120000, true);
-
-    -- Talent 5: Halima
-    INSERT INTO talent_menus (talent_id, service_type_id, price, is_active) VALUES
+    (talent4_id, photo_id, 120000, true),
     (talent5_id, dinner_id, 130000, true),
     (talent5_id, travel_id, 450000, true),
-    (talent5_id, private_id, 280000, true);
-
-    -- Talent 6: Ify
-    INSERT INTO talent_menus (talent_id, service_type_id, price, is_active) VALUES
+    (talent5_id, private_id, 280000, true),
     (talent6_id, dinner_id, 160000, true),
     (talent6_id, event_id, 300000, true),
     (talent6_id, travel_id, 600000, true),
     (talent6_id, photo_id, 140000, true);
 
-    -- Insert some media for talents
+    -- Insert media for talents
     INSERT INTO media (talent_id, url, type, is_premium, unlock_price) VALUES
     (talent1_id, 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80', 'image', false, 0),
     (talent1_id, 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&q=80', 'image', false, 0),
     (talent1_id, 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&q=80', 'image', true, 50),
-    
     (talent2_id, 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&q=80', 'image', false, 0),
     (talent2_id, 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=80', 'image', false, 0),
     (talent2_id, 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&q=80', 'image', true, 75),
-
     (talent3_id, 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&q=80', 'image', false, 0),
     (talent3_id, 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80', 'image', true, 50),
-    
     (talent4_id, 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&q=80', 'image', false, 0),
     (talent4_id, 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&q=80', 'image', false, 0),
-    
     (talent5_id, 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&q=80', 'image', false, 0),
     (talent5_id, 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=80', 'image', true, 60),
-    
     (talent6_id, 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=80', 'image', false, 0),
     (talent6_id, 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80', 'image', false, 0);
 
     RAISE NOTICE 'Demo data inserted successfully!';
 END $$;
 
--- Step 3: Re-enable triggers
-ALTER TABLE profiles ENABLE TRIGGER ALL;
-ALTER TABLE wallets ENABLE TRIGGER ALL;
-ALTER TABLE talent_menus ENABLE TRIGGER ALL;
-ALTER TABLE media ENABLE TRIGGER ALL;
+-- Step 3: Re-add the foreign key constraint (but NOT VALID to skip checking existing rows)
+ALTER TABLE profiles 
+ADD CONSTRAINT profiles_id_fkey 
+FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE 
+NOT VALID;
 
 -- Verify the data was inserted
 SELECT 'Profiles' as table_name, count(*) as count FROM profiles WHERE role = 'talent'
