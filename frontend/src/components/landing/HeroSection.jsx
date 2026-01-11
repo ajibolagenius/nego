@@ -134,16 +134,14 @@ const HeroSection = () => {
             style={{ transitionDelay: '1s' }}
           >
             <Button 
-              className="group relative bg-[#df2531] hover:bg-transparent text-white font-bold px-10 md:px-12 py-5 md:py-6 rounded-full text-sm md:text-base border-2 border-[#df2531] overflow-hidden transition-all duration-500 hover:scale-105 active:scale-95"
+              data-testid="hero-negotiate-btn"
+              className="group relative bg-[#df2531] hover:bg-transparent text-white font-bold px-10 md:px-12 py-5 md:py-6 rounded-full text-sm md:text-base border-2 border-[#df2531] overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95"
             >
-              {/* Background that slides out on hover */}
-              <span className="absolute inset-0 bg-[#df2531] transform scale-x-100 group-hover:scale-x-0 transition-transform duration-500 origin-right" />
-              
               {/* Button content */}
               <span className="relative flex items-center gap-3">
-                <span className="transition-colors duration-500 group-hover:text-[#df2531]">Negotiate</span>
-                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 group-hover:bg-[#df2531]/20 transition-all duration-500">
-                  <HandWaving size={18} weight="fill" className="transition-all duration-500 group-hover:text-[#df2531] group-hover:rotate-12" />
+                <span className="text-white group-hover:text-[#df2531] transition-colors duration-300">Negotiate</span>
+                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 group-hover:bg-[#df2531]/20 transition-all duration-300">
+                  <HandWaving size={18} weight="fill" className="text-white group-hover:text-[#df2531] group-hover:rotate-12 transition-all duration-300" />
                 </span>
               </span>
             </Button>
