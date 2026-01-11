@@ -6,6 +6,7 @@ const aboutImages = [
   "https://customer-assets.emergentagent.com/job_secure-booking-3/artifacts/4wpmqkgg_pexels-pedrofurtadoo-31094965.jpg",
   "https://customer-assets.emergentagent.com/job_secure-booking-3/artifacts/ux7m23fn_pexels-titibrazil-15488638.jpg",
   "https://customer-assets.emergentagent.com/job_secure-booking-3/artifacts/ta13tarq_pexels-titibrazil-33428529.jpg",
+  "https://customer-assets.emergentagent.com/job_secure-booking-3/artifacts/mlmg4rfd_pexels-darcy-delia-345397-950758.jpg",
 ];
 
 const AboutSection = () => {
@@ -143,18 +144,26 @@ const AboutSection = () => {
             </div>
           </div>
 
-          {/* Stats Card */}
+          {/* Image Card 5 - New Image */}
           <div 
-            className={`bg-gradient-to-br from-fuchsia-600/20 to-purple-600/20 backdrop-blur-sm rounded-2xl md:rounded-3xl p-5 md:p-6 border border-fuchsia-500/20 bento-item flex flex-col justify-center transition-all duration-700 ${
+            className={`relative rounded-2xl md:rounded-3xl overflow-hidden bento-item img-zoom aspect-square transition-all duration-700 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
-            style={{ transitionDelay: '0.4s' }}
+            style={{ transitionDelay: '0.35s' }}
+            onMouseEnter={() => setHoveredIndex(4)}
+            onMouseLeave={() => setHoveredIndex(null)}
           >
-            <p className="text-4xl md:text-5xl font-black text-white mb-2" style={{ fontFamily: "'Playfair', serif" }}>
-              500+
-            </p>
-            <p className="text-gray-400 text-sm">Elite Talent</p>
-            <div className="mt-4 h-1 bg-gradient-to-r from-fuchsia-500 to-purple-500 rounded-full" />
+            <img
+              src={aboutImages[4]}
+              alt="Sophisticated"
+              className="w-full h-full object-cover"
+            />
+            <div className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 ${hoveredIndex === 4 ? 'opacity-100' : 'opacity-70'}`} />
+            <div className={`absolute bottom-4 left-4 right-4 transition-all duration-300 ${hoveredIndex === 4 ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-80'}`}>
+              <p className="text-white text-sm md:text-base font-bold" style={{ fontFamily: "'Playfair', serif" }}>
+                Sophisticated
+              </p>
+            </div>
           </div>
 
           {/* Image Card 3 */}
@@ -162,7 +171,7 @@ const AboutSection = () => {
             className={`relative rounded-2xl md:rounded-3xl overflow-hidden bento-item img-zoom aspect-[4/3] md:aspect-auto transition-all duration-700 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
-            style={{ transitionDelay: '0.5s' }}
+            style={{ transitionDelay: '0.4s' }}
             onMouseEnter={() => setHoveredIndex(2)}
             onMouseLeave={() => setHoveredIndex(null)}
           >
@@ -184,7 +193,7 @@ const AboutSection = () => {
             className={`bg-gradient-to-br from-[#1a1a2e]/80 to-[#1a1a2e]/40 backdrop-blur-sm rounded-2xl md:rounded-3xl p-5 md:p-6 border border-white/5 bento-item flex flex-col justify-between transition-all duration-700 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
-            style={{ transitionDelay: '0.6s' }}
+            style={{ transitionDelay: '0.5s' }}
           >
             <div>
               <p className="text-fuchsia-400 text-xs font-medium mb-2">Discover More</p>
@@ -203,7 +212,7 @@ const AboutSection = () => {
             className={`lg:col-span-2 relative rounded-2xl md:rounded-3xl overflow-hidden bento-item img-zoom aspect-[16/9] md:aspect-[21/9] transition-all duration-700 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
-            style={{ transitionDelay: '0.7s' }}
+            style={{ transitionDelay: '0.6s' }}
             onMouseEnter={() => setHoveredIndex(3)}
             onMouseLeave={() => setHoveredIndex(null)}
           >
