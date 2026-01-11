@@ -484,7 +484,7 @@ export function TalentDashboardClient({
             {/* Services List */}
             {menu.length === 0 ? (
               <div className="text-center py-12 rounded-2xl bg-white/5 border border-white/10">
-                <Currency size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
+                <CurrencyDollar size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
                 <p className="text-white/50 mb-2">No services listed yet</p>
                 <p className="text-white/30 text-sm">Add services to start receiving bookings</p>
               </div>
