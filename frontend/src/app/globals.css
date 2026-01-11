@@ -1,8 +1,8 @@
-@import "tailwindcss";
-
-/* Import Google Fonts */
+/* Google Fonts - must be at the top */
 @import url('https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wdth,wght@0,5..1200,87.5..112.5,300..900;1,5..1200,87.5..112.5,300..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+
+@import "tailwindcss";
 
 :root {
   /* Nego Design System - Red Accents */
