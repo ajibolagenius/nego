@@ -45,19 +45,27 @@ export default function RegisterPage() {
       if (data.user && data.session) {
         console.log('[Register] User created with session:', data.user.id)
         // Wait a bit for the trigger to create the profile
-        await new Promise(resolve => setTimeout(resolve, 800))
+        await new Promise(resolve => setTimeout(resolve, 1000))
         
-        console.log('[Register] Calling updateProfileRole...')
-        // Update the profile with the correct role using server action
-        const result = await updateProfileRole(data.user.id, role, name)
-        console.log('[Register] updateProfileRole result:', result)
+        console.log('[Register] Updating profile role directly...')
+        // Update the profile with the correct role directly (user is authenticated)
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            role: role,
+            full_name: name,
+            display_name: name 
+          })
+          .eq('id', data.user.id)
         
-        if (!result.success) {
-          console.error('Profile update failed:', result.error)
+        if (updateError) {
+          console.error('[Register] Profile update failed:', updateError)
+        } else {
+          console.log('[Register] Profile updated successfully')
         }
         
         // Give time for the update to propagate
-        await new Promise(resolve => setTimeout(resolve, 300))
+        await new Promise(resolve => setTimeout(resolve, 500))
         
         console.log('[Register] Redirecting to dashboard...')
         // Session is established, redirect to dashboard
