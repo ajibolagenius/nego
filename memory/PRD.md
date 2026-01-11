@@ -1,159 +1,146 @@
 # Nego - Managed Talent Marketplace
 
 ## Overview
-Nego is a premium managed marketplace for elite escort services. The platform features a sophisticated dark-themed landing page with a red accent color scheme, custom typography, and smooth animations.
+Nego is a premium managed marketplace for elite escort services. The platform features a sophisticated dark-themed design with red accents, custom typography (Playfair Display & DM Sans), and smooth animations.
 
-## Tech Stack
-- **Frontend**: React.js with Tailwind CSS
-- **Backend**: FastAPI (Python)
-- **Database**: MongoDB
-- **Authentication**: JWT-based
+## Tech Stack (Migrated January 2026)
+- **Frontend**: Next.js 14 (App Router) + TypeScript + Tailwind CSS
+- **Backend/Database**: Supabase (PostgreSQL + Auth + Storage)
+- **UI Components**: Shadcn/UI + Radix UI
 - **Icons**: Phosphor Icons
 - **Fonts**: Playfair Display (headings), DM Sans (body)
 
-## What's Been Implemented
-
-### Phase 1: Frontend Landing Page ✅
-**Completed: January 2026**
-
-1. **Hero Section**
-   - Background image slider with Ken Burns effect
-   - Parallax mouse movement
-   - Main CTA "Negotiate" button with inverse hover state (red bg → transparent, white text → red text)
-   - Floating particles animation
-   - Slide counter and navigation
-
-2. **About Section**
-   - Bento grid/masonry layout
-   - Feature pills with icons
-   - Entrance animations
-
-3. **Talent Section**
-   - 4-column responsive grid
-   - Location-only cards (privacy-focused)
-   - Hover effects with like/view actions
-   - Integrated with backend API
-
-4. **Premium Content Section**
-   - 3 locked image cards
-   - Blur effect on locked content
-   - Unlock price display
-   - Integrated with backend API
-
-5. **Footer**
-   - 4-section grid layout
-   - Social links
-   - Back to top button
-
-### Phase 2: Backend Development ✅
-**Completed: January 2026**
-
-1. **Database Models**
-   - Talent: name, location, image, price, age, rating, verification status
-   - User: email, name, hashed password, premium status, coins
-   - PrivateContent: title, description, image, unlock price, locked status
-
-2. **API Endpoints**
-   - `GET /api/health` - Health check
-   - `GET /api/talents` - List all talents (with filtering)
-   - `GET /api/talents/{id}` - Get single talent
-   - `POST /api/talents` - Create talent
-   - `PATCH /api/talents/{id}` - Update talent
-   - `DELETE /api/talents/{id}` - Delete talent
-   - `GET /api/content` - List private content
-   - `POST /api/content/{id}/unlock` - Unlock content with coins
-   - `POST /api/auth/register` - User registration
-   - `POST /api/auth/login` - User login
-   - `GET /api/auth/me` - Get current user
-   - `POST /api/seed` - Seed database
-
-3. **Frontend Integration**
-   - API service layer (`services/api.js`)
-   - TalentSection fetches from `/api/talents`
-   - PremiumSection fetches from `/api/content`
-   - Fallback to mock data if API fails
-
 ## Current Status
-- ✅ Landing page fully functional
-- ✅ Backend APIs implemented and tested
-- ✅ Frontend-backend integration complete
-- ✅ 20/20 API tests passing
-- ✅ CTA button hover state working
 
-## Test Credentials
-```
-Email: test@nego.com
-Password: password123
-```
+### ✅ Completed (Phase 1 - Migration)
+- Next.js 14 project setup with App Router
+- Supabase integration configured
+- Landing page components ported:
+  - Header with navigation
+  - Hero section with image slider
+  - About section with bento grid
+  - Talent section with grid
+  - Premium content section
+  - Footer
+- Authentication pages:
+  - Login page (email + Google OAuth)
+  - Register page with role selection (Client/Talent)
+  - Auth callback handler
+- Basic dashboard structure
+- Database schema designed (see `/app/frontend/supabase_schema.sql`)
 
-## Seeded Data
-- 8 talents across Nigerian cities (Lagos, Abuja, Port Harcourt, Kano, Enugu, Ibadan)
-- 3 locked private content items (50, 75, 100 coins)
+### 🔴 Pending - Database Setup Required
+**User must run the SQL schema in Supabase:**
+1. Go to Supabase Dashboard → SQL Editor
+2. Copy contents of `/app/frontend/supabase_schema.sql`
+3. Run the query to create all tables
+
+### 🟡 In Progress / Next Steps
+1. **Run database schema** in Supabase
+2. **Enable Google OAuth** in Supabase (optional)
+3. **Client Dashboard**:
+   - Browse talents with filters
+   - Talent profile view
+   - Booking flow
+   - Wallet & coin purchase
+4. **Talent Portal**:
+   - Profile management
+   - Service menu setup
+   - Media uploads
+   - Booking management
 
 ---
 
-## Prioritized Backlog
+## Database Schema Summary
 
-### P0 (Critical - Next Sprint)
-- [ ] User authentication UI (login/register modals)
-- [ ] Token management in frontend
-- [ ] Protected routes for private content
+### Core Tables
+- `profiles` - User profiles (extends auth.users)
+- `wallets` - Coin balances per user
+- `service_types` - Admin-defined service categories
+- `talent_menus` - Talent prices per service
+- `bookings` - Client-talent bookings
+- `verifications` - Client identity verification per booking
+- `media` - Talent photos/videos
+- `user_unlocks` - Premium content unlocks
+- `transactions` - Coin transaction history
 
-### P1 (Important)
-- [ ] Talent detail page/modal
-- [ ] Coin purchase flow
-- [ ] Content unlock functionality in UI
-- [ ] User profile page
-
-### P2 (Nice to Have)
-- [ ] Search and filter talents
-- [ ] Favorites/wishlist
-- [ ] Admin dashboard
-- [ ] Email notifications
-- [ ] Payment integration (Stripe/Paystack)
+### User Roles
+- `client` - Browse and book talent
+- `talent` - Provide services, manage profile
+- `admin` - Platform management
 
 ---
 
 ## File Structure
 
 ```
-/app
-├── backend/
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── talent.py
-│   │   ├── user.py
-│   │   └── content.py
-│   ├── routes/
-│   │   ├── __init__.py
-│   │   ├── talent.py
-│   │   ├── auth.py
-│   │   └── content.py
-│   ├── tests/
-│   │   └── test_nego_api.py
-│   ├── server.py
-│   └── requirements.txt
-├── frontend/
-│   └── src/
-│       ├── components/
-│       │   ├── landing/
-│       │   │   ├── HeroSection.jsx
-│       │   │   ├── AboutSection.jsx
-│       │   │   ├── TalentSection.jsx
-│       │   │   ├── PremiumSection.jsx
-│       │   │   ├── Header.jsx
-│       │   │   └── Footer.jsx
-│       │   └── ui/
-│       ├── services/
-│       │   └── api.js
-│       ├── data/
-│       │   └── mock.js
-│       ├── App.js
-│       ├── App.css
-│       └── DESIGN_SYSTEM.md
-└── memory/
-    └── PRD.md
+/app/frontend/
+├── src/
+│   ├── app/
+│   │   ├── page.tsx          # Landing page
+│   │   ├── layout.tsx        # Root layout
+│   │   ├── globals.css       # Global styles
+│   │   ├── login/page.tsx    # Login page
+│   │   ├── register/page.tsx # Register page
+│   │   ├── auth/callback/    # OAuth callback
+│   │   └── dashboard/        # User dashboard
+│   ├── components/
+│   │   ├── landing/          # Landing page sections
+│   │   └── ui/               # Shadcn components
+│   ├── lib/
+│   │   ├── supabase/         # Supabase client setup
+│   │   └── utils.ts          # Helper functions
+│   └── types/
+│       └── database.ts       # TypeScript types
+├── supabase_schema.sql       # Database schema
+├── next.config.ts
+├── package.json
+└── .env.local                # Supabase credentials
 ```
 
-## Design System Reference
-See `/app/frontend/src/DESIGN_SYSTEM.md` for colors, typography, components, and animation patterns.
+---
+
+## Environment Variables
+
+```env
+# /app/frontend/.env.local
+NEXT_PUBLIC_SUPABASE_URL=https://rmaqeotgpfvdtnvcfpox.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+```
+
+---
+
+## Prioritized Backlog
+
+### P0 (Critical - Immediate)
+- [ ] Run database schema in Supabase
+- [ ] Test authentication flow
+- [ ] Complete client dashboard with talent browsing
+
+### P1 (High Priority)
+- [ ] Talent portal (profile, services, media)
+- [ ] Booking flow with payment
+- [ ] Wallet system with coin purchase
+- [ ] Client verification gate
+
+### P2 (Medium Priority)
+- [ ] Admin dashboard
+- [ ] Payment integration (Paystack)
+- [ ] Media uploads to Supabase Storage
+- [ ] Search and filter talents
+
+### P3 (Nice to Have)
+- [ ] Real-time chat
+- [ ] Push notifications
+- [ ] Analytics dashboard
+- [ ] Mobile app (React Native)
+
+---
+
+## Design System
+See `/app/frontend_backup/src/DESIGN_SYSTEM.md` for colors, typography, and component patterns.
+
+**Primary Color**: #df2531 (Red)
+**Fonts**: Playfair Display (headings), DM Sans (body)
+**Theme**: Dark mode only
