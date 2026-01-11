@@ -42,13 +42,23 @@ export default function RegisterPage() {
 
       // Check if user was created and session established
       if (data.user && data.session) {
+        // Update the profile with the correct role (in case trigger didn't capture it)
+        await supabase
+          .from('profiles')
+          .update({ 
+            role: role,
+            full_name: name,
+            display_name: name 
+          })
+          .eq('id', data.user.id)
+        
         // Session is established, redirect to dashboard
         router.push('/dashboard')
         router.refresh()
       } else if (data.user && !data.session) {
         // Email confirmation might be required
         // But since it's disabled in Supabase, try to sign in immediately
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
         })
@@ -57,7 +67,17 @@ export default function RegisterPage() {
           // If sign in fails, show a message
           setError('Account created. Please sign in.')
           router.push('/login')
-        } else {
+        } else if (signInData.user) {
+          // Update the profile with the correct role
+          await supabase
+            .from('profiles')
+            .update({ 
+              role: role,
+              full_name: name,
+              display_name: name 
+            })
+            .eq('id', signInData.user.id)
+          
           router.push('/dashboard')
           router.refresh()
         }
