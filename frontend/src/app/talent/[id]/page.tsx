@@ -1,9 +1,26 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { TalentProfileClient } from './TalentProfileClient'
+import { Metadata } from 'next'
 
 interface PageProps {
   params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+  
+  const { data: talent } = await supabase
+    .from('profiles')
+    .select('display_name')
+    .eq('id', id)
+    .single()
+
+  return {
+    title: talent?.display_name ? `${talent.display_name} - Nego` : 'Talent Profile - Nego',
+    description: `View ${talent?.display_name || 'talent'}'s profile and services on Nego`,
+  }
 }
 
 export default async function TalentProfilePage({ params }: PageProps) {
