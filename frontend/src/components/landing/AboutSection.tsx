@@ -60,17 +60,18 @@ export function AboutSection() {
           </h2>
         </div>
 
-        {/* Masonry Bento Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-4 md:gap-5 auto-rows-[120px] md:auto-rows-[140px]">
+        {/* Flexible Masonry Bento Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
           
-          {/* Text Block - Large */}
+          {/* Row 1 */}
+          {/* Text Block - Spans 2 cols on all, taller */}
           <div 
-            className={`col-span-2 md:col-span-2 lg:col-span-5 row-span-3 bg-white/5 backdrop-blur-sm rounded-2xl md:rounded-3xl p-6 md:p-8 border border-white/10 hover:border-[#df2531]/30 transition-all duration-700 group ${
+            className={`col-span-2 row-span-2 bg-white/5 backdrop-blur-sm rounded-2xl md:rounded-3xl p-6 md:p-8 border border-white/10 hover:border-[#df2531]/30 transition-all duration-700 group ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
             style={{ transitionDelay: '0.1s' }}
           >
-            <div className="h-full flex flex-col justify-between">
+            <div className="h-full flex flex-col justify-between min-h-[280px] md:min-h-[320px]">
               <div>
                 <p className="text-white/80 text-sm md:text-base leading-relaxed mb-4">
                   Nego is a premium managed marketplace connecting discerning clients with verified, elite talent. 
@@ -96,9 +97,9 @@ export function AboutSection() {
             </div>
           </div>
 
-          {/* Image 1 - Tall */}
+          {/* Image 1 - Tall on desktop */}
           <div 
-            className={`col-span-1 md:col-span-1 lg:col-span-3 row-span-4 relative rounded-2xl md:rounded-3xl overflow-hidden group cursor-pointer transition-all duration-700 ${
+            className={`col-span-1 row-span-2 md:row-span-3 relative rounded-2xl md:rounded-3xl overflow-hidden group cursor-pointer transition-all duration-700 min-h-[200px] md:min-h-[400px] ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
             style={{ transitionDelay: '0.2s' }}
@@ -109,7 +110,6 @@ export function AboutSection() {
             <Image src={aboutImages[0]} alt="Featured" fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
             <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent transition-opacity duration-500 ${hoveredIndex === 0 ? 'opacity-100' : 'opacity-70'}`} />
             
-            {/* Magnetic cursor effect */}
             {hoveredIndex === 0 && (
               <div 
                 className="absolute w-16 h-16 rounded-full bg-[#df2531]/20 border border-[#df2531]/50 flex items-center justify-center pointer-events-none transition-all duration-200"
@@ -125,9 +125,9 @@ export function AboutSection() {
             </div>
           </div>
 
-          {/* Image 2 - Square */}
+          {/* Image 2 */}
           <div 
-            className={`col-span-1 md:col-span-1 lg:col-span-4 row-span-2 relative rounded-2xl md:rounded-3xl overflow-hidden group cursor-pointer transition-all duration-700 ${
+            className={`col-span-1 row-span-1 relative rounded-2xl md:rounded-3xl overflow-hidden group cursor-pointer transition-all duration-700 min-h-[150px] md:min-h-[180px] ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
             style={{ transitionDelay: '0.3s' }}
@@ -141,34 +141,13 @@ export function AboutSection() {
             </div>
           </div>
 
-          {/* CTA Card */}
-          <Link 
-            href="/dashboard"
-            className={`col-span-1 md:col-span-1 lg:col-span-2 row-span-2 bg-[#df2531]/10 backdrop-blur-sm rounded-2xl md:rounded-3xl p-5 border border-[#df2531]/20 hover:bg-[#df2531]/20 transition-all duration-500 group cursor-pointer ${
+          {/* Row 2 */}
+          {/* Image 3 */}
+          <div 
+            className={`col-span-1 row-span-1 relative rounded-2xl md:rounded-3xl overflow-hidden group cursor-pointer transition-all duration-700 min-h-[150px] md:min-h-[180px] ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
             style={{ transitionDelay: '0.4s' }}
-          >
-            <div className="h-full flex flex-col justify-between">
-              <div>
-                <p className="text-[#df2531] text-xs font-medium mb-2">Discover</p>
-                <h3 className="text-white text-lg font-bold">
-                  Explore Collection
-                </h3>
-              </div>
-              <div className="flex items-center gap-2 text-white group-hover:text-[#df2531] transition-colors duration-300">
-                <span className="text-sm">View All</span>
-                <ArrowRight size={16} weight="bold" className="transition-transform duration-300 group-hover:translate-x-1" />
-              </div>
-            </div>
-          </Link>
-
-          {/* Image 3 */}
-          <div 
-            className={`col-span-1 md:col-span-1 lg:col-span-2 row-span-2 relative rounded-2xl md:rounded-3xl overflow-hidden group cursor-pointer transition-all duration-700 ${
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`}
-            style={{ transitionDelay: '0.5s' }}
             onMouseEnter={() => setHoveredIndex(2)}
             onMouseLeave={() => setHoveredIndex(null)}
           >
@@ -179,31 +158,29 @@ export function AboutSection() {
             </div>
           </div>
 
-          {/* Image 4 - Wide */}
+          {/* Image 4 */}
           <div 
-            className={`col-span-2 md:col-span-2 lg:col-span-5 row-span-2 relative rounded-2xl md:rounded-3xl overflow-hidden group cursor-pointer transition-all duration-700 ${
+            className={`col-span-1 row-span-1 relative rounded-2xl md:rounded-3xl overflow-hidden group cursor-pointer transition-all duration-700 min-h-[150px] md:min-h-[180px] ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
-            style={{ transitionDelay: '0.6s' }}
+            style={{ transitionDelay: '0.5s' }}
             onMouseEnter={() => setHoveredIndex(3)}
             onMouseLeave={() => setHoveredIndex(null)}
           >
-            <Image src={aboutImages[3]} alt="Premium" fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-            <div className={`absolute bottom-4 md:bottom-6 left-4 md:left-6 transition-all duration-500 ${hoveredIndex === 3 ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-70'}`}>
-              <p className="text-[#df2531] text-xs font-medium mb-1">Premium</p>
-              <h3 className="text-white text-lg md:text-xl font-bold">
-                Unforgettable Experiences
-              </h3>
+            <Image src={aboutImages[3]} alt="Premium" fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+            <div className={`absolute bottom-3 left-3 transition-all duration-500 ${hoveredIndex === 3 ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-70'}`}>
+              <p className="text-white text-sm font-bold">Premium</p>
             </div>
           </div>
 
+          {/* Row 3 - Wide image */}
           {/* Image 5 - Wide */}
           <div 
-            className={`col-span-2 md:col-span-2 lg:col-span-7 row-span-2 relative rounded-2xl md:rounded-3xl overflow-hidden group cursor-pointer transition-all duration-700 ${
+            className={`col-span-2 row-span-1 relative rounded-2xl md:rounded-3xl overflow-hidden group cursor-pointer transition-all duration-700 min-h-[150px] md:min-h-[200px] ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
-            style={{ transitionDelay: '0.7s' }}
+            style={{ transitionDelay: '0.6s' }}
             onMouseEnter={() => setHoveredIndex(4)}
             onMouseLeave={() => setHoveredIndex(null)}
           >
@@ -216,6 +193,26 @@ export function AboutSection() {
               </h3>
             </div>
           </div>
+
+          {/* CTA Card - Always at the end */}
+          <Link 
+            href="/dashboard/browse"
+            className={`col-span-2 md:col-span-1 lg:col-span-2 row-span-1 bg-[#df2531]/10 backdrop-blur-sm rounded-2xl md:rounded-3xl p-5 md:p-6 border border-[#df2531]/20 hover:bg-[#df2531]/20 hover:border-[#df2531]/40 transition-all duration-500 group cursor-pointer min-h-[120px] md:min-h-[150px] flex flex-col justify-between ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            }`}
+            style={{ transitionDelay: '0.7s' }}
+          >
+            <div>
+              <p className="text-[#df2531] text-xs font-medium mb-2">Discover</p>
+              <h3 className="text-white text-lg md:text-xl font-bold">
+                Explore Collection
+              </h3>
+            </div>
+            <div className="flex items-center gap-2 text-white group-hover:text-[#df2531] transition-colors duration-300">
+              <span className="text-sm font-medium">View All</span>
+              <ArrowRight size={18} weight="bold" className="transition-transform duration-300 group-hover:translate-x-1" />
+            </div>
+          </Link>
         </div>
       </div>
     </section>
