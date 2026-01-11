@@ -98,7 +98,7 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
         .filter(s => selectedServices.includes(s.id))
         .map(s => ({
           service_id: s.id,
-          service_name: s.service?.name || s.service_type?.name,
+          service_name: s.service_type?.name,
           price: s.price
         }))
 
