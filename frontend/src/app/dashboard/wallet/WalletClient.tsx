@@ -51,6 +51,14 @@ function PaymentModalInner({
 }) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [usePaystackPayment, setUsePaystackPayment] = useState<any>(null)
+  
+  // Dynamically import react-paystack on client side only
+  useEffect(() => {
+    import('react-paystack').then((module) => {
+      setUsePaystackPayment(() => module.usePaystackPayment)
+    })
+  }, [])
   
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || ''
   
@@ -64,9 +72,11 @@ function PaymentModalInner({
     currency: 'NGN' as const,
   }
   
-  const initializePayment = usePaystackPayment(config)
+  const initializePayment = usePaystackPayment ? usePaystackPayment(config) : null
   
   const handlePayment = async () => {
+    if (!initializePayment) return
+    
     setIsProcessing(true)
     setError(null)
     
@@ -88,7 +98,7 @@ function PaymentModalInner({
       
       // Initialize Paystack payment
       initializePayment({
-        onSuccess: (response) => {
+        onSuccess: (response: any) => {
           console.log('Payment successful:', response)
           onSuccess()
         },
