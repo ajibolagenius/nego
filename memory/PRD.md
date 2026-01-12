@@ -17,6 +17,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 | Media Storage | Supabase Storage ✅ |
 | Payments | Paystack (react-paystack) ✅ |
 | Webcam | react-webcam ✅ |
+| Email | Resend ✅ NEW |
 
 ---
 
@@ -24,6 +25,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 
 ### 1. Authentication ✅
 - Email/Password Login & Register
+- **Google OAuth via Emergent Auth** ✅ NEW
 - Role Selection (Client/Talent/Admin)
 - Admin auto-redirect to /admin on login
 - Talent auto-redirect to /dashboard/talent on login
@@ -37,6 +39,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 - Bookings List/Detail
 - Favorites
 - Profile & Settings
+- **Messages** ✅ NEW
 
 ### 3. Paystack Integration ✅
 - Coin packages (500/1000/2500/5000 coins)
@@ -58,11 +61,11 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 ### 5. Talent Features ✅
 - Talent Dashboard with stats
 - Service Menu Management
-- **Service Price Minimum Validation** (₦100,000) ✅ NEW
+- **Service Price Minimum Validation** (₦100,000) ✅
 - Media Upload UI
 - Booking view with Action Required badges
 - **Booking Accept/Reject Flow** ✅
-- **Withdrawals Tab** with withdrawal request form ✅ NEW
+- **Withdrawals Tab** with withdrawal request form ✅
 
 ### 6. Admin Panel ✅
 | Route | Feature | Status |
@@ -71,22 +74,40 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 | `/admin/verifications` | Review client selfies | ✅ |
 | `/admin/payouts` | Manage talent earnings | ✅ |
 
-### 7. Push Notifications ✅ NEW (December 2025)
+### 7. Push Notifications ✅
 - **NotificationBell component** in header for authenticated users
 - Real-time Supabase subscription for instant notifications
 - Browser push notification permission request
 - Notification types: booking_request, booking_accepted, booking_rejected, etc.
 - Mark as read functionality
 - Notification dropdown with history
-- **Requires**: Run `supabase_notifications_withdrawals.sql` to create tables
 
-### 8. Withdrawal System ✅ NEW (December 2025)
-- Talents can request withdrawals from the Withdrawals tab
-- Bank details form (Bank name, Account number, Account name)
-- Minimum withdrawal: 10,000 coins
-- Supported banks: Access, First Bank, GTBank, UBA, Zenith, Kuda, Opay, Palmpay
-- Admin can process withdrawals from `/admin/payouts`
-- **Requires**: Run `supabase_notifications_withdrawals.sql` to create tables
+### 8. Google OAuth ✅ NEW (December 2025)
+- **Emergent-managed Google Auth** (no API keys needed)
+- One-click sign in with Google
+- Callback at `/auth/google/callback`
+- Pre-fills email and name for new users
+- Role selection preserved through OAuth flow
+- Works alongside email/password auth
+
+### 9. Real-time Chat ✅ NEW (December 2025)
+- Direct messaging between clients and talents
+- Conversations list with search
+- Real-time message updates via Supabase subscriptions
+- Message read status
+- Mobile-responsive design
+- Accessible from `/dashboard/messages`
+- **Requires**: Run `supabase_chat_tables.sql` to create tables
+
+### 10. Email Notifications ✅ NEW (December 2025)
+- **Resend** integration for transactional emails
+- Email templates:
+  - Welcome email for new users
+  - New booking notification for talents
+  - Booking status updates for clients
+- Branded HTML emails with Nego design
+- API route at `/api/email/send`
+- **Requires**: Add your `RESEND_API_KEY` to `.env`
 
 ---
 
@@ -96,11 +117,13 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 /                        # Landing page
 /login                   # Login (redirects by role)
 /register                # Register with role selection
+/auth/google/callback    # Google OAuth callback
 
 /dashboard               # Client dashboard (with notification bell)
 /dashboard/browse        # Browse talents
 /dashboard/bookings      # Bookings list
 /dashboard/bookings/[id] # Booking detail (+ talent accept/reject)
+/dashboard/messages      # Real-time chat ✅ NEW
 /dashboard/wallet        # Wallet + Paystack
 /dashboard/favorites     # Saved talents
 /dashboard/profile       # Profile settings
@@ -116,23 +139,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 
 /api/transactions/create # Create transaction
 /api/webhooks/paystack   # Paystack webhook
-```
-
----
-
-## Booking Flow
-
-```
-1. Client browses talent → Books services
-2. Booking created with status: `payment_pending`
-3. Client pays with coins → Status: `verification_pending`
-4. Talent receives push notification "New Booking Request!"
-5. Talent accepts → Status: `confirmed`
-   OR Talent declines → Status: `cancelled`
-6. Client completes verification (webcam selfie)
-7. Meeting happens
-8. Talent marks as completed → Status: `completed`
-9. Talent can request withdrawal from Withdrawals tab
+/api/email/send          # Send transactional emails ✅ NEW
 ```
 
 ---
@@ -141,24 +148,9 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 
 | Script | Purpose | Status |
 |--------|---------|--------|
-| `supabase_fix_trigger_v2.sql` | Fix handle_new_user() trigger for role assignment | ✅ RUN |
-| `supabase_create_admin.sql` | Helper to create admin users | Optional |
-| `supabase_notifications_withdrawals.sql` | Create notifications and withdrawal_requests tables | **RUN THIS** |
-
----
-
-## Remaining Tasks
-
-### P1 - Important
-- [x] Service price minimum validation (₦100,000) ✅
-- [x] Withdrawal request processing ✅
-- [x] Push notifications for booking requests ✅
-
-### P2 - Secondary
-- [ ] Google OAuth configuration
-- [ ] Real-time chat between client and talent
-- [ ] Email notifications (SendGrid/Resend)
-- [ ] Cron job for auto-expire bookings
+| `supabase_fix_trigger_v2.sql` | Fix handle_new_user() trigger | ✅ RUN |
+| `supabase_notifications_withdrawals.sql` | Notifications + Withdrawals tables | ✅ RUN |
+| `supabase_chat_tables.sql` | Chat messages + conversations tables | **RUN THIS** |
 
 ---
 
@@ -173,12 +165,30 @@ SUPABASE_SERVICE_ROLE_KEY=xxx
 # Paystack ✅ CONFIGURED
 NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_xxx
 PAYSTACK_SECRET_KEY=sk_test_xxx
+
+# Resend Email (add your key)
+RESEND_API_KEY=re_xxx
+SENDER_EMAIL=Nego <onboarding@resend.dev>
 ```
 
 ---
 
+## Remaining Tasks
+
+### P2 - Secondary (Completed this session)
+- [x] Google OAuth integration ✅
+- [x] Real-time chat ✅
+- [x] Email notifications (Resend) ✅
+
+### P3 - Future
+- [ ] Forgot password flow
+- [ ] Profile image upload
+- [ ] Cron job for auto-expire bookings
+- [ ] Admin email notifications digest
+
+---
+
 *Last Updated: December 2025*
-*Push Notifications: ✅ COMPLETE*
-*Service Price Validation: ✅ COMPLETE*
-*Withdrawal System: ✅ COMPLETE*
-*Paystack: ✅ COMPLETE*
+*Google OAuth: ✅ COMPLETE*
+*Real-time Chat: ✅ COMPLETE*
+*Email Notifications: ✅ COMPLETE*
