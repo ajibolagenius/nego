@@ -44,9 +44,13 @@ const statusConfig: Record<BookingStatus, { label: string; color: string; icon: 
 export function BookingDetailClient({ booking, wallet, userId }: BookingDetailClientProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [rejectLoading, setRejectLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
 
   const isClient = booking.client_id === userId
+  const isTalent = booking.talent_id === userId
   const status = statusConfig[booking.status]
   const StatusIcon = status.icon
 
