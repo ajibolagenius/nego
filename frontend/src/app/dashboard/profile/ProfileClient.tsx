@@ -10,6 +10,7 @@ import {
   CaretRight, SignOut
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet } from '@/types/database'
 
@@ -29,6 +30,8 @@ export function ProfileClient({ user, profile, wallet, bookingCount }: ProfileCl
   const [displayName, setDisplayName] = useState(profile?.display_name || '')
   const [location, setLocation] = useState(profile?.location || '')
   const [bio, setBio] = useState(profile?.bio || '')
+
+  const userRole = profile?.role === 'talent' ? 'talent' : 'client'
 
   const handleSave = async () => {
     setIsSaving(true)
