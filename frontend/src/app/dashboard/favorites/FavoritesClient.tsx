@@ -6,6 +6,7 @@ import {
   ArrowLeft, Heart, HeartBreak, MapPin, Circle, User,
   MagnifyingGlass, X
 } from '@phosphor-icons/react'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile } from '@/types/database'
 
@@ -19,6 +20,8 @@ export function FavoritesClient({ user, profile, talents }: FavoritesClientProps
   const [favorites, setFavorites] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoaded, setIsLoaded] = useState(false)
+
+  const userRole = profile?.role === 'talent' ? 'talent' : 'client'
 
   // Load favorites from localStorage
   useEffect(() => {
