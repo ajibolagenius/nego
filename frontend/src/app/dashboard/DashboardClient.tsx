@@ -14,10 +14,20 @@ import { createClient } from '@/lib/supabase/client'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet as WalletType } from '@/types/database'
 
+interface FeaturedTalent {
+  id: string
+  display_name: string
+  avatar_url: string | null
+  location: string
+  status: 'online' | 'offline'
+  starting_price: number
+}
+
 interface DashboardClientProps {
   user: SupabaseUser
   profile: Profile | null
   wallet: WalletType | null
+  featuredTalents?: FeaturedTalent[]
 }
 
 // Mock talent data for now
