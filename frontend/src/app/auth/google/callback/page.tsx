@@ -47,9 +47,8 @@ export default function GoogleCallbackPage() {
         }
 
         const userData = await authResponse.json()
-        setStatus('Creating your account...')
+        setStatus('Checking your account...')
 
-        // Now sign in/up the user with Supabase using the Google user data
         const supabase = createClient()
         
         // Check if user exists in profiles by email
@@ -59,17 +58,16 @@ export default function GoogleCallbackPage() {
           .eq('username', userData.email)
           .single()
 
+        // Store Google auth data
+        localStorage.setItem('google_auth_email', userData.email)
+        localStorage.setItem('google_auth_name', userData.name)
+        localStorage.setItem('google_auth_picture', userData.picture || '')
+        localStorage.setItem('google_auth_verified', 'true')
+
         if (existingProfile) {
-          // User exists - sign them in using a magic link or create a session
-          // For now, we'll use signInWithOtp as a workaround
+          // User exists - they need to sign in with their password
+          // Or we could implement passwordless login here
           setStatus('Signing you in...')
-          
-          // Since we verified with Google, we can trust this email
-          // Store the session token and redirect
-          localStorage.setItem('google_auth_email', userData.email)
-          localStorage.setItem('google_auth_name', userData.name)
-          localStorage.setItem('google_auth_picture', userData.picture || '')
-          localStorage.setItem('google_auth_verified', 'true')
           
           // Redirect based on role
           if (existingProfile.role === 'admin') {
@@ -80,11 +78,13 @@ export default function GoogleCallbackPage() {
             router.push('/dashboard')
           }
         } else {
-          // New user - redirect to role selection
-          localStorage.setItem('google_auth_email', userData.email)
-          localStorage.setItem('google_auth_name', userData.name)
-          localStorage.setItem('google_auth_picture', userData.picture || '')
-          localStorage.setItem('google_auth_verified', 'true')
+          // New user - check if they came from registration with a pending role
+          const pendingRole = localStorage.getItem('google_auth_pending_role')
+          
+          if (pendingRole) {
+            // They selected a role before Google auth, go to step 2 of registration
+            localStorage.removeItem('google_auth_pending_role')
+          }
           
           // Redirect to register page with Google flag
           router.push('/register?google=true')
