@@ -27,6 +27,8 @@ export default function RegisterPage() {
 
     try {
       const supabase = createClient()
+      
+      // Sign up with role in metadata - DB trigger will handle profile creation
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -40,40 +42,14 @@ export default function RegisterPage() {
 
       if (error) throw error
 
-      // Check if user was created and session established
+      // Redirect based on session status
       if (data.user && data.session) {
-        // Wait a bit for the trigger to create the profile
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        // Update the profile with the correct role (user is authenticated now)
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ 
-            role: role,
-            full_name: name,
-            display_name: name 
-          })
-          .eq('id', data.user.id)
-        
-        if (updateError) {
-          console.error('Profile update error:', updateError)
-        }
-        
-        // Redirect to dashboard
+        // User is logged in, redirect to dashboard (role-based routing happens there)
         window.location.href = '/dashboard'
       } else if (data.user && !data.session) {
-        // Email confirmation might be required - try sign in
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-        
-        if (signInError) {
-          setError('Account created. Please sign in.')
-          router.push('/login')
-        } else {
-          window.location.href = '/dashboard'
-        }
+        // Email confirmation might be required
+        setError('Account created! Please check your email to confirm, then sign in.')
+        router.push('/login')
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred'
