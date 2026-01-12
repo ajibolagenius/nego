@@ -71,13 +71,25 @@ export function TalentDashboardClient({
   const router = useRouter()
   const supabase = createClient()
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'services' | 'media' | 'bookings'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'services' | 'media' | 'bookings' | 'withdrawals'>('overview')
   const [isAddingService, setIsAddingService] = useState(false)
   const [newServiceId, setNewServiceId] = useState('')
   const [newServicePrice, setNewServicePrice] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [editingBio, setEditingBio] = useState(false)
   const [bioText, setBioText] = useState(profile?.bio || '')
+  const [priceError, setPriceError] = useState('')
+  
+  // Withdrawal state
+  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false)
+  const [withdrawalAmount, setWithdrawalAmount] = useState('')
+  const [bankName, setBankName] = useState('')
+  const [accountNumber, setAccountNumber] = useState('')
+  const [accountName, setAccountName] = useState('')
+  const [isWithdrawing, setIsWithdrawing] = useState(false)
+
+  // Minimum service price in coins (100,000 NGN = 100,000 coins)
+  const MIN_SERVICE_PRICE = 100000
 
   const formatPrice = (price: number) => {
     return `${new Intl.NumberFormat('en-NG', {
@@ -95,8 +107,23 @@ export function TalentDashboardClient({
     })
   }
 
+  const validatePrice = (price: string) => {
+    const numPrice = parseInt(price)
+    if (isNaN(numPrice) || numPrice < MIN_SERVICE_PRICE) {
+      setPriceError(`Minimum price is ${MIN_SERVICE_PRICE.toLocaleString()} coins (₦${MIN_SERVICE_PRICE.toLocaleString()})`)
+      return false
+    }
+    setPriceError('')
+    return true
+  }
+
   const handleAddService = async () => {
     if (!newServiceId || !newServicePrice) return
+    
+    // Validate minimum price
+    if (!validatePrice(newServicePrice)) {
+      return
+    }
     
     setIsSaving(true)
     try {
@@ -114,12 +141,63 @@ export function TalentDashboardClient({
       setIsAddingService(false)
       setNewServiceId('')
       setNewServicePrice('')
+      setPriceError('')
       router.refresh()
     } catch (error) {
       console.error('Error adding service:', error)
       alert('Failed to add service')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  // Handle withdrawal request
+  const handleWithdrawal = async () => {
+    const amount = parseInt(withdrawalAmount)
+    
+    if (!amount || amount <= 0) {
+      alert('Please enter a valid amount')
+      return
+    }
+    
+    if (amount > (wallet?.balance || 0)) {
+      alert('Insufficient balance')
+      return
+    }
+    
+    if (!bankName || !accountNumber || !accountName) {
+      alert('Please fill in all bank details')
+      return
+    }
+    
+    setIsWithdrawing(true)
+    try {
+      const { error } = await supabase
+        .from('withdrawal_requests')
+        .insert({
+          talent_id: user.id,
+          amount,
+          bank_name: bankName,
+          account_number: accountNumber,
+          account_name: accountName,
+        })
+      
+      if (error) throw error
+      
+      // Reset form
+      setShowWithdrawalModal(false)
+      setWithdrawalAmount('')
+      setBankName('')
+      setAccountNumber('')
+      setAccountName('')
+      
+      alert('Withdrawal request submitted! It will be processed within 24-48 hours.')
+      router.refresh()
+    } catch (error) {
+      console.error('Error submitting withdrawal:', error)
+      alert('Failed to submit withdrawal request')
+    } finally {
+      setIsWithdrawing(false)
     }
   }
 
