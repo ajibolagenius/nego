@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import Webcam from 'react-webcam'
 import { createClient } from '@/lib/supabase/client'
 import { 
   ArrowLeft, Camera, User, Phone, MapPin, ShieldCheck,
-  CheckCircle, XCircle, Hourglass, Warning, Image as ImageIcon,
-  UploadSimple, Sparkle, Lock, Info
+  CheckCircle, XCircle, Hourglass, Warning, 
+  Sparkle, Lock, Info, VideoCamera, ArrowCounterClockwise
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -28,31 +29,48 @@ interface VerifyClientProps {
   verification: Verification | null
 }
 
+const videoConstraints = {
+  width: 480,
+  height: 480,
+  facingMode: 'user',
+}
+
 export function VerifyClient({ user, profile, booking, verification }: VerifyClientProps) {
   const router = useRouter()
   const supabase = createClient()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const webcamRef = useRef<Webcam>(null)
   
   const [step, setStep] = useState<'intro' | 'selfie' | 'details' | 'complete'>('intro')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null)
-  const [selfieFile, setSelfieFile] = useState<File | null>(null)
+  const [selfieBlob, setSelfieBlob] = useState<Blob | null>(null)
   const [fullName, setFullName] = useState(profile?.full_name || profile?.display_name || '')
   const [phone, setPhone] = useState('')
   const [gpsCoords, setGpsCoords] = useState<string | null>(null)
   const [gpsError, setGpsError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [cameraError, setCameraError] = useState<string | null>(null)
+  const [isCameraReady, setIsCameraReady] = useState(false)
 
-  const handleSelfieSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setSelfieFile(file)
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setSelfiePreview(e.target?.result as string)
+  // Capture photo from webcam
+  const capturePhoto = useCallback(() => {
+    if (webcamRef.current) {
+      const imageSrc = webcamRef.current.getScreenshot()
+      if (imageSrc) {
+        setSelfiePreview(imageSrc)
+        
+        // Convert base64 to blob for upload
+        fetch(imageSrc)
+          .then(res => res.blob())
+          .then(blob => setSelfieBlob(blob))
       }
-      reader.readAsDataURL(file)
     }
+  }, [])
+
+  // Retake photo
+  const retakePhoto = () => {
+    setSelfiePreview(null)
+    setSelfieBlob(null)
   }
 
   const handleGetLocation = () => {
@@ -67,14 +85,14 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
         setGpsCoords(coords)
         setGpsError(null)
       },
-      (error) => {
+      () => {
         setGpsError('Unable to retrieve your location')
       }
     )
   }
 
   const handleSubmit = async () => {
-    if (!booking || !selfieFile || !fullName || !phone) {
+    if (!booking || !selfieBlob || !fullName || !phone) {
       setError('Please complete all required fields')
       return
     }
@@ -84,14 +102,14 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
 
     try {
       // Upload selfie to Supabase Storage
-      const fileExt = selfieFile.name.split('.').pop()
-      const fileName = `${user.id}/${booking.id}_${Date.now()}.${fileExt}`
+      const fileName = `${user.id}/${booking.id}_${Date.now()}.jpg`
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('verifications')
-        .upload(fileName, selfieFile, {
+        .upload(fileName, selfieBlob, {
           cacheControl: '3600',
-          upsert: true
+          upsert: true,
+          contentType: 'image/jpeg'
         })
 
       if (uploadError) {
@@ -120,10 +138,10 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
 
       if (verifyError) throw verifyError
 
-      // Update booking status to confirmed
+      // Update booking status to pending_verification
       const { error: bookingError } = await supabase
         .from('bookings')
-        .update({ status: 'confirmed' })
+        .update({ status: 'pending_verification' })
         .eq('id', booking.id)
 
       if (bookingError) throw bookingError
@@ -136,9 +154,10 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
         router.refresh()
       }, 3000)
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Verification error:', err)
-      setError(err.message || 'Failed to submit verification')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit verification'
+      setError(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -147,30 +166,13 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
   // If no booking provided, show general verification info
   if (!booking) {
     return (
-      <div className="min-h-screen bg-black pt-16 lg:pt-0">
-        <header className="sticky top-16 lg:top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
-          <div className="max-w-2xl mx-auto px-4 py-4">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="text-white/60 hover:text-white transition-colors">
-                <ArrowLeft size={24} />
-              </Link>
-              <div>
-                <h1 className="text-xl font-bold text-white">Verification</h1>
-                <p className="text-white/50 text-sm">Identity verification</p>
-              </div>
-            </div>
+      <div className="min-h-screen bg-black pt-16 lg:pt-0 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-6">
+            <Warning size={40} weight="duotone" className="text-amber-400" />
           </div>
-        </header>
-
-        <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-          <div className="w-20 h-20 rounded-full bg-[#df2531]/10 flex items-center justify-center mx-auto mb-6">
-            <ShieldCheck size={40} weight="duotone" className="text-[#df2531]" />
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-4">No Booking to Verify</h2>
-          <p className="text-white/50 mb-8">
-            Verification is required when you make a booking. Once you book a service, 
-            you&apos;ll be asked to verify your identity.
-          </p>
+          <h2 className="text-2xl font-bold text-white mb-4">No Active Booking</h2>
+          <p className="text-white/50 mb-8">You need an active booking to complete verification.</p>
           <Link
             href="/dashboard/browse"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#df2531] text-white font-medium hover:bg-[#c41f2a] transition-colors"
@@ -182,7 +184,7 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
     )
   }
 
-  // If verification already exists and is approved
+  // If verification is already approved
   if (verification?.status === 'approved') {
     return (
       <div className="min-h-screen bg-black pt-16 lg:pt-0 flex items-center justify-center p-4">
@@ -191,7 +193,7 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
             <CheckCircle size={40} weight="duotone" className="text-green-400" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-4">Already Verified</h2>
-          <p className="text-white/50 mb-8">This booking has already been verified.</p>
+          <p className="text-white/50 mb-8">Your identity has been verified for this booking.</p>
           <Link
             href={`/dashboard/bookings/${booking.id}`}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#df2531] text-white font-medium hover:bg-[#c41f2a] transition-colors"
@@ -294,21 +296,21 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
             <div className="space-y-4">
               <div className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
                 <div className="w-10 h-10 rounded-full bg-[#df2531]/10 flex items-center justify-center flex-shrink-0">
-                  <Camera size={20} className="text-[#df2531]" />
+                  <VideoCamera size={20} className="text-[#df2531]" />
                 </div>
                 <div>
-                  <p className="text-white font-medium">Take a Selfie</p>
-                  <p className="text-white/50 text-sm">We&apos;ll need a clear photo of your face</p>
+                  <p className="text-white font-medium">Live Selfie Capture</p>
+                  <p className="text-white/50 text-sm">Take a live photo using your camera to verify your identity</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
                 <div className="w-10 h-10 rounded-full bg-[#df2531]/10 flex items-center justify-center flex-shrink-0">
-                  <User size={20} className="text-[#df2531]" />
+                  <Phone size={20} className="text-[#df2531]" />
                 </div>
                 <div>
-                  <p className="text-white font-medium">Confirm Your Details</p>
-                  <p className="text-white/50 text-sm">Your name and phone number</p>
+                  <p className="text-white font-medium">Contact Information</p>
+                  <p className="text-white/50 text-sm">Provide your phone number for the talent to reach you</p>
                 </div>
               </div>
 
@@ -317,16 +319,16 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                   <MapPin size={20} className="text-[#df2531]" />
                 </div>
                 <div>
-                  <p className="text-white font-medium">Share Location (Optional)</p>
-                  <p className="text-white/50 text-sm">Helps verify your presence</p>
+                  <p className="text-white font-medium">Location (Optional)</p>
+                  <p className="text-white/50 text-sm">Share your location for added security</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-              <Lock size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />
-              <p className="text-blue-400/80 text-sm">
-                Your data is encrypted and only shared with the talent for safety purposes. 
+            <div className="flex items-start gap-3 p-4 bg-white/5 rounded-xl border border-white/10">
+              <Lock size={20} className="text-white/40 flex-shrink-0 mt-0.5" />
+              <p className="text-white/50 text-sm">
+                Your information is encrypted and only shared with the talent for this booking.
                 It&apos;s automatically deleted after 30 days.
               </p>
             </div>
@@ -343,49 +345,82 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
         {step === 'selfie' && (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-xl font-bold text-white mb-2">Take a Selfie</h2>
-              <p className="text-white/50">Make sure your face is clearly visible</p>
+              <h2 className="text-xl font-bold text-white mb-2">Take a Live Selfie</h2>
+              <p className="text-white/50">Position your face in the frame and capture</p>
             </div>
 
-            <div 
-              onClick={() => fileInputRef.current?.click()}
-              className={`aspect-square max-w-sm mx-auto rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
-                selfiePreview 
-                  ? 'border-[#df2531] bg-[#df2531]/5' 
-                  : 'border-white/20 hover:border-white/40 bg-white/5'
-              }`}
-            >
+            {/* Webcam or Preview */}
+            <div className="relative aspect-square max-w-sm mx-auto rounded-2xl overflow-hidden border-2 border-white/20 bg-black">
               {selfiePreview ? (
-                <img src={selfiePreview} alt="Selfie preview" className="w-full h-full object-cover rounded-2xl" />
+                // Show captured photo
+                <img 
+                  src={selfiePreview} 
+                  alt="Selfie preview" 
+                  className="w-full h-full object-cover"
+                />
               ) : (
+                // Show webcam
                 <>
-                  <Camera size={48} weight="duotone" className="text-white/30 mb-4" />
-                  <p className="text-white/50 text-sm">Tap to take or upload a photo</p>
+                  <Webcam
+                    ref={webcamRef}
+                    audio={false}
+                    screenshotFormat="image/jpeg"
+                    videoConstraints={videoConstraints}
+                    onUserMedia={() => setIsCameraReady(true)}
+                    onUserMediaError={(err) => {
+                      console.error('Camera error:', err)
+                      setCameraError('Unable to access camera. Please allow camera permissions.')
+                    }}
+                    className="w-full h-full object-cover"
+                    mirrored={true}
+                  />
+                  
+                  {/* Face guide overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-48 h-48 border-2 border-white/30 rounded-full" />
+                  </div>
+                  
+                  {/* Camera loading state */}
+                  {!isCameraReady && !cameraError && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
+                      <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin mb-4" />
+                      <p className="text-white/50 text-sm">Starting camera...</p>
+                    </div>
+                  )}
                 </>
+              )}
+              
+              {/* Camera error */}
+              {cameraError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black p-4">
+                  <Warning size={48} className="text-amber-400 mb-4" />
+                  <p className="text-white/70 text-sm text-center">{cameraError}</p>
+                </div>
               )}
             </div>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              capture="user"
-              onChange={handleSelfieSelect}
-              className="hidden"
-            />
+            {/* Capture / Retake buttons */}
+            <div className="flex justify-center">
+              {selfiePreview ? (
+                <button
+                  onClick={retakePhoto}
+                  className="flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                >
+                  <ArrowCounterClockwise size={20} />
+                  Retake Photo
+                </button>
+              ) : (
+                <button
+                  onClick={capturePhoto}
+                  disabled={!isCameraReady || !!cameraError}
+                  className="w-16 h-16 rounded-full bg-[#df2531] hover:bg-[#c41f2a] disabled:bg-white/20 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                >
+                  <Camera size={28} weight="fill" className="text-white" />
+                </button>
+              )}
+            </div>
 
-            {selfiePreview && (
-              <button
-                onClick={() => {
-                  setSelfiePreview(null)
-                  setSelfieFile(null)
-                }}
-                className="w-full text-white/50 text-sm hover:text-white"
-              >
-                Take another photo
-              </button>
-            )}
-
+            {/* Navigation */}
             <div className="flex gap-3">
               <Button
                 onClick={() => setStep('intro')}
@@ -419,8 +454,8 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531]"
                   placeholder="Enter your full name"
+                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#df2531]/50"
                 />
               </div>
 
@@ -430,38 +465,51 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531]"
-                  placeholder="+234 XXX XXX XXXX"
+                  placeholder="+234 xxx xxx xxxx"
+                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#df2531]/50"
                 />
               </div>
 
               <div>
                 <label className="block text-white/50 text-sm mb-2">Location (Optional)</label>
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    value={gpsCoords || ''}
-                    readOnly
-                    className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white/50"
-                    placeholder="GPS coordinates"
-                  />
-                  <Button
+                {gpsCoords ? (
+                  <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-green-500/10 border border-green-500/20">
+                    <CheckCircle size={20} className="text-green-400" />
+                    <span className="text-green-400 text-sm">Location captured</span>
+                  </div>
+                ) : (
+                  <button
                     onClick={handleGetLocation}
-                    variant="ghost"
-                    className="px-4 bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 transition-colors"
                   >
                     <MapPin size={20} />
-                  </Button>
-                </div>
-                {gpsError && <p className="text-red-400 text-sm mt-1">{gpsError}</p>}
-                {gpsCoords && <p className="text-green-400 text-sm mt-1">Location captured</p>}
+                    Share Current Location
+                  </button>
+                )}
+                {gpsError && (
+                  <p className="text-red-400 text-sm mt-2">{gpsError}</p>
+                )}
               </div>
             </div>
 
+            {/* Selfie Preview */}
+            {selfiePreview && (
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10">
+                  <img src={selfiePreview} alt="Your selfie" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-white font-medium">Selfie Captured</p>
+                  <p className="text-white/40 text-sm">Ready for verification</p>
+                </div>
+                <CheckCircle size={24} className="text-green-400" />
+              </div>
+            )}
+
             {error && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                <Warning size={18} />
-                {error}
+              <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                <XCircle size={20} className="text-red-400 flex-shrink-0" />
+                <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
 
@@ -478,7 +526,14 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                 disabled={!fullName || !phone || isSubmitting}
                 className="flex-1 bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold disabled:opacity-50"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Verification'}
+                {isSubmitting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Submitting...
+                  </div>
+                ) : (
+                  'Submit Verification'
+                )}
               </Button>
             </div>
           </div>
@@ -489,9 +544,9 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
             <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
               <CheckCircle size={40} weight="duotone" className="text-green-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-4">Verification Complete!</h2>
-            <p className="text-white/50 mb-2">Your booking has been confirmed.</p>
-            <p className="text-white/40 text-sm">Redirecting to booking details...</p>
+            <h2 className="text-2xl font-bold text-white mb-4">Verification Submitted!</h2>
+            <p className="text-white/50 mb-2">Your verification is being reviewed.</p>
+            <p className="text-white/30 text-sm">Redirecting to your booking...</p>
           </div>
         )}
       </div>
