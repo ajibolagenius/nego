@@ -16,7 +16,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 | Database | PostgreSQL (Supabase) ✅ |
 | Media Storage | Supabase Storage ✅ |
 | Payments | Paystack (react-paystack) ✅ |
-| Webcam | ❌ Using file upload (TODO: react-webcam) |
+| Webcam | react-webcam ✅ |
 
 ---
 
@@ -25,7 +25,8 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 ### 1. Authentication ✅
 - Email/Password Login & Register
 - Role Selection (Client/Talent/Admin)
-- Session management via Supabase Auth
+- Admin auto-redirect to /admin on login
+- Talent auto-redirect to /dashboard/talent on login
 
 ### 2. Client Features ✅
 - Talent Feed/Browse with filters
@@ -43,11 +44,14 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 - Webhook with HMAC verification
 - Auto-credit coins on payment success
 
-### 4. Client Verification Gate ✅
-- Post-booking redirect
-- Full name, phone, GPS collection
-- Selfie upload (file) to Supabase Storage
-- Verification record creation
+### 4. Live Webcam Verification ✅ **UPDATED**
+- Uses `react-webcam` for live camera capture
+- Square viewport (480x480) for selfie
+- Face guide overlay (circular)
+- Capture button with photo preview
+- Retake functionality
+- Uploads captured image to Supabase Storage
+- 4-step flow: Intro → Selfie → Details → Complete
 
 ### 5. Talent Features ✅
 - Talent Dashboard with stats
@@ -55,19 +59,12 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 - Media Upload UI
 - Booking view
 
-### 6. Admin Panel ✅ **NEW**
+### 6. Admin Panel ✅
 | Route | Feature | Status |
 |-------|---------|--------|
 | `/admin` | Dashboard with stats | ✅ |
 | `/admin/verifications` | Review client selfies | ✅ |
 | `/admin/payouts` | Manage talent earnings | ✅ |
-
-**Admin Features:**
-- View pending/approved/rejected verifications
-- Approve/Reject with admin notes
-- View all talent balances
-- Payout history
-- Admin-only access control
 
 ---
 
@@ -75,7 +72,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 
 ```
 /                        # Landing page
-/login                   # Login
+/login                   # Login (redirects by role)
 /register                # Register with role selection
 
 /dashboard               # Client dashboard
@@ -86,14 +83,14 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 /dashboard/favorites     # Saved talents
 /dashboard/profile       # Profile settings
 /dashboard/settings      # Account settings
-/dashboard/verify        # Verification gate
+/dashboard/verify        # Webcam verification gate ✅
 /dashboard/talent        # Talent dashboard
 
 /talent/[id]             # Talent profile
 
-/admin                   # Admin dashboard ✅
-/admin/verifications     # Review verifications ✅
-/admin/payouts           # Manage payouts ✅
+/admin                   # Admin dashboard
+/admin/verifications     # Review verifications
+/admin/payouts           # Manage payouts
 
 /api/transactions/create # Create transaction
 /api/webhooks/paystack   # Paystack webhook
@@ -101,19 +98,17 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 
 ---
 
-## Database Tables
+## Remaining Tasks
 
-| Table | Purpose | Status |
-|-------|---------|--------|
-| profiles | User profiles (client/talent/admin) | ✅ |
-| wallets | Coin balances | ✅ |
-| transactions | Transaction history | ✅ |
-| bookings | Booking records | ✅ |
-| verifications | Verification data | ✅ |
-| talent_menus | Service offerings | ✅ |
-| service_types | Service categories | ✅ |
-| media | Talent media | ✅ |
-| favorites | Saved talents | ✅ |
+### P1 - Important
+- [ ] Service price minimum validation (₦100,000)
+- [ ] Talent booking accept/reject flow
+- [ ] Withdrawal request processing
+
+### P2 - Secondary
+- [ ] Google OAuth configuration
+- [ ] Real-time notifications
+- [ ] Cron job for auto-expire bookings
 
 ---
 
@@ -134,35 +129,15 @@ PAYSTACK_SECRET_KEY=sk_test_xxx
 
 ## Admin Setup
 
-To create an admin user:
-1. Register a new user normally
-2. Run this SQL in Supabase SQL Editor:
+To create an admin user, run this SQL in Supabase SQL Editor:
 ```sql
 UPDATE profiles SET role = 'admin' 
 WHERE id = (SELECT id FROM auth.users WHERE email = 'your-email@example.com');
 ```
 
-Or use the provided script: `/app/frontend/supabase_create_admin.sql`
-
----
-
-## Remaining Tasks
-
-### P0 - Critical
-- [ ] **Live Webcam Capture** - Replace file upload with react-webcam
-
-### P1 - Important
-- [ ] Service price minimum validation (₦100,000)
-- [ ] Talent booking accept/reject flow
-- [ ] Withdrawal request processing
-
-### P2 - Secondary
-- [ ] Google OAuth configuration
-- [ ] Real-time notifications
-- [ ] Cron job for auto-expire bookings
-
 ---
 
 *Last Updated: January 2026*
-*Admin Panel: ✅ COMPLETE*
+*Webcam Verification: ✅ COMPLETE*
 *Paystack: ✅ COMPLETE*
+*Admin Panel: ✅ COMPLETE*
