@@ -239,7 +239,6 @@ export default function RegisterPage() {
                     >
                       {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
                     </button>
-                    </button>
                   </div>
                 </div>
 
