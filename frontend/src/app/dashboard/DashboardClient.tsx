@@ -273,7 +273,6 @@ export function DashboardClient({ user, profile, wallet, featuredTalents = [] }:
                   </Link>
                 </div>
               )}
-              ))}
             </div>
           </div>
 
