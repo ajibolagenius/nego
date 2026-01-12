@@ -4,6 +4,8 @@ export type UserRole = 'client' | 'talent' | 'admin'
 export type TalentStatus = 'online' | 'offline' | 'booked'
 export type BookingStatus = 'payment_pending' | 'verification_pending' | 'confirmed' | 'completed' | 'cancelled'
 export type VerificationStatus = 'pending' | 'approved' | 'rejected'
+export type NotificationType = 'booking_request' | 'booking_accepted' | 'booking_rejected' | 'booking_completed' | 'withdrawal_approved' | 'withdrawal_rejected' | 'general'
+export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'completed'
 
 export interface Profile {
   id: string
@@ -82,7 +84,7 @@ export interface Media {
   created_at: string
 }
 
-export type TransactionType = 'purchase' | 'unlock' | 'booking' | 'refund' | 'payout'
+export type TransactionType = 'purchase' | 'unlock' | 'booking' | 'refund' | 'payout' | 'withdrawal'
 export type TransactionStatus = 'pending' | 'completed' | 'failed' | 'refunded'
 
 export interface Transaction {
@@ -97,6 +99,30 @@ export interface Transaction {
   description: string | null
   created_at: string
   updated_at?: string
+}
+
+export interface Notification {
+  id: string
+  user_id: string
+  type: NotificationType
+  title: string
+  message: string
+  data: Record<string, unknown> | null
+  is_read: boolean
+  created_at: string
+}
+
+export interface WithdrawalRequest {
+  id: string
+  talent_id: string
+  amount: number
+  bank_name: string
+  account_number: string
+  account_name: string
+  status: WithdrawalStatus
+  admin_notes: string | null
+  processed_at: string | null
+  created_at: string
 }
 
 // API Response types
