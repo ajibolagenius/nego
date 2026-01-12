@@ -18,7 +18,7 @@ interface MessagesClientProps {
   userRole?: 'client' | 'talent'
 }
 
-export function MessagesClient({ userId, conversations: initialConversations }: MessagesClientProps) {
+export function MessagesClient({ userId, conversations: initialConversations, userRole = 'client' }: MessagesClientProps) {
   const supabase = createClient()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
