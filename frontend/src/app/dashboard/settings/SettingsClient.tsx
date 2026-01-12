@@ -10,6 +10,7 @@ import {
   Envelope, Phone, Warning
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile } from '@/types/database'
 
@@ -34,6 +35,8 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
+
+  const userRole = profile?.role === 'talent' ? 'talent' : 'client'
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
