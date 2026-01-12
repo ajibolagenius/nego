@@ -82,15 +82,20 @@ export interface Media {
 }
 
 export type TransactionType = 'purchase' | 'unlock' | 'booking' | 'refund' | 'payout'
+export type TransactionStatus = 'pending' | 'completed' | 'failed' | 'refunded'
 
 export interface Transaction {
   id: string
   user_id: string
   amount: number
+  coins: number
   type: TransactionType
+  status: TransactionStatus
+  reference: string | null
   reference_id: string | null
   description: string | null
   created_at: string
+  updated_at?: string
 }
 
 // API Response types
