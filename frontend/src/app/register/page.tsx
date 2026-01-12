@@ -102,12 +102,20 @@ export default function RegisterPage() {
   }
 
   const handleGoogleSignup = async () => {
-    // Store the selected role for after Google auth
-    localStorage.setItem('google_auth_pending_role', role)
+    // Store the selected role in localStorage to retrieve after OAuth callback
+    localStorage.setItem('pending_oauth_role', role)
     
-    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-    const redirectUrl = window.location.origin + '/auth/google/callback'
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+    
+    if (error) {
+      setError(error.message)
+    }
   }
 
   return (
