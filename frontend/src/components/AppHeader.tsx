@@ -74,6 +74,7 @@ export function AppHeader({ initialUser }: AppHeaderProps) {
   const isLandingPage = pathname === '/'
   const isAuthPage = pathname === '/login' || pathname === '/register'
   const isDashboardPage = pathname?.startsWith('/dashboard')
+  const isAdminPage = pathname?.startsWith('/admin')
 
   // Navigation links for landing page
   const landingNavLinks = [
@@ -90,6 +91,11 @@ export function AppHeader({ initialUser }: AppHeaderProps) {
     { name: 'Bookings', href: '/dashboard/bookings', icon: CalendarCheck },
     { name: 'Wallet', href: '/dashboard/wallet', icon: Wallet },
   ]
+
+  // Hide header completely on admin pages
+  if (isAdminPage) {
+    return null
+  }
 
   // Hide header on dashboard pages on large screens (dashboard has its own sidebar)
   const hideOnLargeScreens = isDashboardPage ? 'lg:hidden' : ''
