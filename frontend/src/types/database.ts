@@ -53,6 +53,8 @@ export interface Booking {
   total_price: number
   services_snapshot: TalentMenu[]
   status: BookingStatus
+  scheduled_at: string | null
+  notes: string | null
   created_at: string
   client?: Profile
   talent?: Profile
