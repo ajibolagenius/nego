@@ -384,12 +384,146 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
           </div>
         )}
 
-        {booking.status === 'confirmed' && (
+        {booking.status === 'confirmed' && isClient && (
           <div className="bg-green-500/10 rounded-xl p-6 border border-green-500/20 text-center">
             <CheckCircle size={48} weight="fill" className="text-green-400 mx-auto mb-4" />
             <h3 className="text-white font-bold text-lg mb-2">Booking Confirmed!</h3>
             <p className="text-white/60 text-sm">
               Your booking is confirmed. Contact details will be shared closer to the date.
+            </p>
+          </div>
+        )}
+
+        {/* TALENT ACTIONS - Verification Pending (Accept/Reject) */}
+        {booking.status === 'verification_pending' && isTalent && (
+          <div className="space-y-4">
+            <div className="bg-amber-500/10 rounded-xl p-6 border border-amber-500/20">
+              <div className="flex items-center gap-3 mb-4">
+                <User size={24} className="text-amber-400" />
+                <div>
+                  <h3 className="text-white font-bold">New Booking Request</h3>
+                  <p className="text-white/60 text-sm">
+                    {booking.client?.display_name || 'A client'} wants to book your services
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-black/20 rounded-lg p-4 mb-4">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-white/60">Total Amount</span>
+                  <span className="text-white font-bold">{formatPrice(booking.total_price)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/60">Date</span>
+                  <span className="text-white">{formatDate(booking.scheduled_at)}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleAcceptBooking}
+                  disabled={loading || rejectLoading}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl"
+                >
+                  {loading ? (
+                    <SpinnerGap size={20} className="animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle size={20} className="mr-2" />
+                      Accept
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => setShowRejectModal(true)}
+                  disabled={loading || rejectLoading}
+                  variant="outline"
+                  className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10 font-bold py-3 rounded-xl"
+                >
+                  <XCircle size={20} className="mr-2" />
+                  Decline
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TALENT ACTIONS - Confirmed (Complete) */}
+        {booking.status === 'confirmed' && isTalent && (
+          <div className="space-y-4">
+            <div className="bg-green-500/10 rounded-xl p-6 border border-green-500/20">
+              <div className="flex items-center gap-3 mb-4">
+                <CheckCircle size={24} weight="fill" className="text-green-400" />
+                <div>
+                  <h3 className="text-white font-bold">Booking Confirmed</h3>
+                  <p className="text-white/60 text-sm">
+                    This booking is confirmed. Mark as complete after the session.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-black/20 rounded-lg p-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/10 overflow-hidden flex items-center justify-center">
+                    {booking.client?.avatar_url ? (
+                      <Image
+                        src={booking.client.avatar_url}
+                        alt={booking.client.display_name || 'Client'}
+                        width={40}
+                        height={40}
+                        className="object-cover"
+                      />
+                    ) : (
+                      <User size={20} className="text-white/40" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{booking.client?.display_name || 'Client'}</p>
+                    <p className="text-white/50 text-xs">Verified Client</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleCompleteBooking}
+                  disabled={loading}
+                  className="flex-1 bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-3 rounded-xl"
+                >
+                  {loading ? (
+                    <SpinnerGap size={20} className="animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle size={20} className="mr-2" />
+                      Mark as Completed
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Completed Status for both */}
+        {booking.status === 'completed' && (
+          <div className="bg-white/5 rounded-xl p-6 border border-white/10 text-center">
+            <CheckCircle size={48} weight="fill" className="text-white/40 mx-auto mb-4" />
+            <h3 className="text-white font-bold text-lg mb-2">Booking Completed</h3>
+            <p className="text-white/60 text-sm">
+              This booking has been completed. Thank you for using Nego!
+            </p>
+          </div>
+        )}
+
+        {/* Cancelled Status */}
+        {booking.status === 'cancelled' && (
+          <div className="bg-red-500/10 rounded-xl p-6 border border-red-500/20 text-center">
+            <XCircle size={48} weight="fill" className="text-red-400 mx-auto mb-4" />
+            <h3 className="text-white font-bold text-lg mb-2">Booking Cancelled</h3>
+            <p className="text-white/60 text-sm">
+              {booking.notes?.includes('Declined by talent') 
+                ? 'This booking was declined by the talent.'
+                : 'This booking has been cancelled.'}
             </p>
           </div>
         )}
