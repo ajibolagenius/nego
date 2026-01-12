@@ -82,13 +82,13 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 - Mark as read functionality
 - Notification dropdown with history
 
-### 8. Google OAuth ✅ NEW (December 2025)
-- **Emergent-managed Google Auth** (no API keys needed)
+### 8. Google OAuth ✅ (December 2025)
+- **Supabase native OAuth** integration
 - One-click sign in with Google
-- Callback at `/auth/google/callback`
-- Pre-fills email and name for new users
-- Role selection preserved through OAuth flow
+- Callback at `/auth/callback`
+- Role selection preserved through OAuth flow (stored in localStorage)
 - Works alongside email/password auth
+- **Requires**: Configure Google OAuth in Supabase Dashboard
 
 ### 9. Real-time Chat ✅ NEW (December 2025)
 - Direct messaging between clients and talents
