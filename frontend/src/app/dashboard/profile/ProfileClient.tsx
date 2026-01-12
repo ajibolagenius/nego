@@ -286,5 +286,7 @@ export function ProfileClient({ user, profile, wallet, bookingCount }: ProfileCl
         </button>
       </div>
     </div>
+    <MobileBottomNav userRole={userRole} />
+    </>
   )
 }
