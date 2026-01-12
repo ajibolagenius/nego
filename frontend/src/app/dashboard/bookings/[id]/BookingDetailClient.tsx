@@ -132,6 +132,88 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
     }
   }
 
+  // Talent: Accept booking
+  const handleAcceptBooking = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const supabase = createClient()
+
+      // Mark booking as confirmed
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({ status: 'confirmed' })
+        .eq('id', booking.id)
+
+      if (updateError) throw updateError
+
+      router.refresh()
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to accept booking'
+      setError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Talent: Reject booking
+  const handleRejectBooking = async () => {
+    setRejectLoading(true)
+    setError('')
+
+    try {
+      const supabase = createClient()
+
+      // Mark booking as cancelled with reason
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({ 
+          status: 'cancelled',
+          notes: rejectReason ? `Declined by talent: ${rejectReason}` : 'Declined by talent'
+        })
+        .eq('id', booking.id)
+
+      if (updateError) throw updateError
+
+      // TODO: Refund client's coins in a production app
+      // For now, just close the modal and refresh
+      setShowRejectModal(false)
+      router.refresh()
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to reject booking'
+      setError(errorMessage)
+    } finally {
+      setRejectLoading(false)
+    }
+  }
+
+  // Talent: Mark booking as completed
+  const handleCompleteBooking = async () => {
+    if (!confirm('Mark this booking as completed? This action cannot be undone.')) return
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const supabase = createClient()
+
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({ status: 'completed' })
+        .eq('id', booking.id)
+
+      if (updateError) throw updateError
+
+      router.refresh()
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to complete booking'
+      setError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black pt-16 lg:pt-0">
       {/* Header */}
