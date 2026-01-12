@@ -334,5 +334,7 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
         </div>
       )}
     </div>
+    <MobileBottomNav userRole={userRole} />
+    </>
   )
 }
