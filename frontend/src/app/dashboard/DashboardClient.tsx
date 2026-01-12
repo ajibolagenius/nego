@@ -30,14 +30,6 @@ interface DashboardClientProps {
   featuredTalents?: FeaturedTalent[]
 }
 
-// Mock talent data for now
-const mockTalents = [
-  { id: '1', display_name: 'Adaeze', avatar_url: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80', location: 'Lagos', status: 'online', starting_price: 120000 },
-  { id: '2', display_name: 'Chidinma', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80', location: 'Abuja', status: 'online', starting_price: 180000 },
-  { id: '3', display_name: 'Folake', avatar_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80', location: 'Port Harcourt', status: 'offline', starting_price: 150000 },
-  { id: '4', display_name: 'Grace', avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80', location: 'Lagos', status: 'online', starting_price: 100000 },
-]
-
 // Navigation items for clients
 const clientNavItems = [
   { icon: House, label: 'Home', href: '/dashboard', active: true },
