@@ -44,7 +44,7 @@ export default async function VerificationsPage() {
   const transformedVerifications = (verifications || []).map(v => ({
     ...v,
     id: v.booking_id, // Use booking_id as unique identifier
-  }))
+  })) as any[]
 
   return <VerificationsClient verifications={transformedVerifications} />
 }
