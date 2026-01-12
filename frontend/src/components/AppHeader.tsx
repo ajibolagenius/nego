@@ -164,6 +164,9 @@ export function AppHeader({ initialUser }: AppHeaderProps) {
             ) : user ? (
               // Authenticated user buttons
               <>
+                {/* Notification Bell */}
+                <NotificationBell userId={user.id} />
+                
                 <Link href="/dashboard/wallet">
                   <Button 
                     className="relative bg-[#df2531]/10 hover:bg-[#df2531]/20 text-white font-medium px-4 py-2 rounded-full flex items-center gap-2 border border-[#df2531]/30 transition-all duration-300 text-sm"
