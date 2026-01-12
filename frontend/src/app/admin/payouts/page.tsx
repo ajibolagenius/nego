@@ -30,5 +30,14 @@ export default async function PayoutsPage() {
     .order('created_at', { ascending: false })
     .limit(50)
 
-  return <PayoutsClient talents={talents || []} payouts={payouts || []} />
+  // Fetch pending withdrawal requests
+  const { data: withdrawalRequests } = await supabase
+    .from('withdrawal_requests')
+    .select(`
+      *,
+      talent:profiles(id, display_name, avatar_url, username)
+    `)
+    .order('created_at', { ascending: false })
+
+  return <PayoutsClient talents={talents || []} payouts={payouts || []} withdrawalRequests={withdrawalRequests || []} />
 }
