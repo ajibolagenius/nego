@@ -51,34 +51,34 @@ function PaymentModalInner({
 }) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [usePaystackPayment, setUsePaystackPayment] = useState<any>(null)
-  
-  // Dynamically import react-paystack on client side only
-  useEffect(() => {
-    import('react-paystack').then((module) => {
-      setUsePaystackPayment(() => module.usePaystackPayment)
-    })
-  }, [])
+  const [paystackLoaded, setPaystackLoaded] = useState(false)
   
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || ''
+  const isPaystackConfigured = publicKey && publicKey !== 'pk_test_your_paystack_public_key'
   
-  const reference = `nego_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-  
-  const config = {
-    reference,
-    email,
-    amount: pkg.priceInKobo,
-    publicKey,
-    currency: 'NGN' as const,
-  }
-  
-  const initializePayment = usePaystackPayment ? usePaystackPayment(config) : null
+  // Load Paystack script
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.PaystackPop) {
+      const script = document.createElement('script')
+      script.src = 'https://js.paystack.co/v1/inline.js'
+      script.async = true
+      script.onload = () => setPaystackLoaded(true)
+      document.body.appendChild(script)
+    } else if (typeof window !== 'undefined' && window.PaystackPop) {
+      setPaystackLoaded(true)
+    }
+  }, [])
   
   const handlePayment = async () => {
-    if (!initializePayment) return
+    if (!paystackLoaded || typeof window === 'undefined' || !window.PaystackPop) {
+      setError('Payment system not loaded. Please refresh the page.')
+      return
+    }
     
     setIsProcessing(true)
     setError(null)
+    
+    const reference = `nego_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
     
     try {
       // Create transaction record first
@@ -96,9 +96,14 @@ function PaymentModalInner({
         throw new Error(data.error || 'Failed to create transaction')
       }
       
-      // Initialize Paystack payment
-      initializePayment({
-        onSuccess: (response: any) => {
+      // Initialize Paystack payment using inline JS
+      const handler = window.PaystackPop.setup({
+        key: publicKey,
+        email: email,
+        amount: pkg.priceInKobo,
+        currency: 'NGN',
+        ref: reference,
+        callback: (response: any) => {
           console.log('Payment successful:', response)
           onSuccess()
         },
@@ -106,14 +111,14 @@ function PaymentModalInner({
           setIsProcessing(false)
         },
       })
+      
+      handler.openIframe()
     } catch (err: any) {
       console.error('Payment error:', err)
       setError(err.message || 'Payment failed')
       setIsProcessing(false)
     }
   }
-  
-  const isPaystackConfigured = publicKey && publicKey !== 'pk_test_your_paystack_public_key'
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
