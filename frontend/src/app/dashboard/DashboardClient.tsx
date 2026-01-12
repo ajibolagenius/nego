@@ -299,5 +299,17 @@ export function DashboardClient({ user, profile, wallet, featuredTalents = [] }:
         </div>
       </main>
     </div>
+
+    {/* Mobile Bottom Navigation */}
+    <MobileBottomNav userRole={userRole} />
+
+    {/* Onboarding Modal */}
+    <OnboardingModal
+      role={userRole}
+      isOpen={showOnboarding}
+      onClose={completeOnboarding}
+      onComplete={completeOnboarding}
+    />
+    </>
   )
 }
