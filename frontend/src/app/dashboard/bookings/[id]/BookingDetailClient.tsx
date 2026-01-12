@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { 
   ArrowLeft, Calendar, Clock, MapPin, CheckCircle, 
   SpinnerGap, WarningCircle, CreditCard, ShieldCheck,
-  Receipt, Coin, CaretRight
+  Receipt, Coin, CaretRight, XCircle, User
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -24,6 +24,7 @@ interface BookingWithTalent {
   notes: string | null
   created_at: string
   talent: Pick<Profile, 'id' | 'display_name' | 'avatar_url' | 'location'>
+  client?: Pick<Profile, 'id' | 'display_name' | 'avatar_url' | 'location'> | null
 }
 
 interface BookingDetailClientProps {
