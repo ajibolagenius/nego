@@ -166,9 +166,11 @@ SUPABASE_SERVICE_ROLE_KEY=xxx
 NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_xxx
 PAYSTACK_SECRET_KEY=sk_test_xxx
 
-# Resend Email (add your key)
+# Resend Email ✅ CONFIGURED
 RESEND_API_KEY=re_xxx
 SENDER_EMAIL=Nego <onboarding@resend.dev>
+
+# Google OAuth ✅ CONFIGURED (in Supabase Dashboard)
 ```
 
 ---
