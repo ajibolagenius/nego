@@ -9,156 +9,160 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 
 ## Tech Stack
 
-| Component | Target (Documented) | Current Status |
-|-----------|---------------------|----------------|
-| Frontend | Next.js 14 (App Router), Shadcn/UI + Tailwind CSS | ✅ Implemented |
-| Backend | Supabase (Auth, Database, API) | ✅ Implemented |
-| Database | PostgreSQL (Supabase) | ✅ Implemented |
-| Media Storage | Cloudinary | ⚠️ Using Supabase Storage |
-| Payments | Paystack (react-paystack) | ✅ Implemented |
-| Webcam | react-webcam | ❌ Using file upload |
-| Hosting | Vercel | ⚠️ Emergent Platform |
+| Component | Status |
+|-----------|--------|
+| Frontend | Next.js 14 (App Router), Shadcn/UI + Tailwind CSS ✅ |
+| Backend | Supabase (Auth, Database, API) ✅ |
+| Database | PostgreSQL (Supabase) ✅ |
+| Media Storage | Supabase Storage ✅ |
+| Payments | Paystack (react-paystack) ✅ |
+| Webcam | ❌ Using file upload (TODO: react-webcam) |
 
 ---
 
 ## Feature Implementation Status
 
 ### 1. Authentication ✅
-| Feature | Status |
-|---------|--------|
-| Email/Password Login | ✅ Done |
-| Email/Password Register | ✅ Done |
-| Role Selection (Client/Talent) | ✅ Done (Bug: trigger may default to 'client') |
-| Google OAuth | ⚠️ Button exists, needs Supabase config |
+- Email/Password Login & Register
+- Role Selection (Client/Talent/Admin)
+- Session management via Supabase Auth
 
-### 2. Client Features
-| Feature | Status |
-|---------|--------|
-| Talent Feed/Browse | ✅ Done |
-| Talent Profile View | ✅ Done |
-| Service Selection & Booking | ✅ Done |
-| Wallet UI | ✅ Done |
-| **Coin Purchase (Paystack)** | ✅ **IMPLEMENTED** |
-| Bookings List/Detail | ✅ Done |
-| Favorites | ✅ Done |
-| Profile & Settings | ✅ Done |
+### 2. Client Features ✅
+- Talent Feed/Browse with filters
+- Talent Profile View with booking
+- Service Selection & Booking
+- Wallet with Paystack coin purchase
+- Bookings List/Detail
+- Favorites
+- Profile & Settings
 
-### 3. Paystack Integration ✅ NEW
-| Component | Status |
-|-----------|--------|
-| Coin Packages Config | ✅ `/lib/coinPackages.ts` |
-| Payment Modal UI | ✅ Implemented |
-| Transaction Create API | ✅ `/api/transactions/create` |
-| Paystack Webhook | ✅ `/api/webhooks/paystack` |
-| Signature Verification | ✅ HMAC-SHA512 |
-| Wallet Credit on Success | ✅ Implemented |
+### 3. Paystack Integration ✅
+- Coin packages (500/1000/2500/5000 coins)
+- Payment modal with Paystack checkout
+- Transaction create API
+- Webhook with HMAC verification
+- Auto-credit coins on payment success
 
-**To Enable Payments:**
-Add to `/app/frontend/.env`:
-```
-NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_xxxxx
-PAYSTACK_SECRET_KEY=sk_test_xxxxx
-```
+### 4. Client Verification Gate ✅
+- Post-booking redirect
+- Full name, phone, GPS collection
+- Selfie upload (file) to Supabase Storage
+- Verification record creation
 
-### 4. Client Verification Gate
-| Feature | Status |
-|---------|--------|
-| Redirects after payment | ✅ Done |
-| Full Name/Phone Input | ✅ Done |
-| GPS Location | ✅ Done |
-| Selfie Capture | ⚠️ File upload (not webcam) |
-| Selfie Storage | ✅ Supabase Storage |
+### 5. Talent Features ✅
+- Talent Dashboard with stats
+- Service Menu Management
+- Media Upload UI
+- Booking view
 
-### 5. Talent Features
-| Feature | Status |
-|---------|--------|
-| Talent Dashboard | ✅ Done |
-| Service Menu Config | ✅ Done |
-| Media Upload | ⚠️ Partial |
-| Booking Requests | ⚠️ View only |
-| Withdrawals | ❌ Missing |
-
-### 6. Admin Features ❌
-| Feature | Status |
-|---------|--------|
-| Admin Panel | ❌ Not implemented |
-| Review Verifications | ❌ Not implemented |
-| Manual Payouts | ❌ Not implemented |
-
----
-
-## Critical Gaps (Updated Priority)
-
-### P0 - Blocking Core Flow
-1. ~~**Paystack Integration**~~ ✅ DONE
-2. **Admin Verification Panel** ❌ - No one can approve verifications
-3. **Live Webcam Capture** ❌ - Using file upload instead
-
-### P1 - Important Features
-4. **Service Price Minimum (₦100,000)** - No validation
-5. **Talent Booking Management** - Accept/reject flow
-6. **Withdrawal Requests** - Talent payout flow
-
-### P2 - Secondary Features
-7. **Google OAuth Setup**
-8. **Real-time Notifications**
-
----
-
-## API Routes
-
-| Route | Purpose | Status |
+### 6. Admin Panel ✅ **NEW**
+| Route | Feature | Status |
 |-------|---------|--------|
-| `/api/transactions/create` | Create pending transaction | ✅ |
-| `/api/webhooks/paystack` | Handle Paystack webhook | ✅ |
-| `/api/cron` | Auto-expire bookings | ❌ |
+| `/admin` | Dashboard with stats | ✅ |
+| `/admin/verifications` | Review client selfies | ✅ |
+| `/admin/payouts` | Manage talent earnings | ✅ |
+
+**Admin Features:**
+- View pending/approved/rejected verifications
+- Approve/Reject with admin notes
+- View all talent balances
+- Payout history
+- Admin-only access control
+
+---
+
+## Routes Structure
+
+```
+/                        # Landing page
+/login                   # Login
+/register                # Register with role selection
+
+/dashboard               # Client dashboard
+/dashboard/browse        # Browse talents
+/dashboard/bookings      # Bookings list
+/dashboard/bookings/[id] # Booking detail
+/dashboard/wallet        # Wallet + Paystack
+/dashboard/favorites     # Saved talents
+/dashboard/profile       # Profile settings
+/dashboard/settings      # Account settings
+/dashboard/verify        # Verification gate
+/dashboard/talent        # Talent dashboard
+
+/talent/[id]             # Talent profile
+
+/admin                   # Admin dashboard ✅
+/admin/verifications     # Review verifications ✅
+/admin/payouts           # Manage payouts ✅
+
+/api/transactions/create # Create transaction
+/api/webhooks/paystack   # Paystack webhook
+```
 
 ---
 
 ## Database Tables
 
-### Implemented ✅
-- `profiles` - User profiles
-- `wallets` - Coin balances
-- `transactions` - Transaction history (updated with `reference`, `status`, `coins`)
-- `bookings` - Booking records
-- `verifications` - Verification data
-- `talent_menus` - Service offerings
-- `service_types` - Service categories
-- `media` - Media files
-- `favorites` - Saved talents
+| Table | Purpose | Status |
+|-------|---------|--------|
+| profiles | User profiles (client/talent/admin) | ✅ |
+| wallets | Coin balances | ✅ |
+| transactions | Transaction history | ✅ |
+| bookings | Booking records | ✅ |
+| verifications | Verification data | ✅ |
+| talent_menus | Service offerings | ✅ |
+| service_types | Service categories | ✅ |
+| media | Talent media | ✅ |
+| favorites | Saved talents | ✅ |
 
 ---
 
-## File Structure (Key Files)
+## Environment Variables
 
-```
-/app/frontend/src/
-├── app/
-│   ├── api/
-│   │   ├── transactions/create/route.ts  # NEW - Create transaction
-│   │   └── webhooks/paystack/route.ts    # NEW - Paystack webhook
-│   ├── dashboard/
-│   │   ├── wallet/
-│   │   │   ├── page.tsx
-│   │   │   └── WalletClient.tsx          # Updated with Paystack
-│   │   └── ...
-│   └── ...
-├── lib/
-│   └── coinPackages.ts                    # NEW - Package config
-└── types/
-    └── database.ts                        # Updated Transaction type
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=xxx
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
+SUPABASE_SERVICE_ROLE_KEY=xxx
+
+# Paystack (add your keys)
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_xxx
+PAYSTACK_SECRET_KEY=sk_test_xxx
 ```
 
 ---
 
-## Next Steps
+## Admin Setup
 
-1. **Admin Panel** - Create `/admin/verifications` and `/admin/payouts`
-2. **Webcam Capture** - Replace file upload with react-webcam
-3. **Configure Paystack** - User adds API keys to enable payments
+To create an admin user:
+1. Register a new user normally
+2. Run this SQL in Supabase SQL Editor:
+```sql
+UPDATE profiles SET role = 'admin' 
+WHERE id = (SELECT id FROM auth.users WHERE email = 'your-email@example.com');
+```
+
+Or use the provided script: `/app/frontend/supabase_create_admin.sql`
+
+---
+
+## Remaining Tasks
+
+### P0 - Critical
+- [ ] **Live Webcam Capture** - Replace file upload with react-webcam
+
+### P1 - Important
+- [ ] Service price minimum validation (₦100,000)
+- [ ] Talent booking accept/reject flow
+- [ ] Withdrawal request processing
+
+### P2 - Secondary
+- [ ] Google OAuth configuration
+- [ ] Real-time notifications
+- [ ] Cron job for auto-expire bookings
 
 ---
 
 *Last Updated: January 2026*
-*Paystack Integration: ✅ COMPLETE*
+*Admin Panel: ✅ COMPLETE*
+*Paystack: ✅ COMPLETE*
