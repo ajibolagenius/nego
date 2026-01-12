@@ -5,6 +5,11 @@ import { AppHeader } from "@/components/AppHeader"
 export const metadata: Metadata = {
   title: "Nego - Premium Managed Talent Marketplace",
   description: "The premier managed marketplace connecting discerning clients with verified, elite talent. Excellence with discretion.",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
 }
 
 export default function RootLayout({
