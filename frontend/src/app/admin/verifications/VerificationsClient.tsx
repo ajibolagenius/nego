@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 
 interface Verification {
-  id: string
+  id: string // This maps to booking_id from the database
   booking_id: string
   selfie_url: string | null
   full_name: string | null
