@@ -1,13 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { SpinnerGap } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function AuthCallbackPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [status, setStatus] = useState('Completing sign in...')
   const [error, setError] = useState<string | null>(null)
 
@@ -16,7 +15,7 @@ export default function AuthCallbackPage() {
       try {
         const supabase = createClient()
         
-        // Get the current session (Supabase handles the code exchange automatically via the route.ts)
+        // Get the current session (Supabase handles the code exchange automatically)
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         if (sessionError) throw sessionError
