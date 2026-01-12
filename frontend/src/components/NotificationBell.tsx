@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Bell, X, CheckCircle, Clock, XCircle, Money, CalendarCheck } from '@phosphor-icons/react'
+import { Bell, X, CheckCircle, Clock, XCircle, Money, CalendarCheck, Icon } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
 import type { Notification, NotificationType } from '@/types/database'
 
-const notificationIcons: Record<NotificationType, React.ComponentType<{ size?: number; className?: string; weight?: string }>> = {
+const notificationIcons: Record<NotificationType, Icon> = {
   booking_request: CalendarCheck,
   booking_accepted: CheckCircle,
   booking_rejected: XCircle,
