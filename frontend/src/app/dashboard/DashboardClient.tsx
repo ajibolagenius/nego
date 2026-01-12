@@ -65,6 +65,10 @@ export function DashboardClient({ user, profile, wallet, featuredTalents = [] }:
   
   const isTalent = profile?.role === 'talent'
   const navItems = isTalent ? talentNavItems : clientNavItems
+  const userRole = isTalent ? 'talent' : 'client'
+
+  // Onboarding modal
+  const { showOnboarding, completeOnboarding } = useOnboarding(userRole, user.id)
 
   const handleLogout = async () => {
     setLoading(true)
@@ -82,7 +86,8 @@ export function DashboardClient({ user, profile, wallet, featuredTalents = [] }:
   }
 
   return (
-    <div className="min-h-screen bg-black flex pt-16 lg:pt-0">
+    <>
+    <div className="min-h-screen bg-black flex pt-16 lg:pt-0 pb-20 lg:pb-0">
       {/* Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-white/5 border-r border-white/10">
         {/* Logo */}
