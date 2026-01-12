@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { usePaystackPayment } from 'react-paystack'
+import dynamic from 'next/dynamic'
 import { 
   ArrowLeft, Coin, Plus, ArrowUpRight, ArrowDownLeft, 
   Clock, CheckCircle, XCircle, Sparkle, ShoppingCart,
@@ -37,8 +37,8 @@ const transactionColors: Record<string, string> = {
   payout: 'text-red-400 bg-red-500/10',
 }
 
-// Payment Modal Component
-function PaymentModal({ 
+// Payment Modal Component - Client only due to react-paystack
+function PaymentModalInner({ 
   pkg, 
   email, 
   onClose, 
