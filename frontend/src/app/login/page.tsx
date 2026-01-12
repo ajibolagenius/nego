@@ -22,15 +22,33 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) throw error
 
-      router.push('/dashboard')
-      router.refresh()
+      // Check user role to redirect appropriately
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single()
+
+        // Redirect admin users to admin dashboard
+        if (profile?.role === 'admin') {
+          window.location.href = '/admin'
+        } else if (profile?.role === 'talent') {
+          window.location.href = '/dashboard/talent'
+        } else {
+          window.location.href = '/dashboard'
+        }
+      } else {
+        router.push('/dashboard')
+        router.refresh()
+      }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred'
       setError(errorMessage)
