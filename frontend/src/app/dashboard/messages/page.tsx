@@ -11,6 +11,15 @@ export default async function MessagesPage() {
     redirect('/login')
   }
 
+  // Fetch user's profile for role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const userRole = profile?.role === 'talent' ? 'talent' : 'client'
+
   // Fetch user's conversations
   const { data: conversations, error } = await supabase
     .from('conversations')
@@ -48,5 +57,5 @@ export default async function MessagesPage() {
     }
   })
 
-  return <MessagesClient userId={user.id} conversations={formattedConversations} />
+  return <MessagesClient userId={user.id} conversations={formattedConversations} userRole={userRole} />
 }
