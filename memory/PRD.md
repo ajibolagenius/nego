@@ -27,7 +27,7 @@ Nego is a premium managed talent marketplace built with Next.js 14, Supabase, an
    - Google OAuth placeholder
 
 3. **Client Dashboard**
-   - Home: Overview with welcome, stats, recent bookings
+   - Home: Overview with welcome, stats, real featured talents from DB
    - Browse: Search and filter talents
    - Favorites: Save and manage favorite talents
    - Bookings: View and manage bookings
@@ -48,19 +48,19 @@ Nego is a premium managed talent marketplace built with Next.js 14, Supabase, an
    - Coin deduction on booking
    - Verification gate redirect
 
-6. **Legal Pages**
+6. **Verification Flow** ✅
+   - Selfie upload to Supabase Storage (verifications bucket)
+   - Phone number collection
+   - GPS coordinates (optional)
+   - 4-step flow: intro, selfie, details, complete
+
+7. **Legal Pages**
    - Terms of Service
    - Privacy Policy
    - Cookie Policy
 
-### Pending Issues ⚠️
-1. **Talent Role Registration Bug**: New users registering as "talent" are not properly assigned the talent role. 
-   - **Root Cause**: Supabase trigger defaults role to 'client'
-   - **Fix Required**: User must run `/app/frontend/supabase_fix_trigger_v2.sql` in Supabase SQL Editor
-
-2. **Verification File Upload**: Requires user to create `verifications` storage bucket in Supabase
-
-3. **Service Prices**: ✅ FIXED - Now displays "coins" instead of "NGN"
+### Known Issues ⚠️
+1. **Talent Role Registration**: Users registering as "talent" may be assigned "client" role due to Supabase trigger. Run `/app/frontend/supabase_fix_trigger_v2.sql` to fix.
 
 ### Upcoming Tasks
 1. **Paystack Integration** - Allow users to purchase coins with real money
@@ -74,17 +74,20 @@ Nego is a premium managed talent marketplace built with Next.js 14, Supabase, an
 - `wallets`: User coin balances
 - `transactions`: Coin transaction history
 - `bookings`: Booking records
-- `verifications`: Client verification data
+- `verifications`: Client verification data (selfie_url stored in Supabase Storage)
 - `talent_menus`: Talent service offerings
 - `service_types`: Available service categories
 - `media`: Talent media files
 - `favorites`: Client saved talents
 
+## Supabase Storage Buckets
+- `verifications`: Private bucket for client selfie uploads (RLS enabled)
+
 ## Key Files
 - `/app/frontend/src/app/dashboard/DashboardClient.tsx` - Main dashboard layout
+- `/app/frontend/src/app/dashboard/verify/VerifyClient.tsx` - Verification flow
 - `/app/frontend/src/app/talent/[id]/TalentProfileClient.tsx` - Talent profile with booking
 - `/app/frontend/src/app/register/page.tsx` - Registration with role selection
-- `/app/frontend/supabase_fix_trigger_v2.sql` - SQL fix for role assignment
 
 ## Environment Variables
 ```
@@ -95,3 +98,5 @@ SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 
 ---
 *Last Updated: January 2026*
+*Verification Flow: WORKING ✅*
+*Storage Bucket: CONFIGURED ✅*
