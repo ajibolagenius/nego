@@ -234,7 +234,7 @@ export function DashboardClient({ user, profile, wallet, featuredTalents = [] }:
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {mockTalents.map((talent) => (
+              {talents.length > 0 ? talents.map((talent) => (
                 <Link
                   key={talent.id}
                   href={`/talent/${talent.id}`}
@@ -242,7 +242,7 @@ export function DashboardClient({ user, profile, wallet, featuredTalents = [] }:
                 >
                   <div className="aspect-[3/4] relative overflow-hidden">
                     <Image
-                      src={talent.avatar_url}
+                      src={talent.avatar_url || 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80'}
                       alt={talent.display_name}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-110"
@@ -273,6 +273,14 @@ export function DashboardClient({ user, profile, wallet, featuredTalents = [] }:
                     </div>
                   </div>
                 </Link>
+              )) : (
+                <div className="col-span-full text-center py-8 text-white/50">
+                  <p>No featured talents available</p>
+                  <Link href="/dashboard/browse" className="text-[#df2531] hover:underline mt-2 inline-block">
+                    Browse all talents
+                  </Link>
+                </div>
+              )}
               ))}
             </div>
           </div>
