@@ -53,7 +53,7 @@ export default async function DashboardPage() {
     display_name: talent.display_name || 'Unknown',
     avatar_url: talent.avatar_url,
     location: talent.location || 'Nigeria',
-    status: talent.is_online ? 'online' : 'offline',
+    status: (talent.is_online ? 'online' : 'offline') as 'online' | 'offline',
     starting_price: talent.talent_menus?.[0]?.price || 50000
   }))
 
