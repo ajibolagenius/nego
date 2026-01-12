@@ -18,7 +18,7 @@ interface OnboardingModalProps {
 }
 
 interface OnboardingStep {
-  icon: React.ComponentType<{ size?: number; weight?: string; className?: string }>
+  icon: React.ComponentType<{ size?: number; weight?: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone'; className?: string }>
   title: string
   description: string
 }
