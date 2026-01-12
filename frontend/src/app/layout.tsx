@@ -19,6 +19,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="apple-mobile-web-app-title" content="Negotiate" />
+      </head>
       <body className="antialiased bg-black min-h-screen">
         <AppHeader />
         {children}
