@@ -187,6 +187,24 @@ function PaymentModalInner({
   )
 }
 
+// Wrapper to ensure PaymentModal only renders on client
+function PaymentModal(props: { 
+  pkg: CoinPackage
+  email: string
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const [mounted, setMounted] = useState(false)
+  
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  
+  if (!mounted) return null
+  
+  return <PaymentModalInner {...props} />
+}
+
 // Success Modal Component
 function SuccessModal({ coins, onClose }: { coins: number; onClose: () => void }) {
   return (
