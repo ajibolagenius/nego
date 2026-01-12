@@ -5,125 +5,323 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 // Sender email - use verified domain or Resend's test domain
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'Nego <onboarding@resend.dev>'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://nego.app'
+
+// Shared email styles
+const styles = {
+  container: `
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, #0a0a0a 0%, #111111 100%);
+    color: #ffffff;
+  `,
+  header: `
+    text-align: center;
+    padding: 40px 40px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  `,
+  logo: `
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  `,
+  content: `
+    padding: 40px;
+  `,
+  heading: `
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #ffffff;
+  `,
+  text: `
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 24px;
+  `,
+  button: `
+    display: inline-block;
+    background: #df2531;
+    color: #ffffff !important;
+    padding: 14px 32px;
+    text-decoration: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+  `,
+  card: `
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 24px;
+    margin: 24px 0;
+  `,
+  footer: `
+    text-align: center;
+    padding: 32px 40px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  `,
+  footerText: `
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    margin: 0;
+  `,
+  highlight: `
+    color: #df2531;
+    font-weight: 600;
+  `,
+  amount: `
+    font-size: 32px;
+    font-weight: 700;
+    color: #df2531;
+    margin: 8px 0;
+  `,
+}
+
+// Base template wrapper
+const emailWrapper = (content: string) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nego</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #000000;">
+  <div style="${styles.container}">
+    <!-- Header -->
+    <div style="${styles.header}">
+      <div style="${styles.logo}">
+        <span style="color: #ffffff;">NEGO</span><span style="color: #df2531;">.</span>
+      </div>
+    </div>
+    
+    <!-- Content -->
+    <div style="${styles.content}">
+      ${content}
+    </div>
+    
+    <!-- Footer -->
+    <div style="${styles.footer}">
+      <p style="${styles.footerText}">
+        © ${new Date().getFullYear()} Nego. All rights reserved.
+      </p>
+      <p style="${styles.footerText}; margin-top: 8px;">
+        Excellence with discretion.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+`
 
 // Email templates
 export const emailTemplates = {
   // Welcome email for new users
   welcome: (name: string, role: string) => ({
-    subject: 'Welcome to Nego!',
-    html: `
-      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #111; color: #fff; padding: 40px;">
-        <div style="text-align: center; margin-bottom: 40px;">
-          <h1 style="font-size: 32px; margin: 0;">
-            <span style="color: #fff;">NEGO</span><span style="color: #df2531;">.</span>
-          </h1>
-        </div>
-        
-        <h2 style="color: #fff; margin-bottom: 20px;">Welcome, ${name}!</h2>
-        
-        <p style="color: #999; line-height: 1.6;">
-          Thank you for joining Nego as a <strong style="color: #df2531;">${role}</strong>.
-          ${role === 'talent' 
-            ? 'Start setting up your profile to connect with premium clients.'
-            : 'Browse our exclusive talent and book unforgettable experiences.'}
+    subject: 'Welcome to Nego! 🎉',
+    html: emailWrapper(`
+      <h1 style="${styles.heading}">Welcome, ${name}!</h1>
+      
+      <p style="${styles.text}">
+        Thank you for joining Nego as a <span style="${styles.highlight}">${role}</span>.
+      </p>
+      
+      <div style="${styles.card}">
+        <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0 0 12px 0;">
+          ${role === 'talent' ? 'NEXT STEPS' : 'GET STARTED'}
         </p>
-        
-        <div style="text-align: center; margin: 40px 0;">
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://nego.app'}/dashboard" 
-             style="display: inline-block; background: #df2531; color: #fff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-            Go to Dashboard
-          </a>
-        </div>
-        
-        <p style="color: #666; font-size: 12px; text-align: center; margin-top: 40px;">
-          © ${new Date().getFullYear()} Nego. All rights reserved.
+        <p style="color: #ffffff; font-size: 15px; margin: 0; line-height: 1.6;">
+          ${role === 'talent' 
+            ? '1. Complete your profile<br>2. Add your services<br>3. Start accepting bookings'
+            : '1. Browse our elite talent<br>2. Add coins to your wallet<br>3. Book your experience'}
         </p>
       </div>
-    `,
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}/dashboard" style="${styles.button}">
+          Go to Dashboard →
+        </a>
+      </div>
+      
+      <p style="${styles.text}">
+        If you have any questions, our support team is here to help.
+      </p>
+    `),
   }),
 
   // New booking notification for talent
   newBooking: (talentName: string, clientName: string, bookingAmount: number, bookingId: string) => ({
-    subject: '🎉 New Booking Request!',
-    html: `
-      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #111; color: #fff; padding: 40px;">
-        <div style="text-align: center; margin-bottom: 40px;">
-          <h1 style="font-size: 32px; margin: 0;">
-            <span style="color: #fff;">NEGO</span><span style="color: #df2531;">.</span>
-          </h1>
-        </div>
-        
-        <h2 style="color: #fff; margin-bottom: 20px;">New Booking Request!</h2>
-        
-        <p style="color: #999; line-height: 1.6;">
-          Hi ${talentName}, you have a new booking request from <strong style="color: #fff;">${clientName}</strong>.
+    subject: '🔔 New Booking Request!',
+    html: emailWrapper(`
+      <h1 style="${styles.heading}">New Booking Request!</h1>
+      
+      <p style="${styles.text}">
+        Hi ${talentName}, you have a new booking request from <span style="${styles.highlight}">${clientName}</span>.
+      </p>
+      
+      <div style="${styles.card}">
+        <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0 0 8px 0;">
+          BOOKING AMOUNT
         </p>
-        
-        <div style="background: #1a1a1a; border-radius: 12px; padding: 20px; margin: 20px 0;">
-          <p style="color: #999; margin: 0 0 10px 0;">Booking Amount</p>
-          <p style="color: #df2531; font-size: 24px; font-weight: bold; margin: 0;">
-            ${bookingAmount.toLocaleString()} coins
-          </p>
-        </div>
-        
-        <p style="color: #999; line-height: 1.6;">
-          Please review and respond to this booking request as soon as possible.
+        <p style="${styles.amount}">
+          ${bookingAmount.toLocaleString()} coins
         </p>
-        
-        <div style="text-align: center; margin: 40px 0;">
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://nego.app'}/dashboard/bookings/${bookingId}" 
-             style="display: inline-block; background: #df2531; color: #fff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-            View Booking
-          </a>
-        </div>
-        
-        <p style="color: #666; font-size: 12px; text-align: center; margin-top: 40px;">
-          © ${new Date().getFullYear()} Nego. All rights reserved.
+        <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0;">
+          ≈ ₦${bookingAmount.toLocaleString()}
         </p>
       </div>
-    `,
+      
+      <p style="${styles.text}">
+        Please review and respond to this booking request as soon as possible.
+      </p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}/dashboard/bookings/${bookingId}" style="${styles.button}">
+          View Booking →
+        </a>
+      </div>
+    `),
   }),
 
   // Booking status update for client
   bookingUpdate: (clientName: string, talentName: string, status: string, bookingId: string) => {
-    const statusMessages: Record<string, { color: string; message: string }> = {
-      confirmed: { color: '#22c55e', message: 'Your booking has been accepted!' },
-      cancelled: { color: '#ef4444', message: 'Your booking has been declined.' },
-      completed: { color: '#3b82f6', message: 'Your booking has been completed!' },
+    const statusConfig: Record<string, { color: string; emoji: string; message: string; cta: string }> = {
+      confirmed: { 
+        color: '#22c55e', 
+        emoji: '✅', 
+        message: 'Great news! Your booking has been accepted.',
+        cta: 'View Booking Details'
+      },
+      cancelled: { 
+        color: '#ef4444', 
+        emoji: '❌', 
+        message: 'Unfortunately, your booking has been declined.',
+        cta: 'Browse Other Talent'
+      },
+      completed: { 
+        color: '#3b82f6', 
+        emoji: '🎉', 
+        message: 'Your booking has been completed. We hope you had a great experience!',
+        cta: 'Leave a Review'
+      },
     }
     
-    const statusInfo = statusMessages[status] || { color: '#999', message: 'Your booking status has been updated.' }
+    const config = statusConfig[status] || { color: '#999', emoji: '📋', message: 'Your booking status has been updated.', cta: 'View Booking' }
     
     return {
-      subject: `Booking ${status.charAt(0).toUpperCase() + status.slice(1)} - ${talentName}`,
-      html: `
-        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #111; color: #fff; padding: 40px;">
-          <div style="text-align: center; margin-bottom: 40px;">
-            <h1 style="font-size: 32px; margin: 0;">
-              <span style="color: #fff;">NEGO</span><span style="color: #df2531;">.</span>
-            </h1>
-          </div>
-          
-          <h2 style="color: ${statusInfo.color}; margin-bottom: 20px;">${statusInfo.message}</h2>
-          
-          <p style="color: #999; line-height: 1.6;">
-            Hi ${clientName}, ${talentName} has ${status === 'confirmed' ? 'accepted' : status} your booking.
+      subject: `${config.emoji} Booking ${status.charAt(0).toUpperCase() + status.slice(1)} - ${talentName}`,
+      html: emailWrapper(`
+        <div style="text-align: center; margin-bottom: 24px;">
+          <span style="font-size: 48px;">${config.emoji}</span>
+        </div>
+        
+        <h1 style="${styles.heading}; text-align: center; color: ${config.color};">
+          Booking ${status.charAt(0).toUpperCase() + status.slice(1)}
+        </h1>
+        
+        <p style="${styles.text}; text-align: center;">
+          Hi ${clientName}, ${config.message}
+        </p>
+        
+        <div style="${styles.card}; text-align: center;">
+          <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0 0 8px 0;">
+            TALENT
           </p>
-          
-          <div style="text-align: center; margin: 40px 0;">
-            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://nego.app'}/dashboard/bookings/${bookingId}" 
-               style="display: inline-block; background: #df2531; color: #fff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-              View Booking
-            </a>
-          </div>
-          
-          <p style="color: #666; font-size: 12px; text-align: center; margin-top: 40px;">
-            © ${new Date().getFullYear()} Nego. All rights reserved.
+          <p style="color: #ffffff; font-size: 18px; font-weight: 600; margin: 0;">
+            ${talentName}
           </p>
         </div>
-      `,
+        
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${APP_URL}/dashboard/bookings/${bookingId}" style="${styles.button}">
+            ${config.cta} →
+          </a>
+        </div>
+      `),
     }
   },
+
+  // Withdrawal approved notification
+  withdrawalApproved: (talentName: string, amount: number) => ({
+    subject: '💰 Withdrawal Approved!',
+    html: emailWrapper(`
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 48px;">💰</span>
+      </div>
+      
+      <h1 style="${styles.heading}; text-align: center; color: #22c55e;">
+        Withdrawal Approved!
+      </h1>
+      
+      <p style="${styles.text}; text-align: center;">
+        Hi ${talentName}, your withdrawal request has been approved.
+      </p>
+      
+      <div style="${styles.card}; text-align: center;">
+        <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0 0 8px 0;">
+          AMOUNT
+        </p>
+        <p style="${styles.amount}">
+          ${amount.toLocaleString()} coins
+        </p>
+        <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0;">
+          Processing within 24-48 hours
+        </p>
+      </div>
+      
+      <p style="${styles.text}; text-align: center;">
+        The funds will be transferred to your registered bank account shortly.
+      </p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}/dashboard/talent?tab=withdrawals" style="${styles.button}">
+          View Status →
+        </a>
+      </div>
+    `),
+  }),
+
+  // Withdrawal rejected notification
+  withdrawalRejected: (talentName: string, amount: number, reason?: string) => ({
+    subject: '⚠️ Withdrawal Request Update',
+    html: emailWrapper(`
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 48px;">⚠️</span>
+      </div>
+      
+      <h1 style="${styles.heading}; text-align: center; color: #f59e0b;">
+        Withdrawal Not Processed
+      </h1>
+      
+      <p style="${styles.text}; text-align: center;">
+        Hi ${talentName}, unfortunately your withdrawal request for <span style="${styles.highlight}">${amount.toLocaleString()} coins</span> could not be processed.
+      </p>
+      
+      ${reason ? `
+        <div style="${styles.card}">
+          <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0 0 8px 0;">
+            REASON
+          </p>
+          <p style="color: #ffffff; font-size: 15px; margin: 0;">
+            ${reason}
+          </p>
+        </div>
+      ` : ''}
+      
+      <p style="${styles.text}; text-align: center;">
+        Please contact support if you have any questions.
+      </p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="mailto:support@nego.app" style="${styles.button}">
+          Contact Support →
+        </a>
+      </div>
+    `),
+  }),
 }
 
 // Send email function
