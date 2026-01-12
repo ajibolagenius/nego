@@ -3,7 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { List, X, Coin, CaretDown, User, SignOut, House, Heart, CalendarCheck, Wallet, Gear } from '@phosphor-icons/react'
+import { 
+  List, X, Coin, CaretDown, User, SignOut, House, Heart, 
+  CalendarCheck, Wallet, Gear, ChatCircle, MagnifyingGlass,
+  Briefcase, ShieldCheck
+} from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { NotificationBell } from '@/components/NotificationBell'
@@ -11,15 +15,17 @@ import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface AppHeaderProps {
   initialUser?: SupabaseUser | null
+  userRole?: 'client' | 'talent' | 'admin'
 }
 
-export function AppHeader({ initialUser }: AppHeaderProps) {
+export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [activeLink, setActiveLink] = useState('home')
   const [user, setUser] = useState<SupabaseUser | null>(initialUser || null)
   const [isLoading, setIsLoading] = useState(!initialUser)
+  const [role, setRole] = useState<string | null>(userRole || null)
 
   // Check auth state
   useEffect(() => {
@@ -28,6 +34,16 @@ export function AppHeader({ initialUser }: AppHeaderProps) {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
+      
+      if (user && !role) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        setRole(profile?.role || 'client')
+      }
+      
       setIsLoading(false)
     }
 
@@ -40,7 +56,7 @@ export function AppHeader({ initialUser }: AppHeaderProps) {
     })
 
     return () => subscription.unsubscribe()
-  }, [initialUser])
+  }, [initialUser, role])
 
   // Scroll handler for landing page
   useEffect(() => {
@@ -65,6 +81,11 @@ export function AppHeader({ initialUser }: AppHeaderProps) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [pathname])
 
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMenuOpen(false)
+  }, [pathname])
+
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -85,13 +106,26 @@ export function AppHeader({ initialUser }: AppHeaderProps) {
     { name: 'Private Content', href: '#premium', id: 'premium' },
   ]
 
-  // Navigation links for authenticated users
-  const authNavLinks = [
+  // Navigation links for authenticated clients
+  const clientNavLinks = [
     { name: 'Dashboard', href: '/dashboard', icon: House },
-    { name: 'Browse', href: '/dashboard/browse', icon: Heart },
+    { name: 'Browse', href: '/dashboard/browse', icon: MagnifyingGlass },
     { name: 'Bookings', href: '/dashboard/bookings', icon: CalendarCheck },
+    { name: 'Messages', href: '/dashboard/messages', icon: ChatCircle },
+    { name: 'Favorites', href: '/dashboard/favorites', icon: Heart },
     { name: 'Wallet', href: '/dashboard/wallet', icon: Wallet },
   ]
+
+  // Navigation links for talents
+  const talentNavLinks = [
+    { name: 'Dashboard', href: '/dashboard', icon: House },
+    { name: 'Talent Hub', href: '/dashboard/talent', icon: Briefcase },
+    { name: 'Bookings', href: '/dashboard/bookings', icon: CalendarCheck },
+    { name: 'Messages', href: '/dashboard/messages', icon: ChatCircle },
+    { name: 'Wallet', href: '/dashboard/wallet', icon: Wallet },
+  ]
+
+  const authNavLinks = role === 'talent' ? talentNavLinks : clientNavLinks
 
   // Hide header completely on admin pages
   if (isAdminPage) {
