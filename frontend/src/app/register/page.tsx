@@ -200,11 +200,30 @@ export default function RegisterPage() {
                 >
                   ← Back
                 </button>
-                <h1 className="text-2xl font-bold text-white mb-2">Create Account</h1>
+                <h1 className="text-2xl font-bold text-white mb-2">
+                  {isGoogleAuth ? 'Complete Your Profile' : 'Create Account'}
+                </h1>
                 <p className="text-white/50 text-sm">
                   Signing up as a {role === 'client' ? 'Client' : 'Talent'}
                 </p>
               </div>
+
+              {/* Google Auth Badge */}
+              {isGoogleAuth && googleEmail && (
+                <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center gap-3">
+                  {googlePicture ? (
+                    <img src={googlePicture} alt="" className="w-10 h-10 rounded-full" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                      <CheckCircle size={20} className="text-green-400" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="text-green-400 text-sm font-medium">Google verified</p>
+                    <p className="text-white/60 text-xs">{googleEmail}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Error message */}
               {error && (
