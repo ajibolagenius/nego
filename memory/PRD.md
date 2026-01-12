@@ -117,7 +117,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 /                        # Landing page
 /login                   # Login (redirects by role)
 /register                # Register with role selection
-/auth/google/callback    # Google OAuth callback
+/auth/callback           # OAuth callback (Supabase)
 
 /dashboard               # Client dashboard (with notification bell)
 /dashboard/browse        # Browse talents
