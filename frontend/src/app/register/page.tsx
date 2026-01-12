@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Eye, EyeSlash, Envelope, Lock, User, SpinnerGap, GoogleLogo, UserCircle, Briefcase, CheckCircle } from '@phosphor-icons/react'
+import { useRouter } from 'next/navigation'
+import { Eye, EyeSlash, Envelope, Lock, User, SpinnerGap, GoogleLogo, UserCircle, Briefcase } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 
@@ -11,8 +11,6 @@ type UserRole = 'client' | 'talent'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const isGoogleAuth = searchParams.get('google') === 'true'
   
   const [step, setStep] = useState(1)
   const [role, setRole] = useState<UserRole>('client')
@@ -22,32 +20,6 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  
-  // Google auth data
-  const [googleEmail, setGoogleEmail] = useState('')
-  const [googleName, setGoogleName] = useState('')
-  const [googlePicture, setGooglePicture] = useState('')
-
-  // Load Google auth data if coming from Google callback
-  useEffect(() => {
-    if (isGoogleAuth) {
-      const storedEmail = localStorage.getItem('google_auth_email')
-      const storedName = localStorage.getItem('google_auth_name')
-      const storedPicture = localStorage.getItem('google_auth_picture')
-      
-      if (storedEmail) {
-        setGoogleEmail(storedEmail)
-        setEmail(storedEmail)
-      }
-      if (storedName) {
-        setGoogleName(storedName)
-        setName(storedName)
-      }
-      if (storedPicture) {
-        setGooglePicture(storedPicture)
-      }
-    }
-  }, [isGoogleAuth])
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
