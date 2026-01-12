@@ -543,16 +543,26 @@ export function TalentDashboardClient({
                     <input
                       type="number"
                       value={newServicePrice}
-                      onChange={(e) => setNewServicePrice(e.target.value)}
-                      placeholder="e.g., 50"
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531]"
+                      onChange={(e) => {
+                        setNewServicePrice(e.target.value)
+                        if (e.target.value) validatePrice(e.target.value)
+                      }}
+                      placeholder={`Min. ${MIN_SERVICE_PRICE.toLocaleString()}`}
+                      min={MIN_SERVICE_PRICE}
+                      className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white focus:outline-none transition-colors ${
+                        priceError ? 'border-red-500/50 focus:border-red-500' : 'border-white/10 focus:border-[#df2531]'
+                      }`}
                     />
+                    {priceError && (
+                      <p className="text-red-400 text-xs mt-1">{priceError}</p>
+                    )}
+                    <p className="text-white/30 text-xs mt-1">Minimum: ₦{MIN_SERVICE_PRICE.toLocaleString()}</p>
                   </div>
                 </div>
                 
                 <Button
                   onClick={handleAddService}
-                  disabled={!newServiceId || !newServicePrice || isSaving}
+                  disabled={!newServiceId || !newServicePrice || isSaving || !!priceError}
                   className="btn-primary"
                 >
                   {isSaving ? 'Adding...' : 'Add Service'}
