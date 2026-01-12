@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import dynamic from 'next/dynamic'
 import { 
   ArrowLeft, Coin, Plus, ArrowUpRight, ArrowDownLeft, 
   Clock, CheckCircle, XCircle, Sparkle, ShoppingCart,
@@ -13,6 +12,23 @@ import { Button } from '@/components/ui/button'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet, Transaction } from '@/types/database'
 import { COIN_PACKAGES, formatNaira, type CoinPackage } from '@/lib/coinPackages'
+
+// Declare Paystack global type
+declare global {
+  interface Window {
+    PaystackPop: {
+      setup: (config: {
+        key: string
+        email: string
+        amount: number
+        currency: string
+        ref: string
+        callback: (response: any) => void
+        onClose: () => void
+      }) => { openIframe: () => void }
+    }
+  }
+}
 
 interface WalletClientProps {
   user: SupabaseUser
