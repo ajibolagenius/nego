@@ -31,6 +31,12 @@ export default async function BookingDetailPage({ params }: PageProps) {
         display_name,
         avatar_url,
         location
+      ),
+      client:profiles!bookings_client_id_fkey (
+        id,
+        display_name,
+        avatar_url,
+        location
       )
     `)
     .eq('id', id)
