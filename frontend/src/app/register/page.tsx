@@ -37,20 +37,11 @@ export default function RegisterPage() {
           data: {
             full_name: name,
             role: role,
-            avatar_url: googlePicture || null,
           },
         },
       })
 
       if (error) throw error
-
-      // Clean up Google auth data
-      if (isGoogleAuth) {
-        localStorage.removeItem('google_auth_email')
-        localStorage.removeItem('google_auth_name')
-        localStorage.removeItem('google_auth_picture')
-        localStorage.removeItem('google_auth_verified')
-      }
 
       // Redirect based on session status
       if (data.user && data.session) {
