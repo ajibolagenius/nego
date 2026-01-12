@@ -576,6 +576,17 @@ export function TalentDashboardClient({
 
         {activeTab === 'bookings' && (
           <div className="space-y-4">
+            {/* Pending Action Alert */}
+            {bookings.filter(b => b.status === 'verification_pending').length > 0 && (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400">
+                <Hourglass size={24} weight="duotone" />
+                <div className="flex-1">
+                  <p className="font-medium">You have {bookings.filter(b => b.status === 'verification_pending').length} booking(s) awaiting your response</p>
+                  <p className="text-sm text-blue-400/70">Accept or decline to proceed</p>
+                </div>
+              </div>
+            )}
+
             <h3 className="text-lg font-bold text-white">Recent Bookings ({bookings.length})</h3>
 
             {bookings.length === 0 ? (
@@ -587,13 +598,19 @@ export function TalentDashboardClient({
             ) : (
               <div className="space-y-3">
                 {bookings.map((booking) => {
-                  const status = statusColors[booking.status] || statusColors.pending
+                  const status = statusColors[booking.status] || statusColors.payment_pending
                   const StatusIcon = status.icon
+                  const needsAction = status.needsAction
                   
                   return (
-                    <div
+                    <Link
                       key={booking.id}
-                      className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                      href={`/dashboard/bookings/${booking.id}`}
+                      className={`flex items-center gap-4 p-4 rounded-xl border transition-colors ${
+                        needsAction 
+                          ? 'bg-blue-500/5 border-blue-500/30 hover:bg-blue-500/10' 
+                          : 'bg-white/5 border-white/10 hover:bg-white/10'
+                      }`}
                     >
                       <div className="w-12 h-12 rounded-full bg-white/10 overflow-hidden">
                         {booking.client?.avatar_url ? (
@@ -606,7 +623,14 @@ export function TalentDashboardClient({
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <p className="text-white font-medium">{booking.client?.display_name || 'Client'}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-white font-medium">{booking.client?.display_name || 'Client'}</p>
+                          {needsAction && (
+                            <span className="px-2 py-0.5 rounded-full bg-blue-500 text-white text-[10px] font-bold uppercase">
+                              Action Required
+                            </span>
+                          )}
+                        </div>
                         <p className="text-white/40 text-sm truncate">
                           Booking #{booking.id.slice(0, 8)}
                         </p>
@@ -619,16 +643,11 @@ export function TalentDashboardClient({
                       
                       <div className={`px-3 py-1 rounded-full ${status.bg} ${status.text} text-xs font-medium flex items-center gap-1`}>
                         <StatusIcon size={14} weight="bold" />
-                        <span className="capitalize">{booking.status}</span>
+                        <span className="capitalize">{booking.status.replace('_', ' ')}</span>
                       </div>
                       
-                      <Link
-                        href={`/dashboard/bookings/${booking.id}`}
-                        className="p-2 rounded-lg bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-colors"
-                      >
-                        <CaretRight size={20} />
-                      </Link>
-                    </div>
+                      <CaretRight size={20} className="text-white/40" />
+                    </Link>
                   )
                 })}
               </div>
