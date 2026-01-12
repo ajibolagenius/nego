@@ -743,7 +743,167 @@ export function TalentDashboardClient({
             )}
           </div>
         )}
+
+        {/* Withdrawals Tab */}
+        {activeTab === 'withdrawals' && (
+          <div className="space-y-6">
+            {/* Balance Card */}
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-[#df2531]/20 to-transparent border border-[#df2531]/30">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-white/60 text-sm">Available Balance</p>
+                  <p className="text-3xl font-bold text-white">{(wallet?.balance || 0).toLocaleString()} coins</p>
+                  <p className="text-white/40 text-sm">≈ ₦{(wallet?.balance || 0).toLocaleString()}</p>
+                </div>
+                <div className="w-16 h-16 rounded-2xl bg-[#df2531]/20 flex items-center justify-center">
+                  <Coin size={32} weight="duotone" className="text-[#df2531]" />
+                </div>
+              </div>
+              
+              <Button
+                onClick={() => setShowWithdrawalModal(true)}
+                disabled={(wallet?.balance || 0) < 10000}
+                className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-3 rounded-xl disabled:opacity-50"
+              >
+                <Bank size={20} className="mr-2" />
+                Request Withdrawal
+              </Button>
+              {(wallet?.balance || 0) < 10000 && (
+                <p className="text-white/40 text-xs text-center mt-2">
+                  Minimum withdrawal: 10,000 coins
+                </p>
+              )}
+            </div>
+
+            {/* Withdrawal Info */}
+            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <h4 className="text-white font-medium mb-2">Withdrawal Information</h4>
+              <ul className="space-y-2 text-white/60 text-sm">
+                <li className="flex items-center gap-2">
+                  <CheckCircle size={14} className="text-green-400" />
+                  Minimum withdrawal: 10,000 coins
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle size={14} className="text-green-400" />
+                  Processing time: 24-48 hours
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle size={14} className="text-green-400" />
+                  Supported banks: All Nigerian banks
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle size={14} className="text-green-400" />
+                  No withdrawal fees
+                </li>
+              </ul>
+            </div>
+
+            {/* Recent Withdrawals Placeholder */}
+            <div>
+              <h4 className="text-lg font-bold text-white mb-4">Recent Withdrawals</h4>
+              <div className="text-center py-12 rounded-2xl bg-white/5 border border-white/10">
+                <Money size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
+                <p className="text-white/50 mb-2">No withdrawals yet</p>
+                <p className="text-white/30 text-sm">Your withdrawal history will appear here</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Withdrawal Modal */}
+      {showWithdrawalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setShowWithdrawalModal(false)}
+          />
+          <div className="relative bg-[#1a1a1a] rounded-2xl p-6 max-w-md w-full border border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white">Request Withdrawal</h3>
+              <button 
+                onClick={() => setShowWithdrawalModal(false)}
+                className="text-white/40 hover:text-white"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Amount */}
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Amount (coins)</label>
+                <input
+                  type="number"
+                  value={withdrawalAmount}
+                  onChange={(e) => setWithdrawalAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  max={wallet?.balance || 0}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531]"
+                />
+                <p className="text-white/40 text-xs mt-1">
+                  Available: {(wallet?.balance || 0).toLocaleString()} coins
+                </p>
+              </div>
+
+              {/* Bank Name */}
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Bank Name</label>
+                <select
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531]"
+                >
+                  <option value="" className="bg-black">Select bank</option>
+                  <option value="Access Bank" className="bg-black">Access Bank</option>
+                  <option value="First Bank" className="bg-black">First Bank</option>
+                  <option value="GTBank" className="bg-black">GTBank</option>
+                  <option value="UBA" className="bg-black">UBA</option>
+                  <option value="Zenith Bank" className="bg-black">Zenith Bank</option>
+                  <option value="Kuda Bank" className="bg-black">Kuda Bank</option>
+                  <option value="Opay" className="bg-black">Opay</option>
+                  <option value="Palmpay" className="bg-black">Palmpay</option>
+                  <option value="Other" className="bg-black">Other</option>
+                </select>
+              </div>
+
+              {/* Account Number */}
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Account Number</label>
+                <input
+                  type="text"
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="10-digit account number"
+                  maxLength={10}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531]"
+                />
+              </div>
+
+              {/* Account Name */}
+              <div>
+                <label className="block text-white/70 text-sm mb-2">Account Name</label>
+                <input
+                  type="text"
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value)}
+                  placeholder="Name on account"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531]"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                onClick={handleWithdrawal}
+                disabled={isWithdrawing || !withdrawalAmount || !bankName || !accountNumber || !accountName}
+                className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-3 rounded-xl disabled:opacity-50 mt-4"
+              >
+                {isWithdrawing ? 'Submitting...' : 'Submit Request'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
