@@ -58,9 +58,12 @@ const talentNavItems = [
   { icon: Gear, label: 'Settings', href: '/dashboard/settings' },
 ]
 
-export function DashboardClient({ user, profile, wallet }: DashboardClientProps) {
+export function DashboardClient({ user, profile, wallet, featuredTalents = [] }: DashboardClientProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  
+  // Use featuredTalents from props, fallback to empty array
+  const talents = featuredTalents.length > 0 ? featuredTalents : []
   
   const isTalent = profile?.role === 'talent'
   const navItems = isTalent ? talentNavItems : clientNavItems
