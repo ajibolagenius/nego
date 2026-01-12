@@ -150,7 +150,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 |--------|---------|--------|
 | `supabase_fix_trigger_v2.sql` | Fix handle_new_user() trigger | ✅ RUN |
 | `supabase_notifications_withdrawals.sql` | Notifications + Withdrawals tables | ✅ RUN |
-| `supabase_chat_tables.sql` | Chat messages + conversations tables | **RUN THIS** |
+| `supabase_chat_tables.sql` | Chat messages + conversations tables | ✅ RUN |
 
 ---
 
