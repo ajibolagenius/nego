@@ -9,11 +9,13 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
 import type { Conversation, Message, Profile } from '@/types/database'
 
 interface MessagesClientProps {
   userId: string
-  conversations: (Conversation & { other_user?: Profile })[]
+  conversations: (Conversation & { other_user?: Profile | null })[]
+  userRole?: 'client' | 'talent'
 }
 
 export function MessagesClient({ userId, conversations: initialConversations }: MessagesClientProps) {
