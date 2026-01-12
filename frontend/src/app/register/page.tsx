@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Eye, EyeSlash, Envelope, Lock, User, SpinnerGap, GoogleLogo, UserCircle, Briefcase } from '@phosphor-icons/react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Eye, EyeSlash, Envelope, Lock, User, SpinnerGap, GoogleLogo, UserCircle, Briefcase, CheckCircle } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 
@@ -11,6 +11,9 @@ type UserRole = 'client' | 'talent'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isGoogleAuth = searchParams.get('google') === 'true'
+  
   const [step, setStep] = useState(1)
   const [role, setRole] = useState<UserRole>('client')
   const [name, setName] = useState('')
@@ -19,6 +22,32 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  
+  // Google auth data
+  const [googleEmail, setGoogleEmail] = useState('')
+  const [googleName, setGoogleName] = useState('')
+  const [googlePicture, setGooglePicture] = useState('')
+
+  // Load Google auth data if coming from Google callback
+  useEffect(() => {
+    if (isGoogleAuth) {
+      const storedEmail = localStorage.getItem('google_auth_email')
+      const storedName = localStorage.getItem('google_auth_name')
+      const storedPicture = localStorage.getItem('google_auth_picture')
+      
+      if (storedEmail) {
+        setGoogleEmail(storedEmail)
+        setEmail(storedEmail)
+      }
+      if (storedName) {
+        setGoogleName(storedName)
+        setName(storedName)
+      }
+      if (storedPicture) {
+        setGooglePicture(storedPicture)
+      }
+    }
+  }, [isGoogleAuth])
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,16 +65,29 @@ export default function RegisterPage() {
           data: {
             full_name: name,
             role: role,
+            avatar_url: googlePicture || null,
           },
         },
       })
 
       if (error) throw error
 
+      // Clean up Google auth data
+      if (isGoogleAuth) {
+        localStorage.removeItem('google_auth_email')
+        localStorage.removeItem('google_auth_name')
+        localStorage.removeItem('google_auth_picture')
+        localStorage.removeItem('google_auth_verified')
+      }
+
       // Redirect based on session status
       if (data.user && data.session) {
         // User is logged in, redirect to dashboard (role-based routing happens there)
-        window.location.href = '/dashboard'
+        if (role === 'talent') {
+          window.location.href = '/dashboard/talent'
+        } else {
+          window.location.href = '/dashboard'
+        }
       } else if (data.user && !data.session) {
         // Email confirmation might be required
         setError('Account created! Please check your email to confirm, then sign in.')
@@ -60,21 +102,12 @@ export default function RegisterPage() {
   }
 
   const handleGoogleSignup = async () => {
-    setLoading(true)
-    try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
-        },
-      })
-      if (error) throw error
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred'
-      setError(errorMessage)
-      setLoading(false)
-    }
+    // Store the selected role for after Google auth
+    localStorage.setItem('google_auth_pending_role', role)
+    
+    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+    const redirectUrl = window.location.origin + '/auth/google/callback'
+    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`
   }
 
   return (
