@@ -12,6 +12,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { NotificationBell } from '@/components/NotificationBell'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { OnboardingModal, useOnboarding } from '@/components/OnboardingModal'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet as WalletType } from '@/types/database'
 
@@ -34,9 +36,10 @@ interface DashboardClientProps {
 // Navigation items for clients
 const clientNavItems = [
   { icon: House, label: 'Home', href: '/dashboard', active: true },
-  { icon: Heart, label: 'Favorites', href: '/dashboard/favorites' },
+  { icon: MagnifyingGlass, label: 'Browse', href: '/dashboard/browse' },
   { icon: CalendarCheck, label: 'Bookings', href: '/dashboard/bookings' },
   { icon: ChatCircle, label: 'Messages', href: '/dashboard/messages' },
+  { icon: Heart, label: 'Favorites', href: '/dashboard/favorites' },
   { icon: Wallet, label: 'Wallet', href: '/dashboard/wallet' },
   { icon: User, label: 'Profile', href: '/dashboard/profile' },
   { icon: Gear, label: 'Settings', href: '/dashboard/settings' },
