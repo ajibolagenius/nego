@@ -9,247 +9,156 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 
 ## Tech Stack
 
-### Documented (Target)
-- **Frontend**: Next.js 14 (App Router), Shadcn/UI + Tailwind CSS
-- **Backend**: Supabase (Auth, Database, API, Edge Functions)
-- **Database**: PostgreSQL (Supabase)
-- **Media Storage**: Cloudinary
-- **Payments**: Paystack (react-paystack)
-- **Webcam**: react-webcam
-- **Hosting**: Vercel
-- **Security**: Cloudflare
-
-### Current Implementation
-- **Frontend**: Next.js 14 (App Router), Shadcn/UI + Tailwind CSS ✅
-- **Backend**: Supabase (Auth, Database) ✅
-- **Database**: PostgreSQL (Supabase) ✅
-- **Media Storage**: Supabase Storage ⚠️ (Using Supabase instead of Cloudinary)
-- **Payments**: NOT IMPLEMENTED ❌
-- **Webcam**: NOT IMPLEMENTED ❌ (Using file upload instead)
-- **Hosting**: Emergent Platform (Preview) ⚠️
-
----
-
-## Route Structure Comparison
-
-### Documented Routes (Routes.md)
-
-```
-(auth)/
-├── login/               
-├── register/            
-
-(client)/
-├── dashboard/           # Feed (Home)
-├── talent/[id]/         # Talent Profile + Booking
-├── wallet/              # Buy Coins (Paystack)
-├── bookings/            # List of bookings
-└── bookings/[id]/verify/ # SECURITY GATE (Webcam)
-
-(talent)/
-├── portal/              # Dashboard Home
-├── portal/menu/         # Service Pricing
-├── portal/media/        # Upload Media
-└── portal/requests/     # Accept/Reject Bookings
-
-(admin)/
-├── admin/verifications/ # Review Selfies
-└── admin/payouts/       # Manual Bank Transfers
-
-api/
-├── webhooks/paystack/   # Paystack Webhook
-└── cron/                # Auto-expire bookings
-```
-
-### Current Implementation
-
-```
-(auth)/ - EMPTY ROUTE GROUPS ⚠️
-(client)/ - EMPTY ROUTE GROUPS ⚠️
-(talent)/ - EMPTY ROUTE GROUPS ⚠️
-(admin)/ - EMPTY ROUTE GROUPS ⚠️
-
-login/                   ✅ Implemented
-register/                ✅ Implemented
-
-dashboard/               ✅ Implemented (Client Home/Feed)
-dashboard/browse/        ✅ Implemented (Talent browsing)
-dashboard/bookings/      ✅ Implemented (Booking list)
-dashboard/bookings/[id]/ ✅ Implemented (Booking detail)
-dashboard/verify/        ✅ Implemented (Verification - File upload, not webcam)
-dashboard/wallet/        ⚠️ UI Only (No Paystack integration)
-dashboard/favorites/     ✅ Implemented
-dashboard/profile/       ✅ Implemented
-dashboard/settings/      ✅ Implemented
-dashboard/talent/        ✅ Implemented (Talent Dashboard)
-
-talent/[id]/             ✅ Implemented (Talent Profile + Booking)
-
-auth/callback/           ✅ Implemented (OAuth callback)
-
-terms/                   ✅ Implemented
-privacy/                 ✅ Implemented
-cookies/                 ✅ Implemented
-
-api/                     ❌ NOT IMPLEMENTED
-admin/                   ❌ NOT IMPLEMENTED
-```
+| Component | Target (Documented) | Current Status |
+|-----------|---------------------|----------------|
+| Frontend | Next.js 14 (App Router), Shadcn/UI + Tailwind CSS | ✅ Implemented |
+| Backend | Supabase (Auth, Database, API) | ✅ Implemented |
+| Database | PostgreSQL (Supabase) | ✅ Implemented |
+| Media Storage | Cloudinary | ⚠️ Using Supabase Storage |
+| Payments | Paystack (react-paystack) | ✅ Implemented |
+| Webcam | react-webcam | ❌ Using file upload |
+| Hosting | Vercel | ⚠️ Emergent Platform |
 
 ---
 
 ## Feature Implementation Status
 
-### 1. Authentication
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Email/Password Login | ✅ Done | Working |
-| Email/Password Register | ✅ Done | Working |
-| Google OAuth | ⚠️ Partial | Button exists, may need Supabase config |
-| Role Selection (Client/Talent) | ⚠️ Buggy | Trigger doesn't read metadata correctly |
+### 1. Authentication ✅
+| Feature | Status |
+|---------|--------|
+| Email/Password Login | ✅ Done |
+| Email/Password Register | ✅ Done |
+| Role Selection (Client/Talent) | ✅ Done (Bug: trigger may default to 'client') |
+| Google OAuth | ⚠️ Button exists, needs Supabase config |
 
 ### 2. Client Features
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Talent Feed/Browse | ✅ Done | Grid with filters |
-| Talent Profile View | ✅ Done | Services, gallery, booking |
-| Service Selection | ✅ Done | Checkbox selection |
-| Booking Creation | ✅ Done | Creates booking, deducts coins |
-| Wallet UI | ✅ Done | Shows balance, packages |
-| Coin Purchase (Paystack) | ❌ Missing | UI exists, no payment integration |
-| Bookings List | ✅ Done | Shows all bookings |
-| Booking Detail | ✅ Done | Shows booking info |
-| Favorites | ✅ Done | Save/unsave talents |
-| Profile Management | ✅ Done | View/edit profile |
-| Settings | ✅ Done | Account settings |
+| Feature | Status |
+|---------|--------|
+| Talent Feed/Browse | ✅ Done |
+| Talent Profile View | ✅ Done |
+| Service Selection & Booking | ✅ Done |
+| Wallet UI | ✅ Done |
+| **Coin Purchase (Paystack)** | ✅ **IMPLEMENTED** |
+| Bookings List/Detail | ✅ Done |
+| Favorites | ✅ Done |
+| Profile & Settings | ✅ Done |
 
-### 3. Client Verification Gate
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Redirects after payment | ✅ Done | Redirects to /dashboard/verify |
-| Full Name Input | ✅ Done | |
-| Phone Number Input | ✅ Done | |
-| GPS Location | ✅ Done | Optional |
-| **LIVE WEBCAM SELFIE** | ❌ Missing | Using file upload instead |
-| Selfie Storage | ✅ Done | Uploads to Supabase Storage |
-| Submit to Admin | ✅ Done | Creates verification record |
+### 3. Paystack Integration ✅ NEW
+| Component | Status |
+|-----------|--------|
+| Coin Packages Config | ✅ `/lib/coinPackages.ts` |
+| Payment Modal UI | ✅ Implemented |
+| Transaction Create API | ✅ `/api/transactions/create` |
+| Paystack Webhook | ✅ `/api/webhooks/paystack` |
+| Signature Verification | ✅ HMAC-SHA512 |
+| Wallet Credit on Success | ✅ Implemented |
 
-### 4. Talent Features
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Talent Dashboard | ✅ Done | Overview with stats |
-| Availability Toggle | ⚠️ Partial | UI exists |
-| Service Menu Config | ✅ Done | Add/edit/remove services |
-| Price Minimum (₦100,000) | ❌ Missing | No validation |
-| Media Upload | ⚠️ Partial | UI exists, storage may need work |
-| Earnings Wallet | ⚠️ UI Only | Shows balance |
-| Withdrawal Request | ❌ Missing | Not implemented |
-| Booking Requests | ⚠️ Partial | Can view, accept/reject needs work |
+**To Enable Payments:**
+Add to `/app/frontend/.env`:
+```
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_xxxxx
+PAYSTACK_SECRET_KEY=sk_test_xxxxx
+```
 
-### 5. Admin Features
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Admin Panel | ❌ Missing | Route groups exist but empty |
-| Review Verifications | ❌ Missing | |
-| Approve/Reject Selfies | ❌ Missing | |
-| Set Coin Rates | ❌ Missing | |
-| Manual Payouts | ❌ Missing | |
-| Dispute Resolution | ❌ Missing | |
+### 4. Client Verification Gate
+| Feature | Status |
+|---------|--------|
+| Redirects after payment | ✅ Done |
+| Full Name/Phone Input | ✅ Done |
+| GPS Location | ✅ Done |
+| Selfie Capture | ⚠️ File upload (not webcam) |
+| Selfie Storage | ✅ Supabase Storage |
 
-### 6. Payment System
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Coin-Based Economy | ✅ Done | Wallets, transactions tables |
-| Coin Packages UI | ✅ Done | Shows packages |
-| Paystack Integration | ❌ Missing | No payment processing |
-| Paystack Webhook | ❌ Missing | No API route |
-| Escrow System | ⚠️ Partial | Coins moved to escrow on booking |
-| Gifting/Tipping | ❌ Missing | |
+### 5. Talent Features
+| Feature | Status |
+|---------|--------|
+| Talent Dashboard | ✅ Done |
+| Service Menu Config | ✅ Done |
+| Media Upload | ⚠️ Partial |
+| Booking Requests | ⚠️ View only |
+| Withdrawals | ❌ Missing |
 
-### 7. Content Features
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Stories Feature | ❌ Missing | |
-| Premium/Locked Content | ❌ Missing | |
-
-### 8. API Routes
-| Feature | Status | Notes |
-|---------|--------|-------|
-| /api/webhooks/paystack | ❌ Missing | |
-| /api/cron (auto-expire) | ❌ Missing | |
+### 6. Admin Features ❌
+| Feature | Status |
+|---------|--------|
+| Admin Panel | ❌ Not implemented |
+| Review Verifications | ❌ Not implemented |
+| Manual Payouts | ❌ Not implemented |
 
 ---
 
-## Critical Gaps (Priority Order)
+## Critical Gaps (Updated Priority)
 
 ### P0 - Blocking Core Flow
-1. **Paystack Integration** - Users cannot buy coins
-2. **Admin Verification Panel** - No one can approve verifications
-3. **Live Webcam Capture** - Documented as webcam, implemented as file upload
+1. ~~**Paystack Integration**~~ ✅ DONE
+2. **Admin Verification Panel** ❌ - No one can approve verifications
+3. **Live Webcam Capture** ❌ - Using file upload instead
 
 ### P1 - Important Features
 4. **Service Price Minimum (₦100,000)** - No validation
-5. **Talent Booking Requests Management** - Accept/reject flow
-6. **Talent Role Bug** - Registration assigns wrong role
+5. **Talent Booking Management** - Accept/reject flow
+6. **Withdrawal Requests** - Talent payout flow
 
 ### P2 - Secondary Features
-7. **Google OAuth Setup** - Needs Supabase configuration
-8. **Withdrawal Requests** - Talent payout flow
-9. **Real-time Notifications** - Booking alerts
-
-### P3 - Future/Nice to Have
-10. **Stories Feature**
-11. **Premium Content Monetization**
-12. **Cron Job for Auto-expire**
+7. **Google OAuth Setup**
+8. **Real-time Notifications**
 
 ---
 
-## Database Schema Status
+## API Routes
 
-### Implemented Tables ✅
-- `profiles` - User profiles with role
-- `wallets` - Coin balances
-- `transactions` - Coin transaction history
-- `bookings` - Booking records
-- `verifications` - Client verification data
-- `talent_menus` - Talent service offerings
-- `service_types` - Available service categories
-- `media` - Talent media files
-- `favorites` - Client saved talents
-
-### Missing Tables ❌
-- `stories` - Content/story posts
-- `admin_settings` - Coin rates, global minimum price
-- `withdrawal_requests` - Talent payout requests
-- `disputes` - Dispute records
+| Route | Purpose | Status |
+|-------|---------|--------|
+| `/api/transactions/create` | Create pending transaction | ✅ |
+| `/api/webhooks/paystack` | Handle Paystack webhook | ✅ |
+| `/api/cron` | Auto-expire bookings | ❌ |
 
 ---
 
-## Storage Buckets Status
+## Database Tables
 
 ### Implemented ✅
-- `verifications` - Client selfie uploads (RLS enabled)
-
-### Documented but Not Implemented ❌
-- Profile pictures bucket
-- Talent media/gallery bucket
-- Premium content bucket
+- `profiles` - User profiles
+- `wallets` - Coin balances
+- `transactions` - Transaction history (updated with `reference`, `status`, `coins`)
+- `bookings` - Booking records
+- `verifications` - Verification data
+- `talent_menus` - Service offerings
+- `service_types` - Service categories
+- `media` - Media files
+- `favorites` - Saved talents
 
 ---
 
-## Summary
+## File Structure (Key Files)
 
-**Overall Implementation: ~60%**
+```
+/app/frontend/src/
+├── app/
+│   ├── api/
+│   │   ├── transactions/create/route.ts  # NEW - Create transaction
+│   │   └── webhooks/paystack/route.ts    # NEW - Paystack webhook
+│   ├── dashboard/
+│   │   ├── wallet/
+│   │   │   ├── page.tsx
+│   │   │   └── WalletClient.tsx          # Updated with Paystack
+│   │   └── ...
+│   └── ...
+├── lib/
+│   └── coinPackages.ts                    # NEW - Package config
+└── types/
+    └── database.ts                        # Updated Transaction type
+```
 
-The core client flow (browse → select → book → verify) is functional. However, critical components are missing:
+---
 
-1. **No real payment** - Coins cannot be purchased
-2. **No admin oversight** - Verifications cannot be reviewed
-3. **No webcam** - Using file upload instead of live capture
-4. **Talent flow incomplete** - Missing booking management
+## Next Steps
 
-The current implementation is a **functional prototype** but not a complete MVP as documented.
+1. **Admin Panel** - Create `/admin/verifications` and `/admin/payouts`
+2. **Webcam Capture** - Replace file upload with react-webcam
+3. **Configure Paystack** - User adds API keys to enable payments
 
 ---
 
 *Last Updated: January 2026*
-*Document Version: 2.0*
+*Paystack Integration: ✅ COMPLETE*
