@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { List, X, Coin, CaretDown, User, SignOut, House, Heart, CalendarCheck, Wallet, Gear } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { NotificationBell } from '@/components/NotificationBell'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface AppHeaderProps {
