@@ -125,6 +125,30 @@ export interface WithdrawalRequest {
   created_at: string
 }
 
+export interface Conversation {
+  id: string
+  participant_1: string
+  participant_2: string
+  booking_id: string | null
+  last_message_at: string
+  created_at: string
+  // Joined data
+  other_user?: Profile
+  last_message?: Message
+  unread_count?: number
+}
+
+export interface Message {
+  id: string
+  conversation_id: string
+  sender_id: string
+  content: string
+  is_read: boolean
+  created_at: string
+  // Joined data
+  sender?: Profile
+}
+
 // API Response types
 export interface TalentWithMenu extends Profile {
   menu: TalentMenu[]
