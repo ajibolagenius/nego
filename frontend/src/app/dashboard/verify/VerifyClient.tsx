@@ -83,9 +83,28 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
     setError(null)
 
     try {
-      // For now, store selfie as base64 data URL since storage bucket may not exist
-      // In production, you'd create the storage bucket in Supabase dashboard
-      const selfieUrl = selfiePreview || ''
+      // Upload selfie to Supabase Storage
+      const fileExt = selfieFile.name.split('.').pop()
+      const fileName = `${user.id}/${booking.id}_${Date.now()}.${fileExt}`
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('verifications')
+        .upload(fileName, selfieFile, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        throw new Error('Failed to upload selfie image')
+      }
+
+      // Get the public URL for the uploaded file
+      const { data: urlData } = supabase.storage
+        .from('verifications')
+        .getPublicUrl(fileName)
+
+      const selfieUrl = urlData.publicUrl
 
       // Create verification record
       const { error: verifyError } = await supabase
