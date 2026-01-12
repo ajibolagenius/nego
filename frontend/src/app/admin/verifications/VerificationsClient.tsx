@@ -85,7 +85,7 @@ export function VerificationsClient({ verifications }: VerificationsClientProps)
           status: 'approved',
           admin_notes: adminNotes || null,
         })
-        .eq('id', verification.id)
+        .eq('booking_id', verification.booking_id)
 
       if (verifyError) throw verifyError
 
@@ -125,7 +125,7 @@ export function VerificationsClient({ verifications }: VerificationsClientProps)
           status: 'rejected',
           admin_notes: adminNotes,
         })
-        .eq('id', verification.id)
+        .eq('booking_id', verification.booking_id)
 
       if (verifyError) throw verifyError
 
