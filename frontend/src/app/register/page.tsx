@@ -210,26 +210,17 @@ export default function RegisterPage() {
                     <input
                       type="email"
                       value={email}
-                      onChange={(e) => !isGoogleAuth && setEmail(e.target.value)}
+                      onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
                       required
-                      readOnly={isGoogleAuth}
-                      className={`w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors ${isGoogleAuth ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors"
                     />
                   </div>
-                  {isGoogleAuth && (
-                    <p className="text-white/40 text-xs mt-1">Email verified by Google</p>
-                  )}
                 </div>
 
                 {/* Password */}
                 <div>
-                  <label className="block text-white/70 text-sm mb-2">
-                    {isGoogleAuth ? 'Create a Password' : 'Password'}
-                  </label>
-                  <p className="text-white/40 text-xs mb-2">
-                    {isGoogleAuth ? 'This lets you sign in with email too' : ''}
-                  </p>
+                  <label className="block text-white/70 text-sm mb-2">Password</label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
                     <input
@@ -247,6 +238,7 @@ export default function RegisterPage() {
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
                     >
                       {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+                    </button>
                     </button>
                   </div>
                 </div>
