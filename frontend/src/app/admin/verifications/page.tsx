@@ -13,7 +13,14 @@ export default async function VerificationsPage() {
   const { data: verifications } = await supabase
     .from('verifications')
     .select(`
-      *,
+      booking_id,
+      selfie_url,
+      full_name,
+      phone,
+      gps_coords,
+      status,
+      admin_notes,
+      created_at,
       booking:bookings (
         id,
         total_price,
@@ -33,5 +40,11 @@ export default async function VerificationsPage() {
     `)
     .order('created_at', { ascending: false })
 
-  return <VerificationsClient verifications={verifications || []} />
+  // Transform data to include id field (use booking_id as id)
+  const transformedVerifications = (verifications || []).map(v => ({
+    ...v,
+    id: v.booking_id, // Use booking_id as unique identifier
+  }))
+
+  return <VerificationsClient verifications={transformedVerifications} />
 }
