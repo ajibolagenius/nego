@@ -275,7 +275,7 @@ export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
 
         {/* Mobile Menu */}
         <div className={`md:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-xl border-b border-white/5 transition-all duration-500 ${
-          isMenuOpen ? 'opacity-100 translate-y-0 max-h-[80vh]' : 'opacity-0 -translate-y-4 max-h-0 overflow-hidden'
+          isMenuOpen ? 'opacity-100 translate-y-0 max-h-[85vh] overflow-y-auto' : 'opacity-0 -translate-y-4 max-h-0 overflow-hidden'
         }`}>
           <nav className="flex flex-col py-4">
             {isLandingPage && !user ? (
@@ -296,40 +296,67 @@ export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
                 ))}
               </>
             ) : user ? (
-              // Authenticated mobile nav
-              authNavLinks.map((link, index) => (
+              // Authenticated mobile nav - Full navigation
+              <>
+                {authNavLinks.map((link, index) => (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center gap-3 px-6 py-3 transition-all duration-300 ${
+                      pathname === link.href ? 'text-white bg-[#df2531]/10 border-l-2 border-[#df2531]' : 'text-white/70 hover:text-white hover:bg-white/5'
+                    }`}
+                    style={{ transitionDelay: `${index * 50}ms` }}
+                  >
+                    <link.icon size={20} weight={pathname === link.href ? 'fill' : 'regular'} />
+                    {link.name}
+                  </Link>
+                ))}
+                
+                {/* Divider */}
+                <div className="my-3 mx-6 border-t border-white/10" />
+                
+                {/* Profile & Settings */}
                 <Link
-                  key={link.name}
-                  href={link.href}
+                  href="/dashboard/profile"
                   onClick={() => setIsMenuOpen(false)}
-                  className={`flex items-center gap-3 px-6 py-3 transition-all duration-300 ${
-                    pathname === link.href ? 'text-white bg-white/5' : 'text-white/70 hover:text-white hover:bg-white/5'
+                  className={`flex items-center gap-3 px-6 py-3 transition-colors ${
+                    pathname === '/dashboard/profile' ? 'text-white bg-[#df2531]/10 border-l-2 border-[#df2531]' : 'text-white/70 hover:text-white hover:bg-white/5'
                   }`}
-                  style={{ transitionDelay: `${index * 75}ms` }}
                 >
-                  <link.icon size={18} />
-                  {link.name}
+                  <User size={20} weight={pathname === '/dashboard/profile' ? 'fill' : 'regular'} />
+                  Profile
                 </Link>
-              ))
+                <Link
+                  href="/dashboard/settings"
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`flex items-center gap-3 px-6 py-3 transition-colors ${
+                    pathname === '/dashboard/settings' ? 'text-white bg-[#df2531]/10 border-l-2 border-[#df2531]' : 'text-white/70 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Gear size={20} weight={pathname === '/dashboard/settings' ? 'fill' : 'regular'} />
+                  Settings
+                </Link>
+              </>
             ) : null}
 
             {/* Auth links for mobile */}
-            <div className="px-6 py-3 mt-2 border-t border-white/10 space-y-3">
+            <div className="px-6 py-4 mt-2 border-t border-white/10 space-y-3">
               {user ? (
                 <>
                   <Link 
                     href="/dashboard/wallet" 
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-2 text-[#df2531]"
+                    className="flex items-center gap-2 text-[#df2531] font-medium"
                   >
-                    <Coin size={18} weight="duotone" />
+                    <Coin size={20} weight="duotone" />
                     Buy Tokens
                   </Link>
                   <button 
                     onClick={() => { setIsMenuOpen(false); handleLogout(); }}
-                    className="flex items-center gap-2 text-white/70 hover:text-red-400"
+                    className="flex items-center gap-2 text-white/70 hover:text-red-400 transition-colors"
                   >
-                    <SignOut size={18} />
+                    <SignOut size={20} />
                     Logout
                   </button>
                 </>
@@ -338,21 +365,21 @@ export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
                   <Link 
                     href="/login" 
                     onClick={() => setIsMenuOpen(false)}
-                    className="block text-white/70 hover:text-white"
+                    className="block text-white/70 hover:text-white py-2"
                   >
                     Login
                   </Link>
                   <Link 
                     href="/register" 
                     onClick={() => setIsMenuOpen(false)}
-                    className="block text-[#df2531]"
+                    className="block text-[#df2531] font-medium py-2"
                   >
                     Register
                   </Link>
                   <Link 
                     href="/dashboard/wallet" 
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-2 text-white/70 hover:text-white"
+                    className="flex items-center gap-2 text-white/70 hover:text-white py-2"
                   >
                     <Coin size={18} weight="duotone" className="text-[#df2531]" />
                     Buy Tokens
