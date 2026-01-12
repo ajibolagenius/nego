@@ -6,11 +6,12 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { 
   House, User, Wallet, CalendarCheck, Heart, Gear, SignOut, 
-  MagnifyingGlass, Bell, Coin, ArrowRight, SpinnerGap, MapPin,
+  MagnifyingGlass, Coin, ArrowRight, SpinnerGap, MapPin,
   Plus, CaretRight, Briefcase
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { NotificationBell } from '@/components/NotificationBell'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet as WalletType } from '@/types/database'
 
