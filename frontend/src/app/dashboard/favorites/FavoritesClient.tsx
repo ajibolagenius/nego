@@ -198,5 +198,7 @@ export function FavoritesClient({ user, profile, talents }: FavoritesClientProps
         )}
       </div>
     </div>
+    <MobileBottomNav userRole={userRole} />
+    </>
   )
 }
