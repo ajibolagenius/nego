@@ -269,6 +269,7 @@ export function TalentDashboardClient({
     { id: 'services', label: 'Services', icon: CurrencyDollar },
     { id: 'media', label: 'Gallery', icon: ImageIcon },
     { id: 'bookings', label: 'Bookings', icon: CalendarCheck },
+    { id: 'withdrawals', label: 'Withdrawals', icon: Bank },
   ]
 
   return (
