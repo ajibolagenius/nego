@@ -44,7 +44,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 - Transaction create API
 - Webhook with HMAC verification
 - Auto-credit coins on payment success
-- **Note**: Requires user to add their Paystack API keys
+- **API Keys Configured** ✅
 
 ### 4. Live Webcam Verification ✅
 - Uses `react-webcam` for live camera capture
@@ -58,9 +58,11 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 ### 5. Talent Features ✅
 - Talent Dashboard with stats
 - Service Menu Management
+- **Service Price Minimum Validation** (₦100,000) ✅ NEW
 - Media Upload UI
 - Booking view with Action Required badges
-- **Booking Accept/Reject Flow** ✅ NEW
+- **Booking Accept/Reject Flow** ✅
+- **Withdrawals Tab** with withdrawal request form ✅ NEW
 
 ### 6. Admin Panel ✅
 | Route | Feature | Status |
@@ -69,12 +71,22 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 | `/admin/verifications` | Review client selfies | ✅ |
 | `/admin/payouts` | Manage talent earnings | ✅ |
 
-### 7. Talent Booking Accept/Reject Flow ✅ NEW (December 2025)
-- Talents can **Accept** booking requests (moves to `confirmed` status)
-- Talents can **Decline** booking requests with optional reason
-- Talents can **Mark as Completed** after the session
-- **Action Required** badge on pending bookings in Talent Dashboard
-- Pending Action Alert shows count of bookings needing response
+### 7. Push Notifications ✅ NEW (December 2025)
+- **NotificationBell component** in header for authenticated users
+- Real-time Supabase subscription for instant notifications
+- Browser push notification permission request
+- Notification types: booking_request, booking_accepted, booking_rejected, etc.
+- Mark as read functionality
+- Notification dropdown with history
+- **Requires**: Run `supabase_notifications_withdrawals.sql` to create tables
+
+### 8. Withdrawal System ✅ NEW (December 2025)
+- Talents can request withdrawals from the Withdrawals tab
+- Bank details form (Bank name, Account number, Account name)
+- Minimum withdrawal: 10,000 coins
+- Supported banks: Access, First Bank, GTBank, UBA, Zenith, Kuda, Opay, Palmpay
+- Admin can process withdrawals from `/admin/payouts`
+- **Requires**: Run `supabase_notifications_withdrawals.sql` to create tables
 
 ---
 
@@ -85,7 +97,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 /login                   # Login (redirects by role)
 /register                # Register with role selection
 
-/dashboard               # Client dashboard
+/dashboard               # Client dashboard (with notification bell)
 /dashboard/browse        # Browse talents
 /dashboard/bookings      # Bookings list
 /dashboard/bookings/[id] # Booking detail (+ talent accept/reject)
@@ -94,13 +106,13 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 /dashboard/profile       # Profile settings
 /dashboard/settings      # Account settings
 /dashboard/verify        # Webcam verification gate
-/dashboard/talent        # Talent dashboard
+/dashboard/talent        # Talent dashboard (5 tabs incl. Withdrawals)
 
 /talent/[id]             # Talent profile
 
 /admin                   # Admin dashboard
 /admin/verifications     # Review verifications
-/admin/payouts           # Manage payouts
+/admin/payouts           # Manage payouts + withdrawals
 
 /api/transactions/create # Create transaction
 /api/webhooks/paystack   # Paystack webhook
@@ -114,25 +126,38 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 1. Client browses talent → Books services
 2. Booking created with status: `payment_pending`
 3. Client pays with coins → Status: `verification_pending`
-4. Talent sees booking with "Action Required" badge
+4. Talent receives push notification "New Booking Request!"
 5. Talent accepts → Status: `confirmed`
    OR Talent declines → Status: `cancelled`
 6. Client completes verification (webcam selfie)
 7. Meeting happens
 8. Talent marks as completed → Status: `completed`
+9. Talent can request withdrawal from Withdrawals tab
 ```
+
+---
+
+## SQL Scripts to Run
+
+| Script | Purpose | Status |
+|--------|---------|--------|
+| `supabase_fix_trigger_v2.sql` | Fix handle_new_user() trigger for role assignment | ✅ RUN |
+| `supabase_create_admin.sql` | Helper to create admin users | Optional |
+| `supabase_notifications_withdrawals.sql` | Create notifications and withdrawal_requests tables | **RUN THIS** |
 
 ---
 
 ## Remaining Tasks
 
 ### P1 - Important
-- [ ] Service price minimum validation (₦100,000)
-- [ ] Withdrawal request processing
+- [x] Service price minimum validation (₦100,000) ✅
+- [x] Withdrawal request processing ✅
+- [x] Push notifications for booking requests ✅
 
 ### P2 - Secondary
 - [ ] Google OAuth configuration
-- [ ] Real-time notifications
+- [ ] Real-time chat between client and talent
+- [ ] Email notifications (SendGrid/Resend)
 - [ ] Cron job for auto-expire bookings
 
 ---
@@ -145,35 +170,15 @@ NEXT_PUBLIC_SUPABASE_URL=xxx
 NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
 SUPABASE_SERVICE_ROLE_KEY=xxx
 
-# Paystack (add your keys)
+# Paystack ✅ CONFIGURED
 NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_xxx
 PAYSTACK_SECRET_KEY=sk_test_xxx
 ```
 
 ---
 
-## Admin Setup
-
-To create an admin user, run this SQL in Supabase SQL Editor:
-```sql
-UPDATE profiles SET role = 'admin' 
-WHERE id = (SELECT id FROM auth.users WHERE email = 'your-email@example.com');
-```
-
----
-
-## SQL Scripts Reference
-
-| Script | Purpose |
-|--------|---------|
-| `supabase_fix_trigger_v2.sql` | Fix for handle_new_user() trigger to read role from metadata |
-| `supabase_create_admin.sql` | Helper script to create admin users |
-
----
-
 *Last Updated: December 2025*
-*Registration Fix: ✅ COMPLETE*
-*Talent Booking Accept/Reject: ✅ COMPLETE*
-*Webcam Verification: ✅ COMPLETE*
-*Paystack: ✅ COMPLETE (awaiting user API keys)*
-*Admin Panel: ✅ COMPLETE*
+*Push Notifications: ✅ COMPLETE*
+*Service Price Validation: ✅ COMPLETE*
+*Withdrawal System: ✅ COMPLETE*
+*Paystack: ✅ COMPLETE*
