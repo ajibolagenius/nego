@@ -61,10 +61,11 @@ export interface Booking {
 }
 
 export interface Verification {
+  id: string
   booking_id: string
-  selfie_url: string
-  full_name: string
-  phone: string
+  selfie_url: string | null
+  full_name: string | null
+  phone: string | null
   gps_coords: string | null
   admin_notes: string | null
   status: VerificationStatus
