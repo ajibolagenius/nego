@@ -394,5 +394,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
         </div>
       </div>
     </div>
+    <MobileBottomNav userRole={userRole} />
+    </>
   )
 }
