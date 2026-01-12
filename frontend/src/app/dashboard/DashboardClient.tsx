@@ -146,10 +146,7 @@ export function DashboardClient({ user, profile, wallet, featuredTalents = [] }:
             {/* Right side */}
             <div className="flex items-center gap-4 ml-6">
               {/* Notifications */}
-              <button className="relative w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all">
-                <Bell size={20} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#df2531] rounded-full" />
-              </button>
+              <NotificationBell userId={user.id} />
 
               {/* Wallet balance */}
               <Link 
