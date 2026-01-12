@@ -536,6 +536,53 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
           </button>
         </div>
       </div>
+
+      {/* Reject Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setShowRejectModal(false)}
+          />
+          <div className="relative bg-[#1a1a1a] rounded-2xl p-6 max-w-md w-full border border-white/10">
+            <h3 className="text-xl font-bold text-white mb-2">Decline Booking</h3>
+            <p className="text-white/60 text-sm mb-4">
+              Are you sure you want to decline this booking? The client will be notified.
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-white/70 text-sm mb-2">Reason (optional)</label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Let the client know why you're declining..."
+                className="w-full h-24 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531] resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setShowRejectModal(false)}
+                variant="ghost"
+                className="flex-1 text-white/60 hover:text-white"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleRejectBooking}
+                disabled={rejectLoading}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold"
+              >
+                {rejectLoading ? (
+                  <SpinnerGap size={20} className="animate-spin" />
+                ) : (
+                  'Decline Booking'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
