@@ -193,7 +193,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
           </div>
 
           {/* Notifications List */}
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-8 text-center">
                 <Bell size={32} className="text-white/20 mx-auto mb-2" />
