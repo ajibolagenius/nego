@@ -33,7 +33,7 @@ export default async function TalentProfilePage({ params }: PageProps) {
     redirect('/login')
   }
 
-  // Fetch talent profile
+  // Fetch talent profile with reviews
   const { data: talent, error } = await supabase
     .from('profiles')
     .select(`
@@ -65,6 +65,25 @@ export default async function TalentProfilePage({ params }: PageProps) {
     notFound()
   }
 
+  // Fetch reviews for this talent
+  const { data: reviews } = await supabase
+    .from('reviews')
+    .select(`
+      *,
+      client:profiles!reviews_client_id_fkey(id, display_name, avatar_url)
+    `)
+    .eq('talent_id', id)
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  // Calculate average rating
+  let averageRating = 0
+  let reviewCount = 0
+  if (reviews && reviews.length > 0) {
+    reviewCount = reviews.length
+    averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+  }
+
   // Fetch current user's profile and wallet
   const { data: currentUserProfile } = await supabase
     .from('profiles')
@@ -80,7 +99,12 @@ export default async function TalentProfilePage({ params }: PageProps) {
 
   return (
     <TalentProfileClient 
-      talent={talent} 
+      talent={{
+        ...talent,
+        reviews: reviews || [],
+        average_rating: averageRating,
+        review_count: reviewCount
+      }} 
       currentUser={currentUserProfile}
       wallet={wallet}
       userId={user.id}
