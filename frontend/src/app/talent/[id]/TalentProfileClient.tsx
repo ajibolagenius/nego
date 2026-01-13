@@ -349,6 +349,55 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
           </div>
         )}
 
+        {/* Reviews Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <ChatCircle size={24} weight="duotone" className="text-[#df2531]" />
+              Reviews
+            </h2>
+            {talent.review_count && talent.review_count > 0 && (
+              <span className="text-white/50 text-sm">{talent.review_count} total</span>
+            )}
+          </div>
+
+          {/* Review Summary */}
+          {talent.review_count && talent.review_count > 0 ? (
+            <>
+              <ReviewSummary
+                averageRating={talent.average_rating || 0}
+                totalReviews={talent.review_count || 0}
+              />
+
+              {/* Review List */}
+              {talent.reviews && talent.reviews.length > 0 && (
+                <div className="mt-4 space-y-4">
+                  {talent.reviews.slice(0, 5).map((review) => (
+                    <ReviewCard
+                      key={review.id}
+                      review={review}
+                      currentUserId={userId}
+                      isTalentOwner={userId === talent.id}
+                    />
+                  ))}
+                  
+                  {talent.reviews.length > 5 && (
+                    <button className="w-full py-3 text-center text-[#df2531] hover:text-[#c41f2a] text-sm font-medium transition-colors">
+                      View all {talent.review_count} reviews
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-8 rounded-2xl bg-white/5 border border-white/10">
+              <Star size={32} weight="duotone" className="text-white/20 mx-auto mb-2" />
+              <p className="text-white/50">No reviews yet</p>
+              <p className="text-white/30 text-sm">Be the first to leave a review!</p>
+            </div>
+          )}
+        </div>
+
         {/* Booking Summary - Fixed Bottom */}
         {selectedServices.length > 0 && (
           <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 p-4 z-50">
