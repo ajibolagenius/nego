@@ -114,28 +114,29 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 ## Routes Structure
 
 ```
-/                        # Landing page
+/                        # Landing page (with talent carousel)
 /login                   # Login (redirects by role)
 /register                # Register with role selection
 /auth/callback           # OAuth callback (Supabase)
 
-/dashboard               # Client dashboard (with notification bell)
-/dashboard/browse        # Browse talents
-/dashboard/bookings      # Bookings list
+/dashboard               # Client dashboard (with notification bell + onboarding)
+/dashboard/browse        # Browse talents (+ MobileBottomNav)
+/dashboard/bookings      # Bookings list (+ MobileBottomNav)
 /dashboard/bookings/[id] # Booking detail (+ talent accept/reject)
-/dashboard/messages      # Real-time chat ✅ NEW
-/dashboard/wallet        # Wallet + Paystack
-/dashboard/favorites     # Saved talents
-/dashboard/profile       # Profile settings
-/dashboard/settings      # Account settings
-/dashboard/verify        # Webcam verification gate
-/dashboard/talent        # Talent dashboard (5 tabs incl. Withdrawals)
+/dashboard/messages      # Real-time chat (+ MobileBottomNav)
+/dashboard/wallet        # Wallet + Paystack (+ MobileBottomNav)
+/dashboard/favorites     # Saved talents (+ MobileBottomNav)
+/dashboard/profile       # Profile settings (+ MobileBottomNav)
+/dashboard/settings      # Account settings (+ MobileBottomNav)
+/dashboard/verify        # Webcam verification gate (+ MobileBottomNav)
+/dashboard/talent        # Talent dashboard (5 tabs incl. Withdrawals + MobileBottomNav)
 
 /talent/[id]             # Talent profile
 
-/admin                   # Admin dashboard
-/admin/verifications     # Review verifications
-/admin/payouts           # Manage payouts + withdrawals
+/admin                   # Admin dashboard (mobile responsive + AdminMobileNav)
+/admin/verifications     # Review verifications (mobile responsive)
+/admin/payouts           # Manage payouts + withdrawals (mobile responsive)
+/admin/analytics         # Analytics & Reporting ✅ NEW
 
 /api/transactions/create # Create transaction
 /api/webhooks/paystack   # Paystack webhook
