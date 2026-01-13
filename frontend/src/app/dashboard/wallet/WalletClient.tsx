@@ -475,5 +475,7 @@ export function WalletClient({ user, profile, wallet, transactions }: WalletClie
         </div>
       </div>
     </div>
+    <MobileBottomNav userRole={profile?.role === 'talent' ? 'talent' : 'client'} />
+    </>
   )
 }
