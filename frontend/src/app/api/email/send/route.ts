@@ -13,10 +13,10 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { type, data } = body
+    const { type, to, data } = body
 
     let template
-    let recipientEmail
+    let recipientEmail = to
 
     switch (type) {
       case 'welcome':
@@ -43,9 +43,28 @@ export async function POST(request: Request) {
           data.bookingId
         )
         break
+
+      case 'review_received':
+        recipientEmail = to
+        template = emailTemplates.reviewReceived(
+          data.talentName,
+          data.clientName,
+          data.rating,
+          data.comment
+        )
+        break
+
+      case 'admin_digest':
+        recipientEmail = to
+        template = emailTemplates.adminDigest(data)
+        break
         
       default:
         return NextResponse.json({ error: 'Invalid email type' }, { status: 400 })
+    }
+
+    if (!recipientEmail) {
+      return NextResponse.json({ error: 'No recipient email provided' }, { status: 400 })
     }
 
     const result = await sendEmail(recipientEmail, template)
