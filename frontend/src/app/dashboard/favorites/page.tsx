@@ -16,28 +16,19 @@ export default async function FavoritesPage() {
     redirect('/login')
   }
 
-  // Fetch user profile
+  // Fetch user profile to get role
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*')
+    .select('role')
     .eq('id', user.id)
     .single()
 
-  // For now, favorites will be stored in localStorage on the client
-  // In production, you'd have a favorites table in the database
-  
-  // Fetch all talents for now (we'll filter on client side based on favorites)
-  const { data: talents } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('role', 'talent')
-    .order('display_name', { ascending: true })
+  const userRole = profile?.role === 'talent' ? 'talent' : 'client'
 
   return (
     <FavoritesClient 
-      user={user} 
-      profile={profile} 
-      talents={talents || []}
+      userId={user.id}
+      userRole={userRole}
     />
   )
 }
