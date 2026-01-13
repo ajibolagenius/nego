@@ -289,7 +289,7 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 ---
 
 *Last Updated: December 2025*
-*All SQL Scripts: ✅ RUN*
+*All SQL Scripts: ✅ RUN (except supabase_reviews.sql - needs to be run)*
 *Google OAuth: ✅ CONFIGURED*
 *Paystack: ✅ CONFIGURED*
 *Resend Email: ✅ CONFIGURED*
@@ -299,3 +299,6 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 *Withdrawals: ✅ COMPLETE*
 *Admin Mobile: ✅ COMPLETE*
 *Analytics: ✅ COMPLETE*
+*Profile Image Upload: ✅ COMPLETE*
+*Auto-expire Bookings: ✅ COMPLETE*
+*Reviews System: ✅ COMPLETE*
