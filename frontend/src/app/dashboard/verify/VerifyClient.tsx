@@ -11,6 +11,7 @@ import {
   Sparkle, Lock, Info, VideoCamera, ArrowCounterClockwise
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Booking, Verification } from '@/types/database'
 
