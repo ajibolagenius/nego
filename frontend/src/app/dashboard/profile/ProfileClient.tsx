@@ -111,18 +111,12 @@ export function ProfileClient({ user, profile, wallet, bookingCount }: ProfileCl
         {/* Avatar & Name Section */}
         <div className="flex flex-col items-center text-center">
           <div className="relative mb-4">
-            <div className="w-28 h-28 rounded-full bg-white/10 overflow-hidden border-4 border-[#df2531]/30">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt={displayName} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <User size={48} weight="duotone" className="text-white/40" />
-                </div>
-              )}
-            </div>
-            <button className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-[#df2531] flex items-center justify-center text-white hover:bg-[#c41f2a] transition-colors border-4 border-black">
-              <Camera size={18} />
-            </button>
+            <ProfileImageUpload
+              userId={user.id}
+              currentImageUrl={avatarUrl}
+              displayName={displayName}
+              onUploadComplete={handleImageUpload}
+            />
           </div>
           
           {isEditing ? (
