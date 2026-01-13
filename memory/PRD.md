@@ -196,12 +196,52 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 - [x] Analytics & Reporting Dashboard ✅ NEW (December 2025)
 
 ### P3 - Future / Backlog
+- [x] Profile Image Upload ✅ NEW (December 2025)
+- [x] Auto-expire Bookings ✅ NEW (December 2025)
+- [x] Reviews and Ratings System ✅ NEW (December 2025)
 - [ ] Live Video Calls (Daily.co/Twilio integration)
-- [ ] Profile Image Upload
-- [ ] Auto-expire Bookings (cron job)
 - [ ] Admin Email Digest
-- [ ] Reviews and Ratings System
 - [ ] Forgot password flow
+
+---
+
+## New Features (December 2025)
+
+### Profile Image Upload
+- New `ProfileImageUpload` component at `/app/frontend/src/components/ProfileImageUpload.tsx`
+- Drag & drop or click to upload
+- Image preview before saving
+- Max file size: 5MB
+- Uses Supabase Storage (`avatars` or `profiles` bucket)
+- Updates `profiles.avatar_url` on successful upload
+
+### Auto-expire Bookings API
+- New API route at `/api/bookings/expire`
+- Expiration rules:
+  - `payment_pending` bookings expire after 1 hour
+  - `pending` bookings expire after 24 hours
+- Automatic actions on expiry:
+  - Updates booking status to `expired`
+  - Refunds coins from escrow if applicable
+  - Creates notification for client
+- Can be called by cron job or external scheduler
+- Optional `CRON_SECRET` for security
+
+### Reviews & Ratings System
+- New `reviews` table in Supabase (run `supabase_reviews.sql`)
+- Schema: `{id, booking_id, client_id, talent_id, rating (1-5), comment, talent_response, talent_responded_at, created_at}`
+- Components:
+  - `ReviewCard` - Display individual review with talent response
+  - `ReviewSummary` - Rating summary with distribution chart
+  - `WriteReviewModal` - Modal for clients to write reviews
+- Features:
+  - Clients can review after booking is completed
+  - Talents can respond to reviews
+  - Average rating displayed on talent profiles
+  - Rating distribution visualization
+- Integration:
+  - Talent profile page shows reviews section
+  - Booking detail page shows "Write Review" button for completed bookings
 
 ---
 
