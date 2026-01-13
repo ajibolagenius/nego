@@ -11,6 +11,7 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { ProfileImageUpload } from '@/components/ProfileImageUpload'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet } from '@/types/database'
 
