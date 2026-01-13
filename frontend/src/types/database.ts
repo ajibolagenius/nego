@@ -149,8 +149,30 @@ export interface Message {
   sender?: Profile
 }
 
+export interface Review {
+  id: string
+  booking_id: string
+  client_id: string
+  talent_id: string
+  rating: number // 1-5
+  comment: string | null
+  talent_response: string | null
+  talent_responded_at: string | null
+  created_at: string
+  // Joined data
+  client?: Profile
+  talent?: Profile
+  booking?: Booking
+}
+
 // API Response types
 export interface TalentWithMenu extends Profile {
   menu: TalentMenu[]
   media: Media[]
+}
+
+export interface TalentWithReviews extends Profile {
+  reviews: Review[]
+  average_rating: number
+  review_count: number
 }
