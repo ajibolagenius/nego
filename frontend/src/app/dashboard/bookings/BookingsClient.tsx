@@ -78,7 +78,8 @@ export function BookingsClient({ user, profile, bookings, isClient }: BookingsCl
   ]
 
   return (
-    <div className="min-h-screen bg-black pt-16 lg:pt-0">
+    <>
+    <div className="min-h-screen bg-black pt-16 lg:pt-0 pb-20 lg:pb-0">
       {/* Header */}
       <header className="sticky top-16 lg:top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-4xl mx-auto px-4 py-4">
