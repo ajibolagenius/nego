@@ -73,7 +73,8 @@ export function BrowseClient({ talents, serviceTypes }: BrowseClientProps) {
   }
 
   return (
-    <div className="min-h-screen bg-black pt-16 lg:pt-0">
+    <>
+    <div className="min-h-screen bg-black pt-16 lg:pt-0 pb-20 lg:pb-0">
       {/* Header */}
       <header className="sticky top-16 lg:top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
