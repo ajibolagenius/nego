@@ -41,5 +41,5 @@ export default async function BrowsePage() {
     .select('*')
     .eq('is_active', true)
 
-  return <BrowseClient talents={talents || []} serviceTypes={serviceTypes || []} />
+  return <BrowseClient talents={talents || []} serviceTypes={serviceTypes || []} userId={user.id} />
 }
