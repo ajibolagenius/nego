@@ -11,6 +11,7 @@ import {
   Camera, MapPin, Sparkle, Receipt, ChartLine, Icon, Bank, Money
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet, ServiceType, Booking } from '@/types/database'
 
