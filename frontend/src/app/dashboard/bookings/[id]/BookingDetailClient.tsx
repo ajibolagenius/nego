@@ -26,6 +26,7 @@ interface BookingWithTalent {
   created_at: string
   talent: Pick<Profile, 'id' | 'display_name' | 'avatar_url' | 'location'>
   client?: Pick<Profile, 'id' | 'display_name' | 'avatar_url' | 'location'> | null
+  review?: Review | null
 }
 
 interface BookingDetailClientProps {
@@ -40,6 +41,7 @@ const statusConfig: Record<BookingStatus, { label: string; color: string; icon: 
   confirmed: { label: 'Confirmed', color: 'text-green-400 bg-green-500/10 border-green-500/30', icon: CheckCircle },
   completed: { label: 'Completed', color: 'text-white/60 bg-white/5 border-white/10', icon: CheckCircle },
   cancelled: { label: 'Cancelled', color: 'text-red-400 bg-red-500/10 border-red-500/30', icon: WarningCircle },
+  expired: { label: 'Expired', color: 'text-gray-400 bg-gray-500/10 border-gray-500/30', icon: Hourglass },
 }
 
 export function BookingDetailClient({ booking, wallet, userId }: BookingDetailClientProps) {
@@ -49,10 +51,12 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
   const [error, setError] = useState('')
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [hasReviewed, setHasReviewed] = useState(!!booking.review)
 
   const isClient = booking.client_id === userId
   const isTalent = booking.talent_id === userId
-  const status = statusConfig[booking.status]
+  const status = statusConfig[booking.status] || statusConfig.cancelled
   const StatusIcon = status.icon
 
   const formatPrice = (price: number) => {
