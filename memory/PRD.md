@@ -140,7 +140,12 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 
 /api/transactions/create # Create transaction
 /api/webhooks/paystack   # Paystack webhook
-/api/email/send          # Send transactional emails ✅ NEW
+/api/email/send          # Send transactional emails
+/api/bookings/expire     # Auto-expire stale bookings (cron)
+/api/admin/digest        # Weekly admin email digest (cron)
+
+/forgot-password         # Request password reset
+/reset-password          # Set new password (from email link)
 ```
 
 ---
