@@ -247,5 +247,7 @@ export function BookingsClient({ user, profile, bookings, isClient }: BookingsCl
         )}
       </div>
     </div>
+    <MobileBottomNav userRole={profile?.role === 'talent' ? 'talent' : 'client'} />
+    </>
   )
 }
