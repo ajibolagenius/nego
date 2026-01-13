@@ -31,8 +31,14 @@ export function ProfileClient({ user, profile, wallet, bookingCount }: ProfileCl
   const [displayName, setDisplayName] = useState(profile?.display_name || '')
   const [location, setLocation] = useState(profile?.location || '')
   const [bio, setBio] = useState(profile?.bio || '')
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || null)
 
   const userRole = profile?.role === 'talent' ? 'talent' : 'client'
+
+  const handleImageUpload = (url: string) => {
+    setAvatarUrl(url)
+    router.refresh()
+  }
 
   const handleSave = async () => {
     setIsSaving(true)
