@@ -161,12 +161,12 @@ export function VerificationsClient({ verifications }: VerificationsClientProps)
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Verifications</h1>
-          <p className="text-white/60">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Verifications</h1>
+          <p className="text-white/60 text-sm sm:text-base">
             Review client identity verifications
             {pendingCount > 0 && (
               <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-sm">
@@ -178,12 +178,12 @@ export function VerificationsClient({ verifications }: VerificationsClientProps)
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         {(['all', 'pending', 'approved', 'rejected'] as const).map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
               filter === status
                 ? 'bg-[#df2531] text-white'
                 : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
@@ -201,15 +201,15 @@ export function VerificationsClient({ verifications }: VerificationsClientProps)
 
       {/* Verifications List */}
       {filteredVerifications.length === 0 ? (
-        <div className="text-center py-16 rounded-2xl bg-white/5 border border-white/10">
-          <CheckCircle size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
+        <div className="text-center py-12 sm:py-16 rounded-2xl bg-white/5 border border-white/10">
+          <CheckCircle size={40} weight="duotone" className="text-white/20 mx-auto mb-4 sm:w-12 sm:h-12" />
           <p className="text-white/50 mb-2">No verifications found</p>
           <p className="text-white/30 text-sm">
             {filter === 'pending' ? 'All verifications have been reviewed' : 'No verifications match this filter'}
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {filteredVerifications.map((verification) => {
             const status = statusConfig[verification.status]
             const StatusIcon = status.icon
@@ -217,10 +217,10 @@ export function VerificationsClient({ verifications }: VerificationsClientProps)
             return (
               <div
                 key={verification.id}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
               >
                 {/* Selfie Thumbnail */}
-                <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white/10 shrink-0">
+                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-white/10 shrink-0">
                   {verification.selfie_url ? (
                     <Image
                       src={verification.selfie_url}
@@ -230,14 +230,14 @@ export function VerificationsClient({ verifications }: VerificationsClientProps)
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <User size={24} className="text-white/30" />
+                      <User size={20} className="text-white/30 sm:w-6 sm:h-6" />
                     </div>
                   )}
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
                     <p className="text-white font-medium truncate">
                       {verification.full_name || verification.booking?.client?.display_name || 'Unknown'}
                     </p>
@@ -246,20 +246,20 @@ export function VerificationsClient({ verifications }: VerificationsClientProps)
                       {status.label}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 text-white/40 text-sm">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-white/40 text-xs sm:text-sm">
                     {verification.phone && (
                       <span className="flex items-center gap-1">
-                        <Phone size={14} />
+                        <Phone size={12} />
                         {verification.phone}
                       </span>
                     )}
-                    <span>Booking #{verification.booking_id.slice(0, 8)}</span>
+                    <span className="hidden sm:inline">Booking #{verification.booking_id.slice(0, 8)}</span>
                     <span>{formatDate(verification.created_at)}</span>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mt-2 sm:mt-0">
                   <Button
                     variant="outline"
                     size="sm"
@@ -267,7 +267,7 @@ export function VerificationsClient({ verifications }: VerificationsClientProps)
                       setSelectedVerification(verification)
                       setAdminNotes('')
                     }}
-                    className="border-white/20 text-white hover:bg-white/10"
+                    className="border-white/20 text-white hover:bg-white/10 w-full sm:w-auto"
                   >
                     <Eye size={16} className="mr-1" />
                     Review
