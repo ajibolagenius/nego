@@ -553,5 +553,7 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
         )}
       </div>
     </div>
+    <MobileBottomNav />
+    </>
   )
 }
