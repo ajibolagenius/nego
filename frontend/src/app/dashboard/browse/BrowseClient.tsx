@@ -209,6 +209,8 @@ export function BrowseClient({ talents, serviceTypes }: BrowseClientProps) {
         )}
       </div>
     </div>
+    <MobileBottomNav />
+    </>
   )
 }
 
