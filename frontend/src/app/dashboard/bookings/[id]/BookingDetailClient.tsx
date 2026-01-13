@@ -511,12 +511,53 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
 
         {/* Completed Status for both */}
         {booking.status === 'completed' && (
-          <div className="bg-white/5 rounded-xl p-6 border border-white/10 text-center">
-            <CheckCircle size={48} weight="fill" className="text-white/40 mx-auto mb-4" />
-            <h3 className="text-white font-bold text-lg mb-2">Booking Completed</h3>
-            <p className="text-white/60 text-sm">
-              This booking has been completed. Thank you for using Nego!
-            </p>
+          <div className="space-y-4">
+            <div className="bg-white/5 rounded-xl p-6 border border-white/10 text-center">
+              <CheckCircle size={48} weight="fill" className="text-green-400 mx-auto mb-4" />
+              <h3 className="text-white font-bold text-lg mb-2">Booking Completed</h3>
+              <p className="text-white/60 text-sm">
+                This booking has been completed. Thank you for using Nego!
+              </p>
+            </div>
+
+            {/* Review Section - Only for Clients */}
+            {isClient && (
+              <div className="bg-amber-500/5 rounded-xl p-6 border border-amber-500/10">
+                {hasReviewed ? (
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 mb-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          size={24}
+                          weight={star <= (booking.review?.rating || 0) ? 'fill' : 'regular'}
+                          className={star <= (booking.review?.rating || 0) ? 'text-amber-400' : 'text-white/20'}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-white/60 text-sm">You've already reviewed this booking</p>
+                    {booking.review?.comment && (
+                      <p className="text-white/50 text-sm mt-2 italic">"{booking.review.comment}"</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <Star size={32} weight="duotone" className="text-amber-400 mx-auto mb-3" />
+                    <h3 className="text-white font-bold mb-2">How was your experience?</h3>
+                    <p className="text-white/60 text-sm mb-4">
+                      Share your feedback to help others and support the talent.
+                    </p>
+                    <Button
+                      onClick={() => setShowReviewModal(true)}
+                      className="bg-amber-500 hover:bg-amber-600 text-black font-bold px-6 py-3 rounded-xl"
+                    >
+                      <Star size={18} weight="fill" className="mr-2" />
+                      Write a Review
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
