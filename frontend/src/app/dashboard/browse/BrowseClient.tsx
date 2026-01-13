@@ -216,8 +216,9 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
   )
 }
 
-function TalentCard({ talent, formatPrice }: { talent: TalentWithMenu; formatPrice: (p: number) => string }) {
-  const [liked, setLiked] = useState(false)
+function TalentCard({ talent, formatPrice, userId }: { talent: TalentWithMenu; formatPrice: (p: number) => string; userId: string }) {
+  const { isFavorite, toggleFavorite } = useFavorites(userId)
+  const liked = isFavorite(talent.id)
 
   const minPrice = talent.talent_menus?.length > 0
     ? Math.min(...talent.talent_menus.filter(m => m.is_active).map(m => m.price))
@@ -256,10 +257,11 @@ function TalentCard({ talent, formatPrice }: { talent: TalentWithMenu; formatPri
 
         {/* Like Button */}
         <button
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLiked(!liked) }}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(talent.id) }}
           className={`absolute top-3 right-3 w-9 h-9 rounded-full backdrop-blur-sm flex items-center justify-center transition-all ${
             liked ? 'bg-[#df2531] text-white' : 'bg-black/30 text-white hover:bg-[#df2531]'
           }`}
+          data-testid={`favorite-btn-${talent.id}`}
         >
           <Heart size={16} weight={liked ? 'fill' : 'regular'} />
         </button>
