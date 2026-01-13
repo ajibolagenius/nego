@@ -258,6 +258,20 @@ export function WriteReviewModal({ bookingId, talentId, clientId, onReviewSubmit
     try {
       const supabase = createClient()
       
+      // Get talent info for email
+      const { data: talentData } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .eq('id', talentId)
+        .single()
+
+      // Get client info for email
+      const { data: clientData } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .eq('id', clientId)
+        .single()
+      
       const { data, error: submitError } = await supabase
         .from('reviews')
         .insert({
@@ -280,6 +294,35 @@ export function WriteReviewModal({ bookingId, talentId, clientId, onReviewSubmit
           throw submitError
         }
         return
+      }
+
+      // Send email notification to talent
+      try {
+        // Get talent's email from auth
+        const { data: userData } = await supabase.auth.admin.getUserById(talentId)
+        const talentEmail = userData?.user?.email
+        
+        if (talentEmail) {
+          await fetch('/api/email/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: talentEmail,
+              subject: `New ${rating}-Star Review on Nego!`,
+              type: 'review_received',
+              data: {
+                talentName: talentData?.display_name || 'there',
+                clientName: clientData?.display_name || 'A client',
+                rating,
+                comment: comment.trim() || 'No comment provided',
+                bookingId,
+              }
+            })
+          })
+        }
+      } catch (emailError) {
+        // Don't fail the review submission if email fails
+        console.error('Failed to send review notification email:', emailError)
       }
 
       onReviewSubmit(data)
