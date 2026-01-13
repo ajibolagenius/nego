@@ -629,6 +629,21 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
           </div>
         </div>
       )}
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <WriteReviewModal
+          bookingId={booking.id}
+          talentId={booking.talent_id}
+          clientId={booking.client_id}
+          onReviewSubmit={() => {
+            setHasReviewed(true)
+            setShowReviewModal(false)
+            router.refresh()
+          }}
+          onClose={() => setShowReviewModal(false)}
+        />
+      )}
     </div>
   )
 }
