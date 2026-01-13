@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { MapPin, Heart, Eye, ArrowRight, SpinnerGap } from '@phosphor-icons/react'
+import { MapPin, Heart, Eye, ArrowRight, SpinnerGap, CaretLeft, CaretRight } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types/database'
@@ -21,7 +21,7 @@ function TalentCard({ talent, index, isVisible }: TalentCardProps) {
   return (
     <Link 
       href={`/talent/${talent.id}`}
-      className={`group relative bg-white/5 rounded-xl md:rounded-2xl overflow-hidden border border-white/5 hover:border-[#df2531]/30 transition-all duration-500 cursor-pointer ${
+      className={`group relative bg-white/5 rounded-xl md:rounded-2xl overflow-hidden border border-white/5 hover:border-[#df2531]/30 transition-all duration-500 cursor-pointer flex-shrink-0 w-[160px] sm:w-[200px] md:w-[240px] ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
       }`}
       style={{ transitionDelay: `${index * 100}ms` }}
@@ -46,25 +46,28 @@ function TalentCard({ talent, index, isVisible }: TalentCardProps) {
         <div className={`absolute top-3 right-3 flex gap-2 transition-all duration-500 ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
           <button 
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLiked(!liked); }}
-            className={`w-9 h-9 rounded-full backdrop-blur-sm flex items-center justify-center transition-all duration-300 ${
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full backdrop-blur-sm flex items-center justify-center transition-all duration-300 ${
               liked ? 'bg-[#df2531] text-white' : 'bg-black/50 text-white hover:bg-[#df2531]'
             }`}
           >
-            <Heart size={16} weight={liked ? "fill" : "duotone"} />
+            <Heart size={14} weight={liked ? "fill" : "duotone"} />
           </button>
           <button 
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white hover:text-black transition-all duration-300"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white hover:text-black transition-all duration-300"
           >
-            <Eye size={16} weight="duotone" />
+            <Eye size={14} weight="duotone" />
           </button>
         </div>
 
         {/* Bottom Content */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 transition-all duration-500">
+        <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 transition-all duration-500">
+          <p className="text-white font-medium text-sm sm:text-base truncate mb-1">
+            {talent.display_name || 'Talent'}
+          </p>
           <div className={`flex items-center gap-1.5 transition-all duration-300 ${isHovered ? 'text-[#df2531]' : 'text-white/80'}`}>
-            <MapPin size={14} weight="duotone" />
-            <span className="text-sm font-medium">{talent.location || 'Lagos'}</span>
+            <MapPin size={12} weight="duotone" />
+            <span className="text-xs sm:text-sm">{talent.location || 'Lagos'}</span>
           </div>
           
           {/* Status indicator */}
@@ -107,7 +110,10 @@ export function TalentSection() {
   const [isVisible, setIsVisible] = useState(false)
   const [talents, setTalents] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
+  const [isPaused, setIsPaused] = useState(false)
   const sectionRef = useRef<HTMLElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const scrollPositionRef = useRef(0)
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -129,16 +135,60 @@ export function TalentSection() {
           .limit(8)
         
         if (error) throw error
-        setTalents(data || mockTalents)
+        // Duplicate talents for seamless infinite scroll
+        const fetchedTalents = data && data.length > 0 ? data : mockTalents
+        setTalents([...fetchedTalents, ...fetchedTalents])
       } catch (error) {
         console.error('Failed to fetch talents:', error)
-        setTalents(mockTalents)
+        setTalents([...mockTalents, ...mockTalents])
       } finally {
         setLoading(false)
       }
     }
     fetchTalents()
   }, [])
+
+  // Auto-scroll animation
+  useEffect(() => {
+    if (loading || !scrollContainerRef.current || talents.length === 0) return
+
+    const container = scrollContainerRef.current
+    const scrollSpeed = 0.5 // pixels per frame
+    let animationFrameId: number
+
+    const animate = () => {
+      if (!isPaused && container) {
+        scrollPositionRef.current += scrollSpeed
+        
+        // Reset scroll position when reaching halfway (since we duplicated the content)
+        const halfWidth = container.scrollWidth / 2
+        if (scrollPositionRef.current >= halfWidth) {
+          scrollPositionRef.current = 0
+        }
+        
+        container.scrollLeft = scrollPositionRef.current
+      }
+      animationFrameId = requestAnimationFrame(animate)
+    }
+
+    animationFrameId = requestAnimationFrame(animate)
+
+    return () => {
+      cancelAnimationFrame(animationFrameId)
+    }
+  }, [loading, isPaused, talents.length])
+
+  // Manual scroll handlers
+  const scroll = (direction: 'left' | 'right') => {
+    if (!scrollContainerRef.current) return
+    const scrollAmount = 260
+    const newPosition = scrollPositionRef.current + (direction === 'left' ? -scrollAmount : scrollAmount)
+    scrollPositionRef.current = Math.max(0, newPosition)
+    scrollContainerRef.current.scrollTo({
+      left: scrollPositionRef.current,
+      behavior: 'smooth'
+    })
+  }
 
   return (
     <section ref={sectionRef} id="talent" className="relative py-16 md:py-24 lg:py-32 bg-black overflow-hidden">
@@ -158,32 +208,82 @@ export function TalentSection() {
               POPULAR TALENT
             </h2>
           </div>
-          <Link href="/dashboard">
-            <Button className="group bg-[#df2531] hover:bg-[#c41f2a] text-white font-medium px-6 py-2.5 rounded-full transition-all duration-300 hover:scale-105 active:scale-95">
-              <span className="flex items-center gap-2">
-                See All
-                <ArrowRight size={16} weight="bold" className="transition-transform duration-300 group-hover:translate-x-1" />
-              </span>
-            </Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            {/* Navigation Arrows */}
+            <div className="hidden sm:flex items-center gap-2">
+              <button
+                onClick={() => scroll('left')}
+                className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:bg-white/10 hover:text-white hover:border-white/40 transition-all duration-300"
+              >
+                <CaretLeft size={20} weight="bold" />
+              </button>
+              <button
+                onClick={() => scroll('right')}
+                className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:bg-white/10 hover:text-white hover:border-white/40 transition-all duration-300"
+              >
+                <CaretRight size={20} weight="bold" />
+              </button>
+            </div>
+            <Link href="/dashboard/browse">
+              <Button className="group bg-[#df2531] hover:bg-[#c41f2a] text-white font-medium px-6 py-2.5 rounded-full transition-all duration-300 hover:scale-105 active:scale-95">
+                <span className="flex items-center gap-2">
+                  See All
+                  <ArrowRight size={16} weight="bold" className="transition-transform duration-300 group-hover:translate-x-1" />
+                </span>
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        {/* Grid Container */}
-        <div className={`bg-white/5 backdrop-blur-sm rounded-2xl md:rounded-3xl p-4 md:p-6 lg:p-8 border border-white/10 transition-all duration-700 ${
-          isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-        }`} style={{ transitionDelay: '0.2s' }}>
+        {/* Carousel Container */}
+        <div 
+          className={`relative transition-all duration-700 ${
+            isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+          }`} 
+          style={{ transitionDelay: '0.2s' }}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
+          {/* Gradient Edges */}
+          <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
           
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <SpinnerGap size={40} weight="bold" className="text-[#df2531] animate-spin" />
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-5">
+            <div 
+              ref={scrollContainerRef}
+              className="flex gap-3 md:gap-4 lg:gap-5 overflow-x-hidden py-4 scroll-smooth"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
               {talents.map((talent, index) => (
-                <TalentCard key={talent.id} talent={talent} index={index} isVisible={isVisible} />
+                <TalentCard 
+                  key={`${talent.id}-${index}`} 
+                  talent={talent} 
+                  index={index % (talents.length / 2)} 
+                  isVisible={isVisible} 
+                />
               ))}
             </div>
           )}
+        </div>
+
+        {/* Mobile Navigation Dots */}
+        <div className="flex sm:hidden items-center justify-center gap-2 mt-6">
+          <button
+            onClick={() => scroll('left')}
+            className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:bg-white/10 hover:text-white transition-all"
+          >
+            <CaretLeft size={18} weight="bold" />
+          </button>
+          <button
+            onClick={() => scroll('right')}
+            className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:bg-white/10 hover:text-white transition-all"
+          >
+            <CaretRight size={18} weight="bold" />
+          </button>
         </div>
       </div>
     </section>
