@@ -341,6 +341,17 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
             >
               Start Verification
             </Button>
+            
+            {/* Return to Booking option */}
+            <div className="text-center pt-4">
+              <p className="text-white/40 text-sm mb-2">Not ready to verify now?</p>
+              <Link
+                href={`/dashboard/bookings/${booking.id}`}
+                className="text-[#df2531] hover:text-[#c41f2a] text-sm font-medium transition-colors"
+              >
+                Return to Booking Details →
+              </Link>
+            </div>
           </div>
         )}
 
