@@ -9,6 +9,7 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { useFavorites } from '@/hooks/useFavorites'
 import type { Profile, ServiceType, TalentMenu } from '@/types/database'
 
 interface TalentWithMenu extends Profile {
