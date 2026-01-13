@@ -284,7 +284,8 @@ export function WalletClient({ user, profile, wallet, transactions }: WalletClie
   }
 
   return (
-    <div className="min-h-screen bg-black pt-16 lg:pt-0">
+    <>
+    <div className="min-h-screen bg-black pt-16 lg:pt-0 pb-20 lg:pb-0">
       {/* Payment Modal */}
       {selectedPackage && (
         <PaymentModal
