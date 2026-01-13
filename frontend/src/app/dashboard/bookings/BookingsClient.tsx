@@ -7,6 +7,7 @@ import {
   CheckCircle, XCircle, Hourglass, CaretRight, Coin,
   MagnifyingGlass, Funnel, ShieldCheck
 } from '@phosphor-icons/react'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Booking } from '@/types/database'
 
