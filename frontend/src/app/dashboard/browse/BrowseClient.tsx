@@ -205,7 +205,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {filteredTalents.map((talent) => (
-              <TalentCard key={talent.id} talent={talent} formatPrice={formatPrice} />
+              <TalentCard key={talent.id} talent={talent} formatPrice={formatPrice} userId={userId} />
             ))}
           </div>
         )}
