@@ -7,16 +7,20 @@ import { useRouter } from 'next/navigation'
 import { 
   ArrowLeft, MapPin, Star, Heart, Share, Circle,
   Check, Calendar, Clock, SpinnerGap, X, ShieldCheck,
-  ForkKnife, CalendarCheck, Airplane, Lock, Camera, Coin, Warning
+  ForkKnife, CalendarCheck, Airplane, Lock, Camera, Coin, Warning, ChatCircle
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, ServiceType, TalentMenu, Media, Wallet } from '@/types/database'
+import { ReviewCard, ReviewSummary } from '@/components/Reviews'
+import type { Profile, ServiceType, TalentMenu, Media, Wallet, Review } from '@/types/database'
 import type { Icon } from '@phosphor-icons/react'
 
 interface TalentWithDetails extends Profile {
   talent_menus: (TalentMenu & { service_type: ServiceType })[]
   media: Media[]
+  reviews?: (Review & { client?: Profile })[]
+  average_rating?: number
+  review_count?: number
 }
 
 interface TalentProfileClientProps {
