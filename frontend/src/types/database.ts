@@ -2,9 +2,9 @@
 
 export type UserRole = 'client' | 'talent' | 'admin'
 export type TalentStatus = 'online' | 'offline' | 'booked'
-export type BookingStatus = 'payment_pending' | 'verification_pending' | 'confirmed' | 'completed' | 'cancelled'
+export type BookingStatus = 'payment_pending' | 'verification_pending' | 'confirmed' | 'completed' | 'cancelled' | 'expired'
 export type VerificationStatus = 'pending' | 'approved' | 'rejected'
-export type NotificationType = 'booking_request' | 'booking_accepted' | 'booking_rejected' | 'booking_completed' | 'withdrawal_approved' | 'withdrawal_rejected' | 'general'
+export type NotificationType = 'booking_request' | 'booking_accepted' | 'booking_rejected' | 'booking_completed' | 'booking_expired' | 'withdrawal_approved' | 'withdrawal_rejected' | 'general'
 export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'completed'
 
 export interface Profile {
