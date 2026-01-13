@@ -19,12 +19,13 @@ interface TalentWithMenu extends Profile {
 interface BrowseClientProps {
   talents: TalentWithMenu[]
   serviceTypes: ServiceType[]
+  userId: string
 }
 
 // Nigerian cities for filter
 const locations = ['All Locations', 'Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan', 'Enugu']
 
-export function BrowseClient({ talents, serviceTypes }: BrowseClientProps) {
+export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLocation, setSelectedLocation] = useState('All Locations')
   const [selectedService, setSelectedService] = useState<string | null>(null)
