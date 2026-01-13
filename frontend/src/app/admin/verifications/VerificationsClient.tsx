@@ -281,25 +281,25 @@ export function VerificationsClient({ verifications }: VerificationsClientProps)
 
       {/* Review Modal */}
       {selectedVerification && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#111] border border-white/10 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#111] border border-white/10 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-2xl max-h-[90vh] overflow-auto">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
-              <h3 className="text-xl font-bold text-white">Review Verification</h3>
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-white/10 sticky top-0 bg-[#111] z-10">
+              <h3 className="text-lg sm:text-xl font-bold text-white">Review Verification</h3>
               <button
                 onClick={() => setSelectedVerification(null)}
-                className="text-white/60 hover:text-white transition-colors"
+                className="text-white/60 hover:text-white transition-colors p-1"
               >
                 <X size={24} />
               </button>
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
               {/* Selfie */}
               <div>
                 <p className="text-white/60 text-sm mb-2">Selfie</p>
-                <div className="relative aspect-square max-w-xs rounded-2xl overflow-hidden bg-white/5">
+                <div className="relative aspect-square max-w-[200px] sm:max-w-xs rounded-2xl overflow-hidden bg-white/5 mx-auto sm:mx-0">
                   {selectedVerification.selfie_url ? (
                     <Image
                       src={selectedVerification.selfie_url}
@@ -316,7 +316,7 @@ export function VerificationsClient({ verifications }: VerificationsClientProps)
               </div>
 
               {/* Details Grid */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="p-4 rounded-xl bg-white/5">
                   <p className="text-white/40 text-xs mb-1">Full Name</p>
                   <p className="text-white font-medium">
