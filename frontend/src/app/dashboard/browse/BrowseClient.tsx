@@ -8,6 +8,7 @@ import {
   Heart, Star, Circle, ArrowLeft
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
 import type { Profile, ServiceType, TalentMenu } from '@/types/database'
 
 interface TalentWithMenu extends Profile {
