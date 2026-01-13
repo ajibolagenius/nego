@@ -322,6 +322,146 @@ export const emailTemplates = {
       </div>
     `),
   }),
+
+  // Review received notification for talent
+  reviewReceived: (talentName: string, clientName: string, rating: number, comment: string) => {
+    const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating)
+    const ratingColor = rating >= 4 ? '#22c55e' : rating >= 3 ? '#f59e0b' : '#ef4444'
+    
+    return {
+      subject: `⭐ New ${rating}-Star Review on Nego!`,
+      html: emailWrapper(`
+        <div style="text-align: center; margin-bottom: 24px;">
+          <span style="font-size: 48px;">⭐</span>
+        </div>
+        
+        <h1 style="${styles.heading}; text-align: center;">
+          New Review Received!
+        </h1>
+        
+        <p style="${styles.text}; text-align: center;">
+          Hi ${talentName}, <span style="${styles.highlight}">${clientName}</span> just left you a review.
+        </p>
+        
+        <div style="${styles.card}; text-align: center;">
+          <p style="font-size: 28px; margin: 0 0 8px 0; color: ${ratingColor}; letter-spacing: 4px;">
+            ${stars}
+          </p>
+          <p style="font-size: 32px; font-weight: 700; color: ${ratingColor}; margin: 0;">
+            ${rating}/5
+          </p>
+        </div>
+        
+        ${comment && comment !== 'No comment provided' ? `
+          <div style="${styles.card}">
+            <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0 0 12px 0;">
+              THEIR FEEDBACK
+            </p>
+            <p style="color: #ffffff; font-size: 15px; margin: 0; font-style: italic; line-height: 1.6;">
+              "${comment}"
+            </p>
+          </div>
+        ` : ''}
+        
+        <p style="${styles.text}; text-align: center;">
+          You can respond to this review from your dashboard.
+        </p>
+        
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${APP_URL}/dashboard/talent" style="${styles.button}">
+            View & Respond →
+          </a>
+        </div>
+      `),
+    }
+  },
+
+  // Weekly admin digest
+  adminDigest: (data: {
+    totalUsers: number
+    newUsersThisWeek: number
+    totalBookings: number
+    newBookingsThisWeek: number
+    pendingVerifications: number
+    pendingWithdrawals: number
+    totalRevenue: number
+    revenueThisWeek: number
+  }) => ({
+    subject: '📊 Nego Weekly Digest',
+    html: emailWrapper(`
+      <h1 style="${styles.heading}; text-align: center;">
+        Weekly Platform Digest
+      </h1>
+      
+      <p style="${styles.text}; text-align: center;">
+        Here's what happened on Nego this week.
+      </p>
+      
+      <!-- Users & Bookings -->
+      <div style="display: flex; gap: 16px; margin: 24px 0;">
+        <div style="${styles.card}; flex: 1; text-align: center;">
+          <p style="color: rgba(255,255,255,0.5); font-size: 12px; margin: 0 0 8px 0;">
+            NEW USERS
+          </p>
+          <p style="font-size: 28px; font-weight: 700; color: #3b82f6; margin: 0;">
+            +${data.newUsersThisWeek}
+          </p>
+          <p style="color: rgba(255,255,255,0.4); font-size: 12px; margin: 4px 0 0 0;">
+            Total: ${data.totalUsers}
+          </p>
+        </div>
+        <div style="${styles.card}; flex: 1; text-align: center;">
+          <p style="color: rgba(255,255,255,0.5); font-size: 12px; margin: 0 0 8px 0;">
+            NEW BOOKINGS
+          </p>
+          <p style="font-size: 28px; font-weight: 700; color: #a855f7; margin: 0;">
+            +${data.newBookingsThisWeek}
+          </p>
+          <p style="color: rgba(255,255,255,0.4); font-size: 12px; margin: 4px 0 0 0;">
+            Total: ${data.totalBookings}
+          </p>
+        </div>
+      </div>
+      
+      <!-- Revenue -->
+      <div style="${styles.card}; text-align: center;">
+        <p style="color: rgba(255,255,255,0.5); font-size: 12px; margin: 0 0 8px 0;">
+          WEEKLY REVENUE
+        </p>
+        <p style="${styles.amount}">
+          ₦${data.revenueThisWeek.toLocaleString()}
+        </p>
+        <p style="color: rgba(255,255,255,0.4); font-size: 12px; margin: 0;">
+          All-time: ₦${data.totalRevenue.toLocaleString()}
+        </p>
+      </div>
+      
+      <!-- Action Items -->
+      ${(data.pendingVerifications > 0 || data.pendingWithdrawals > 0) ? `
+        <div style="${styles.card}; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2);">
+          <p style="color: #ef4444; font-size: 13px; font-weight: 600; margin: 0 0 12px 0;">
+            ⚠️ ACTION REQUIRED
+          </p>
+          ${data.pendingVerifications > 0 ? `
+            <p style="color: rgba(255,255,255,0.7); font-size: 14px; margin: 0 0 8px 0;">
+              • ${data.pendingVerifications} verification${data.pendingVerifications > 1 ? 's' : ''} pending review
+            </p>
+          ` : ''}
+          ${data.pendingWithdrawals > 0 ? `
+            <p style="color: rgba(255,255,255,0.7); font-size: 14px; margin: 0;">
+              • ${data.pendingWithdrawals} withdrawal${data.pendingWithdrawals > 1 ? 's' : ''} pending approval
+            </p>
+          ` : ''}
+        </div>
+      ` : ''}
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}/admin" style="${styles.button}">
+          Go to Admin Panel →
+        </a>
+      </div>
+    `),
+  }),
 }
 
 // Send email function
