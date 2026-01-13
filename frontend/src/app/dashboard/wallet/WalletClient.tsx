@@ -9,6 +9,7 @@ import {
   Gift, CreditCard, Receipt, CaretRight, Icon, Warning
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet, Transaction } from '@/types/database'
 import { COIN_PACKAGES, formatNaira, type CoinPackage } from '@/lib/coinPackages'
