@@ -7,11 +7,12 @@ import { useRouter } from 'next/navigation'
 import { 
   ArrowLeft, Calendar, Clock, MapPin, CheckCircle, 
   SpinnerGap, WarningCircle, CreditCard, ShieldCheck,
-  Receipt, Coin, CaretRight, XCircle, User
+  Receipt, Coin, CaretRight, XCircle, User, Star, Hourglass
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, Wallet, BookingStatus } from '@/types/database'
+import { WriteReviewModal } from '@/components/Reviews'
+import type { Profile, Wallet, BookingStatus, Review } from '@/types/database'
 
 interface BookingWithTalent {
   id: string
