@@ -907,5 +907,7 @@ export function TalentDashboardClient({
         </div>
       )}
     </div>
+    <MobileBottomNav userRole="talent" />
+    </>
   )
 }
