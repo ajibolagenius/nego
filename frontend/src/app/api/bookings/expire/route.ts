@@ -131,14 +131,14 @@ export async function POST(request: NextRequest) {
           }
 
           // Create notification for client
-          const clientProfile = booking.client as { display_name: string; id: string } | null
-          const talentProfile = booking.talent as { display_name: string; id: string } | null
+          const clientData = booking.client as unknown as { display_name: string; id: string } | null
+          const talentData = booking.talent as unknown as { display_name: string; id: string } | null
           
           await supabase.from('notifications').insert({
             user_id: booking.client_id,
             type: 'booking_expired',
             title: 'Booking Expired',
-            message: `Your booking with ${talentProfile?.display_name || 'the talent'} has expired due to inactivity.`,
+            message: `Your booking with ${talentData?.display_name || 'the talent'} has expired due to inactivity.`,
             data: { booking_id: booking.id },
             is_read: false
           })
