@@ -199,9 +199,10 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 - [x] Profile Image Upload ✅ NEW (December 2025)
 - [x] Auto-expire Bookings ✅ NEW (December 2025)
 - [x] Reviews and Ratings System ✅ NEW (December 2025)
-- [ ] Live Video Calls (Daily.co/Twilio integration)
-- [ ] Admin Email Digest
-- [ ] Forgot password flow
+- [x] Forgot Password Flow ✅ NEW (December 2025)
+- [x] Weekly Admin Email Digest ✅ NEW (December 2025)
+- [x] Email on Review Posted ✅ NEW (December 2025)
+- [x] Favorites Persistence Fix ✅ NEW (December 2025)
 
 ---
 
