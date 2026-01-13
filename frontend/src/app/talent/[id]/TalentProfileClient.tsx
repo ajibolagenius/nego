@@ -241,7 +241,7 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Star size={16} weight="fill" className="text-amber-400" />
-                    4.9 (128 reviews)
+                    {(talent.average_rating || 0).toFixed(1)} ({talent.review_count || 0} reviews)
                   </span>
                 </div>
               </div>
