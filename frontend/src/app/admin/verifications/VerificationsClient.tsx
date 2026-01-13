@@ -387,7 +387,7 @@ export function VerificationsClient({ verifications }: VerificationsClientProps)
 
             {/* Modal Footer */}
             {selectedVerification.status === 'pending' && (
-              <div className="flex gap-3 p-6 border-t border-white/10">
+              <div className="flex flex-col sm:flex-row gap-3 p-4 sm:p-6 border-t border-white/10 sticky bottom-0 bg-[#111]">
                 <Button
                   onClick={() => handleReject(selectedVerification)}
                   disabled={isProcessing}
