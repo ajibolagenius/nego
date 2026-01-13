@@ -297,7 +297,7 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 ---
 
 *Last Updated: December 2025*
-*All SQL Scripts: ✅ RUN (except supabase_reviews.sql - needs to be run)*
+*All SQL Scripts: ⏳ 2 pending (reviews, avatars storage)*
 *Google OAuth: ✅ CONFIGURED*
 *Paystack: ✅ CONFIGURED*
 *Resend Email: ✅ CONFIGURED*
@@ -310,3 +310,11 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 *Profile Image Upload: ✅ COMPLETE*
 *Auto-expire Bookings: ✅ COMPLETE*
 *Reviews System: ✅ COMPLETE*
+*Forgot Password: ✅ COMPLETE*
+*Admin Digest: ✅ COMPLETE*
+*Favorites: ✅ FIXED*
+*Vercel Cron: ✅ CONFIGURED*
+
+## Cron Jobs (vercel.json)
+- `/api/bookings/expire` - Every hour (0 * * * *)
+- `/api/admin/digest` - Every Monday 9am (0 9 * * 1)
