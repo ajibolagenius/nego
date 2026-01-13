@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Bell, X, CheckCircle, Clock, XCircle, Money, CalendarCheck, Icon } from '@phosphor-icons/react'
+import { Bell, X, CheckCircle, Clock, XCircle, Money, CalendarCheck, Hourglass, Icon } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
 import type { Notification, NotificationType } from '@/types/database'
 
@@ -11,6 +11,7 @@ const notificationIcons: Record<NotificationType, Icon> = {
   booking_accepted: CheckCircle,
   booking_rejected: XCircle,
   booking_completed: CheckCircle,
+  booking_expired: Hourglass,
   withdrawal_approved: Money,
   withdrawal_rejected: XCircle,
   general: Bell,
@@ -21,6 +22,7 @@ const notificationColors: Record<NotificationType, string> = {
   booking_accepted: 'text-green-400 bg-green-500/10',
   booking_rejected: 'text-red-400 bg-red-500/10',
   booking_completed: 'text-green-400 bg-green-500/10',
+  booking_expired: 'text-gray-400 bg-gray-500/10',
   withdrawal_approved: 'text-green-400 bg-green-500/10',
   withdrawal_rejected: 'text-red-400 bg-red-500/10',
   general: 'text-white/60 bg-white/10',
