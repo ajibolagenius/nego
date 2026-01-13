@@ -58,5 +58,17 @@ export default async function BookingDetailPage({ params }: PageProps) {
     .eq('user_id', user.id)
     .single()
 
-  return <BookingDetailClient booking={booking} wallet={wallet} userId={user.id} />
+  // Fetch existing review for this booking (if completed)
+  let review = null
+  if (booking.status === 'completed') {
+    const { data: reviewData } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('booking_id', id)
+      .single()
+    
+    review = reviewData
+  }
+
+  return <BookingDetailClient booking={{ ...booking, review }} wallet={wallet} userId={user.id} />
 }
