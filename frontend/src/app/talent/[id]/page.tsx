@@ -115,7 +115,7 @@ export default async function TalentProfilePage({ params }: PageProps) {
   return (
     <TalentProfileClient 
       talent={{
-        ...talent,
+        ...talentWithMedia,
         reviews: reviews || [],
         average_rating: averageRating,
         review_count: reviewCount
