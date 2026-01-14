@@ -16,6 +16,7 @@ import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { OnboardingModal, useOnboarding } from '@/components/OnboardingModal'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet as WalletType } from '@/types/database'
+import { getTalentUrl } from '@/lib/talent-url'
 
 interface FeaturedTalent {
   id: string
