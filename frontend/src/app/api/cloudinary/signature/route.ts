@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import crypto from 'crypto'
 
 // Allowed folders for uploads
 const ALLOWED_FOLDERS = ['users', 'talents', 'media', 'avatars', 'profiles', 'uploads']
+
+// SHA1 hash using Web Crypto API (works in Edge runtime)
+async function sha1(message: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(message)
+  const hashBuffer = await crypto.subtle.digest('SHA-1', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     if (!cloudName || !apiKey || !apiSecret) {
       return NextResponse.json(
-        { error: 'Cloudinary configuration missing' },
+        { error: 'Cloudinary configuration missing', details: { cloudName: !!cloudName, apiKey: !!apiKey, apiSecret: !!apiSecret } },
         { status: 500 }
       )
     }
@@ -40,12 +48,9 @@ export async function GET(request: NextRequest) {
 
     const timestamp = Math.round(new Date().getTime() / 1000)
     
-    // Create signature manually without SDK
+    // Create signature using Web Crypto API
     const paramsToSign = `folder=${folder}&timestamp=${timestamp}`
-    const signature = crypto
-      .createHash('sha1')
-      .update(paramsToSign + apiSecret)
-      .digest('hex')
+    const signature = await sha1(paramsToSign + apiSecret)
 
     return NextResponse.json({
       signature,
@@ -58,8 +63,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Cloudinary signature error:', error)
     return NextResponse.json(
-      { error: 'Failed to generate signature' },
+      { error: 'Failed to generate signature', details: String(error) },
       { status: 500 }
     )
   }
 }
+
+// Ensure this runs on Edge runtime for better compatibility
+export const runtime = 'edge'
