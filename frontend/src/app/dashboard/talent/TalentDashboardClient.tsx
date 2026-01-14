@@ -293,7 +293,7 @@ export function TalentDashboardClient({
             </div>
             
             <Link 
-              href={`/talent/${user.id}`}
+              href={getTalentUrl({ id: user.id, username: profile?.username, display_name: profile?.display_name })}
               className="flex items-center gap-2 text-[#df2531] hover:text-[#df2531]/80 transition-colors text-sm"
             >
               <Eye size={18} />
