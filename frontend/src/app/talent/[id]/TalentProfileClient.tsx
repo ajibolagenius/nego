@@ -333,32 +333,8 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
           )}
         </div>
 
-        {/* Gallery */}
-        {talent.media && talent.media.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-bold text-white mb-4">Gallery</h2>
-            <div className="grid grid-cols-3 gap-3">
-              {talent.media.slice(0, 6).map((item) => (
-                <div key={item.id} className="aspect-square rounded-xl overflow-hidden relative group">
-                  <Image
-                    src={item.url}
-                    alt="Gallery"
-                    fill
-                    className={`object-cover ${item.is_premium ? 'blur-lg' : ''}`}
-                  />
-                  {item.is_premium && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                      <div className="text-center">
-                        <Lock size={24} className="text-white mx-auto mb-1" />
-                        <p className="text-white text-xs">{item.unlock_price} coins</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Gallery with Free/Premium Tabs */}
+        <GallerySection media={talent.media || []} />
 
         {/* Reviews Section */}
         <div className="mb-8">
