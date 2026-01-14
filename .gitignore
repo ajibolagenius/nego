@@ -83,3 +83,7 @@ frontend/node_modules/@next/swc-linux-arm64-musl/next-swc.linux-arm64-musl.node
 
 # NOTE: .env files are NOT ignored - they are required for Emergent deployment
 # The platform handles secrets securely during the deployment process
+-e 
+# Environment files
+*.env
+*.env.*
