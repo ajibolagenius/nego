@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useSearchParams } from 'next/navigation'
 import { 
   ArrowLeft, PaperPlaneRight, User, Chat, MagnifyingGlass,
   DotsThree, Phone, VideoCamera, SpinnerGap, CheckCircle
@@ -20,16 +21,52 @@ interface MessagesClientProps {
 
 export function MessagesClient({ userId, conversations: initialConversations, userRole = 'client' }: MessagesClientProps) {
   const supabase = createClient()
+  const searchParams = useSearchParams()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   
   const [conversations, setConversations] = useState(initialConversations)
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
+  const [selectedConversation, setSelectedConversation] = useState<(Conversation & { other_user?: Profile | null }) | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+
+  // Auto-select conversation from URL parameter
+  useEffect(() => {
+    const conversationId = searchParams.get('conversation')
+    if (conversationId && conversations.length > 0) {
+      const conv = conversations.find(c => c.id === conversationId)
+      if (conv) {
+        handleSelectConversation(conv)
+      }
+    } else if (conversationId && conversations.length === 0) {
+      // Fetch the new conversation if not in list
+      const fetchNewConversation = async () => {
+        const { data } = await supabase
+          .from('conversations')
+          .select('*')
+          .eq('id', conversationId)
+          .single()
+        
+        if (data) {
+          // Fetch the other user's profile
+          const otherUserId = data.participant_1 === userId ? data.participant_2 : data.participant_1
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, display_name, avatar_url, role')
+            .eq('id', otherUserId)
+            .single()
+          
+          const convWithUser = { ...data, other_user: profile }
+          setConversations([convWithUser])
+          handleSelectConversation(convWithUser)
+        }
+      }
+      fetchNewConversation()
+    }
+  }, [searchParams, conversations.length])
 
   // Scroll to bottom of messages
   const scrollToBottom = () => {
