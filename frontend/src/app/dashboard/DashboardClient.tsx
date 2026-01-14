@@ -64,7 +64,7 @@ const talentNavItems = [
   { icon: Gear, label: 'Settings', href: '/dashboard/settings' },
 ]
 
-export function DashboardClient({ user, profile, wallet, featuredTalents = [] }: DashboardClientProps) {
+export function DashboardClient({ user, profile, wallet, featuredTalents = [], activeBookings = 0, favoritesCount = 0 }: DashboardClientProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   
