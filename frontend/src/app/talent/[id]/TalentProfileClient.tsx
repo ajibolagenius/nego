@@ -694,6 +694,11 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
           onUnlock={handleUnlockMedia}
         />
 
+        {/* Gift Leaderboard */}
+        <div className="mb-8">
+          <GiftLeaderboard talentId={talent.id} />
+        </div>
+
         {/* Reviews Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
