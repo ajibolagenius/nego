@@ -6,11 +6,14 @@ import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { 
   ArrowLeft, PaperPlaneRight, User, Chat, MagnifyingGlass,
-  DotsThree, Phone, VideoCamera, SpinnerGap, CheckCircle, Checks
+  DotsThree, Phone, VideoCamera, SpinnerGap, CheckCircle, Checks,
+  CalendarPlus, Gift
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { GiftCoins } from '@/components/GiftCoins'
+import { getTalentUrl } from '@/lib/talent-url'
 import type { Conversation, Message, Profile } from '@/types/database'
 
 interface MessagesClientProps {
