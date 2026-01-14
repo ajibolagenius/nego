@@ -133,32 +133,40 @@ export async function POST(request: NextRequest) {
     }
 
     // Create media unlock record
-    await supabase.from('media_unlocks').insert({
-      user_id: userId,
-      media_id: mediaId
-    }).catch(() => {})
+    try {
+      await supabase.from('media_unlocks').insert({
+        user_id: userId,
+        media_id: mediaId
+      })
+    } catch {
+      // Ignore media unlock record errors
+    }
 
     // Create transaction records
-    await supabase.from('transactions').insert([
-      {
-        user_id: userId,
-        amount: -unlockPrice,
-        coins: -unlockPrice,
-        type: 'premium_unlock',
-        status: 'completed',
-        reference_id: mediaId,
-        description: 'Unlocked premium content'
-      },
-      {
-        user_id: talentId,
-        amount: unlockPrice,
-        coins: unlockPrice,
-        type: 'premium_unlock',
-        status: 'completed',
-        reference_id: mediaId,
-        description: 'Content unlock payment'
-      }
-    ]).catch(() => {})
+    try {
+      await supabase.from('transactions').insert([
+        {
+          user_id: userId,
+          amount: -unlockPrice,
+          coins: -unlockPrice,
+          type: 'premium_unlock',
+          status: 'completed',
+          reference_id: mediaId,
+          description: 'Unlocked premium content'
+        },
+        {
+          user_id: talentId,
+          amount: unlockPrice,
+          coins: unlockPrice,
+          type: 'premium_unlock',
+          status: 'completed',
+          reference_id: mediaId,
+          description: 'Content unlock payment'
+        }
+      ])
+    } catch {
+      // Ignore transaction record errors
+    }
 
     return NextResponse.json({
       success: true,
