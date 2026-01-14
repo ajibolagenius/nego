@@ -64,25 +64,48 @@ export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuc
 
       if (deductError) throw deductError
 
-      // Add to recipient's wallet
-      const { data: recipientWallet } = await supabase
+      // Add to recipient's wallet - use RPC or direct update
+      // First try to get recipient wallet
+      const { data: recipientWallet, error: fetchError } = await supabase
         .from('wallets')
         .select('balance')
         .eq('user_id', talentId)
         .single()
 
-      const { error: addError } = await supabase
-        .from('wallets')
-        .update({ balance: (recipientWallet?.balance || 0) + effectiveAmount })
-        .eq('user_id', talentId)
-
-      if (addError) {
-        // Rollback sender's wallet
-        await supabase
+      if (fetchError) {
+        // If wallet doesn't exist, create it with the gift amount
+        const { error: createError } = await supabase
           .from('wallets')
-          .update({ balance: senderBalance })
-          .eq('user_id', senderId)
-        throw addError
+          .insert({ 
+            user_id: talentId, 
+            balance: effectiveAmount,
+            escrow_balance: 0 
+          })
+        
+        if (createError) {
+          // Rollback sender's wallet
+          await supabase
+            .from('wallets')
+            .update({ balance: senderBalance })
+            .eq('user_id', senderId)
+          throw createError
+        }
+      } else {
+        // Update existing wallet
+        const newBalance = (recipientWallet?.balance || 0) + effectiveAmount
+        const { error: addError } = await supabase
+          .from('wallets')
+          .update({ balance: newBalance })
+          .eq('user_id', talentId)
+
+        if (addError) {
+          // Rollback sender's wallet
+          await supabase
+            .from('wallets')
+            .update({ balance: senderBalance })
+            .eq('user_id', senderId)
+          throw addError
+        }
       }
 
       // Create gift record
