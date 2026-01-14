@@ -622,48 +622,11 @@ export function TalentDashboardClient({
         )}
 
         {activeTab === 'media' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">Gallery ({media.length})</h3>
-              <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#df2531] text-white text-sm font-medium hover:bg-[#df2531]/80 transition-colors">
-                <Plus size={18} />
-                Upload
-              </button>
-            </div>
-
-            {media.length === 0 ? (
-              <div className="text-center py-12 rounded-2xl bg-white/5 border border-white/10">
-                <ImageIcon size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
-                <p className="text-white/50 mb-2">No photos yet</p>
-                <p className="text-white/30 text-sm">Upload photos to showcase your work</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {media.map((item) => (
-                  <div key={item.id} className="relative aspect-square rounded-xl overflow-hidden group">
-                    <img 
-                      src={item.url} 
-                      alt="" 
-                      className="w-full h-full object-cover"
-                    />
-                    {item.is_premium && (
-                      <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-[#df2531] text-white text-xs font-medium">
-                        Premium
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20">
-                        <PencilSimple size={18} />
-                      </button>
-                      <button className="p-2 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30">
-                        <Trash size={18} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <MediaManager 
+            talentId={user.id}
+            media={media}
+            onRefresh={() => router.refresh()}
+          />
         )}
 
         {activeTab === 'bookings' && (
