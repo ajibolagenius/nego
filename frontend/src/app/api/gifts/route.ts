@@ -148,15 +148,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Create gift record
-    await supabase.from('gifts').insert({
-      sender_id: senderId,
-      recipient_id: recipientId,
-      amount,
-      message: message || null
-    }).catch(() => {})
+    try {
+      await supabase.from('gifts').insert({
+        sender_id: senderId,
+        recipient_id: recipientId,
+        amount,
+        message: message || null
+      })
+    } catch {
+      // Ignore gift record errors
+    }
 
     // Create transaction records
-    await supabase.from('transactions').insert([
+    try {
+      await supabase.from('transactions').insert([
       {
         user_id: senderId,
         amount: -amount,
