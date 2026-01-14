@@ -551,6 +551,22 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
                   onSuccess={() => router.refresh()}
                 />
               )}
+              {/* Message Button - Only show for logged in clients */}
+              {currentUser && currentUser.role === 'client' && (
+                <button
+                  onClick={handleStartChat}
+                  disabled={startingChat}
+                  data-testid="message-button"
+                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-white hover:bg-[#df2531] transition-all disabled:opacity-50"
+                  title="Send message"
+                >
+                  {startingChat ? (
+                    <SpinnerGap size={20} className="animate-spin" />
+                  ) : (
+                    <ChatCircle size={20} />
+                  )}
+                </button>
+              )}
               <button
                 onClick={handleFavoriteToggle}
                 data-testid="favorite-button"
