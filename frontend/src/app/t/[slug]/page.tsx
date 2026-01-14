@@ -117,11 +117,25 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
   }
 
   // Fetch ALL media (including premium) using admin client to bypass RLS
-  const { data: media } = await supabaseAdmin
-    .from('media')
-    .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
-    .eq('talent_id', talent.id)
-    .order('created_at', { ascending: false })
+  let media = null
+  const supabaseAdmin = getAdminClient()
+  
+  if (supabaseAdmin) {
+    const { data: mediaData } = await supabaseAdmin
+      .from('media')
+      .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
+      .eq('talent_id', talent.id)
+      .order('created_at', { ascending: false })
+    media = mediaData
+  } else {
+    // Fallback to regular client (will only get non-premium media due to RLS)
+    const { data: mediaData } = await supabase
+      .from('media')
+      .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
+      .eq('talent_id', talent.id)
+      .order('created_at', { ascending: false })
+    media = mediaData
+  }
 
   // Attach media to talent object
   const talentWithMedia = {
