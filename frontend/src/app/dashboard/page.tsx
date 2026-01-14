@@ -30,7 +30,7 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .single()
 
-  // Fetch featured talents (role = 'talent', is_active = true, limit 4)
+  // Fetch featured talents (role = 'talent', limit 6)
   const { data: featuredTalents } = await supabase
     .from('profiles')
     .select(`
@@ -38,24 +38,31 @@ export default async function DashboardPage() {
       display_name,
       avatar_url,
       location,
-      is_online,
+      status,
+      starting_price,
       talent_menus (
-        price
+        price,
+        is_active
       )
     `)
     .eq('role', 'talent')
-    .eq('is_active', true)
-    .limit(4)
+    .limit(6)
 
   // Transform data to include starting_price
-  const talents = (featuredTalents || []).map(talent => ({
-    id: talent.id,
-    display_name: talent.display_name || 'Unknown',
-    avatar_url: talent.avatar_url,
-    location: talent.location || 'Nigeria',
-    status: (talent.is_online ? 'online' : 'offline') as 'online' | 'offline',
-    starting_price: talent.talent_menus?.[0]?.price || 50000
-  }))
+  const talents = (featuredTalents || []).map(talent => {
+    // Get the minimum active price from talent_menus, or fallback to starting_price
+    const activePrices = talent.talent_menus?.filter((m: { is_active: boolean; price: number }) => m.is_active).map((m: { price: number }) => m.price) || []
+    const minPrice = activePrices.length > 0 ? Math.min(...activePrices) : (talent.starting_price || 100000)
+    
+    return {
+      id: talent.id,
+      display_name: talent.display_name || 'Talent',
+      avatar_url: talent.avatar_url,
+      location: talent.location || 'Lagos',
+      status: (talent.status === 'online' ? 'online' : 'offline') as 'online' | 'offline',
+      starting_price: minPrice
+    }
+  })
 
   return <DashboardClient user={user} profile={profile} wallet={wallet} featuredTalents={talents} />
 }
