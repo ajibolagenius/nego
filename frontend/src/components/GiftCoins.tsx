@@ -26,7 +26,16 @@ export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuc
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
-  const effectiveAmount = customAmount ? parseInt(customAmount) : amount
+  // Calculate effective amount - use custom if valid, otherwise use preset
+  const getEffectiveAmount = () => {
+    if (customAmount && customAmount.trim() !== '') {
+      const parsed = parseInt(customAmount)
+      return isNaN(parsed) ? 0 : parsed
+    }
+    return amount
+  }
+  
+  const effectiveAmount = getEffectiveAmount()
   const hasInsufficientBalance = effectiveAmount > senderBalance
   const isValidAmount = effectiveAmount >= MIN_GIFT_AMOUNT
 
