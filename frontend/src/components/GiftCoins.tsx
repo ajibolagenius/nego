@@ -152,10 +152,14 @@ export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuc
 
       {/* Modal */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={() => setIsOpen(false)}
+        >
           <div 
-            className="bg-[#0a0a0f] rounded-2xl w-full max-w-md border border-white/10 overflow-hidden max-h-[90vh] overflow-y-auto"
+            className="bg-[#0a0a0f] rounded-2xl w-full max-w-md border border-white/10 overflow-hidden max-h-[90vh] overflow-y-auto my-auto"
             data-testid="gift-coins-modal"
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-white/10">
