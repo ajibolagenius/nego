@@ -319,6 +319,15 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 - Components: `/app/frontend/src/components/GiftCoins.tsx`
 - Database: `gifts` table (run `supabase_media_gifting.sql`)
 
+### Notifications Page ✅ NEW (January 2025)
+- Full page to view all notifications at `/dashboard/notifications`
+- Notification icons by type (booking, withdrawal, gift, etc.)
+- Mark individual or all notifications as read
+- Delete notifications
+- Time formatting (Just now, 2h ago, etc.)
+- Deep links to related content (bookings, wallet, etc.)
+- Components: `/app/frontend/src/app/dashboard/notifications/`
+
 ---
 
 *Last Updated: January 2025*
