@@ -1,9 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+/**
+ * GiftCoins Component
+ * 
+ * A modal component that allows users to send coin gifts to talents.
+ * Features:
+ * - Preset amount buttons for quick selection
+ * - Custom amount input with validation
+ * - Optional message field
+ * - Balance checking with top-up link
+ * - Loading state and success animation
+ * - Comprehensive error handling with user-friendly messages
+ */
+
+import { useState, useCallback } from 'react'
 import { Gift, Coin, X, SpinnerGap, Check, Warning } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { GIFT_CONSTANTS, isValidUUID, isValidAmount } from '@/lib/gift-validation'
 
 interface GiftCoinsProps {
   talentId: string
@@ -13,79 +27,189 @@ interface GiftCoinsProps {
   onSuccess?: () => void
 }
 
-const PRESET_AMOUNTS = [100, 500, 1000, 2500]
-const MIN_GIFT_AMOUNT = 100
+interface GiftError {
+  message: string
+  field?: string
+}
 
-export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuccess }: GiftCoinsProps) {
+export function GiftCoins({ 
+  talentId, 
+  talentName, 
+  senderId, 
+  senderBalance, 
+  onSuccess 
+}: GiftCoinsProps) {
+  // Modal state
   const [isOpen, setIsOpen] = useState(false)
-  const [amount, setAmount] = useState<number>(100)
+  
+  // Form state
+  const [selectedPreset, setSelectedPreset] = useState<number>(GIFT_CONSTANTS.PRESET_AMOUNTS[0])
   const [customAmount, setCustomAmount] = useState('')
   const [message, setMessage] = useState('')
+  
+  // UI state
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<GiftError | null>(null)
   const [success, setSuccess] = useState(false)
 
-  // Calculate effective amount - use custom if valid, otherwise use preset
-  const getEffectiveAmount = () => {
-    if (customAmount && customAmount.trim() !== '') {
-      const parsed = parseInt(customAmount)
-      return isNaN(parsed) ? 0 : parsed
+  // Calculate effective amount - prefer custom amount if entered
+  const getEffectiveAmount = useCallback((): number => {
+    if (customAmount.trim()) {
+      const parsed = parseInt(customAmount, 10)
+      return isNaN(parsed) ? 0 : Math.floor(parsed)
     }
-    return amount
-  }
-  
+    return selectedPreset
+  }, [customAmount, selectedPreset])
+
   const effectiveAmount = getEffectiveAmount()
   const hasInsufficientBalance = effectiveAmount > senderBalance
-  const isValidAmount = effectiveAmount >= MIN_GIFT_AMOUNT
+  const isAmountValid = effectiveAmount >= GIFT_CONSTANTS.MIN_AMOUNT && 
+                        effectiveAmount <= GIFT_CONSTANTS.MAX_AMOUNT
 
-  const handleGift = async () => {
-    if (!isValidAmount) {
-      setError(`Minimum gift amount is ${MIN_GIFT_AMOUNT} coins`)
-      return
+  // Reset form state
+  const resetForm = useCallback(() => {
+    setSelectedPreset(GIFT_CONSTANTS.PRESET_AMOUNTS[0])
+    setCustomAmount('')
+    setMessage('')
+    setError(null)
+    setSuccess(false)
+  }, [])
+
+  // Handle modal open
+  const openModal = useCallback(() => {
+    resetForm()
+    setIsOpen(true)
+  }, [resetForm])
+
+  // Handle modal close
+  const closeModal = useCallback(() => {
+    if (!loading) {
+      setIsOpen(false)
+      resetForm()
+    }
+  }, [loading, resetForm])
+
+  // Handle preset selection
+  const selectPreset = useCallback((amount: number) => {
+    setSelectedPreset(amount)
+    setCustomAmount('') // Clear custom amount when preset is selected
+    setError(null)
+  }, [])
+
+  // Handle custom amount change
+  const handleCustomAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/g, '') // Only allow digits
+    setCustomAmount(value)
+    setError(null)
+  }, [])
+
+  // Handle message change
+  const handleMessageChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value.slice(0, GIFT_CONSTANTS.MAX_MESSAGE_LENGTH)
+    setMessage(value)
+  }, [])
+
+  // Validate inputs before sending
+  const validateInputs = useCallback((): GiftError | null => {
+    // Validate IDs
+    if (!isValidUUID(senderId)) {
+      return { message: 'Invalid session. Please refresh the page and try again.', field: 'senderId' }
+    }
+    if (!isValidUUID(talentId)) {
+      return { message: 'Invalid talent profile. Please refresh the page and try again.', field: 'talentId' }
+    }
+    if (senderId === talentId) {
+      return { message: 'You cannot send a gift to yourself.', field: 'talentId' }
     }
 
+    // Validate amount
+    if (!isAmountValid) {
+      if (effectiveAmount < GIFT_CONSTANTS.MIN_AMOUNT) {
+        return { message: `Minimum gift amount is ${GIFT_CONSTANTS.MIN_AMOUNT} coins`, field: 'amount' }
+      }
+      if (effectiveAmount > GIFT_CONSTANTS.MAX_AMOUNT) {
+        return { message: `Maximum gift amount is ${GIFT_CONSTANTS.MAX_AMOUNT.toLocaleString()} coins`, field: 'amount' }
+      }
+      return { message: 'Please enter a valid gift amount', field: 'amount' }
+    }
+
+    // Validate balance
     if (hasInsufficientBalance) {
-      setError('Insufficient balance')
+      return { message: 'Insufficient balance', field: 'balance' }
+    }
+
+    return null
+  }, [senderId, talentId, effectiveAmount, isAmountValid, hasInsufficientBalance])
+
+  // Handle gift submission
+  const handleGift = async () => {
+    // Clear previous error
+    setError(null)
+
+    // Validate inputs
+    const validationError = validateInputs()
+    if (validationError) {
+      setError(validationError)
       return
     }
 
     setLoading(true)
-    setError('')
 
     try {
-      // Use server-side API to handle gift transaction (bypasses RLS)
       const response = await fetch('/api/gifts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           senderId,
           recipientId: talentId,
           amount: effectiveAmount,
-          message: message || null,
-          senderName: 'Client',
-          recipientName: talentName
-        })
+          message: message.trim() || null,
+          senderName: 'Client', // Could be enhanced to use actual user name
+          recipientName: talentName,
+        }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to send gift')
+        // Handle specific error cases
+        const errorMessage = data.error || 'Failed to send gift'
+        const errorField = data.field
+        
+        // Provide more specific error messages
+        if (errorMessage.includes('balance')) {
+          setError({ message: 'Insufficient balance. Please top up your wallet.', field: 'balance' })
+        } else if (errorMessage.includes('wallet')) {
+          setError({ message: 'Wallet not found. Please contact support.', field: 'wallet' })
+        } else if (errorMessage.includes('pattern') || errorMessage.includes('format')) {
+          setError({ message: 'Invalid data format. Please refresh and try again.', field: errorField })
+        } else {
+          setError({ message: errorMessage, field: errorField })
+        }
+        return
       }
 
+      // Success!
       setSuccess(true)
+      
+      // Close modal and callback after animation
       setTimeout(() => {
         setIsOpen(false)
-        setSuccess(false)
-        setAmount(100)
-        setCustomAmount('')
-        setMessage('')
+        resetForm()
         onSuccess?.()
       }, 2000)
 
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send gift'
-      setError(errorMessage)
+    } catch (err) {
+      console.error('[GiftCoins] Error sending gift:', err)
+      
+      // Handle network errors
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setError({ message: 'Network error. Please check your connection and try again.' })
+      } else {
+        setError({ message: 'Something went wrong. Please try again.' })
+      }
     } finally {
       setLoading(false)
     }
@@ -93,9 +217,9 @@ export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuc
 
   return (
     <>
-      {/* Gift Button */}
+      {/* Gift Button - Triggers modal */}
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={openModal}
         data-testid="gift-coins-button"
         className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg shadow-amber-500/20"
       >
@@ -103,12 +227,16 @@ export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuc
         <span>Gift Coins</span>
       </button>
 
-      {/* Modal */}
+      {/* Modal Overlay */}
       {isOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-          onClick={() => setIsOpen(false)}
+          onClick={closeModal}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="gift-modal-title"
         >
+          {/* Modal Content */}
           <div 
             className="bg-[#0a0a0f] rounded-2xl w-full max-w-md border border-white/10 overflow-hidden max-h-[90vh] overflow-y-auto my-auto"
             data-testid="gift-coins-modal"
@@ -121,13 +249,15 @@ export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuc
                   <Gift size={20} weight="fill" className="text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white">Send Gift</h2>
+                  <h2 id="gift-modal-title" className="text-xl font-bold text-white">Send Gift</h2>
                   <p className="text-white/50 text-sm">to {talentName}</p>
                 </div>
               </div>
               <button
-                onClick={() => setIsOpen(false)}
-                className="text-white/60 hover:text-white"
+                onClick={closeModal}
+                disabled={loading}
+                className="text-white/60 hover:text-white disabled:opacity-50 transition-colors"
+                aria-label="Close modal"
               >
                 <X size={24} />
               </button>
@@ -136,77 +266,101 @@ export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuc
             {/* Body */}
             <div className="p-6 space-y-6">
               {success ? (
-                <div className="text-center py-8">
+                /* Success State */
+                <div className="text-center py-8" data-testid="gift-success">
                   <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
                     <Check size={32} weight="bold" className="text-green-400" />
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">Gift Sent!</h3>
                   <p className="text-white/60">
-                    You sent {effectiveAmount} coins to {talentName}
+                    You sent {effectiveAmount.toLocaleString()} coins to {talentName}
                   </p>
                 </div>
               ) : (
+                /* Form State */
                 <>
+                  {/* Error Display */}
                   {error && (
-                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                      {error}
+                    <div 
+                      className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
+                      data-testid="gift-error"
+                      role="alert"
+                    >
+                      {error.message}
                     </div>
                   )}
 
-                  {/* Preset Amounts */}
+                  {/* Preset Amount Buttons */}
                   <div>
                     <label className="block text-white/70 text-sm mb-3">Select Amount</label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {PRESET_AMOUNTS.map((preset) => (
+                    <div className="grid grid-cols-5 gap-2">
+                      {GIFT_CONSTANTS.PRESET_AMOUNTS.map((preset) => (
                         <button
                           key={preset}
-                          onClick={() => { setAmount(preset); setCustomAmount('') }}
-                          className={`py-3 rounded-xl font-bold text-sm transition-all ${
-                            amount === preset && !customAmount
+                          onClick={() => selectPreset(preset)}
+                          disabled={loading}
+                          data-testid={`preset-amount-${preset}`}
+                          className={`py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 ${
+                            selectedPreset === preset && !customAmount.trim()
                               ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
                               : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
                           }`}
                         >
-                          {preset}
+                          {preset >= 1000 ? `${preset / 1000}k` : preset}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Custom Amount */}
+                  {/* Custom Amount Input */}
                   <div>
-                    <label className="block text-white/70 text-sm mb-2">Or Enter Custom Amount</label>
+                    <label htmlFor="custom-amount" className="block text-white/70 text-sm mb-2">
+                      Or Enter Custom Amount
+                    </label>
                     <div className="relative">
                       <Coin className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} />
                       <input
-                        type="number"
+                        id="custom-amount"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={customAmount}
-                        onChange={(e) => setCustomAmount(e.target.value)}
-                        placeholder={`Min. ${MIN_GIFT_AMOUNT}`}
-                        min={MIN_GIFT_AMOUNT}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-amber-500/50"
+                        onChange={handleCustomAmountChange}
+                        disabled={loading}
+                        placeholder={`Min. ${GIFT_CONSTANTS.MIN_AMOUNT}`}
+                        data-testid="custom-amount-input"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-amber-500/50 disabled:opacity-50"
                       />
                     </div>
-                    {customAmount && parseInt(customAmount) < MIN_GIFT_AMOUNT && (
-                      <p className="text-red-400 text-xs mt-1">Minimum gift is {MIN_GIFT_AMOUNT} coins</p>
+                    {customAmount && parseInt(customAmount, 10) < GIFT_CONSTANTS.MIN_AMOUNT && (
+                      <p className="text-amber-400 text-xs mt-1">
+                        Minimum gift is {GIFT_CONSTANTS.MIN_AMOUNT} coins
+                      </p>
                     )}
                   </div>
 
-                  {/* Message */}
+                  {/* Message Input */}
                   <div>
-                    <label className="block text-white/70 text-sm mb-2">Add a Message (optional)</label>
+                    <label htmlFor="gift-message" className="block text-white/70 text-sm mb-2">
+                      Add a Message (optional)
+                    </label>
                     <textarea
+                      id="gift-message"
                       value={message}
-                      onChange={(e) => setMessage(e.target.value)}
+                      onChange={handleMessageChange}
+                      disabled={loading}
                       placeholder="Write a nice message..."
                       rows={2}
-                      maxLength={200}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-amber-500/50 resize-none"
+                      maxLength={GIFT_CONSTANTS.MAX_MESSAGE_LENGTH}
+                      data-testid="gift-message-input"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-amber-500/50 resize-none disabled:opacity-50"
                     />
-                    <p className="text-white/30 text-xs text-right mt-1">{message.length}/200</p>
+                    <p className="text-white/30 text-xs text-right mt-1">
+                      {message.length}/{GIFT_CONSTANTS.MAX_MESSAGE_LENGTH}
+                    </p>
                   </div>
 
-                  {/* Balance Warning */}
+                  {/* Balance Display / Warning */}
                   <div className={`p-4 rounded-xl border ${
                     hasInsufficientBalance 
                       ? 'bg-amber-500/10 border-amber-500/20' 
@@ -214,7 +368,11 @@ export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuc
                   }`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Coin size={24} weight="duotone" className={hasInsufficientBalance ? 'text-amber-400' : 'text-white/50'} />
+                        <Coin 
+                          size={24} 
+                          weight="duotone" 
+                          className={hasInsufficientBalance ? 'text-amber-400' : 'text-white/50'} 
+                        />
                         <div>
                           <p className="text-white/50 text-xs">Your Balance</p>
                           <p className={`font-bold ${hasInsufficientBalance ? 'text-amber-400' : 'text-white'}`}>
@@ -226,16 +384,17 @@ export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuc
                         <Link 
                           href="/dashboard/wallet" 
                           className="px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium hover:bg-amber-500/30 transition-colors"
+                          onClick={closeModal}
                         >
                           Top Up
                         </Link>
                       )}
                     </div>
-                    {hasInsufficientBalance && (
+                    {hasInsufficientBalance && effectiveAmount > 0 && (
                       <div className="mt-3 pt-3 border-t border-amber-500/20 flex items-center gap-2">
                         <Warning size={16} className="text-amber-400" />
                         <p className="text-amber-400 text-sm">
-                          You need <span className="font-bold">{effectiveAmount - senderBalance}</span> more coins
+                          You need <span className="font-bold">{(effectiveAmount - senderBalance).toLocaleString()}</span> more coins
                         </p>
                       </div>
                     )}
@@ -244,15 +403,15 @@ export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuc
               )}
             </div>
 
-            {/* Footer */}
+            {/* Footer - Send Button */}
             {!success && (
               <div className="p-6 border-t border-white/10">
                 <Button
                   onClick={handleGift}
-                  disabled={loading || hasInsufficientBalance || !isValidAmount}
+                  disabled={loading || hasInsufficientBalance || !isAmountValid}
                   data-testid="send-gift-button"
-                  className={`w-full font-bold py-4 rounded-xl disabled:opacity-50 ${
-                    hasInsufficientBalance || !isValidAmount
+                  className={`w-full font-bold py-4 rounded-xl disabled:opacity-50 transition-all ${
+                    hasInsufficientBalance || !isAmountValid
                       ? 'bg-white/10 text-white/50 cursor-not-allowed' 
                       : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white'
                   }`}
@@ -262,7 +421,7 @@ export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuc
                   ) : (
                     <>
                       <Gift size={20} className="mr-2" />
-                      Send {effectiveAmount} Coins
+                      Send {effectiveAmount > 0 ? effectiveAmount.toLocaleString() : '0'} Coins
                     </>
                   )}
                 </Button>
