@@ -1,9 +1,21 @@
-import { createApiClient } from '@/lib/supabase/api'
+import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createApiClient()
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+    
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    })
     
     const body = await request.json()
     const { userId, mediaId, talentId, unlockPrice } = body
@@ -12,6 +24,15 @@ export async function POST(request: NextRequest) {
     if (!userId || !mediaId || !talentId || !unlockPrice) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Validate UUIDs
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(userId) || !uuidRegex.test(mediaId) || !uuidRegex.test(talentId)) {
+      return NextResponse.json(
+        { error: 'Invalid ID format' },
         { status: 400 }
       )
     }
@@ -35,14 +56,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: rpcData.message,
-        newUserBalance: rpcData.newUserBalance
+        newUserBalance: rpcData.new_balance
       })
     }
 
-    // Fallback: Direct operations (may fail due to RLS)
-    console.log('RPC not available, trying direct operations:', rpcError?.message)
+    // Log RPC error for debugging
+    console.log('RPC unlock_media not available:', rpcError?.message)
 
-    // Get user's wallet
+    // Fallback: Direct operations using service role
     const { data: userWallet, error: userError } = await supabase
       .from('wallets')
       .select('balance')
@@ -63,7 +84,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Deduct from user (this should work - user updating their own wallet)
+    // Get talent wallet
+    const { data: talentWallet, error: talentError } = await supabase
+      .from('wallets')
+      .select('balance')
+      .eq('user_id', talentId)
+      .single()
+
+    if (talentError || !talentWallet) {
+      return NextResponse.json(
+        { error: 'Talent wallet not found' },
+        { status: 404 }
+      )
+    }
+
+    // Deduct from user
     const { error: deductError } = await supabase
       .from('wallets')
       .update({ balance: userWallet.balance - unlockPrice })
@@ -72,21 +107,15 @@ export async function POST(request: NextRequest) {
     if (deductError) {
       console.error('Deduct error:', deductError)
       return NextResponse.json(
-        { error: 'Failed to process unlock - please run the SQL script supabase_gift_unlock_functions.sql' },
+        { error: 'Failed to process unlock' },
         { status: 500 }
       )
     }
 
-    // Try to add to talent (may fail due to RLS)
-    const { data: talentWallet } = await supabase
-      .from('wallets')
-      .select('balance')
-      .eq('user_id', talentId)
-      .single()
-
+    // Add to talent
     const { error: addError } = await supabase
       .from('wallets')
-      .update({ balance: (talentWallet?.balance || 0) + unlockPrice })
+      .update({ balance: talentWallet.balance + unlockPrice })
       .eq('user_id', talentId)
 
     if (addError) {
@@ -98,36 +127,38 @@ export async function POST(request: NextRequest) {
       
       console.error('Add to talent error:', addError)
       return NextResponse.json(
-        { error: 'Failed to credit talent - please run the SQL script supabase_gift_unlock_functions.sql' },
+        { error: 'Failed to credit talent' },
         { status: 500 }
       )
     }
 
-    // Create records (best effort)
-    try {
-      await supabase.from('transactions').insert([
-        {
-          user_id: userId,
-          amount: -unlockPrice,
-          coins: -unlockPrice,
-          type: 'unlock',
-          status: 'completed',
-          reference_id: mediaId,
-          description: 'Unlocked premium content'
-        },
-        {
-          user_id: talentId,
-          amount: unlockPrice,
-          coins: unlockPrice,
-          type: 'unlock',
-          status: 'completed',
-          reference_id: mediaId,
-          description: 'Content unlock payment'
-        }
-      ])
-    } catch {
-      // Ignore errors
-    }
+    // Create media unlock record
+    await supabase.from('media_unlocks').insert({
+      user_id: userId,
+      media_id: mediaId
+    }).catch(() => {})
+
+    // Create transaction records
+    await supabase.from('transactions').insert([
+      {
+        user_id: userId,
+        amount: -unlockPrice,
+        coins: -unlockPrice,
+        type: 'premium_unlock',
+        status: 'completed',
+        reference_id: mediaId,
+        description: 'Unlocked premium content'
+      },
+      {
+        user_id: talentId,
+        amount: unlockPrice,
+        coins: unlockPrice,
+        type: 'premium_unlock',
+        status: 'completed',
+        reference_id: mediaId,
+        description: 'Content unlock payment'
+      }
+    ]).catch(() => {})
 
     return NextResponse.json({
       success: true,
@@ -143,3 +174,5 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const runtime = 'edge'
