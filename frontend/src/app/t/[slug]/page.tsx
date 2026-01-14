@@ -106,10 +106,31 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
     }) || null
   }
 
-  // If still not found, check if it's a UUID and redirect to /talent/[id]
+  // If still not found, check if it's a UUID and try to find by ID
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (!talent && uuidRegex.test(slug)) {
-    redirect(`/talent/${slug}`)
+    // Try to find talent by UUID
+    const { data: talentById } = await supabase
+      .from('profiles')
+      .select(`
+        *,
+        talent_menus (
+          id,
+          price,
+          is_active,
+          service_type:service_types (
+            id,
+            name,
+            icon,
+            description
+          )
+        )
+      `)
+      .eq('id', slug)
+      .eq('role', 'talent')
+      .single()
+    
+    talent = talentById
   }
 
   if (!talent) {
