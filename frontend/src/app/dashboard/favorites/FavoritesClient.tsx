@@ -7,6 +7,7 @@ import { ArrowLeft, Heart, MapPin, Star, SpinnerGap, HeartBreak, MagnifyingGlass
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { useFavorites } from '@/hooks/useFavorites'
 import { createClient } from '@/lib/supabase/client'
+import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile } from '@/types/database'
 
 interface FavoritesClientProps {
