@@ -2,6 +2,7 @@
 
 import { useState, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { uploadMedia, deleteAsset } from '@/lib/cloudinary'
 import { 
   Image as ImageIcon, Plus, Trash, X, Upload, Lock, Eye,
   SpinnerGap, Check, Crown, Star, SortAscending, SortDescending,
@@ -17,6 +18,7 @@ interface TalentMedia {
   is_premium: boolean
   unlock_price: number
   created_at: string
+  cloudinary_public_id?: string
 }
 
 interface MediaManagerProps {
@@ -34,6 +36,7 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
   const [activeTab, setActiveTab] = useState<MediaTab>('free')
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadError, setUploadError] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -81,9 +84,9 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
       return
     }
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setUploadError('File size must be less than 10MB')
+    // Validate file size (max 50MB for Cloudinary)
+    if (file.size > 50 * 1024 * 1024) {
+      setUploadError('File size must be less than 50MB')
       return
     }
 
@@ -102,38 +105,27 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
     if (!selectedFile) return
 
     setUploading(true)
+    setUploadProgress(0)
     setUploadError('')
 
     try {
+      // Upload to Cloudinary
+      const folder = `talents/${talentId}`
+      const result = await uploadMedia(selectedFile, folder, (progress) => {
+        setUploadProgress(progress)
+      })
+
+      // Insert media record in Supabase
       const supabase = createClient()
-      
-      // Upload to storage
-      const fileExt = selectedFile.name.split('.').pop()
-      const fileName = `${talentId}/${Date.now()}.${fileExt}`
-      
-      const { error: uploadErr, data } = await supabase.storage
-        .from('media')
-        .upload(fileName, selectedFile, {
-          cacheControl: '3600',
-          upsert: false
-        })
-
-      if (uploadErr) throw uploadErr
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('media')
-        .getPublicUrl(fileName)
-
-      // Insert media record
       const { error: insertErr } = await supabase
         .from('media')
         .insert({
           talent_id: talentId,
-          url: publicUrl,
-          type: selectedFile.type.startsWith('video/') ? 'video' : 'image',
+          url: result.secure_url,
+          type: result.resource_type as 'image' | 'video',
           is_premium: isPremium,
-          unlock_price: isPremium ? parseInt(unlockPrice) : 0
+          unlock_price: isPremium ? parseInt(unlockPrice) : 0,
+          cloudinary_public_id: result.public_id
         })
 
       if (insertErr) throw insertErr
@@ -144,6 +136,7 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
       setIsPremium(false)
       setUnlockPrice('50')
       setShowUploadModal(false)
+      setUploadProgress(0)
       onRefresh()
 
     } catch (err: unknown) {
@@ -154,31 +147,40 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
     }
   }
 
-  const handleDelete = async (mediaId: string, mediaUrl: string) => {
+  const handleDelete = async (mediaItem: TalentMedia) => {
     if (!confirm('Are you sure you want to delete this item?')) return
 
-    setDeletingId(mediaId)
+    setDeletingId(mediaItem.id)
 
     try {
       const supabase = createClient()
 
-      // Delete from database
+      // Delete from database first
       const { error: deleteErr } = await supabase
         .from('media')
         .delete()
-        .eq('id', mediaId)
+        .eq('id', mediaItem.id)
 
       if (deleteErr) throw deleteErr
 
-      // Try to delete from storage (extract path from URL)
-      try {
-        const urlParts = new URL(mediaUrl)
-        const pathMatch = urlParts.pathname.match(/\/media\/(.+)$/)
-        if (pathMatch) {
-          await supabase.storage.from('media').remove([pathMatch[1]])
+      // Try to delete from Cloudinary if we have the public_id
+      if (mediaItem.cloudinary_public_id) {
+        try {
+          await deleteAsset(mediaItem.cloudinary_public_id, mediaItem.type)
+        } catch {
+          // Ignore Cloudinary deletion errors
         }
-      } catch {
-        // Ignore storage deletion errors
+      } else {
+        // Fallback: Try to delete from Supabase storage for legacy uploads
+        try {
+          const urlParts = new URL(mediaItem.url)
+          const pathMatch = urlParts.pathname.match(/\/media\/(.+)$/)
+          if (pathMatch) {
+            await supabase.storage.from('media').remove([pathMatch[1]])
+          }
+        } catch {
+          // Ignore storage deletion errors
+        }
       }
 
       onRefresh()
