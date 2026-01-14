@@ -120,7 +120,7 @@ function GallerySection({ media }: { media: Media[] }) {
 
 export function TalentProfileClient({ talent, currentUser, wallet, userId }: TalentProfileClientProps) {
   const router = useRouter()
-  const [liked, setLiked] = useState(false)
+  const { isFavorite, toggleFavorite, isLoaded: favoritesLoaded } = useFavorites(userId)
   const [selectedServices, setSelectedServices] = useState<string[]>([])
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [bookingDate, setBookingDate] = useState('')
@@ -128,7 +128,10 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
   const [bookingNotes, setBookingNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showShareMenu, setShowShareMenu] = useState(false)
+  const [copied, setCopied] = useState(false)
 
+  const isLiked = favoritesLoaded && isFavorite(talent.id)
   const activeServices = talent.talent_menus?.filter(m => m.is_active) || []
   
   const totalPrice = activeServices
@@ -143,6 +146,43 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price)} coins`
+  }
+
+  const handleFavoriteToggle = () => {
+    toggleFavorite(talent.id)
+  }
+
+  const handleShare = async () => {
+    const shareUrl = window.location.href
+    const shareText = `Check out ${talent.display_name} on Nego!`
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${talent.display_name} - Nego`,
+          text: shareText,
+          url: shareUrl,
+        })
+      } catch (err) {
+        // User cancelled or share failed, show menu instead
+        setShowShareMenu(true)
+      }
+    } else {
+      setShowShareMenu(true)
+    }
+  }
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      setCopied(true)
+      setTimeout(() => {
+        setCopied(false)
+        setShowShareMenu(false)
+      }, 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
   }
 
   const toggleService = (serviceId: string) => {
