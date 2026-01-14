@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { MapPin, Heart, Eye, ArrowRight, SpinnerGap, CaretLeft, CaretRight } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile } from '@/types/database'
 
 interface TalentCardProps {
@@ -20,7 +21,7 @@ function TalentCard({ talent, index, isVisible }: TalentCardProps) {
 
   return (
     <Link 
-      href={`/talent/${talent.id}`}
+      href={getTalentUrl(talent)}
       className={`group relative bg-white/5 rounded-xl md:rounded-2xl overflow-hidden border border-white/5 hover:border-[#df2531]/30 transition-all duration-500 cursor-pointer flex-shrink-0 w-[160px] sm:w-[200px] md:w-[240px] ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
       }`}
