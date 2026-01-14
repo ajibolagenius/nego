@@ -525,12 +525,12 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
 
               {/* File Upload Area */}
               <div
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => !uploading && fileInputRef.current?.click()}
                 className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
                   previewUrl 
                     ? 'border-[#df2531]/50 bg-[#df2531]/5' 
                     : 'border-white/20 hover:border-white/40 bg-white/5'
-                }`}
+                } ${uploading ? 'cursor-not-allowed opacity-75' : ''}`}
               >
                 {previewUrl ? (
                   <div className="relative">
@@ -539,16 +539,28 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
                       alt="Preview" 
                       className="max-h-48 mx-auto rounded-lg object-contain"
                     />
-                    <div className="mt-4 flex items-center justify-center gap-2 text-green-400">
-                      <Check size={18} />
-                      <span className="text-sm font-medium">{selectedFile?.name}</span>
-                    </div>
+                    {uploading ? (
+                      <div className="mt-4">
+                        <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                          <div 
+                            className="bg-gradient-to-r from-[#df2531] to-orange-500 h-full transition-all duration-300"
+                            style={{ width: `${uploadProgress}%` }}
+                          />
+                        </div>
+                        <p className="text-white/60 text-sm mt-2">Uploading... {uploadProgress}%</p>
+                      </div>
+                    ) : (
+                      <div className="mt-4 flex items-center justify-center gap-2 text-green-400">
+                        <Check size={18} />
+                        <span className="text-sm font-medium">{selectedFile?.name}</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
                     <Upload size={48} weight="duotone" className="text-white/30 mx-auto mb-4" />
                     <p className="text-white/60 mb-2">Click to select a file</p>
-                    <p className="text-white/30 text-sm">Max 10MB • Images & Videos</p>
+                    <p className="text-white/30 text-sm">Max 50MB • Images & Videos</p>
                   </>
                 )}
                 <input
@@ -557,6 +569,7 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
                   accept="image/*,video/*"
                   onChange={handleFileSelect}
                   className="hidden"
+                  disabled={uploading}
                 />
               </div>
 
