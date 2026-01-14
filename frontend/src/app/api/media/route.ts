@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { createApiClient } from '@/lib/supabase/api'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = createApiClient()
     
     const { searchParams } = new URL(request.url)
     const talentId = searchParams.get('talentId')
