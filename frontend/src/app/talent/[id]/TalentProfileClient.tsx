@@ -311,16 +311,61 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
                 />
               )}
               <button
-                onClick={() => setLiked(!liked)}
+                onClick={handleFavoriteToggle}
+                data-testid="favorite-button"
                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                  liked ? 'bg-[#df2531] text-white' : 'bg-white/5 text-white/60 hover:text-white'
+                  isLiked ? 'bg-[#df2531] text-white' : 'bg-white/5 text-white/60 hover:text-white'
                 }`}
               >
-                <Heart size={20} weight={liked ? 'fill' : 'regular'} />
+                <Heart size={20} weight={isLiked ? 'fill' : 'regular'} />
               </button>
-              <button className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition-colors">
-                <Share size={20} />
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={handleShare}
+                  data-testid="share-button"
+                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+                >
+                  <Share size={20} />
+                </button>
+                
+                {/* Share Menu Dropdown */}
+                {showShareMenu && (
+                  <div className="absolute right-0 top-12 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden">
+                    <button
+                      onClick={copyToClipboard}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 transition-colors text-left"
+                    >
+                      {copied ? (
+                        <>
+                          <CheckCircle size={18} className="text-green-400" />
+                          <span className="text-green-400">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={18} />
+                          <span>Copy Link</span>
+                        </>
+                      )}
+                    </button>
+                    <a
+                      href={`https://twitter.com/intent/tweet?text=Check out ${talent.display_name} on Nego!&url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 transition-colors"
+                    >
+                      <ShareNetwork size={18} />
+                      <span>Share on X</span>
+                    </a>
+                    <button
+                      onClick={() => setShowShareMenu(false)}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-white/50 hover:bg-white/10 transition-colors text-left border-t border-white/10"
+                    >
+                      <X size={18} />
+                      <span>Close</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
