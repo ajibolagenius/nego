@@ -4,12 +4,20 @@ import { redirect, notFound } from 'next/navigation'
 import { TalentProfileClient } from './TalentProfileClient'
 import { Metadata } from 'next'
 
-// Create admin client with service role key for bypassing RLS
-const getAdminClient = () => createAdminClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-)
+// Create admin client lazily with service role key for bypassing RLS
+function getAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error('Missing Supabase env vars for admin client')
+    return null
+  }
+  
+  return createAdminClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false }
+  })
+}
 
 interface PageProps {
   params: Promise<{ id: string }>
