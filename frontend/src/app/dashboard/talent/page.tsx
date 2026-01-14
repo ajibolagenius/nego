@@ -70,6 +70,23 @@ export default async function TalentDashboardPage() {
     .eq('user_id', user.id)
     .single()
 
+  // Fetch earnings breakdown (gifts received, content unlocks)
+  const { data: transactions } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('user_id', user.id)
+    .gt('amount', 0)
+    .in('type', ['gift', 'premium_unlock', 'booking'])
+    .order('created_at', { ascending: false })
+
+  // Fetch gifts received
+  const { data: giftsReceived } = await supabase
+    .from('gifts')
+    .select('*, sender:profiles!gifts_sender_id_fkey(display_name, avatar_url)')
+    .eq('recipient_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
   return (
     <TalentDashboardClient 
       user={user} 
@@ -79,6 +96,8 @@ export default async function TalentDashboardPage() {
       media={media || []}
       bookings={bookings || []}
       wallet={wallet}
+      transactions={transactions || []}
+      giftsReceived={giftsReceived || []}
     />
   )
 }
