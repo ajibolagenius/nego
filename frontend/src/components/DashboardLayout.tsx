@@ -31,7 +31,9 @@ const clientNavItems = [
   { icon: CalendarCheck, label: 'Bookings', href: '/dashboard/bookings' },
   { icon: ChatCircle, label: 'Messages', href: '/dashboard/messages' },
   { icon: Heart, label: 'Favorites', href: '/dashboard/favorites' },
+  { icon: Gift, label: 'Gift History', href: '/dashboard/gifts' },
   { icon: Wallet, label: 'Wallet', href: '/dashboard/wallet' },
+  { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },
   { icon: User, label: 'Profile', href: '/dashboard/profile' },
   { icon: Gear, label: 'Settings', href: '/dashboard/settings' },
 ]
@@ -42,7 +44,9 @@ const talentNavItems = [
   { icon: Briefcase, label: 'Talent Dashboard', href: '/dashboard/talent' },
   { icon: CalendarCheck, label: 'Bookings', href: '/dashboard/bookings' },
   { icon: ChatCircle, label: 'Messages', href: '/dashboard/messages' },
+  { icon: Gift, label: 'Gift History', href: '/dashboard/gifts' },
   { icon: Wallet, label: 'Wallet', href: '/dashboard/wallet' },
+  { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },
   { icon: User, label: 'Profile', href: '/dashboard/profile' },
   { icon: Gear, label: 'Settings', href: '/dashboard/settings' },
 ]
