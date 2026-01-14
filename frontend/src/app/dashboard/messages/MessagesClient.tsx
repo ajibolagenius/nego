@@ -121,14 +121,14 @@ export function MessagesClient({ userId, conversations: initialConversations, us
     setNewMessage('')
 
     // Optimistically add message to UI
-    const tempMessage = {
+    const tempMessage: Message = {
       id: `temp-${Date.now()}`,
       conversation_id: selectedConversation.id,
       sender_id: userId,
       content: messageContent,
       is_read: false,
       created_at: new Date().toISOString(),
-      sender: null
+      sender: undefined
     }
     setMessages(prev => [...prev, tempMessage])
     scrollToBottom()
