@@ -42,11 +42,6 @@ const serviceIcons: Record<string, Icon> = {
 export function TalentProfileClient({ talent, currentUser, wallet, userId }: TalentProfileClientProps) {
   const router = useRouter()
   const [liked, setLiked] = useState(false)
-  
-  // Debug log
-  console.log('TalentProfileClient - currentUser:', currentUser)
-  console.log('TalentProfileClient - currentUser.role:', currentUser?.role)
-  console.log('TalentProfileClient - wallet:', wallet)
   const [selectedServices, setSelectedServices] = useState<string[]>([])
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [bookingDate, setBookingDate] = useState('')
