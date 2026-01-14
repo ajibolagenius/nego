@@ -1,15 +1,34 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
-// Create admin client with service role key for bypassing RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-)
+// Create admin client lazily to avoid errors at module load time
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Missing Supabase environment variables')
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false }
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
+    // Get admin client
+    let supabaseAdmin
+    try {
+      supabaseAdmin = getSupabaseAdmin()
+    } catch (envError) {
+      console.error('Supabase config error:', envError)
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
     const body = await request.json()
     const { userId, mediaId, talentId, unlockPrice } = body
 
@@ -29,6 +48,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (userError || !userWallet) {
+      console.error('User wallet error:', userError)
       return NextResponse.json(
         { error: 'User wallet not found' },
         { status: 404 }
@@ -43,20 +63,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Get or create talent's wallet
-    let { data: talentWallet } = await supabaseAdmin
+    let { data: talentWallet, error: talentWalletError } = await supabaseAdmin
       .from('wallets')
       .select('balance')
       .eq('user_id', talentId)
       .single()
 
-    if (!talentWallet) {
+    if (talentWalletError || !talentWallet) {
       // Create wallet for talent if doesn't exist
-      const { data: newWallet } = await supabaseAdmin
+      const { data: newWallet, error: createError } = await supabaseAdmin
         .from('wallets')
         .insert({ user_id: talentId, balance: 0, escrow_balance: 0 })
         .select('balance')
         .single()
       
+      if (createError) {
+        console.error('Failed to create talent wallet:', createError)
+        return NextResponse.json(
+          { error: 'Failed to process unlock' },
+          { status: 500 }
+        )
+      }
       talentWallet = newWallet
     }
 
@@ -95,7 +122,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create transaction records
-    await supabaseAdmin.from('transactions').insert([
+    const { error: txError } = await supabaseAdmin.from('transactions').insert([
       {
         user_id: userId,
         amount: -unlockPrice,
@@ -115,6 +142,11 @@ export async function POST(request: NextRequest) {
         description: 'Content unlock payment'
       }
     ])
+
+    if (txError) {
+      console.error('Transaction record error:', txError)
+      // Don't fail the request for this
+    }
 
     return NextResponse.json({
       success: true,
