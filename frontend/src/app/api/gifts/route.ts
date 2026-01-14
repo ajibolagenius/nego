@@ -1,9 +1,21 @@
-import { createApiClient } from '@/lib/supabase/api'
+import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createApiClient()
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+    
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    })
     
     const body = await request.json()
     const { senderId, recipientId, amount, message, senderName, recipientName } = body
@@ -12,6 +24,15 @@ export async function POST(request: NextRequest) {
     if (!senderId || !recipientId || !amount) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Validate UUIDs
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(senderId) || !uuidRegex.test(recipientId)) {
+      return NextResponse.json(
+        { error: 'Invalid user ID format' },
         { status: 400 }
       )
     }
@@ -31,13 +52,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Try database function first (most reliable)
-    const { data: rpcData, error: rpcError } = await supabase.rpc('send_gift', {
+    const { data: rpcData, error: rpcError } = await supabase.rpc('handle_gift', {
       p_sender_id: senderId,
       p_recipient_id: recipientId,
       p_amount: amount,
-      p_message: message || null,
-      p_sender_name: senderName || 'Someone',
-      p_recipient_name: recipientName || 'Talent'
+      p_message: message || null
     })
 
     // If RPC works, use its result
@@ -50,14 +69,15 @@ export async function POST(request: NextRequest) {
       }
       return NextResponse.json({
         success: true,
-        message: rpcData.message,
-        newSenderBalance: rpcData.newSenderBalance
+        message: 'Gift sent successfully!',
+        newSenderBalance: rpcData.new_balance
       })
     }
 
-    // Fallback: Direct operations (may fail due to RLS)
-    console.log('RPC not available, trying direct operations:', rpcError?.message)
+    // Log RPC error for debugging
+    console.log('RPC handle_gift not available or failed:', rpcError?.message)
 
+    // Fallback: Direct operations using service role (bypasses RLS)
     // Get sender's wallet
     const { data: senderWallet, error: senderError } = await supabase
       .from('wallets')
@@ -79,7 +99,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Deduct from sender (this should work - user updating their own wallet)
+    // Get recipient wallet
+    const { data: recipientWallet, error: recipientWalletError } = await supabase
+      .from('wallets')
+      .select('balance')
+      .eq('user_id', recipientId)
+      .single()
+
+    if (recipientWalletError || !recipientWallet) {
+      return NextResponse.json(
+        { error: 'Recipient wallet not found' },
+        { status: 404 }
+      )
+    }
+
+    // Deduct from sender
     const { error: deductError } = await supabase
       .from('wallets')
       .update({ balance: senderWallet.balance - amount })
@@ -88,25 +122,19 @@ export async function POST(request: NextRequest) {
     if (deductError) {
       console.error('Deduct error:', deductError)
       return NextResponse.json(
-        { error: 'Failed to process gift - please run the SQL script supabase_gift_unlock_functions.sql' },
+        { error: 'Failed to process gift' },
         { status: 500 }
       )
     }
 
-    // Try to add to recipient (may fail due to RLS)
-    const { data: recipientWallet } = await supabase
-      .from('wallets')
-      .select('balance')
-      .eq('user_id', recipientId)
-      .single()
-
+    // Add to recipient
     const { error: addError } = await supabase
       .from('wallets')
-      .update({ balance: (recipientWallet?.balance || 0) + amount })
+      .update({ balance: recipientWallet.balance + amount })
       .eq('user_id', recipientId)
 
     if (addError) {
-      // Rollback
+      // Rollback sender deduction
       await supabase
         .from('wallets')
         .update({ balance: senderWallet.balance })
@@ -114,57 +142,47 @@ export async function POST(request: NextRequest) {
       
       console.error('Add to recipient error:', addError)
       return NextResponse.json(
-        { error: 'Failed to credit recipient - please run the SQL script supabase_gift_unlock_functions.sql' },
+        { error: 'Failed to credit recipient' },
         { status: 500 }
       )
     }
 
-    // Create records (best effort)
-    try {
-      await supabase.from('gifts').insert({
-        sender_id: senderId,
-        recipient_id: recipientId,
-        amount,
-        message: message || null
-      })
-    } catch {
-      // Ignore errors
-    }
+    // Create gift record
+    await supabase.from('gifts').insert({
+      sender_id: senderId,
+      recipient_id: recipientId,
+      amount,
+      message: message || null
+    }).catch(() => {})
 
-    try {
-      await supabase.from('transactions').insert([
-        {
-          user_id: senderId,
-          amount: -amount,
-          coins: -amount,
-          type: 'gift',
-          status: 'completed',
-          description: `Gift to ${recipientName || 'Talent'}`
-        },
-        {
-          user_id: recipientId,
-          amount: amount,
-          coins: amount,
-          type: 'gift',
-          status: 'completed',
-          description: `Gift from ${senderName || 'Someone'}`
-        }
-      ])
-    } catch {
-      // Ignore errors
-    }
-
-    try {
-      await supabase.from('notifications').insert({
+    // Create transaction records
+    await supabase.from('transactions').insert([
+      {
+        user_id: senderId,
+        amount: -amount,
+        coins: -amount,
+        type: 'gift',
+        status: 'completed',
+        description: `Gift to ${recipientName || 'Talent'}`
+      },
+      {
         user_id: recipientId,
-        type: 'general',
-        title: 'You received a gift! 🎁',
-        message: `${senderName || 'Someone'} sent you ${amount} coins`,
-        data: { gift_amount: amount, sender_id: senderId }
-      })
-    } catch {
-      // Ignore errors
-    }
+        amount: amount,
+        coins: amount,
+        type: 'gift',
+        status: 'completed',
+        description: `Gift from ${senderName || 'Someone'}`
+      }
+    ]).catch(() => {})
+
+    // Create notification
+    await supabase.from('notifications').insert({
+      user_id: recipientId,
+      type: 'general',
+      title: 'You received a gift! 🎁',
+      message: `${senderName || 'Someone'} sent you ${amount} coins`,
+      data: { gift_amount: amount, sender_id: senderId }
+    }).catch(() => {})
 
     return NextResponse.json({
       success: true,
@@ -180,3 +198,5 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const runtime = 'edge'
