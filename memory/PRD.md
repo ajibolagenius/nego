@@ -395,6 +395,11 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 *Wallet Redesign: ✅ COMPLETE*
 *Gallery Lightbox: ✅ COMPLETE*
 *Video Support: ✅ COMPLETE*
+*API 520 Fix: ✅ COMPLETE - Using service_role key*
+*Navigation Updates: ✅ COMPLETE - Added Gift History & Notifications*
+*Dynamic Stat Cards: ✅ COMPLETE*
+*Image Loading Fix: ✅ COMPLETE - Added Supabase domain to next.config*
+*Legacy Route Redirect: ✅ COMPLETE - /talent/[id] → /t/[slug]*
 
 ## API Routes (Server-Side)
 - `/api/gifts` - POST: Send gift coins (bypasses RLS)
