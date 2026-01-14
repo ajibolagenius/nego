@@ -41,9 +41,18 @@ const serviceIcons: Record<string, Icon> = {
   'camera': Camera,
 }
 
-// Gallery Section with Free/Premium Tabs
-function GallerySection({ media }: { media: Media[] }) {
+// Gallery Section with Free/Premium Tabs and Unlock functionality
+interface GallerySectionProps {
+  media: Media[]
+  userId: string
+  userBalance: number
+  onUnlock: (mediaId: string, unlockPrice: number) => Promise<boolean>
+}
+
+function GallerySection({ media, userId, userBalance, onUnlock }: GallerySectionProps) {
   const [activeTab, setActiveTab] = useState<'free' | 'premium'>('free')
+  const [unlocking, setUnlocking] = useState<string | null>(null)
+  const [unlockedMedia, setUnlockedMedia] = useState<Set<string>>(new Set())
   
   const freeMedia = media.filter(m => !m.is_premium)
   const premiumMedia = media.filter(m => m.is_premium)
@@ -51,6 +60,27 @@ function GallerySection({ media }: { media: Media[] }) {
   
   // Don't render if no media at all
   if (media.length === 0) return null
+
+  const handleUnlock = async (item: Media) => {
+    if (userBalance < item.unlock_price) {
+      alert(`Insufficient balance. You need ${item.unlock_price} coins to unlock this content.`)
+      return
+    }
+    
+    setUnlocking(item.id)
+    try {
+      const success = await onUnlock(item.id, item.unlock_price)
+      if (success) {
+        setUnlockedMedia(prev => new Set([...prev, item.id]))
+      }
+    } catch (err) {
+      console.error('Unlock failed:', err)
+    } finally {
+      setUnlocking(null)
+    }
+  }
+
+  const isUnlocked = (mediaId: string) => unlockedMedia.has(mediaId)
   
   return (
     <div className="mb-8" data-testid="talent-gallery">
@@ -94,24 +124,52 @@ function GallerySection({ media }: { media: Media[] }) {
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-3">
-          {currentMedia.map((item) => (
-            <div key={item.id} className="aspect-square rounded-xl overflow-hidden relative group">
-              <Image
-                src={item.url}
-                alt="Gallery"
-                fill
-                className={`object-cover ${item.is_premium ? 'blur-lg' : ''}`}
-              />
-              {item.is_premium && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                  <div className="text-center">
-                    <Lock size={24} className="text-white mx-auto mb-1" />
-                    <p className="text-white text-xs">{item.unlock_price} coins</p>
+          {currentMedia.map((item) => {
+            const unlocked = isUnlocked(item.id)
+            const showBlur = item.is_premium && !unlocked
+            
+            return (
+              <div key={item.id} className="aspect-square rounded-xl overflow-hidden relative group">
+                <Image
+                  src={item.url}
+                  alt="Gallery"
+                  fill
+                  className={`object-cover transition-all ${showBlur ? 'blur-xl scale-110' : ''}`}
+                />
+                {item.is_premium && !unlocked && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                    <button
+                      onClick={() => handleUnlock(item)}
+                      disabled={unlocking === item.id}
+                      className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:from-amber-500/30 hover:to-orange-500/30 transition-all"
+                    >
+                      {unlocking === item.id ? (
+                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Lock size={24} className="text-amber-400" />
+                          <span className="text-white text-xs font-medium">
+                            Unlock for {item.unlock_price} coins
+                          </span>
+                          {userBalance < item.unlock_price && (
+                            <span className="text-red-400 text-[10px]">
+                              Need {item.unlock_price - userBalance} more
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </button>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+                {unlocked && (
+                  <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-green-500/80 text-white text-[10px] font-medium flex items-center gap-1">
+                    <CheckCircle size={12} weight="bold" />
+                    Unlocked
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
