@@ -12,6 +12,7 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { MediaManager } from '@/components/MediaManager'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet, ServiceType, Booking } from '@/types/database'
 
