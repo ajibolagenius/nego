@@ -196,10 +196,12 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
     setShowUploadModal(true)
   }
 
+  const isVideo = (url: string) => url.match(/\.(mp4|webm|ogg|mov)$/i) !== null
+
   return (
     <div className="space-y-4" data-testid="media-manager">
       {/* Tab Headers */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab('free')}
@@ -227,7 +229,26 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
           </button>
         </div>
         
-        <button
+        <div className="flex items-center gap-2">
+          {/* Filter Toggle */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`p-2 rounded-lg transition-all ${
+              showFilters ? 'bg-[#df2531] text-white' : 'bg-white/5 text-white/60 hover:text-white border border-white/10'
+            }`}
+          >
+            <FunnelSimple size={18} />
+          </button>
+          
+          {/* View Mode Toggle */}
+          <button
+            onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+            className="p-2 rounded-lg bg-white/5 text-white/60 hover:text-white border border-white/10 transition-all"
+          >
+            {viewMode === 'grid' ? <List size={18} /> : <GridFour size={18} />}
+          </button>
+          
+          <button
           onClick={() => openUploadModal(activeTab === 'premium')}
           data-testid="upload-media-button"
           className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#df2531] text-white text-sm font-medium hover:bg-[#df2531]/80 transition-colors"
