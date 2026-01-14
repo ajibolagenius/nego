@@ -160,7 +160,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 | `supabase_chat_tables.sql` | Chat messages + conversations tables | ✅ RUN |
 | `supabase_reviews.sql` | Reviews & ratings table | ✅ RUN |
 | `supabase_avatars_storage.sql` | Storage bucket RLS policies | ✅ RUN |
-| `supabase_media_gifting.sql` | Gifts table + Media storage bucket | ⏳ PENDING |
+| `supabase_media_gifting.sql` | Gifts table + Media storage bucket | ✅ RUN |
 
 ---
 
