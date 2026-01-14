@@ -72,7 +72,7 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
 
   // Transform data to include starting_price
-  const talents = (featuredTalents || []).map(talent => {
+  const talents = shuffledTalents.map(talent => {
     // Get the minimum active price from talent_menus, or fallback to starting_price
     const activePrices = talent.talent_menus?.filter((m: { is_active: boolean; price: number }) => m.is_active).map((m: { price: number }) => m.price) || []
     const minPrice = activePrices.length > 0 ? Math.min(...activePrices) : (talent.starting_price || 100000)
