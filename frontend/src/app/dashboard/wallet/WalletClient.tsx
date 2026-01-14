@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation'
 import { 
   ArrowLeft, Coin, Plus, ArrowUpRight, ArrowDownLeft, 
   Clock, CheckCircle, XCircle, Sparkle, ShoppingCart,
-  Gift, CreditCard, Receipt, CaretRight, Icon, Warning
+  Gift, CreditCard, Receipt, CaretRight, Warning,
+  Wallet as WalletIcon, TrendUp, TrendDown, Bank, Lightning, Crown
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
@@ -24,7 +25,7 @@ declare global {
         amount: number
         currency: string
         ref: string
-        callback: (response: any) => void
+        callback: (response: unknown) => void
         onClose: () => void
       }) => { openIframe: () => void }
     }
@@ -38,24 +39,18 @@ interface WalletClientProps {
   transactions: Transaction[]
 }
 
-const transactionIcons: Record<string, Icon> = {
-  purchase: Plus,
-  booking: ShoppingCart,
-  unlock: Gift,
-  refund: ArrowDownLeft,
-  payout: ArrowUpRight,
+const transactionConfig: Record<string, { icon: typeof Coin; color: string; bg: string; label: string }> = {
+  purchase: { icon: Plus, color: 'text-green-400', bg: 'bg-green-500/10', label: 'Coin Purchase' },
+  booking: { icon: ShoppingCart, color: 'text-blue-400', bg: 'bg-blue-500/10', label: 'Booking' },
+  unlock: { icon: Crown, color: 'text-amber-400', bg: 'bg-amber-500/10', label: 'Content Unlock' },
+  gift: { icon: Gift, color: 'text-pink-400', bg: 'bg-pink-500/10', label: 'Gift' },
+  refund: { icon: ArrowDownLeft, color: 'text-cyan-400', bg: 'bg-cyan-500/10', label: 'Refund' },
+  payout: { icon: Bank, color: 'text-purple-400', bg: 'bg-purple-500/10', label: 'Payout' },
+  withdrawal: { icon: ArrowUpRight, color: 'text-red-400', bg: 'bg-red-500/10', label: 'Withdrawal' },
 }
 
-const transactionColors: Record<string, string> = {
-  purchase: 'text-green-400 bg-green-500/10',
-  booking: 'text-amber-400 bg-amber-500/10',
-  unlock: 'text-purple-400 bg-purple-500/10',
-  refund: 'text-blue-400 bg-blue-500/10',
-  payout: 'text-red-400 bg-red-500/10',
-}
-
-// Payment Modal Component - Client only due to react-paystack
-function PaymentModalInner({ 
+// Payment Modal Component
+function PaymentModal({ 
   pkg, 
   email, 
   onClose, 
@@ -73,7 +68,6 @@ function PaymentModalInner({
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || ''
   const isPaystackConfigured = publicKey && publicKey !== 'pk_test_your_paystack_public_key'
   
-  // Load Paystack script
   useEffect(() => {
     if (typeof window !== 'undefined' && !window.PaystackPop) {
       const script = document.createElement('script')
@@ -98,14 +92,10 @@ function PaymentModalInner({
     const reference = `nego_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
     
     try {
-      // Create transaction record first
       const response = await fetch('/api/transactions/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          packageId: pkg.id,
-          reference,
-        }),
+        body: JSON.stringify({ packageId: pkg.id, reference }),
       })
       
       if (!response.ok) {
@@ -113,15 +103,13 @@ function PaymentModalInner({
         throw new Error(data.error || 'Failed to create transaction')
       }
       
-      // Initialize Paystack payment using inline JS
       const handler = window.PaystackPop.setup({
         key: publicKey,
         email: email,
         amount: pkg.priceInKobo,
         currency: 'NGN',
         ref: reference,
-        callback: (response: any) => {
-          console.log('Payment successful:', response)
+        callback: () => {
           onSuccess()
         },
         onClose: () => {
@@ -130,30 +118,47 @@ function PaymentModalInner({
       })
       
       handler.openIframe()
-    } catch (err: any) {
-      console.error('Payment error:', err)
-      setError(err.message || 'Payment failed')
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Payment failed'
+      setError(errorMessage)
       setIsProcessing(false)
     }
   }
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-[#111] border border-white/10 rounded-3xl p-6 w-full max-w-md">
-        <h3 className="text-xl font-bold text-white mb-4">Confirm Purchase</h3>
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-[#0a0a0f] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#df2531] to-[#9a1b23] flex items-center justify-center">
+            <Coin size={28} weight="duotone" className="text-white" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white">Buy {pkg.coins.toLocaleString()} Coins</h3>
+            <p className="text-white/50 text-sm">{pkg.description}</p>
+          </div>
+        </div>
         
-        <div className="bg-white/5 rounded-2xl p-4 mb-6">
-          <div className="flex items-center justify-between mb-3">
+        <div className="space-y-3 mb-6">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
             <span className="text-white/60">Package</span>
             <span className="text-white font-medium">{pkg.displayName}</span>
           </div>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
             <span className="text-white/60">Amount</span>
-            <span className="text-white font-bold">{formatNaira(pkg.price)}</span>
+            <span className="text-white font-bold text-lg">{formatNaira(pkg.price)}</span>
           </div>
-          <div className="flex items-center justify-between pt-3 border-t border-white/10">
-            <span className="text-white/60">You'll receive</span>
-            <span className="text-[#df2531] font-bold text-lg">{pkg.coins.toLocaleString()} coins</span>
+          <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-[#df2531]/10 to-transparent border border-[#df2531]/20">
+            <span className="text-white/60">You&apos;ll receive</span>
+            <div className="flex items-center gap-2">
+              <Coin size={20} className="text-[#df2531]" />
+              <span className="text-[#df2531] font-bold text-xl">{pkg.coins.toLocaleString()}</span>
+            </div>
           </div>
         </div>
         
@@ -162,9 +167,7 @@ function PaymentModalInner({
             <Warning size={20} className="text-amber-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-amber-400 text-sm font-medium">Paystack Not Configured</p>
-              <p className="text-amber-400/70 text-xs mt-1">
-                Please add your Paystack API keys to enable payments.
-              </p>
+              <p className="text-amber-400/70 text-xs mt-1">Add your Paystack API keys to enable payments.</p>
             </div>
           </div>
         )}
@@ -188,7 +191,7 @@ function PaymentModalInner({
           <Button
             onClick={handlePayment}
             disabled={isProcessing || !isPaystackConfigured}
-            className="flex-1 bg-[#df2531] hover:bg-[#df2531]/90 text-white"
+            className="flex-1 bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold"
           >
             {isProcessing ? (
               <div className="flex items-center gap-2">
@@ -202,49 +205,34 @@ function PaymentModalInner({
         </div>
         
         <p className="text-center text-white/30 text-xs mt-4">
-          Secured by Paystack. Your card details are never stored.
+          🔒 Secured by Paystack
         </p>
       </div>
     </div>
   )
 }
 
-// Wrapper to ensure PaymentModal only renders on client
-function PaymentModal(props: { 
-  pkg: CoinPackage
-  email: string
-  onClose: () => void
-  onSuccess: () => void
-}) {
-  const [mounted, setMounted] = useState(false)
-  
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-  
-  if (!mounted) return null
-  
-  return <PaymentModalInner {...props} />
-}
-
-// Success Modal Component
+// Success Modal
 function SuccessModal({ coins, onClose }: { coins: number; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-[#111] border border-white/10 rounded-3xl p-8 w-full max-w-md text-center">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-[#0a0a0f] border border-white/10 rounded-2xl p-8 w-full max-w-md text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
           <CheckCircle size={48} weight="duotone" className="text-green-400" />
         </div>
         
         <h3 className="text-2xl font-bold text-white mb-2">Payment Successful!</h3>
         <p className="text-white/60 mb-6">
-          {coins.toLocaleString()} coins have been added to your wallet.
+          <span className="text-[#df2531] font-bold">{coins.toLocaleString()}</span> coins have been added to your wallet.
         </p>
         
-        <Button
-          onClick={onClose}
-          className="w-full bg-[#df2531] hover:bg-[#df2531]/90 text-white"
-        >
+        <Button onClick={onClose} className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold">
           Done
         </Button>
       </div>
@@ -257,12 +245,17 @@ export function WalletClient({ user, profile, wallet, transactions }: WalletClie
   const [selectedPackage, setSelectedPackage] = useState<CoinPackage | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
   const [purchasedCoins, setPurchasedCoins] = useState(0)
+  const [mounted, setMounted] = useState(false)
+  const [activeTab, setActiveTab] = useState<'buy' | 'history'>('buy')
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-NG', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     })
@@ -283,199 +276,268 @@ export function WalletClient({ user, profile, wallet, transactions }: WalletClie
     router.refresh()
   }
 
+  // Calculate stats
+  const totalSpent = transactions
+    .filter(t => t.amount < 0 || t.coins < 0)
+    .reduce((sum, t) => sum + Math.abs(t.coins || t.amount), 0)
+  
+  const totalReceived = transactions
+    .filter(t => t.amount > 0 || t.coins > 0)
+    .reduce((sum, t) => sum + Math.abs(t.coins || t.amount), 0)
+
   return (
     <>
-    <div className="min-h-screen bg-black pt-16 lg:pt-0 pb-20 lg:pb-0">
-      {/* Payment Modal */}
-      {selectedPackage && (
-        <PaymentModal
-          pkg={selectedPackage}
-          email={user.email || ''}
-          onClose={() => setSelectedPackage(null)}
-          onSuccess={handlePaymentSuccess}
-        />
-      )}
-      
-      {/* Success Modal */}
-      {showSuccess && (
-        <SuccessModal coins={purchasedCoins} onClose={handleSuccessClose} />
-      )}
-      
-      {/* Header */}
-      <header className="sticky top-16 lg:top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-white/60 hover:text-white transition-colors">
-              <ArrowLeft size={24} />
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold text-white">Wallet</h1>
-              <p className="text-white/50 text-sm">Manage your coins</p>
+      <div className="min-h-screen bg-black pt-16 lg:pt-0 pb-20 lg:pb-0">
+        {/* Payment Modal */}
+        {mounted && selectedPackage && (
+          <PaymentModal
+            pkg={selectedPackage}
+            email={user.email || ''}
+            onClose={() => setSelectedPackage(null)}
+            onSuccess={handlePaymentSuccess}
+          />
+        )}
+        
+        {/* Success Modal */}
+        {showSuccess && (
+          <SuccessModal coins={purchasedCoins} onClose={handleSuccessClose} />
+        )}
+        
+        {/* Header */}
+        <header className="sticky top-16 lg:top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
+          <div className="max-w-4xl mx-auto px-4 py-4">
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard" className="text-white/60 hover:text-white transition-colors">
+                <ArrowLeft size={24} />
+              </Link>
+              <div className="flex-1">
+                <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                  <WalletIcon size={24} weight="duotone" className="text-[#df2531]" />
+                  My Wallet
+                </h1>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
-        {/* Balance Card */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#df2531] to-[#9a1b23] p-6 md:p-8">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
-          
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                <Coin size={24} weight="duotone" className="text-white" />
-              </div>
-              <div>
-                <p className="text-white/70 text-sm">Available Balance</p>
-                <p className="text-white/50 text-xs">{user.email}</p>
-              </div>
+        <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+          {/* Balance Card */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#df2531] via-[#b91c26] to-[#7a1219] p-6 md:p-8">
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
+            <div className="absolute top-4 right-4">
+              <Coin size={80} weight="duotone" className="text-white/10" />
             </div>
             
-            <div className="flex items-baseline gap-2 mb-6">
-              <span className="text-5xl md:text-6xl font-bold text-white">
-                {wallet?.balance?.toLocaleString() || 0}
-              </span>
-              <span className="text-white/70 text-lg">coins</span>
-            </div>
-            
-            {(wallet?.escrow_balance || 0) > 0 && (
-              <div className="flex items-center gap-2 text-white/60 text-sm">
-                <Clock size={16} />
-                <span>{wallet?.escrow_balance?.toLocaleString()} coins in escrow</span>
+            <div className="relative">
+              <p className="text-white/70 text-sm mb-1">Available Balance</p>
+              <div className="flex items-baseline gap-3 mb-4">
+                <span className="text-5xl md:text-6xl font-bold text-white">
+                  {(wallet?.balance || 0).toLocaleString()}
+                </span>
+                <span className="text-white/70 text-xl">coins</span>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Buy Coins Section */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white">Buy Coins</h2>
-            <div className="flex items-center gap-2 text-white/50 text-sm">
-              <CreditCard size={16} />
-              <span>Secure payment via Paystack</span>
+              
+              <div className="flex flex-wrap gap-4">
+                {(wallet?.escrow_balance || 0) > 0 && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10">
+                    <Clock size={14} className="text-white/70" />
+                    <span className="text-white/80 text-sm">{wallet?.escrow_balance?.toLocaleString()} in escrow</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {COIN_PACKAGES.map((pkg) => (
-              <button
-                key={pkg.id}
-                onClick={() => handlePurchaseClick(pkg)}
-                className={`relative p-4 rounded-2xl border transition-all duration-300 text-left
-                  border-white/10 bg-white/5 hover:border-[#df2531]/50 hover:bg-white/10
-                `}
-              >
-                {pkg.popular && (
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-[#df2531] rounded-full">
-                    <span className="text-[10px] text-white font-bold uppercase">Popular</span>
-                  </div>
-                )}
-                {pkg.bestValue && (
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-green-500 rounded-full">
-                    <span className="text-[10px] text-white font-bold uppercase">Best Value</span>
-                  </div>
-                )}
-                
-                <div className="flex items-center gap-2 mb-3">
-                  <Coin size={20} weight="duotone" className="text-[#df2531]" />
-                  <span className="text-white font-bold">{pkg.coins.toLocaleString()}</span>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+              <div className="flex items-center gap-2 text-green-400 mb-2">
+                <TrendUp size={18} />
+                <span className="text-sm">Received</span>
+              </div>
+              <p className="text-2xl font-bold text-white">{totalReceived.toLocaleString()}</p>
+              <p className="text-white/40 text-xs">coins total</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+              <div className="flex items-center gap-2 text-red-400 mb-2">
+                <TrendDown size={18} />
+                <span className="text-sm">Spent</span>
+              </div>
+              <p className="text-2xl font-bold text-white">{totalSpent.toLocaleString()}</p>
+              <p className="text-white/40 text-xs">coins total</p>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-2 p-1 bg-white/5 rounded-xl">
+            <button
+              onClick={() => setActiveTab('buy')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${
+                activeTab === 'buy'
+                  ? 'bg-[#df2531] text-white'
+                  : 'text-white/60 hover:text-white'
+              }`}
+            >
+              <Lightning size={18} weight="fill" />
+              Buy Coins
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${
+                activeTab === 'history'
+                  ? 'bg-[#df2531] text-white'
+                  : 'text-white/60 hover:text-white'
+              }`}
+            >
+              <Receipt size={18} />
+              History
+            </button>
+          </div>
+
+          {/* Buy Coins Tab */}
+          {activeTab === 'buy' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold text-white">Select Package</h2>
+                <div className="flex items-center gap-2 text-white/40 text-xs">
+                  <CreditCard size={14} />
+                  <span>Paystack</span>
                 </div>
-                
-                <p className="text-white/90 font-bold mb-1">{formatNaira(pkg.price)}</p>
-                <p className="text-white/40 text-xs">{pkg.description}</p>
-              </button>
-            ))}
-          </div>
-          
-          <p className="text-center text-white/30 text-xs mt-4">
-            Payments processed securely. Coins are non-refundable.
-          </p>
-        </div>
-
-        {/* Transaction History */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white">Transaction History</h2>
-          </div>
-          
-          {transactions.length === 0 ? (
-            <div className="text-center py-12 rounded-2xl bg-white/5 border border-white/10">
-              <Receipt size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
-              <p className="text-white/50 mb-2">No transactions yet</p>
-              <p className="text-white/30 text-sm">Your transaction history will appear here</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {transactions.map((transaction) => {
-                const Icon = transactionIcons[transaction.type] || Receipt
-                const colorClass = transactionColors[transaction.type] || 'text-white/50 bg-white/5'
-                const isCredit = transaction.type === 'purchase' || transaction.type === 'refund'
-                
-                return (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {COIN_PACKAGES.map((pkg) => (
+                  <button
+                    key={pkg.id}
+                    onClick={() => handlePurchaseClick(pkg)}
+                    className={`relative p-5 rounded-2xl border transition-all duration-300 text-left group hover:scale-[1.02] ${
+                      pkg.bestValue 
+                        ? 'border-green-500/50 bg-green-500/5 hover:border-green-500' 
+                        : pkg.popular 
+                        ? 'border-[#df2531]/50 bg-[#df2531]/5 hover:border-[#df2531]' 
+                        : 'border-white/10 bg-white/5 hover:border-white/30'
+                    }`}
                   >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${colorClass}`}>
-                      <Icon size={20} weight="duotone" />
+                    {pkg.popular && (
+                      <div className="absolute -top-2 left-4 px-2 py-0.5 bg-[#df2531] rounded-full">
+                        <span className="text-[10px] text-white font-bold uppercase">Popular</span>
+                      </div>
+                    )}
+                    {pkg.bestValue && (
+                      <div className="absolute -top-2 left-4 px-2 py-0.5 bg-green-500 rounded-full">
+                        <span className="text-[10px] text-white font-bold uppercase">Best Value</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        pkg.bestValue ? 'bg-green-500/20' : pkg.popular ? 'bg-[#df2531]/20' : 'bg-white/10'
+                      }`}>
+                        <Coin size={20} weight="duotone" className={
+                          pkg.bestValue ? 'text-green-400' : pkg.popular ? 'text-[#df2531]' : 'text-white/60'
+                        } />
+                      </div>
+                      <span className="text-white font-bold text-lg">{pkg.coins.toLocaleString()}</span>
                     </div>
                     
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white font-medium capitalize">
-                        {transaction.type.replace('_', ' ')}
-                      </p>
-                      <p className="text-white/40 text-sm truncate">
-                        {transaction.description || `Transaction #${transaction.id.slice(0, 8)}`}
-                      </p>
-                    </div>
+                    <p className="text-white font-bold text-xl mb-1">{formatNaira(pkg.price)}</p>
+                    <p className="text-white/40 text-xs">{pkg.description}</p>
                     
-                    <div className="text-right">
-                      <p className={`font-bold ${isCredit ? 'text-green-400' : 'text-red-400'}`}>
-                        {isCredit ? '+' : '-'}{Math.abs(transaction.coins || transaction.amount)} coins
-                      </p>
-                      <p className="text-white/40 text-xs">
-                        {formatDate(transaction.created_at)}
-                      </p>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <CaretRight size={20} className="text-white/40" />
                     </div>
-                  </div>
-                )
-              })}
+                  </button>
+                ))}
+              </div>
+              
+              <p className="text-center text-white/30 text-xs">
+                Payments processed securely. Coins are non-refundable.
+              </p>
             </div>
           )}
-        </div>
 
-        {/* Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-[#df2531]/10 flex items-center justify-center">
-                <Sparkle size={20} weight="duotone" className="text-[#df2531]" />
-              </div>
-              <h3 className="text-white font-medium">How Coins Work</h3>
+          {/* History Tab */}
+          {activeTab === 'history' && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-bold text-white">Transaction History</h2>
+              
+              {transactions.length === 0 ? (
+                <div className="text-center py-16 rounded-2xl bg-white/5 border border-white/10">
+                  <Receipt size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
+                  <p className="text-white/50 mb-2">No transactions yet</p>
+                  <p className="text-white/30 text-sm">Your transaction history will appear here</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {transactions.map((transaction) => {
+                    const config = transactionConfig[transaction.type] || transactionConfig.purchase
+                    const Icon = config.icon
+                    const isCredit = transaction.type === 'purchase' || transaction.type === 'refund' || 
+                                    (transaction.type === 'gift' && (transaction.coins || transaction.amount) > 0)
+                    const amount = Math.abs(transaction.coins || transaction.amount)
+                    
+                    return (
+                      <div
+                        key={transaction.id}
+                        className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+                      >
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${config.bg}`}>
+                          <Icon size={22} weight="duotone" className={config.color} />
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-medium">{config.label}</p>
+                          <p className="text-white/40 text-sm truncate">
+                            {transaction.description || `#${transaction.id.slice(0, 8)}`}
+                          </p>
+                        </div>
+                        
+                        <div className="text-right">
+                          <p className={`font-bold ${isCredit ? 'text-green-400' : 'text-red-400'}`}>
+                            {isCredit ? '+' : '-'}{amount.toLocaleString()}
+                          </p>
+                          <p className="text-white/40 text-xs">
+                            {formatDate(transaction.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
-            <p className="text-white/50 text-sm">
-              Use coins to book services from talented providers. Coins are held in escrow until the service is completed.
-            </p>
-          </div>
-          
-          <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
+          )}
+
+          {/* Info Section */}
+          <div className="p-5 rounded-2xl bg-gradient-to-br from-white/5 to-transparent border border-white/10">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                <CheckCircle size={20} weight="duotone" className="text-green-400" />
-              </div>
-              <h3 className="text-white font-medium">Secure & Protected</h3>
+              <Sparkle size={24} weight="duotone" className="text-[#df2531]" />
+              <h3 className="text-white font-bold">How Coins Work</h3>
             </div>
-            <p className="text-white/50 text-sm">
-              All payments are processed securely through Paystack. Your coins are protected in our system.
-            </p>
+            <ul className="space-y-2 text-white/60 text-sm">
+              <li className="flex items-center gap-2">
+                <CheckCircle size={14} className="text-green-400 flex-shrink-0" />
+                Use coins to book services from talented providers
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle size={14} className="text-green-400 flex-shrink-0" />
+                Unlock exclusive premium content
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle size={14} className="text-green-400 flex-shrink-0" />
+                Send gifts to your favorite talents
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle size={14} className="text-green-400 flex-shrink-0" />
+                Coins are held in escrow until service completion
+              </li>
+            </ul>
           </div>
         </div>
       </div>
-    </div>
-    <MobileBottomNav userRole={profile?.role === 'talent' ? 'talent' : 'client'} />
+      <MobileBottomNav userRole={profile?.role === 'talent' ? 'talent' : 'client'} />
     </>
   )
 }
