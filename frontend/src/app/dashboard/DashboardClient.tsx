@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { 
   House, User, Wallet, CalendarCheck, Heart, Gear, SignOut, 
   MagnifyingGlass, Coin, ArrowRight, SpinnerGap, MapPin,
-  Plus, CaretRight, Briefcase, ChatCircle
+  Plus, CaretRight, Briefcase, ChatCircle, Gift
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
