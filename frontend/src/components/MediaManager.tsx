@@ -422,7 +422,7 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
               
               {/* Delete */}
               <button 
-                onClick={() => handleDelete(item.id, item.url)}
+                onClick={() => handleDelete(item)}
                 disabled={deletingId === item.id}
                 className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
               >
@@ -460,7 +460,7 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
               {/* Hover Overlay */}
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <button 
-                  onClick={() => handleDelete(item.id, item.url)}
+                  onClick={() => handleDelete(item)}
                   disabled={deletingId === item.id}
                   className="p-3 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50"
                 >
