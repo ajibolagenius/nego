@@ -1,17 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
-import crypto from 'crypto'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
+
+// SHA1 hash using Web Crypto API
+async function sha1(message: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(message)
+  const hashBuffer = await crypto.subtle.digest('SHA-1', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    // Check authentication using cookies
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.json({ error: 'Configuration error' }, { status: 500 })
+    }
 
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    // Get auth token from cookie
+    const cookieHeader = request.headers.get('cookie') || ''
+    const authToken = cookieHeader.split(';').find(c => c.trim().startsWith('sb-'))
+    
+    if (!authToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
@@ -19,33 +33,24 @@ export async function POST(request: NextRequest) {
     const apiSecret = process.env.CLOUDINARY_API_SECRET
 
     if (!cloudName || !apiKey || !apiSecret) {
-      return NextResponse.json(
-        { error: 'Cloudinary configuration missing' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Cloudinary configuration missing' }, { status: 500 })
     }
 
     const body = await request.json()
     const { publicId, resourceType = 'image' } = body
 
     if (!publicId) {
-      return NextResponse.json(
-        { error: 'Missing publicId' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Missing publicId' }, { status: 400 })
     }
 
     const timestamp = Math.round(new Date().getTime() / 1000)
     
     // Create signature for deletion
     const paramsToSign = `public_id=${publicId}&timestamp=${timestamp}`
-    const signature = crypto
-      .createHash('sha1')
-      .update(paramsToSign + apiSecret)
-      .digest('hex')
+    const signature = await sha1(paramsToSign + apiSecret)
 
     // Call Cloudinary destroy API
-    const formData = new FormData()
+    const formData = new URLSearchParams()
     formData.append('public_id', publicId)
     formData.append('timestamp', timestamp.toString())
     formData.append('api_key', apiKey)
@@ -55,7 +60,8 @@ export async function POST(request: NextRequest) {
       `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/destroy`,
       {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString()
       }
     )
 
@@ -77,3 +83,5 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const runtime = 'edge'
