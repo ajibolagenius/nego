@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { v2 as cloudinary } from 'cloudinary'
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true
-})
+import crypto from 'crypto'
 
 // Allowed folders for uploads
-const ALLOWED_FOLDERS = ['users', 'talents', 'media', 'avatars', 'profiles']
+const ALLOWED_FOLDERS = ['users', 'talents', 'media', 'avatars', 'profiles', 'uploads']
 
 export async function GET(request: NextRequest) {
   try {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    const apiKey = process.env.CLOUDINARY_API_KEY
+    const apiSecret = process.env.CLOUDINARY_API_SECRET
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      return NextResponse.json(
+        { error: 'Cloudinary configuration missing' },
+        { status: 500 }
+      )
+    }
+
     const searchParams = request.nextUrl.searchParams
     const resourceType = searchParams.get('resource_type') || 'image'
     const folder = searchParams.get('folder') || 'uploads'
@@ -28,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     // Validate folder (basic security check)
     const folderBase = folder.split('/')[0]
-    if (!ALLOWED_FOLDERS.includes(folderBase) && folderBase !== 'uploads') {
+    if (!ALLOWED_FOLDERS.includes(folderBase)) {
       return NextResponse.json(
         { error: 'Invalid folder path' },
         { status: 400 }
@@ -37,21 +40,18 @@ export async function GET(request: NextRequest) {
 
     const timestamp = Math.round(new Date().getTime() / 1000)
     
-    const paramsToSign = {
-      timestamp,
-      folder,
-    }
-
-    const signature = cloudinary.utils.api_sign_request(
-      paramsToSign,
-      process.env.CLOUDINARY_API_SECRET!
-    )
+    // Create signature manually without SDK
+    const paramsToSign = `folder=${folder}&timestamp=${timestamp}`
+    const signature = crypto
+      .createHash('sha1')
+      .update(paramsToSign + apiSecret)
+      .digest('hex')
 
     return NextResponse.json({
       signature,
       timestamp,
-      cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
+      cloud_name: cloudName,
+      api_key: apiKey,
       folder,
       resource_type: resourceType
     })
