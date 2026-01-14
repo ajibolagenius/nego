@@ -86,15 +86,55 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // 6. Execute the gift transaction
-    const result = await executeGiftTransaction(supabase, {
-      senderId: giftRequest.senderId,
-      recipientId: giftRequest.recipientId,
-      amount: giftRequest.amount,
-      message: giftRequest.message,
-      senderName: giftRequest.senderName || 'Someone',
-      recipientName: giftRequest.recipientName || 'Talent',
-    })
+    // 6. Try RPC function first (more reliable, atomic transaction)
+    let result: { success: boolean; error?: string; newSenderBalance?: number; giftId?: string }
+
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('handle_gift', {
+        p_sender_id: giftRequest.senderId,
+        p_recipient_id: giftRequest.recipientId,
+        p_amount: giftRequest.amount,
+        p_message: giftRequest.message || null,
+      })
+
+      if (!rpcError && rpcData) {
+        console.log(`[Gift API ${requestId}] RPC result:`, JSON.stringify(rpcData))
+        
+        if (rpcData.success) {
+          result = {
+            success: true,
+            newSenderBalance: rpcData.new_balance,
+            giftId: rpcData.gift_id,
+          }
+        } else {
+          result = {
+            success: false,
+            error: rpcData.error || 'Gift failed',
+          }
+        }
+      } else {
+        // RPC failed or not available, fall back to direct operations
+        console.log(`[Gift API ${requestId}] RPC not available, using fallback:`, rpcError?.message)
+        result = await executeGiftTransaction(supabase, {
+          senderId: giftRequest.senderId,
+          recipientId: giftRequest.recipientId,
+          amount: giftRequest.amount,
+          message: giftRequest.message,
+          senderName: giftRequest.senderName || 'Someone',
+          recipientName: giftRequest.recipientName || 'Talent',
+        })
+      }
+    } catch (rpcCatchError) {
+      console.log(`[Gift API ${requestId}] RPC exception, using fallback:`, rpcCatchError)
+      result = await executeGiftTransaction(supabase, {
+        senderId: giftRequest.senderId,
+        recipientId: giftRequest.recipientId,
+        amount: giftRequest.amount,
+        message: giftRequest.message,
+        senderName: giftRequest.senderName || 'Someone',
+        recipientName: giftRequest.recipientName || 'Talent',
+      })
+    }
 
     if (!result.success) {
       console.log(`[Gift API ${requestId}] Transaction failed:`, result.error)
