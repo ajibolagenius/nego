@@ -30,23 +30,40 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .single()
 
-  // Fetch featured talents (role = 'talent', limit 6)
+  // Fetch featured talents (role = 'talent', is_verified = true, limit 6)
   const { data: featuredTalents } = await supabase
     .from('profiles')
     .select(`
       id,
       display_name,
+      username,
       avatar_url,
       location,
       status,
       starting_price,
+      is_verified,
       talent_menus (
         price,
         is_active
       )
     `)
     .eq('role', 'talent')
+    .eq('is_verified', true)
+    .order('created_at', { ascending: false })
     .limit(6)
+
+  // Fetch active bookings count
+  const { count: activeBookingsCount } = await supabase
+    .from('bookings')
+    .select('*', { count: 'exact', head: true })
+    .eq(profile?.role === 'talent' ? 'talent_id' : 'client_id', user.id)
+    .in('status', ['pending', 'accepted', 'payment_pending'])
+
+  // Fetch favorites count (for clients)
+  const { count: favoritesCount } = await supabase
+    .from('favorites')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
 
   // Transform data to include starting_price
   const talents = (featuredTalents || []).map(talent => {
@@ -57,6 +74,7 @@ export default async function DashboardPage() {
     return {
       id: talent.id,
       display_name: talent.display_name || 'Talent',
+      username: talent.username,
       avatar_url: talent.avatar_url,
       location: talent.location || 'Lagos',
       status: (talent.status === 'online' ? 'online' : 'offline') as 'online' | 'offline',
@@ -64,5 +82,14 @@ export default async function DashboardPage() {
     }
   })
 
-  return <DashboardClient user={user} profile={profile} wallet={wallet} featuredTalents={talents} />
+  return (
+    <DashboardClient 
+      user={user} 
+      profile={profile} 
+      wallet={wallet} 
+      featuredTalents={talents}
+      activeBookings={activeBookingsCount || 0}
+      favoritesCount={favoritesCount || 0}
+    />
+  )
 }
