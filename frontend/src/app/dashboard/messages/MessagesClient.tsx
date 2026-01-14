@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { 
   ArrowLeft, PaperPlaneRight, User, Chat, MagnifyingGlass,
-  DotsThree, Phone, VideoCamera, SpinnerGap, CheckCircle
+  DotsThree, Phone, VideoCamera, SpinnerGap, CheckCircle, Checks
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -22,8 +22,10 @@ interface MessagesClientProps {
 export function MessagesClient({ userId, conversations: initialConversations, userRole = 'client' }: MessagesClientProps) {
   const supabase = createClient()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   const [conversations, setConversations] = useState(initialConversations)
   const [selectedConversation, setSelectedConversation] = useState<(Conversation & { other_user?: Profile | null }) | null>(null)
@@ -32,6 +34,44 @@ export function MessagesClient({ userId, conversations: initialConversations, us
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+  const [otherUserTyping, setOtherUserTyping] = useState(false)
+
+  // Scroll to bottom of messages
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [])
+
+  // Fetch messages for selected conversation
+  const fetchMessages = useCallback(async (conversationId: string) => {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('messages')
+      .select(`
+        *,
+        sender:profiles!messages_sender_id_fkey(id, display_name, avatar_url)
+      `)
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true })
+
+    if (!error && data) {
+      setMessages(data)
+      // Mark messages as read
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('conversation_id', conversationId)
+        .neq('sender_id', userId)
+    }
+    setLoading(false)
+  }, [supabase, userId])
+
+  // Select a conversation
+  const handleSelectConversation = useCallback((conv: Conversation & { other_user?: Profile | null }) => {
+    setSelectedConversation(conv)
+    fetchMessages(conv.id)
+    inputRef.current?.focus()
+  }, [fetchMessages])
 
   // Auto-select conversation from URL parameter
   useEffect(() => {
@@ -60,49 +100,16 @@ export function MessagesClient({ userId, conversations: initialConversations, us
             .single()
           
           const convWithUser = { ...data, other_user: profile }
-          setConversations([convWithUser])
+          setConversations(prev => {
+            if (prev.find(c => c.id === data.id)) return prev
+            return [convWithUser, ...prev]
+          })
           handleSelectConversation(convWithUser)
         }
       }
       fetchNewConversation()
     }
-  }, [searchParams, conversations.length])
-
-  // Scroll to bottom of messages
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  // Fetch messages for selected conversation
-  const fetchMessages = async (conversationId: string) => {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('messages')
-      .select(`
-        *,
-        sender:profiles!messages_sender_id_fkey(id, display_name, avatar_url)
-      `)
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true })
-
-    if (!error && data) {
-      setMessages(data)
-      // Mark messages as read
-      await supabase
-        .from('messages')
-        .update({ is_read: true })
-        .eq('conversation_id', conversationId)
-        .neq('sender_id', userId)
-    }
-    setLoading(false)
-  }
-
-  // Select a conversation
-  const handleSelectConversation = (conv: Conversation) => {
-    setSelectedConversation(conv)
-    fetchMessages(conv.id)
-    inputRef.current?.focus()
-  }
+  }, [searchParams, conversations.length, handleSelectConversation, supabase, userId])
 
   // Send a message
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -110,25 +117,86 @@ export function MessagesClient({ userId, conversations: initialConversations, us
     if (!newMessage.trim() || !selectedConversation) return
 
     setSending(true)
-    const { error } = await supabase
+    const messageContent = newMessage.trim()
+    setNewMessage('')
+
+    // Optimistically add message to UI
+    const tempMessage = {
+      id: `temp-${Date.now()}`,
+      conversation_id: selectedConversation.id,
+      sender_id: userId,
+      content: messageContent,
+      is_read: false,
+      created_at: new Date().toISOString(),
+      sender: null
+    }
+    setMessages(prev => [...prev, tempMessage])
+    scrollToBottom()
+
+    const { data, error } = await supabase
       .from('messages')
       .insert({
         conversation_id: selectedConversation.id,
         sender_id: userId,
-        content: newMessage.trim(),
+        content: messageContent,
       })
+      .select(`
+        *,
+        sender:profiles!messages_sender_id_fkey(id, display_name, avatar_url)
+      `)
+      .single()
 
-    if (!error) {
-      setNewMessage('')
+    if (!error && data) {
+      // Replace temp message with real one
+      setMessages(prev => prev.map(m => 
+        m.id === tempMessage.id ? data : m
+      ))
+      
+      // Update conversation's last_message_at
+      await supabase
+        .from('conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', selectedConversation.id)
+    } else {
+      // Remove temp message on error
+      setMessages(prev => prev.filter(m => m.id !== tempMessage.id))
+      setNewMessage(messageContent) // Restore message
     }
     setSending(false)
   }
 
-  // Subscribe to new messages
+  // Handle typing indicator
+  const handleTyping = () => {
+    if (!selectedConversation) return
+    
+    // Broadcast typing status
+    supabase.channel(`typing:${selectedConversation.id}`).send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { userId, isTyping: true }
+    })
+
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+
+    // Set timeout to stop typing indicator
+    typingTimeoutRef.current = setTimeout(() => {
+      supabase.channel(`typing:${selectedConversation.id}`).send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { userId, isTyping: false }
+      })
+    }, 2000)
+  }
+
+  // Subscribe to new messages and typing indicators
   useEffect(() => {
     if (!selectedConversation) return
 
-    const channel = supabase
+    // Message subscription
+    const messageChannel = supabase
       .channel(`messages:${selectedConversation.id}`)
       .on(
         'postgres_changes',
@@ -139,6 +207,9 @@ export function MessagesClient({ userId, conversations: initialConversations, us
           filter: `conversation_id=eq.${selectedConversation.id}`,
         },
         async (payload) => {
+          // Only process messages from other users
+          if (payload.new.sender_id === userId) return
+
           // Fetch the full message with sender info
           const { data } = await supabase
             .from('messages')
@@ -150,28 +221,57 @@ export function MessagesClient({ userId, conversations: initialConversations, us
             .single()
 
           if (data) {
-            setMessages(prev => [...prev, data])
-            // Mark as read if not from current user
-            if (data.sender_id !== userId) {
-              await supabase
-                .from('messages')
-                .update({ is_read: true })
-                .eq('id', data.id)
-            }
+            setMessages(prev => {
+              // Avoid duplicates
+              if (prev.find(m => m.id === data.id)) return prev
+              return [...prev, data]
+            })
+            
+            // Mark as read
+            await supabase
+              .from('messages')
+              .update({ is_read: true })
+              .eq('id', data.id)
           }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${selectedConversation.id}`,
+        },
+        (payload) => {
+          // Update read status in UI
+          setMessages(prev => prev.map(m => 
+            m.id === payload.new.id ? { ...m, is_read: payload.new.is_read } : m
+          ))
         }
       )
       .subscribe()
 
+    // Typing indicator subscription
+    const typingChannel = supabase
+      .channel(`typing:${selectedConversation.id}`)
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        if (payload.payload.userId !== userId) {
+          setOtherUserTyping(payload.payload.isTyping)
+        }
+      })
+      .subscribe()
+
     return () => {
-      supabase.removeChannel(channel)
+      supabase.removeChannel(messageChannel)
+      supabase.removeChannel(typingChannel)
     }
-  }, [selectedConversation, userId])
+  }, [selectedConversation, userId, supabase])
 
   // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [messages, scrollToBottom])
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -238,6 +338,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                   <button
                     key={conv.id}
                     onClick={() => handleSelectConversation(conv)}
+                    data-testid={`conversation-${conv.id}`}
                     className={`w-full p-4 flex items-center gap-3 hover:bg-white/5 transition-colors border-b border-white/5 ${
                       selectedConversation?.id === conv.id ? 'bg-white/10' : ''
                     }`}
@@ -250,6 +351,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                           width={48}
                           height={48}
                           className="w-full h-full object-cover"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -299,6 +401,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                           width={40}
                           height={40}
                           className="w-full h-full object-cover"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -310,19 +413,23 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                       <p className="text-white font-medium">
                         {selectedConversation.other_user?.display_name || 'Unknown'}
                       </p>
-                      <p className="text-white/40 text-xs capitalize">
-                        {selectedConversation.other_user?.role}
-                      </p>
+                      {otherUserTyping ? (
+                        <p className="text-[#df2531] text-sm animate-pulse">typing...</p>
+                      ) : (
+                        <p className="text-white/40 text-sm capitalize">
+                          {selectedConversation.other_user?.role || 'User'}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+                    <button className="p-2 rounded-full text-white/40 hover:text-white hover:bg-white/10">
                       <Phone size={20} />
                     </button>
-                    <button className="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+                    <button className="p-2 rounded-full text-white/40 hover:text-white hover:bg-white/10">
                       <VideoCamera size={20} />
                     </button>
-                    <button className="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+                    <button className="p-2 rounded-full text-white/40 hover:text-white hover:bg-white/10">
                       <DotsThree size={20} weight="bold" />
                     </button>
                   </div>
@@ -331,57 +438,46 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {loading ? (
-                    <div className="flex items-center justify-center py-12">
+                    <div className="flex items-center justify-center py-8">
                       <SpinnerGap size={32} className="text-[#df2531] animate-spin" />
                     </div>
                   ) : messages.length === 0 ? (
-                    <div className="text-center py-12">
+                    <div className="text-center py-8">
                       <Chat size={48} className="text-white/20 mx-auto mb-4" />
                       <p className="text-white/50">No messages yet</p>
-                      <p className="text-white/30 text-sm">Start the conversation!</p>
+                      <p className="text-white/30 text-sm">Send a message to start the conversation</p>
                     </div>
                   ) : (
-                    messages.map((msg) => {
-                      const isMine = msg.sender_id === userId
+                    messages.map((message) => {
+                      const isOwn = message.sender_id === userId
                       return (
                         <div
-                          key={msg.id}
-                          className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
+                          key={message.id}
+                          className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                         >
-                          <div className={`flex items-end gap-2 max-w-[75%] ${isMine ? 'flex-row-reverse' : ''}`}>
-                            {!isMine && (
-                              <div className="w-8 h-8 rounded-full bg-white/10 overflow-hidden shrink-0">
-                                {msg.sender?.avatar_url ? (
-                                  <Image
-                                    src={msg.sender.avatar_url}
-                                    alt=""
-                                    width={32}
-                                    height={32}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <User size={16} className="text-white/40" />
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                          <div className={`max-w-[70%] ${isOwn ? 'order-1' : ''}`}>
                             <div
                               className={`px-4 py-2.5 rounded-2xl ${
-                                isMine
+                                isOwn
                                   ? 'bg-[#df2531] text-white rounded-br-md'
                                   : 'bg-white/10 text-white rounded-bl-md'
                               }`}
                             >
-                              <p className="text-sm">{msg.content}</p>
-                              <div className={`flex items-center gap-1 mt-1 ${isMine ? 'justify-end' : ''}`}>
-                                <span className="text-[10px] opacity-60">
-                                  {formatTime(msg.created_at)}
+                              <p className="break-words">{message.content}</p>
+                            </div>
+                            <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : ''}`}>
+                              <span className="text-white/40 text-xs">
+                                {formatTime(message.created_at)}
+                              </span>
+                              {isOwn && (
+                                <span className="text-white/40">
+                                  {message.is_read ? (
+                                    <Checks size={14} className="text-blue-400" />
+                                  ) : (
+                                    <CheckCircle size={14} />
+                                  )}
                                 </span>
-                                {isMine && msg.is_read && (
-                                  <CheckCircle size={12} className="opacity-60" />
-                                )}
-                              </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -398,14 +494,19 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                       ref={inputRef}
                       type="text"
                       value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
+                      onChange={(e) => {
+                        setNewMessage(e.target.value)
+                        handleTyping()
+                      }}
                       placeholder="Type a message..."
-                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-full px-5 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50"
+                      data-testid="message-input"
                     />
                     <Button
                       type="submit"
                       disabled={!newMessage.trim() || sending}
-                      className="bg-[#df2531] hover:bg-[#c41f2a] text-white p-3 rounded-xl disabled:opacity-50"
+                      className="w-12 h-12 rounded-full bg-[#df2531] hover:bg-[#df2531]/90 text-white flex items-center justify-center disabled:opacity-50"
+                      data-testid="send-message-btn"
                     >
                       {sending ? (
                         <SpinnerGap size={20} className="animate-spin" />
@@ -421,9 +522,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                 <div className="text-center">
                   <Chat size={64} className="text-white/20 mx-auto mb-4" />
                   <p className="text-white/50 text-lg">Select a conversation</p>
-                  <p className="text-white/30 text-sm mt-1">
-                    Choose from your existing conversations
-                  </p>
+                  <p className="text-white/30 text-sm">Choose from your existing conversations or start a new one</p>
                 </div>
               </div>
             )}
