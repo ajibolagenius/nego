@@ -198,6 +198,7 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
 
   const userBalance = wallet?.balance || 0
   const hasInsufficientBalance = totalPrice > userBalance && selectedServices.length > 0
+  const [currentBalance, setCurrentBalance] = useState(userBalance)
 
   const formatPrice = (price: number) => {
     return `${new Intl.NumberFormat('en-NG', {
@@ -240,6 +241,63 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
       }, 2000)
     } catch (err) {
       console.error('Failed to copy:', err)
+    }
+  }
+
+  const handleUnlockMedia = async (mediaId: string, unlockPrice: number): Promise<boolean> => {
+    if (currentBalance < unlockPrice) return false
+
+    try {
+      const supabase = createClient()
+
+      // Deduct from user's wallet
+      const { error: deductError } = await supabase
+        .from('wallets')
+        .update({ balance: currentBalance - unlockPrice })
+        .eq('user_id', userId)
+
+      if (deductError) throw deductError
+
+      // Add to talent's wallet
+      const { data: talentWallet } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', talent.id)
+        .single()
+
+      await supabase
+        .from('wallets')
+        .update({ balance: (talentWallet?.balance || 0) + unlockPrice })
+        .eq('user_id', talent.id)
+
+      // Create transaction records
+      await supabase.from('transactions').insert([
+        {
+          user_id: userId,
+          amount: -unlockPrice,
+          coins: -unlockPrice,
+          type: 'unlock',
+          status: 'completed',
+          reference_id: mediaId,
+          description: `Unlocked premium content`
+        },
+        {
+          user_id: talent.id,
+          amount: unlockPrice,
+          coins: unlockPrice,
+          type: 'unlock',
+          status: 'completed',
+          reference_id: mediaId,
+          description: `Content unlock payment`
+        }
+      ])
+
+      // Update local balance
+      setCurrentBalance(prev => prev - unlockPrice)
+      return true
+    } catch (err) {
+      console.error('Unlock error:', err)
+      return false
     }
   }
 
