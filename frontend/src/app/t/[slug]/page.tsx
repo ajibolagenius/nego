@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params
   const supabase = await createClient()
   
-  // Try to find talent by username first, then by slug match
+  // Try to find talent by username first
   const { data: talent } = await supabase
     .from('profiles')
     .select('display_name, username')
@@ -52,7 +52,7 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
     redirect('/login')
   }
 
-  // First try exact username match (without media - we'll fetch that separately)
+  // First try exact username match (without media)
   let { data: talent } = await supabase
     .from('profiles')
     .select(`
@@ -72,32 +72,9 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
     .eq('role', 'talent')
     .eq('username', slug)
     .single()
-      talent_menus (
-        id,
-        price,
-        is_active,
-        service_type:service_types (
-          id,
-          name,
-          icon,
-          description
-        )
-      ),
-      media (
-        id,
-        url,
-        type,
-        is_premium,
-        unlock_price
-      )
-    `)
-    .eq('role', 'talent')
-    .eq('username', slug)
-    .single()
 
   // If not found by username, try matching by generated slug from display_name
   if (!talent) {
-    // Fetch all talents and find by slug match
     const { data: allTalents } = await supabase
       .from('profiles')
       .select(`
@@ -112,13 +89,6 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
             icon,
             description
           )
-        ),
-        media (
-          id,
-          url,
-          type,
-          is_premium,
-          unlock_price
         )
       `)
       .eq('role', 'talent')
@@ -137,6 +107,19 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
 
   if (!talent) {
     notFound()
+  }
+
+  // Fetch ALL media (including premium) using admin client to bypass RLS
+  const { data: media } = await supabaseAdmin
+    .from('media')
+    .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
+    .eq('talent_id', talent.id)
+    .order('created_at', { ascending: false })
+
+  // Attach media to talent object
+  const talentWithMedia = {
+    ...talent,
+    media: media || []
   }
 
   // Fetch reviews for this talent
@@ -174,7 +157,7 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
   return (
     <TalentProfileClient 
       talent={{
-        ...talent,
+        ...talentWithMedia,
         reviews: reviews || [],
         average_rating: averageRating,
         review_count: reviewCount
