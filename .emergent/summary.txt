@@ -5,89 +5,96 @@ The initial scope included:
 *   **Tech Stack**: Next.js 14, Supabase, PostgreSQL, Tailwind CSS, Shadcn/UI.
 *   **Core Features**: Role-based authentication (Client/Talent/Admin), landing page, talent browsing/profiles, a full booking flow, user dashboards, client verification, an admin panel, a coin-based wallet with Paystack, real-time chat, and notifications.
 
-Recent user requests being implemented:
-1.  **Talent Media Manager**: Talents should have Free and Premium tabs in their gallery to upload public or locked content.
-2.  **Gifting**: Clients should be able to gift coins to talents (minimum 100 coins).
-3.  **Fixes**: Address an issue where Featured Talents on the client dashboard shows as empty.
+Recent user requests implemented include:
+1.  **Talent Media Manager**: Talents can upload Free and Premium content.
+2.  **Gifting**: Clients can gift coins to talents.
+3.  **Premium Content Unlock**: Clients can pay to unlock premium media.
+4.  **User-Friendly URLs**: Talent profiles are accessible via a username slug (e.g., ).
+5.  **Notifications Page**: A dedicated page to view all notifications.
+6.  **Gift History & Leaderboard**: A page for gift history and a leaderboard on talent profiles.
+7.  **Media Sorting**: Options to sort media in the talent dashboard.
+8.  **Push Notifications**: Ability for users to subscribe to push notifications.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The project is a comprehensive full-stack Next.js 14 application with Supabase as the backend. The application is feature-rich and stable. It includes:
+The project is a feature-rich, full-stack Next.js 14 application with Supabase as the backend. The application is largely stable and includes:
 - A complete, role-based authentication system (email & Supabase native Google OAuth).
-- Fully functional and mobile-responsive Client, Talent, and Admin dashboards with appropriate navigation (sidebars and mobile bottom nav).
-- A complete booking flow, including talent acceptance/rejection, client verification, and auto-expiration of stale bookings via a Vercel Cron-ready API route.
+- Fully functional and mobile-responsive Client, Talent, and Admin dashboards.
+- A complete booking flow, including talent acceptance/rejection, and a pre-configured API route for auto-expiring bookings.
 - A full Forgot Password and Reset Password flow.
 - A profile image upload system using Supabase Storage.
-- A complete reviews and ratings system, allowing clients to leave reviews and talents to respond.
-- An in-app notification system and Resend integration for transactional emails (e.g., new review notifications).
-- A functional favorites system for clients to save talents.
+- A complete reviews and ratings system with email notifications.
+- A functional favorites system for clients.
 - An admin panel for managing user verifications and talent payout requests.
 - A landing page with a dynamic, auto-scrolling talent carousel.
+- Server-side API routes (, ) that use Supabase RPC functions to handle secure transactions like gifting and unlocking content, bypassing client-side RLS policies.
+- Slug-based, user-friendly URLs for talent profiles (e.g., ).
+- A dedicated notifications page ().
+- A fully implemented Gift History page, a Gift Leaderboard component, media sorting options in the talent dashboard, and a complete setup for browser push notifications.
 
 **Last working item**:
-The agent was starting the implementation of the Talent Media Manager and Gift Coins features.
+The agent just finished implementing three features requested by the user: Gift History & Leaderboard, Media Sorting Options, and Push Notifications.
 
-- **Last item agent was working**: The agent began work on the new features by exploring the existing codebase to plan the implementation. The agent reviewed  and  to understand the current structure for the talent's media gallery before making changes.
-- **Status**: IN PROGRESS
-- **Agent Testing Done**: N
-- **Which testing method agent to use?**: testing_agent_v3_fork
+- **Last item agent was working**: The agent implemented all three features, created the necessary components and pages, and then invoked the testing agent to verify the functionality. The testing agent ran and provided a test report.
+- **Status**: USER VERIFICATION PENDING
+- **Agent Testing Done**: Y
+- **Which testing method agent to use?**: NA (Testing for this item is complete. The next agent should start by reviewing the test report).
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-- **Issue 1**: Implement Talent Media Manager & Gifting Features (P0 - HIGHEST)
+- **Issue 1**: API routes returning 520 errors on preview deployment. (P0 - HIGHEST)
 
 **Issues Detail**:
-- **Issue 1: Implement Talent Media Manager & Gifting Features**
-  - **Description**: The user requested two major features: a media manager for talents to upload public (free) and premium (locked) content, and a feature for clients to gift coins to talents. The agent had just fixed a minor bug with the Featured Talents section and was beginning the implementation of these new features.
-  - **Next debug checklist**:
-    1.  Update  to add a property to the  table (e.g., ) to distinguish between free and premium content. Add a new table schema for .
-    2.  Create a new SQL script () with the necessary table alterations and new table creation.
-    3.  Modify  to display Free and Premium tabs in the media section. Update the upload logic to allow talents to specify the content type.
-    4.  Create a Gift Coins component that can be used on the public  page.
-    5.  Implement the backend logic to handle the coin transfer from client to talent for gifts.
-    6.  Ensure the UI updates correctly after a gift is made.
-  - **Why fix this issue and what will be achieved with the fix?**: This will implement core monetization features for the platform, allowing talents to offer exclusive content and receive tips.
-  - **Status**: IN PROGRESS
-  - **Is recurring issue?** N
-  - **Should Test frontend/backend/both after fix?**: Both
-  - **Blocked on other issue**: None
+- **Issue 1: API routes returning 520 errors on preview deployment.**
+    - **Description**: Throughout the session, the agent battled  on preview deployments for newly created API routes (, ). This was caused by the serverless environment's inability to correctly handle the Supabase  key.
+    - **Attempted fixes**:
+        1.  Initial fix involved creating a lazy-loaded admin client, which failed.
+        2.  A second fix involved creating a new, non-cookie-based Supabase client in  specifically for API routes.
+        3.  This new client was tested locally with  and worked perfectly, returning correct JSON error/success messages.
+        4.  However, the preview deployment *still* showed a 520 error, which the agent suspected was a caching or deployment propagation issue.
+    - **Next debug checklist**:
+        1.  Verify if the  is correctly configured as an environment variable in the Vercel/preview deployment settings.
+        2.  Check the runtime logs of the deployed API function to see the exact error causing the crash.
+        3.  The agent created SQL functions (, ) in  as a more robust solution, which the user has run. The API routes were updated to use these RPC calls. Confirm the API routes are correctly calling these functions.
+    - **Why fix this issue and what will be achieved with the fix?**: This is a critical, blocking issue. The core monetization features (gifting, unlocking premium content) depend on these API routes. Fixing this will make the application's primary revenue streams functional.
+    - **Status**: IN PROGRESS
+    - **Is recurring issue?** Y
+    - **Should Test frontend/backend/both after fix?**: Backend
+    - **Blocked on other issue**: None
 
 **In progress Task List**:
-- **Task 1: Implement Talent Media Manager & Gifting Features**
-  - **Where to resume**: The agent has already fixed the Featured Talents bug and analyzed the relevant files (, ). The next step is to start coding the database changes and then the frontend components.
-  - **What will be achieved with this?**: This will add significant new functionality aligned with the platform's monetization strategy.
-  - **Status**: IN PROGRESS
-  - **Should Test frontend/backend/both after fix?**: Both
-  - **Blocked on something**: No
+- **Task 1: Verify the implementation of the three latest features.**
+    - **Where to resume**: The testing agent has just completed its run. The next step is to view the test report at  to confirm that the Gift History, Media Sorting, and Push Notification features are working as expected.
+    - **What will be achieved with this?**: Confirms the completion of the latest user requests.
+    - **Status**: TESTING PENDING
+    - **Should Test frontend/backend/both after fix?**: Both
+    - **Blocked on something**: No
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks**:
     - **P2: Analytics & Reporting**: Integrate a basic analytics dashboard for admins to track user engagement, conversion rates, and booking trends.
 - **Future Tasks**:
-    - **Admin Email Digest**: The API route () and Vercel Cron config are in place, but the cron job needs to be activated in the Vercel dashboard to make it operational.
-    - **Auto-expire Bookings**: The API route () and Vercel Cron config are in place, but the cron job needs to be activated in the Vercel dashboard.
+    - **Activate Vercel Cron Jobs**: The cron jobs for auto-expiring bookings () and the admin digest () are configured in  but need to be activated in the Vercel project dashboard after deployment to become operational.
+    - **Push Notifications to Mobile**: The current implementation is for web push notifications. A future task could involve integrating with a service like Firebase Cloud Messaging for native mobile push.
 
 **Completed work in this session**
-- **Feature Verification**: Successfully built, tested, and verified a batch of 7 previously implemented features, including mobile navigation and onboarding modals.
-- **UI/UX Overhaul**:
-    - Made all Admin pages mobile responsive.
-    - Added  to all remaining dashboard pages (, , , , ) ensuring consistent mobile navigation.
-    - Converted the landing page's Popular Talents section into an auto-scrolling carousel.
-    - Redesigned and improved the functionality of the  and  pages.
-- **Bug Fixes**:
-    - **Favorites**: Fixed a critical bug where adding a talent to favorites was not being saved. Implemented a  hook using  for persistence.
-    - **Avatar Upload & Rendering**: Fixed a bug where avatar uploads failed due to a missing RLS policy on the Supabase bucket. Also fixed the associated issue where uploaded avatars were not rendering correctly across the app.
-    - **Auth Callback**: Resolved a major authentication issue where Google Sign-In and Password Reset flows would incorrectly leave a  parameter in the URL. This was fixed by implementing a  file to properly handle the redirect.
-    - **Featured Talents**: Fixed a bug on the client dashboard where the Featured Talents section was always empty.
-- **New Features Implemented**:
-    - **Forgot/Reset Password**: Implemented the complete user flow with UI pages and Supabase integration.
-    - **Review Notifications**: Added email notifications to alert talents when a new review is posted.
-    - **Admin Email Digest**: Created the API route for a weekly admin digest.
-    - **Cron Job Setup**: Created a  file to configure Vercel Cron for auto-expiring bookings and sending the admin digest.
+- **Feature: Talent Media Manager & Gifting**: Implemented the core UI and backend logic for talents to manage free/premium media and for clients to gift coins.
+- **Feature: Premium Content Unlock**: Created the flow for clients to spend coins to unlock access to premium media items.
+- **Feature: User-Friendly Talent URLs**: Migrated talent profile links from UUID-based () to a more readable slug-based format ().
+- **Feature: Notifications Page**: Created a new page at  to display user notifications.
+- **Feature: Gift History & Leaderboard**: Created a page for users to view their gift history and added a Top Gifters leaderboard to talent profile pages.
+- **Feature: Media Sorting**: Added controls to the  component for talents to sort their media by date.
+- **Feature: Push Notifications**: Implemented a service worker () and a settings component to allow users to subscribe to browser push notifications.
+- **Critical Bug Fix (RLS Policies)**: Refactored gifting and content unlocking logic to use secure, server-side API routes and Supabase RPC functions, resolving  errors caused by client-side RLS limitations.
+- **Critical Bug Fix (API 520 Errors)**: Created a dedicated Supabase client for API routes () to resolve server crashes in the deployment environment. This fix works locally but needs verification on the live preview URL.
+- **UI/UX Improvements**:
+    - Redesigned the wallet page for a cleaner look.
+    - Implemented a lightbox feature for the media gallery, allowing fullscreen viewing of images and videos.
+    - Fixed numerous UI bugs, including modal centering, button state updates, and broken favorite/share functionality.
 
 **Earlier issues found/mentioned but not fixed**
-None.
+None. The agent addressed all issues raised by the user in this session.
 
 **Known issue recurrence from previous fork**
 None.
@@ -96,48 +103,51 @@ None.
 
 
 **Key Technical Concepts**
-- **Frontend**: Next.js 14 (App Router), TypeScript, React, Tailwind CSS
-- **UI**: Shadcn/UI
-- **Backend**: Supabase (PostgreSQL, Auth, Storage)
-- **State Management**: React Hooks, , Custom Hooks ()
-- **Authentication**: Supabase Auth (JWT, Native Google OAuth), Next.js Middleware for handling callbacks.
-- **Integrations**: Paystack, Resend, Vercel Cron.
+- **Backend**: Next.js API Routes, Supabase (PostgreSQL, Auth, Storage), Supabase RPC Functions, Vercel Cron.
+- **Frontend**: Next.js 14 (App Router), TypeScript, React, Tailwind CSS.
+- **UI**: Shadcn/UI, Headless UI.
+- **State Management**: React Hooks (, ), Custom Hooks.
+- **Security**: Using server-side API routes with a  key to perform sensitive database operations, bypassing client-side Row Level Security (RLS).
+- **PWA**: Using a Service Worker () and the Push API for web push notifications.
 
 **key DB schema**
-- **reviews**: 
-- **profiles**: Now includes .
-- **(Pending)**: A new table for  and a modification to  to support premium content will be added.
+- **gifts**: 
+- **transactions**:  enum now includes  and .
+- **Database Functions**: ,  (defined in ).
 
 **changes in tech stack**
-- Added  to manage Vercel-specific features like Cron Jobs.
+- Introduction of a Service Worker () for PWA capabilities.
+- Heavy reliance on Supabase RPC functions for secure backend logic.
 
 **All files of reference**
-- : **CRITICAL**. Handles auth redirects from Supabase to prevent  in the URL.
-- : New custom hook to manage user's favorite talents using .
-- : Rewritten with improved design and logic for avatar rendering.
-- : Rewritten with improved design and a functional Change Password form.
-- : New page for the password reset flow.
-- : New page for the password reset flow.
-- : API route for Vercel Cron to expire bookings.
-- : API route for Vercel Cron to generate admin digest.
-- : Configuration file for Vercel Cron Jobs.
-- : New RLS policy for the  bucket.
-- : Schema for the new  table.
+- : **CRITICAL**. A custom, non-cookie-based Supabase client created to fix persistent  errors in API routes on the preview deployment. It uses the  key directly.
+- : Server-side route that calls the  RPC function.
+- : Server-side route that calls the  RPC function.
+- : The new, primary page for displaying talent profiles using a username slug. It uses a server admin client to fetch all media content (including premium).
+- : Heavily modified to include a tabbed gallery with a lightbox, premium content unlock flow, a gift leaderboard, and fixed favorite/share functionality.
+- : Refactored to use the  route instead of direct client-side Supabase calls.
+- : New component for talents to manage their media, with free/premium tabs and sorting options.
+- : New component to handle push subscription logic.
+- : New service worker file for handling push events.
+- : Contains the SQL to create the  and  database functions, which are crucial for the application's economy.
 
 **Areas that need refactoring**:
-None. The agent has recently refactored the Profile and Settings pages and resolved significant technical debt around authentication.
+- The old  route should be deprecated and redirected to the new  route to avoid confusion and duplicate code.
 
 **key api endpoints**
-- : [Cron] Expires stale bookings.
-- : [Cron] Triggers the weekly admin email digest.
-- : Sends various transactional emails (e.g., new review alerts).
+- : Securely handles the transfer of coins from a client to a talent.
+- : Securely handles a client purchasing access to a premium media item.
+- : Securely fetches all media for a specific talent (used internally).
 
 **Critical Info for New Agent**
-- **Cron Jobs**: The  file is configured for two cron jobs ( and ). The user needs to be reminded that these jobs will only run after the project is deployed to Vercel and the cron jobs are enabled in the Vercel project settings.
-- **SQL Scripts**: The user has confirmed that all previously generated SQL scripts ( and ) have been executed. The next implementation step (Media Manager) will require a new SQL script.
-- **Current Task**: You are in the middle of implementing the Talent Media Manager (Free/Premium content) and the Gift Coins feature. The immediate next step is to define the database changes and create the corresponding SQL script.
+- **API Route Stability**: The most critical ongoing issue is the  error on deployed API routes. The agent implemented a fix using a dedicated Supabase client () that works perfectly in local  tests. However, it failed on the last preview deployment, possibly due to caching. If gifting or unlocking content fails, investigate the deployed API function logs immediately. Verify the  is available in the deployment environment.
+- **SQL Functions are Key**: The backend logic now relies on two PostgreSQL functions:  and . The user has confirmed the SQL script () to create these has been run. These functions are the source of truth for all economic transactions.
+- **Immediate Next Step**: Your first action should be to view the test report at . This file contains the test results for the three most recently implemented features (Gift History, Media Sorting, Push Notifications) and will determine if they are complete or require debugging.
 
 **documents and test reports created in this job**
+- 
+- 
+- 
 - 
 - 
 - 
@@ -146,39 +156,39 @@ None. The agent has recently refactored the Profile and Settings pages and resol
 -  (heavily updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-10. **User**: Requested the implementation of Talent Media Manager and Gifting features after the agent proposed a plan. **Status: In Progress**.
-9. **User**: Provided documents (PRD, Routes, Design) and reported that Featured Talents was empty. **Status: Completed**.
-8. **User**: Acknowledged the agent's work and confirmed that all SQL scripts were run. **Status: Completed**.
-7. **User**: Approved the plan to fix 6 outstanding issues, including auth callback, avatar rendering, and profile/settings redesign. Chose Vercel for cron jobs. **Status: Completed**.
-6. **User**: Reported 6 new issues/requests after the agent implemented the password reset flow, reviews, and auto-expire features. **Status: Completed**.
-5. **User**: Confirmed they created the  bucket in Supabase and specified the schedule for the Admin Email Digest. **Status: Completed**.
-4. **User**: Reported bugs with the favorites and avatar upload features, and requested several new features like email notifications for reviews and a forgot password flow. **Status: Completed**.
-3. **User**: Confirmed the agent should proceed with implementing Profile Image Upload, Auto-expire Bookings, and a Reviews system. **Status: Completed**.
-2. **User**: Approved the agent's plan to implement 5 UI/UX improvements, including making admin pages responsive and creating an admin analytics dashboard. **Status: Completed**.
-1. **User**: After the agent fixed a major build issue and verified 7 features, the user provided a new list of 5 tasks to work on. **Status: Completed**.
+10. **User**: Approved the plan to implement Gift History, Media Sorting, and Push Notifications in that order. **Status: In Progress**.
+9.  **User**: Confirmed that  was run successfully and provided priorities for the next set of features. **Status: Completed**.
+8.  **User**: Reported persistent  errors on the  and  routes in the preview deployment. **Status: In Progress (Fix implemented but needs verification)**.
+7.  **User**: Reported several issues: gifting not updating the talent's wallet, inconsistent gallery display, and premium content not being unlockable. **Status: Completed**.
+6.  **User**: Reported multiple new issues after a batch of fixes, including non-functional favorite/share icons, un-centered gift modal, and requested username-based URLs. **Status: Completed**.
+5.  **User**: Reported issues with the newly implemented Media Manager and Gifting features: no notifications page, UI bugs in the gift modal, and client-side visibility issues with talent media. **Status: Completed**.
+4.  **User**: Approved the implementation of Talent Media Manager and Gift Coins features. **Status: Completed**.
+3.  **User**: (From previous fork summary) Provided documents and reported an issue with Featured Talents being empty. **Status: Completed**.
+2.  **User**: (From previous fork summary) Confirmed all previous SQL scripts were run. **Status: Completed**.
+1.  **User**: (From previous fork summary) Approved a large plan to fix 6 outstanding issues. **Status: Completed**.
 
 **Project Health Check:**
-- **Broken**: None. All known bugs have been addressed.
+- **Broken**: The core monetization API routes (, ) are potentially broken on the preview deployment due to  errors, despite working locally. This is the highest priority issue to verify and fix.
 - **Mocked**: None.
 
 **3rd Party Integrations**
-- **Supabase**: Backend-as-a-Service (PostgreSQL DB, Auth, Storage).
-- **Paystack**: Payments.
+- **Supabase**: Backend-as-a-Service (PostgreSQL DB, Auth, Storage, Edge Functions via RPC).
+- **Paystack**: Payments (Implemented but not recently touched).
 - **Resend**: Transactional emails.
-- **Vercel Cron**: For scheduled jobs (configured but requires deployment to be active).
-- **react-webcam**: For live selfie capture.
+- **Vercel Cron**: For scheduled jobs (configured but not yet activated by the user).
+- **react-webcam**: Used for live selfie capture during client verification.
 
 **Testing status**
-- **Testing agent used after significant changes**: YES, multiple times in this session.
+- **Testing agent used after significant changes**: YES, used multiple times to test features and bug fixes. The last action was invoking the testing agent.
 - **Troubleshoot agent used after agent stuck in loop**: NO
 - **Test files created**: None.
-- **Known regressions**: None.
+- **Known regressions**: The  error on API routes can be considered a regression or a persistent deployment issue.
 
 **Credentials to test flow:**
 - **Registration**: Use the  page to create 'Client' and 'Talent' users.
-- **Google OAuth**: Use the Continue with Google button on the  or  page.
-- **Forgot Password**: Use the  page.
+- **Google OAuth**: Use the Continue with Google button.
 - **Admin**: The user with email  has admin privileges.
+- To test gifting and unlocking, ensure the client user has a coin balance.
 
 **What agent forgot to execute**
-The agent has been thorough and has not forgotten any requested tasks. All open items are part of the current in-progress feature implementation.</analysis>
+The agent did not forget to execute any steps. The session ended immediately after the testing agent was invoked for the last set of features. The next logical step, reviewing the test report, was not performed due to the interruption.</analysis>
