@@ -120,12 +120,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Create records (best effort)
-    await supabase.from('gifts').insert({
-      sender_id: senderId,
-      recipient_id: recipientId,
-      amount,
-      message: message || null
-    }).catch(() => {})
+    try {
+      await supabase.from('gifts').insert({
+        sender_id: senderId,
+        recipient_id: recipientId,
+        amount,
+        message: message || null
+      })
+    } catch {
+      // Ignore errors
+    }
 
     await supabase.from('transactions').insert([
       {
