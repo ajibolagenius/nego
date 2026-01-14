@@ -283,7 +283,82 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
         </div>
       </div>
 
-      {/* Media Grid */}
+      {/* Filter Panel */}
+      {showFilters && (
+        <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-4">
+          <div className="flex flex-wrap gap-4">
+            {/* Sort By */}
+            <div className="flex-1 min-w-[150px]">
+              <label className="block text-white/50 text-xs mb-2">Sort By</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSortBy('newest')}
+                  className={`flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-lg text-sm transition-all ${
+                    sortBy === 'newest'
+                      ? 'bg-[#df2531] text-white'
+                      : 'bg-white/10 text-white/60 hover:text-white'
+                  }`}
+                >
+                  <SortDescending size={14} />
+                  Newest
+                </button>
+                <button
+                  onClick={() => setSortBy('oldest')}
+                  className={`flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-lg text-sm transition-all ${
+                    sortBy === 'oldest'
+                      ? 'bg-[#df2531] text-white'
+                      : 'bg-white/10 text-white/60 hover:text-white'
+                  }`}
+                >
+                  <SortAscending size={14} />
+                  Oldest
+                </button>
+              </div>
+            </div>
+            
+            {/* Filter By Type */}
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-white/50 text-xs mb-2">Filter By Type</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setFilterBy('all')}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm transition-all ${
+                    filterBy === 'all'
+                      ? 'bg-[#df2531] text-white'
+                      : 'bg-white/10 text-white/60 hover:text-white'
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setFilterBy('images')}
+                  className={`flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-lg text-sm transition-all ${
+                    filterBy === 'images'
+                      ? 'bg-[#df2531] text-white'
+                      : 'bg-white/10 text-white/60 hover:text-white'
+                  }`}
+                >
+                  <ImageIcon size={14} />
+                  Images
+                </button>
+                <button
+                  onClick={() => setFilterBy('videos')}
+                  className={`flex-1 flex items-center justify-center gap-1 py-2 px-3 rounded-lg text-sm transition-all ${
+                    filterBy === 'videos'
+                      ? 'bg-[#df2531] text-white'
+                      : 'bg-white/10 text-white/60 hover:text-white'
+                  }`}
+                >
+                  <VideoCamera size={14} />
+                  Videos
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Media Grid/List */}
       {currentMedia.length === 0 ? (
         <div className="text-center py-12 rounded-2xl bg-white/5 border border-white/10">
           <ImageIcon size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
@@ -302,6 +377,60 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
             <Plus size={18} className="mr-2" />
             Upload First {activeTab === 'premium' ? 'Premium' : ''} Photo
           </Button>
+        </div>
+      ) : viewMode === 'list' ? (
+        <div className="space-y-2">
+          {currentMedia.map((item) => (
+            <div 
+              key={item.id} 
+              className="flex items-center gap-4 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+              data-testid={`media-item-${item.id}`}
+            >
+              {/* Thumbnail */}
+              <div className="w-16 h-16 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
+                {isVideo(item.url) ? (
+                  <video src={item.url} className="w-full h-full object-cover" muted />
+                ) : (
+                  <img src={item.url} alt="" className="w-full h-full object-cover" />
+                )}
+              </div>
+              
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  {isVideo(item.url) ? (
+                    <VideoCamera size={14} className="text-purple-400" />
+                  ) : (
+                    <ImageIcon size={14} className="text-blue-400" />
+                  )}
+                  <span className="text-white/60 text-sm">
+                    {isVideo(item.url) ? 'Video' : 'Image'}
+                  </span>
+                  {item.is_premium && (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs">
+                      {item.unlock_price} coins
+                    </span>
+                  )}
+                </div>
+                <p className="text-white/40 text-xs mt-1">
+                  {new Date(item.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              
+              {/* Delete */}
+              <button 
+                onClick={() => handleDelete(item.id, item.url)}
+                disabled={deletingId === item.id}
+                className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+              >
+                {deletingId === item.id ? (
+                  <SpinnerGap size={16} className="animate-spin" />
+                ) : (
+                  <Trash size={16} />
+                )}
+              </button>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
