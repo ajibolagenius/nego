@@ -79,11 +79,13 @@ export function GiftLeaderboard({ talentId }: GiftLeaderboardProps) {
       
       gifts?.forEach(gift => {
         if (!aggregated[gift.sender_id]) {
+          // Handle sender which could be an array or single object from Supabase
+          const senderData = Array.isArray(gift.sender) ? gift.sender[0] : gift.sender
           aggregated[gift.sender_id] = {
             sender_id: gift.sender_id,
             total_amount: 0,
             gift_count: 0,
-            sender: gift.sender as TopGifter['sender']
+            sender: senderData as TopGifter['sender']
           }
         }
         aggregated[gift.sender_id].total_amount += gift.amount
