@@ -39,6 +39,21 @@ export function MessagesClient({ userId, conversations: initialConversations, us
   const [searchQuery, setSearchQuery] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [otherUserTyping, setOtherUserTyping] = useState(false)
+  const [showQuickActions, setShowQuickActions] = useState(false)
+  const [walletBalance, setWalletBalance] = useState(0)
+
+  // Fetch wallet balance for gift feature
+  useEffect(() => {
+    const fetchWallet = async () => {
+      const { data } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', userId)
+        .single()
+      if (data) setWalletBalance(data.balance)
+    }
+    fetchWallet()
+  }, [supabase, userId])
 
   // Scroll to bottom of messages
   const scrollToBottom = useCallback(() => {
