@@ -1,7 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { redirect, notFound } from 'next/navigation'
 import { TalentProfileClient } from './TalentProfileClient'
 import { Metadata } from 'next'
+
+// Create admin client with service role key for bypassing RLS
+const getAdminClient = () => createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false } }
+)
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -26,6 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function TalentProfilePage({ params }: PageProps) {
   const { id } = await params
   const supabase = await createClient()
+  const supabaseAdmin = getAdminClient()
   
   const { data: { user } } = await supabase.auth.getUser()
   
