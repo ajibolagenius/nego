@@ -249,13 +249,14 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
           </button>
           
           <button
-          onClick={() => openUploadModal(activeTab === 'premium')}
-          data-testid="upload-media-button"
-          className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#df2531] text-white text-sm font-medium hover:bg-[#df2531]/80 transition-colors"
-        >
-          <Plus size={18} />
-          Upload {activeTab === 'premium' ? 'Premium' : 'Free'}
-        </button>
+            onClick={() => openUploadModal(activeTab === 'premium')}
+            data-testid="upload-media-button"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#df2531] text-white text-sm font-medium hover:bg-[#df2531]/80 transition-colors"
+          >
+            <Plus size={18} />
+            Upload {activeTab === 'premium' ? 'Premium' : 'Free'}
+          </button>
+        </div>
       </div>
 
       {/* Tab Description */}
