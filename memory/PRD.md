@@ -469,7 +469,7 @@ The gifting system was completely rebuilt from scratch to fix "string did not ma
 - Automatic optimization and transformations
 
 ## API Routes (Server-Side)
-- `/api/gifts` - POST: Send gift coins (bypasses RLS)
+- `/api/gifts` - POST: Send gift coins (REBUILT - Edge runtime, comprehensive validation)
 - `/api/media/unlock` - POST: Unlock premium content (bypasses RLS)
 - `/api/media` - GET: Fetch all media including premium (bypasses RLS)
 - `/api/transactions/create` - POST: Create transaction for Paystack
@@ -477,6 +477,12 @@ The gifting system was completely rebuilt from scratch to fix "string did not ma
 - `/api/email/send` - POST: Send transactional emails
 - `/api/bookings/expire` - POST: Expire stale bookings (Cron)
 - `/api/admin/digest` - POST: Send admin digest (Cron)
+
+## SQL Scripts to Run
+| Script | Purpose | Status |
+|--------|---------|--------|
+| `supabase_gift_functions_v2.sql` | Atomic gift transaction function | ⏳ NEW - Run for improved reliability |
+| All other scripts | See earlier entries | ✅ RUN |
 
 ## Cron Jobs (vercel.json)
 - `/api/bookings/expire` - Every hour (0 * * * *)
