@@ -154,7 +154,7 @@ export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuc
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div 
-            className="bg-[#0a0a0f] rounded-2xl w-full max-w-md border border-white/10 overflow-hidden"
+            className="bg-[#0a0a0f] rounded-2xl w-full max-w-md border border-white/10 overflow-hidden max-h-[90vh] overflow-y-auto"
             data-testid="gift-coins-modal"
           >
             {/* Header */}
