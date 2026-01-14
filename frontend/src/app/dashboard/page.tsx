@@ -30,7 +30,10 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .single()
 
-  // Fetch featured talents (role = 'talent', is_verified = true, limit 6)
+  // Generate random limit between 8 and 16
+  const randomLimit = Math.floor(Math.random() * 9) + 8 // 8 to 16
+
+  // Fetch featured talents (random selection of talents)
   const { data: featuredTalents } = await supabase
     .from('profiles')
     .select(`
@@ -48,9 +51,12 @@ export default async function DashboardPage() {
       )
     `)
     .eq('role', 'talent')
-    .eq('is_verified', true)
-    .order('created_at', { ascending: false })
-    .limit(6)
+    .limit(50) // Fetch more to randomize from
+
+  // Shuffle and pick random talents
+  const shuffledTalents = (featuredTalents || [])
+    .sort(() => Math.random() - 0.5)
+    .slice(0, randomLimit)
 
   // Fetch active bookings count
   const { count: activeBookingsCount } = await supabase
