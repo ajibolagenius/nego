@@ -85,11 +85,15 @@ export default async function TalentProfilePage({ params }: PageProps) {
   }
 
   // Fetch current user's profile and wallet
-  const { data: currentUserProfile } = await supabase
+  const { data: currentUserProfile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single()
+
+  console.log('TalentProfilePage - user.id:', user.id)
+  console.log('TalentProfilePage - currentUserProfile:', currentUserProfile)
+  console.log('TalentProfilePage - profileError:', profileError)
 
   const { data: wallet } = await supabase
     .from('wallets')
