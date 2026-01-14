@@ -1,7 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { redirect, notFound } from 'next/navigation'
 import { TalentProfileClient } from '@/app/talent/[id]/TalentProfileClient'
 import { Metadata } from 'next'
+
+// Create admin client with service role key for bypassing RLS
+const getAdminClient = () => createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false } }
+)
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -36,6 +44,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function TalentProfileBySlugPage({ params }: PageProps) {
   const { slug } = await params
   const supabase = await createClient()
+  const supabaseAdmin = getAdminClient()
   
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -43,11 +52,26 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
     redirect('/login')
   }
 
-  // First try exact username match
-  let { data: talent, error } = await supabase
+  // First try exact username match (without media - we'll fetch that separately)
+  let { data: talent } = await supabase
     .from('profiles')
     .select(`
       *,
+      talent_menus (
+        id,
+        price,
+        is_active,
+        service_type:service_types (
+          id,
+          name,
+          icon,
+          description
+        )
+      )
+    `)
+    .eq('role', 'talent')
+    .eq('username', slug)
+    .single()
       talent_menus (
         id,
         price,
