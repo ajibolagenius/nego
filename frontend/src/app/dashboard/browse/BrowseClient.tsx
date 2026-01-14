@@ -227,7 +227,7 @@ function TalentCard({ talent, formatPrice, userId }: { talent: TalentWithMenu; f
 
   return (
     <Link
-      href={`/talent/${talent.id}`}
+      href={getTalentUrl(talent)}
       className="group bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:border-[#df2531]/30 transition-all duration-300"
     >
       <div className="aspect-[3/4] relative overflow-hidden">
