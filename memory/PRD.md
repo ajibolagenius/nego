@@ -294,9 +294,32 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 - Time range filter: This Week / This Month
 - Fully mobile responsive
 
+### Talent Media Manager ✅ NEW (January 2025)
+- Free and Premium content tabs in Talent Dashboard Gallery
+- Free content: Visible to all visitors
+- Premium content: Locked, requires coins to unlock
+- Upload modal with:
+  - File validation (10MB max, images/videos)
+  - Premium toggle switch
+  - Unlock price input (for premium content)
+- Delete functionality for uploaded media
+- Components: `/app/frontend/src/components/MediaManager.tsx`
+
+### Gift Coins Feature ✅ NEW (January 2025)
+- Clients can gift coins to talents from their profile page
+- Minimum gift amount: 100 coins
+- Preset amounts: 100, 500, 1000, 2500 coins
+- Custom amount input with validation
+- Optional message with gift
+- Insufficient balance warning with "Top Up" link
+- Creates transaction records for both sender and recipient
+- Triggers notification to talent
+- Components: `/app/frontend/src/components/GiftCoins.tsx`
+- Database: `gifts` table (run `supabase_media_gifting.sql`)
+
 ---
 
-*Last Updated: December 2025*
+*Last Updated: January 2025*
 *All SQL Scripts: ✅ ALL RUN*
 *Google OAuth: ✅ CONFIGURED*
 *Paystack: ✅ CONFIGURED*
@@ -314,6 +337,8 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 *Admin Digest: ✅ COMPLETE*
 *Favorites: ✅ FIXED*
 *Vercel Cron: ✅ CONFIGURED*
+*Media Manager: ✅ COMPLETE*
+*Gift Coins: ✅ COMPLETE*
 
 ## Cron Jobs (vercel.json)
 - `/api/bookings/expire` - Every hour (0 * * * *)
