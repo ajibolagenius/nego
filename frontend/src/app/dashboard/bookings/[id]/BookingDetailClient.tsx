@@ -271,7 +271,7 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
 
         {/* Talent Card */}
         <Link 
-          href={`/talent/${booking.talent.id}`}
+          href={getTalentUrl(booking.talent)}
           className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/10 hover:border-white/20 transition-colors"
         >
           <div className="relative w-16 h-16 rounded-full overflow-hidden">
