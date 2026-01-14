@@ -614,7 +614,12 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
         </div>
 
         {/* Gallery with Free/Premium Tabs */}
-        <GallerySection media={talent.media || []} />
+        <GallerySection 
+          media={talent.media || []} 
+          userId={userId}
+          userBalance={currentBalance}
+          onUnlock={handleUnlockMedia}
+        />
 
         {/* Reviews Section */}
         <div className="mb-8">
