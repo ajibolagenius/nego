@@ -1,15 +1,34 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
-// Create admin client with service role key for bypassing RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-)
+// Create admin client lazily to avoid errors at module load time
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Missing Supabase environment variables')
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false }
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
+    // Get admin client
+    let supabaseAdmin
+    try {
+      supabaseAdmin = getSupabaseAdmin()
+    } catch (envError) {
+      console.error('Supabase config error:', envError)
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
     const body = await request.json()
     const { senderId, recipientId, amount, message, senderName, recipientName } = body
 
@@ -43,6 +62,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (senderError || !senderWallet) {
+      console.error('Sender wallet error:', senderError)
       return NextResponse.json(
         { error: 'Sender wallet not found' },
         { status: 404 }
@@ -131,7 +151,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create transaction records
-    await supabaseAdmin.from('transactions').insert([
+    const { error: txError } = await supabaseAdmin.from('transactions').insert([
       {
         user_id: senderId,
         amount: -amount,
@@ -150,14 +170,22 @@ export async function POST(request: NextRequest) {
       }
     ])
 
+    if (txError) {
+      console.error('Transaction record error:', txError)
+    }
+
     // Create notification for recipient
-    await supabaseAdmin.from('notifications').insert({
+    const { error: notifError } = await supabaseAdmin.from('notifications').insert({
       user_id: recipientId,
       type: 'general',
       title: 'You received a gift! 🎁',
       message: `${senderName || 'Someone'} sent you ${amount} coins${message ? `: "${message}"` : ''}`,
       data: { gift_amount: amount, sender_id: senderId }
     })
+
+    if (notifError) {
+      console.error('Notification error:', notifError)
+    }
 
     return NextResponse.json({
       success: true,
