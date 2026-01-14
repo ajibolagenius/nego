@@ -21,6 +21,7 @@ import { getTalentUrl } from '@/lib/talent-url'
 interface FeaturedTalent {
   id: string
   display_name: string
+  username?: string | null
   avatar_url: string | null
   location: string
   status: 'online' | 'offline'
@@ -32,6 +33,8 @@ interface DashboardClientProps {
   profile: Profile | null
   wallet: WalletType | null
   featuredTalents?: FeaturedTalent[]
+  activeBookings?: number
+  favoritesCount?: number
 }
 
 // Navigation items for clients
