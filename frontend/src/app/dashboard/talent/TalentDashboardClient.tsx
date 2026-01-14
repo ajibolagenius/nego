@@ -44,6 +44,30 @@ interface BookingWithClient extends Omit<Booking, 'client'> {
   } | null
 }
 
+interface Transaction {
+  id: string
+  user_id: string
+  amount: number
+  coins: number
+  type: string
+  status: string
+  description: string
+  created_at: string
+}
+
+interface GiftReceived {
+  id: string
+  sender_id: string
+  recipient_id: string
+  amount: number
+  message: string | null
+  created_at: string
+  sender: {
+    display_name: string
+    avatar_url: string | null
+  } | null
+}
+
 interface TalentDashboardClientProps {
   user: SupabaseUser
   profile: Profile | null
@@ -52,6 +76,8 @@ interface TalentDashboardClientProps {
   media: TalentMedia[]
   bookings: BookingWithClient[]
   wallet: Wallet | null
+  transactions?: Transaction[]
+  giftsReceived?: GiftReceived[]
 }
 
 const statusColors: Record<string, { bg: string; text: string; icon: Icon; needsAction?: boolean }> = {
@@ -69,12 +95,14 @@ export function TalentDashboardClient({
   allServices,
   media,
   bookings,
-  wallet 
+  wallet,
+  transactions = [],
+  giftsReceived = []
 }: TalentDashboardClientProps) {
   const router = useRouter()
   const supabase = createClient()
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'services' | 'media' | 'bookings' | 'withdrawals'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'services' | 'media' | 'bookings' | 'earnings' | 'withdrawals'>('overview')
   const [isAddingService, setIsAddingService] = useState(false)
   const [newServiceId, setNewServiceId] = useState('')
   const [newServicePrice, setNewServicePrice] = useState('')
