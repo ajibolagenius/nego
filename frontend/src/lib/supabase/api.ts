@@ -1,15 +1,26 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
-// Simple Supabase client for API routes that doesn't depend on cookies
+// Admin Supabase client for API routes - uses service role key to bypass RLS
 export function createApiClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase environment variables')
+  if (!supabaseUrl || !serviceRoleKey) {
+    // Fallback to anon key if service role not available
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!supabaseUrl || !anonKey) {
+      throw new Error('Missing Supabase environment variables')
+    }
+    console.warn('Warning: Using anon key - some operations may fail due to RLS')
+    return createSupabaseClient(supabaseUrl, anonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      }
+    })
   }
 
-  return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+  return createSupabaseClient(supabaseUrl, serviceRoleKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
