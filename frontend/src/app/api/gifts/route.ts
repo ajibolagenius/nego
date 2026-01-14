@@ -1,34 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-
-// Create admin client lazily to avoid errors at module load time
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Missing Supabase environment variables')
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false }
-  })
-}
 
 export async function POST(request: NextRequest) {
   try {
-    // Get admin client
-    let supabaseAdmin
-    try {
-      supabaseAdmin = getSupabaseAdmin()
-    } catch (envError) {
-      console.error('Supabase config error:', envError)
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      )
-    }
-
+    const supabase = await createClient()
+    
     const body = await request.json()
     const { senderId, recipientId, amount, message, senderName, recipientName } = body
 
@@ -40,157 +16,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (amount < 100) {
-      return NextResponse.json(
-        { error: 'Minimum gift amount is 100 coins' },
-        { status: 400 }
-      )
-    }
-
-    if (senderId === recipientId) {
-      return NextResponse.json(
-        { error: 'Cannot gift to yourself' },
-        { status: 400 }
-      )
-    }
-
-    // Get sender's wallet
-    const { data: senderWallet, error: senderError } = await supabaseAdmin
-      .from('wallets')
-      .select('balance')
-      .eq('user_id', senderId)
-      .single()
-
-    if (senderError || !senderWallet) {
-      console.error('Sender wallet error:', senderError)
-      return NextResponse.json(
-        { error: 'Sender wallet not found' },
-        { status: 404 }
-      )
-    }
-
-    if (senderWallet.balance < amount) {
-      return NextResponse.json(
-        { error: 'Insufficient balance' },
-        { status: 400 }
-      )
-    }
-
-    // Get or create recipient's wallet
-    let { data: recipientWallet, error: recipientError } = await supabaseAdmin
-      .from('wallets')
-      .select('balance')
-      .eq('user_id', recipientId)
-      .single()
-
-    if (recipientError || !recipientWallet) {
-      // Create wallet for recipient if it doesn't exist
-      const { data: newWallet, error: createError } = await supabaseAdmin
-        .from('wallets')
-        .insert({ user_id: recipientId, balance: 0, escrow_balance: 0 })
-        .select('balance')
-        .single()
-
-      if (createError) {
-        console.error('Failed to create recipient wallet:', createError)
-        return NextResponse.json(
-          { error: 'Failed to create recipient wallet' },
-          { status: 500 }
-        )
-      }
-      recipientWallet = newWallet
-    }
-
-    // Deduct from sender
-    const { error: deductError } = await supabaseAdmin
-      .from('wallets')
-      .update({ balance: senderWallet.balance - amount })
-      .eq('user_id', senderId)
-
-    if (deductError) {
-      console.error('Failed to deduct from sender:', deductError)
-      return NextResponse.json(
-        { error: 'Failed to process gift' },
-        { status: 500 }
-      )
-    }
-
-    // Add to recipient
-    const { error: addError } = await supabaseAdmin
-      .from('wallets')
-      .update({ balance: (recipientWallet?.balance || 0) + amount })
-      .eq('user_id', recipientId)
-
-    if (addError) {
-      // Rollback sender deduction
-      await supabaseAdmin
-        .from('wallets')
-        .update({ balance: senderWallet.balance })
-        .eq('user_id', senderId)
-      
-      console.error('Failed to add to recipient:', addError)
-      return NextResponse.json(
-        { error: 'Failed to process gift' },
-        { status: 500 }
-      )
-    }
-
-    // Create gift record
-    const { error: giftError } = await supabaseAdmin
-      .from('gifts')
-      .insert({
-        sender_id: senderId,
-        recipient_id: recipientId,
-        amount,
-        message: message || null
-      })
-
-    if (giftError) {
-      console.error('Gift record error:', giftError)
-      // Don't fail the whole transaction for this
-    }
-
-    // Create transaction records
-    const { error: txError } = await supabaseAdmin.from('transactions').insert([
-      {
-        user_id: senderId,
-        amount: -amount,
-        coins: -amount,
-        type: 'gift',
-        status: 'completed',
-        description: `Gift to ${recipientName || 'Talent'}`
-      },
-      {
-        user_id: recipientId,
-        amount: amount,
-        coins: amount,
-        type: 'gift',
-        status: 'completed',
-        description: `Gift from ${senderName || 'Client'}`
-      }
-    ])
-
-    if (txError) {
-      console.error('Transaction record error:', txError)
-    }
-
-    // Create notification for recipient
-    const { error: notifError } = await supabaseAdmin.from('notifications').insert({
-      user_id: recipientId,
-      type: 'general',
-      title: 'You received a gift! 🎁',
-      message: `${senderName || 'Someone'} sent you ${amount} coins${message ? `: "${message}"` : ''}`,
-      data: { gift_amount: amount, sender_id: senderId }
+    // Call the database function that handles the gift transaction
+    const { data, error } = await supabase.rpc('send_gift', {
+      p_sender_id: senderId,
+      p_recipient_id: recipientId,
+      p_amount: amount,
+      p_message: message || null,
+      p_sender_name: senderName || 'Someone',
+      p_recipient_name: recipientName || 'Talent'
     })
 
-    if (notifError) {
-      console.error('Notification error:', notifError)
+    if (error) {
+      console.error('Gift RPC error:', error)
+      return NextResponse.json(
+        { error: error.message || 'Failed to send gift' },
+        { status: 500 }
+      )
+    }
+
+    // The function returns a JSON object
+    if (!data?.success) {
+      return NextResponse.json(
+        { error: data?.error || 'Gift failed' },
+        { status: 400 }
+      )
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Gift sent successfully',
-      newSenderBalance: senderWallet.balance - amount
+      message: data.message,
+      newSenderBalance: data.newSenderBalance
     })
 
   } catch (error) {
