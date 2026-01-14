@@ -124,6 +124,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 /dashboard/bookings      # Bookings list (+ MobileBottomNav)
 /dashboard/bookings/[id] # Booking detail (+ talent accept/reject)
 /dashboard/messages      # Real-time chat (+ MobileBottomNav)
+/dashboard/notifications # All notifications page ✅ NEW
 /dashboard/wallet        # Wallet + Paystack (+ MobileBottomNav)
 /dashboard/favorites     # Saved talents (+ MobileBottomNav)
 /dashboard/profile       # Profile settings (+ MobileBottomNav)
