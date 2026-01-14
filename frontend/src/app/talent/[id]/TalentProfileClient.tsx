@@ -181,6 +181,16 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
               <ArrowLeft size={24} />
             </button>
             <div className="flex items-center gap-3">
+              {/* Gift Coins Button - Only show for logged in clients */}
+              {currentUser && currentUser.role === 'client' && (
+                <GiftCoins
+                  talentId={talent.id}
+                  talentName={talent.display_name || 'Talent'}
+                  senderId={userId}
+                  senderBalance={wallet?.balance || 0}
+                  onSuccess={() => router.refresh()}
+                />
+              )}
               <button
                 onClick={() => setLiked(!liked)}
                 className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
