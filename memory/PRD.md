@@ -408,6 +408,40 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 *Typing Indicators: ✅ COMPLETE - Shows "typing..." when other user is typing*
 *Read Receipts: ✅ COMPLETE - Blue double checkmarks for read messages*
 *Talent Earnings Dashboard: ✅ COMPLETE - Breakdown by gifts, unlocks, bookings*
+*Gift System: ✅ REBUILT (January 2025) - Complete rewrite fixing pattern errors*
+
+### Gift System Architecture ✅ REBUILT (January 2025)
+The gifting system was completely rebuilt from scratch to fix "string did not match expected pattern" errors.
+
+**New Architecture:**
+- **Validation Library** (`/lib/gift-validation.ts`):
+  - Centralized validation rules for UUID, amount, and message
+  - Constants: MIN_AMOUNT=100, MAX_AMOUNT=1,000,000, MAX_MESSAGE_LENGTH=500
+  - Preset amounts: [100, 500, 1000, 2500, 5000]
+  - User-friendly error messages (no cryptic pattern errors)
+
+- **Service Layer** (`/lib/gift-service.ts`):
+  - Transaction handling with proper rollback on failure
+  - Wallet balance checks and updates
+  - Gift record, transaction records, and notification creation
+
+- **API Route** (`/api/gifts/route.ts`):
+  - Edge runtime for better performance
+  - Tries Supabase RPC first (atomic), falls back to direct operations
+  - Structured logging with request IDs
+  - Clear error responses with field indicators
+
+- **Frontend Component** (`/components/GiftCoins.tsx`):
+  - Rebuilt modal with improved UX
+  - Preset and custom amount selection
+  - Balance display with top-up link
+  - Client-side validation matching backend rules
+  - Accessibility improvements (ARIA labels, keyboard navigation)
+
+**Testing:**
+- 21 backend API tests (all passing)
+- Frontend component tests (all passing)
+- No "pattern" errors in any response
 
 ### Talent Earnings Dashboard ✅ NEW (January 2025)
 - New "Earnings" tab in talent dashboard
