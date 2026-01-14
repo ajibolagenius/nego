@@ -746,6 +746,124 @@ export function TalentDashboardClient({
           </div>
         )}
 
+        {/* Earnings Tab */}
+        {activeTab === 'earnings' && (
+          <div className="space-y-6">
+            {/* Earnings Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-green-500/20 to-transparent border border-green-500/30">
+                <p className="text-white/60 text-xs mb-1">Total Earnings</p>
+                <p className="text-2xl font-bold text-white">{totalAllEarnings.toLocaleString()}</p>
+                <p className="text-green-400 text-xs">coins</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-2 mb-1">
+                  <Gift size={14} className="text-pink-400" />
+                  <p className="text-white/60 text-xs">From Gifts</p>
+                </div>
+                <p className="text-xl font-bold text-white">{giftEarnings.toLocaleString()}</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-2 mb-1">
+                  <Eye size={14} className="text-amber-400" />
+                  <p className="text-white/60 text-xs">Content Unlocks</p>
+                </div>
+                <p className="text-xl font-bold text-white">{unlockEarnings.toLocaleString()}</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-2 mb-1">
+                  <CalendarCheck size={14} className="text-blue-400" />
+                  <p className="text-white/60 text-xs">Bookings</p>
+                </div>
+                <p className="text-xl font-bold text-white">{bookingEarnings.toLocaleString()}</p>
+              </div>
+            </div>
+
+            {/* Recent Gifts Received */}
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Gift size={20} className="text-pink-400" />
+                Recent Gifts Received
+              </h3>
+              {giftsReceived.length === 0 ? (
+                <div className="p-8 rounded-2xl bg-white/5 border border-white/10 text-center">
+                  <Gift size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
+                  <p className="text-white/50">No gifts received yet</p>
+                  <p className="text-white/30 text-sm mt-1">When clients send you gifts, they&apos;ll appear here</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {giftsReceived.map((gift) => (
+                    <div
+                      key={gift.id}
+                      className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-pink-500/20 flex items-center justify-center">
+                        <Gift size={20} className="text-pink-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium">
+                          {gift.sender?.display_name || 'Anonymous'}
+                        </p>
+                        {gift.message && (
+                          <p className="text-white/40 text-sm truncate">&quot;{gift.message}&quot;</p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white font-bold text-green-400">+{gift.amount}</p>
+                        <p className="text-white/40 text-xs">{formatDate(gift.created_at)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recent Transactions */}
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Receipt size={20} className="text-white/60" />
+                Transaction History
+              </h3>
+              {transactions.length === 0 ? (
+                <div className="p-8 rounded-2xl bg-white/5 border border-white/10 text-center">
+                  <Receipt size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
+                  <p className="text-white/50">No transactions yet</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {transactions.slice(0, 10).map((tx) => (
+                    <div
+                      key={tx.id}
+                      className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10"
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        tx.type === 'gift' ? 'bg-pink-500/20' :
+                        tx.type === 'premium_unlock' ? 'bg-amber-500/20' :
+                        'bg-blue-500/20'
+                      }`}>
+                        {tx.type === 'gift' ? <Gift size={20} className="text-pink-400" /> :
+                         tx.type === 'premium_unlock' ? <Eye size={20} className="text-amber-400" /> :
+                         <CalendarCheck size={20} className="text-blue-400" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium capitalize">
+                          {tx.type.replace('_', ' ')}
+                        </p>
+                        <p className="text-white/40 text-sm truncate">{tx.description}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white font-bold text-green-400">+{tx.amount}</p>
+                        <p className="text-white/40 text-xs">{formatDate(tx.created_at)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Withdrawals Tab */}
         {activeTab === 'withdrawals' && (
           <div className="space-y-6">
