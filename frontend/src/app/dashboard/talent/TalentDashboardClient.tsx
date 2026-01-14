@@ -295,11 +295,18 @@ export function TalentDashboardClient({
   const pendingBookings = bookings.filter(b => b.status === 'payment_pending' || b.status === 'verification_pending').length
   const completedBookings = bookings.filter(b => b.status === 'completed').length
 
+  // Calculate earnings breakdown
+  const giftEarnings = transactions.filter(t => t.type === 'gift').reduce((sum, t) => sum + t.amount, 0)
+  const unlockEarnings = transactions.filter(t => t.type === 'premium_unlock').reduce((sum, t) => sum + t.amount, 0)
+  const bookingEarnings = transactions.filter(t => t.type === 'booking').reduce((sum, t) => sum + t.amount, 0)
+  const totalAllEarnings = giftEarnings + unlockEarnings + bookingEarnings
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: ChartLine },
     { id: 'services', label: 'Services', icon: CurrencyDollar },
     { id: 'media', label: 'Gallery', icon: ImageIcon },
     { id: 'bookings', label: 'Bookings', icon: CalendarCheck },
+    { id: 'earnings', label: 'Earnings', icon: Money },
     { id: 'withdrawals', label: 'Withdrawals', icon: Bank },
   ]
 
