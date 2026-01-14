@@ -248,52 +248,26 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
     if (currentBalance < unlockPrice) return false
 
     try {
-      const supabase = createClient()
+      // Use server-side API to handle unlock transaction (bypasses RLS)
+      const response = await fetch('/api/media/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          mediaId,
+          talentId: talent.id,
+          unlockPrice
+        })
+      })
 
-      // Deduct from user's wallet
-      const { error: deductError } = await supabase
-        .from('wallets')
-        .update({ balance: currentBalance - unlockPrice })
-        .eq('user_id', userId)
+      const data = await response.json()
 
-      if (deductError) throw deductError
-
-      // Add to talent's wallet
-      const { data: talentWallet } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('user_id', talent.id)
-        .single()
-
-      await supabase
-        .from('wallets')
-        .update({ balance: (talentWallet?.balance || 0) + unlockPrice })
-        .eq('user_id', talent.id)
-
-      // Create transaction records
-      await supabase.from('transactions').insert([
-        {
-          user_id: userId,
-          amount: -unlockPrice,
-          coins: -unlockPrice,
-          type: 'unlock',
-          status: 'completed',
-          reference_id: mediaId,
-          description: `Unlocked premium content`
-        },
-        {
-          user_id: talent.id,
-          amount: unlockPrice,
-          coins: unlockPrice,
-          type: 'unlock',
-          status: 'completed',
-          reference_id: mediaId,
-          description: `Content unlock payment`
-        }
-      ])
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to unlock content')
+      }
 
       // Update local balance
-      setCurrentBalance(prev => prev - unlockPrice)
+      setCurrentBalance(data.newUserBalance)
       return true
     } catch (err) {
       console.error('Unlock error:', err)
