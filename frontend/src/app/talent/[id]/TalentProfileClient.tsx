@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { ReviewCard, ReviewSummary } from '@/components/Reviews'
+import { GiftCoins } from '@/components/GiftCoins'
 import type { Profile, ServiceType, TalentMenu, Media, Wallet, Review } from '@/types/database'
 import type { Icon } from '@phosphor-icons/react'
 
