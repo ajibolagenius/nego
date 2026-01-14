@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { MediaManager } from '@/components/MediaManager'
+import { getTalentUrl } from '@/lib/talent-url'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet, ServiceType, Booking } from '@/types/database'
 
