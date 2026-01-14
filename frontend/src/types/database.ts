@@ -176,3 +176,15 @@ export interface TalentWithReviews extends Profile {
   average_rating: number
   review_count: number
 }
+
+export interface Gift {
+  id: string
+  sender_id: string
+  recipient_id: string
+  amount: number
+  message: string | null
+  created_at: string
+  // Joined data
+  sender?: Profile
+  recipient?: Profile
+}
