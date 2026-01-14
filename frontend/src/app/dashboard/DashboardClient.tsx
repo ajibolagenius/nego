@@ -238,7 +238,7 @@ export function DashboardClient({ user, profile, wallet, featuredTalents = [] }:
               {talents.length > 0 ? talents.map((talent) => (
                 <Link
                   key={talent.id}
-                  href={`/talent/${talent.id}`}
+                  href={getTalentUrl(talent)}
                   className="group bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:border-[#df2531]/30 transition-all duration-300"
                 >
                   <div className="aspect-[3/4] relative overflow-hidden">
