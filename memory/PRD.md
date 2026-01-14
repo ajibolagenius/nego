@@ -400,6 +400,18 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 *Dynamic Stat Cards: ✅ COMPLETE*
 *Image Loading Fix: ✅ COMPLETE - Added Supabase domain to next.config*
 *Legacy Route Redirect: ✅ COMPLETE - /talent/[id] → /t/[slug]*
+*Mobile Hamburger Menu: ✅ COMPLETE - All nav items including Gift History & Notifications*
+*Featured Talents Random: ✅ COMPLETE - Random 8-16 profiles per page load*
+*Real-time Messaging: ✅ COMPLETE - Clients can message talents from profile*
+*Cloudinary Integration: ✅ COMPLETE - Media uploads with progress, transformations*
+
+### Cloudinary Integration ✅ NEW (January 2025)
+- Cloud Name: drhsnjxqj
+- API routes: `/api/cloudinary/signature` and `/api/cloudinary/delete`
+- Client library: `/lib/cloudinary.ts` with upload utilities
+- MediaManager updated to use Cloudinary with progress indicator
+- Supports images and videos up to 50MB
+- Automatic optimization and transformations
 
 ## API Routes (Server-Side)
 - `/api/gifts` - POST: Send gift coins (bypasses RLS)
