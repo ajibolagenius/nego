@@ -161,6 +161,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 | `supabase_reviews.sql` | Reviews & ratings table | ✅ RUN |
 | `supabase_avatars_storage.sql` | Storage bucket RLS policies | ✅ RUN |
 | `supabase_media_gifting.sql` | Gifts table + Media storage bucket | ✅ RUN |
+| `supabase_gift_unlock_functions.sql` | RPC functions for gift/unlock | ⏳ OPTIONAL (improves reliability) |
 
 ---
 
