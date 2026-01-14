@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { v2 as cloudinary } from 'cloudinary'
+import crypto from 'crypto'
 import { createClient } from '@/lib/supabase/server'
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true
-})
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +14,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    const apiKey = process.env.CLOUDINARY_API_KEY
+    const apiSecret = process.env.CLOUDINARY_API_SECRET
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      return NextResponse.json(
+        { error: 'Cloudinary configuration missing' },
+        { status: 500 }
+      )
+    }
+
     const body = await request.json()
     const { publicId, resourceType = 'image' } = body
 
@@ -32,18 +35,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Delete from Cloudinary
-    const result = await cloudinary.uploader.destroy(publicId, {
-      resource_type: resourceType,
-      invalidate: true
-    })
+    const timestamp = Math.round(new Date().getTime() / 1000)
+    
+    // Create signature for deletion
+    const paramsToSign = `public_id=${publicId}&timestamp=${timestamp}`
+    const signature = crypto
+      .createHash('sha1')
+      .update(paramsToSign + apiSecret)
+      .digest('hex')
+
+    // Call Cloudinary destroy API
+    const formData = new FormData()
+    formData.append('public_id', publicId)
+    formData.append('timestamp', timestamp.toString())
+    formData.append('api_key', apiKey)
+    formData.append('signature', signature)
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/destroy`,
+      {
+        method: 'POST',
+        body: formData
+      }
+    )
+
+    const result = await response.json()
 
     if (result.result === 'ok' || result.result === 'not found') {
       return NextResponse.json({ success: true })
     }
 
     return NextResponse.json(
-      { error: 'Failed to delete asset' },
+      { error: 'Failed to delete asset', details: result },
       { status: 500 }
     )
   } catch (error) {
