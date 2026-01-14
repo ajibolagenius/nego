@@ -407,6 +407,14 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 *Messaging Quick Actions: ✅ COMPLETE - Gift Coins and Book buttons in chat header*
 *Typing Indicators: ✅ COMPLETE - Shows "typing..." when other user is typing*
 *Read Receipts: ✅ COMPLETE - Blue double checkmarks for read messages*
+*Talent Earnings Dashboard: ✅ COMPLETE - Breakdown by gifts, unlocks, bookings*
+
+### Talent Earnings Dashboard ✅ NEW (January 2025)
+- New "Earnings" tab in talent dashboard
+- Summary cards: Total Earnings, From Gifts, Content Unlocks, Bookings
+- Recent Gifts Received section with sender details
+- Transaction History with type-specific icons
+- Data fetched from transactions and gifts tables
 
 ### Real-time Messaging ✅ NEW (January 2025)
 - Clients can start conversations with talents from profile page
