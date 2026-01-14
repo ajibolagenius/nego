@@ -1,16 +1,17 @@
 /**
- * Gift API Route - Edge Runtime Compatible
+ * Gift API Route - Standard Node.js Runtime
  * 
  * POST /api/gifts - Send coins as a gift to another user
  * 
- * All validation and transaction logic is inlined for Edge runtime compatibility.
+ * Using standard Node.js runtime for better compatibility.
  */
 
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
-// Use Edge runtime
-export const runtime = 'edge'
+// Use standard Node.js runtime (NOT Edge) for better compatibility
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 // ============================================
 // CONSTANTS
