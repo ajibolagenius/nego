@@ -1,214 +1,138 @@
+/**
+ * Gift API Route
+ * 
+ * POST /api/gifts - Send coins as a gift to another user
+ * 
+ * This endpoint handles the complete gift transaction:
+ * 1. Validates the request payload
+ * 2. Verifies sender has sufficient balance
+ * 3. Transfers coins from sender to recipient
+ * 4. Creates gift record, transaction records, and notification
+ * 
+ * Request Body:
+ * {
+ *   senderId: string (UUID),
+ *   recipientId: string (UUID),
+ *   amount: number (min 100, max 1000000),
+ *   message?: string (optional, max 500 chars),
+ *   senderName?: string (for display),
+ *   recipientName?: string (for display)
+ * }
+ * 
+ * Response:
+ * Success: { success: true, message: string, newSenderBalance: number, giftId?: string }
+ * Error: { success: false, error: string, field?: string }
+ */
+
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { validateGiftRequest, sanitizeGiftRequest, GIFT_CONSTANTS } from '@/lib/gift-validation'
+import { executeGiftTransaction } from '@/lib/gift-service'
+
+// Use Edge runtime for better performance and reliability
+export const runtime = 'edge'
+
+// Response helpers
+function successResponse(data: object, status = 200) {
+  return NextResponse.json({ success: true, ...data }, { status })
+}
+
+function errorResponse(error: string, status = 400, field?: string) {
+  return NextResponse.json({ success: false, error, field }, { status })
+}
 
 export async function POST(request: NextRequest) {
+  // Log request for debugging
+  const requestId = crypto.randomUUID().slice(0, 8)
+  console.log(`[Gift API ${requestId}] Processing gift request`)
+
   try {
+    // 1. Validate environment
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    
+
     if (!supabaseUrl || !serviceRoleKey) {
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      )
+      console.error(`[Gift API ${requestId}] Missing Supabase configuration`)
+      return errorResponse('Server configuration error. Please try again later.', 500)
     }
-    
+
+    // 2. Parse request body
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      console.error(`[Gift API ${requestId}] Invalid JSON in request body`)
+      return errorResponse('Invalid request format. Please try again.', 400)
+    }
+
+    console.log(`[Gift API ${requestId}] Request body:`, JSON.stringify(body))
+
+    // 3. Validate request
+    const validation = validateGiftRequest(body)
+    if (!validation.valid) {
+      console.log(`[Gift API ${requestId}] Validation failed:`, validation.error)
+      return errorResponse(validation.error || 'Invalid request', 400, validation.field)
+    }
+
+    // 4. Sanitize and extract data
+    const giftRequest = sanitizeGiftRequest(body as Record<string, unknown>)
+    console.log(`[Gift API ${requestId}] Sanitized request:`, JSON.stringify(giftRequest))
+
+    // 5. Create Supabase admin client
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false, autoRefreshToken: false }
-    })
-    
-    const body = await request.json()
-    const { senderId, recipientId, amount, message, senderName, recipientName } = body
-
-    // Validate input
-    if (!senderId || !recipientId || !amount) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
-
-    // Validate UUIDs
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!uuidRegex.test(senderId) || !uuidRegex.test(recipientId)) {
-      return NextResponse.json(
-        { error: 'Invalid user ID format' },
-        { status: 400 }
-      )
-    }
-
-    if (amount < 100) {
-      return NextResponse.json(
-        { error: 'Minimum gift amount is 100 coins' },
-        { status: 400 }
-      )
-    }
-
-    if (senderId === recipientId) {
-      return NextResponse.json(
-        { error: 'Cannot gift to yourself' },
-        { status: 400 }
-      )
-    }
-
-    // Try database function first (most reliable)
-    const { data: rpcData, error: rpcError } = await supabase.rpc('handle_gift', {
-      p_sender_id: senderId,
-      p_recipient_id: recipientId,
-      p_amount: amount,
-      p_message: message || null
-    })
-
-    // If RPC works, use its result
-    if (!rpcError && rpcData) {
-      if (!rpcData.success) {
-        return NextResponse.json(
-          { error: rpcData.error || 'Gift failed' },
-          { status: 400 }
-        )
-      }
-      return NextResponse.json({
-        success: true,
-        message: 'Gift sent successfully!',
-        newSenderBalance: rpcData.new_balance
-      })
-    }
-
-    // Log RPC error for debugging
-    console.log('RPC handle_gift not available or failed:', rpcError?.message)
-
-    // Fallback: Direct operations using service role (bypasses RLS)
-    // Get sender's wallet
-    const { data: senderWallet, error: senderError } = await supabase
-      .from('wallets')
-      .select('balance')
-      .eq('user_id', senderId)
-      .single()
-
-    if (senderError || !senderWallet) {
-      return NextResponse.json(
-        { error: 'Sender wallet not found' },
-        { status: 404 }
-      )
-    }
-
-    if (senderWallet.balance < amount) {
-      return NextResponse.json(
-        { error: 'Insufficient balance' },
-        { status: 400 }
-      )
-    }
-
-    // Get recipient wallet
-    const { data: recipientWallet, error: recipientWalletError } = await supabase
-      .from('wallets')
-      .select('balance')
-      .eq('user_id', recipientId)
-      .single()
-
-    if (recipientWalletError || !recipientWallet) {
-      return NextResponse.json(
-        { error: 'Recipient wallet not found' },
-        { status: 404 }
-      )
-    }
-
-    // Deduct from sender
-    const { error: deductError } = await supabase
-      .from('wallets')
-      .update({ balance: senderWallet.balance - amount })
-      .eq('user_id', senderId)
-
-    if (deductError) {
-      console.error('Deduct error:', deductError)
-      return NextResponse.json(
-        { error: 'Failed to process gift' },
-        { status: 500 }
-      )
-    }
-
-    // Add to recipient
-    const { error: addError } = await supabase
-      .from('wallets')
-      .update({ balance: recipientWallet.balance + amount })
-      .eq('user_id', recipientId)
-
-    if (addError) {
-      // Rollback sender deduction
-      await supabase
-        .from('wallets')
-        .update({ balance: senderWallet.balance })
-        .eq('user_id', senderId)
-      
-      console.error('Add to recipient error:', addError)
-      return NextResponse.json(
-        { error: 'Failed to credit recipient' },
-        { status: 500 }
-      )
-    }
-
-    // Create gift record
-    try {
-      await supabase.from('gifts').insert({
-        sender_id: senderId,
-        recipient_id: recipientId,
-        amount,
-        message: message || null
-      })
-    } catch {
-      // Ignore gift record errors
-    }
-
-    // Create transaction records
-    try {
-      await supabase.from('transactions').insert([
-      {
-        user_id: senderId,
-        amount: -amount,
-        coins: -amount,
-        type: 'gift',
-        status: 'completed',
-        description: `Gift to ${recipientName || 'Talent'}`
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
       },
-      {
-        user_id: recipientId,
-        amount: amount,
-        coins: amount,
-        type: 'gift',
-        status: 'completed',
-        description: `Gift from ${senderName || 'Someone'}`
-      }
-    ])
-    } catch {
-      // Ignore transaction record errors
+    })
+
+    // 6. Execute the gift transaction
+    const result = await executeGiftTransaction(supabase, {
+      senderId: giftRequest.senderId,
+      recipientId: giftRequest.recipientId,
+      amount: giftRequest.amount,
+      message: giftRequest.message,
+      senderName: giftRequest.senderName || 'Someone',
+      recipientName: giftRequest.recipientName || 'Talent',
+    })
+
+    if (!result.success) {
+      console.log(`[Gift API ${requestId}] Transaction failed:`, result.error)
+      return errorResponse(result.error || 'Gift failed', 400)
     }
 
-    // Create notification
-    try {
-      await supabase.from('notifications').insert({
-        user_id: recipientId,
-        type: 'general',
-        title: 'You received a gift! 🎁',
-        message: `${senderName || 'Someone'} sent you ${amount} coins`,
-        data: { gift_amount: amount, sender_id: senderId }
-      })
-    } catch {
-      // Ignore notification errors
-    }
+    console.log(`[Gift API ${requestId}] Gift successful, new balance:`, result.newSenderBalance)
 
-    return NextResponse.json({
-      success: true,
-      message: 'Gift sent successfully',
-      newSenderBalance: senderWallet.balance - amount
+    return successResponse({
+      message: 'Gift sent successfully! 🎁',
+      newSenderBalance: result.newSenderBalance,
+      giftId: result.giftId,
     })
 
   } catch (error) {
-    console.error('Gift API error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error(`[Gift API ${requestId}] Unexpected error:`, error)
+    
+    // Provide user-friendly error message
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    
+    // Check for specific error patterns
+    if (message.includes('pattern') || message.includes('format')) {
+      return errorResponse('Invalid data format. Please refresh and try again.', 400)
+    }
+    
+    return errorResponse('An unexpected error occurred. Please try again.', 500)
   }
 }
 
-export const runtime = 'edge'
+// Handle unsupported methods
+export async function GET() {
+  return errorResponse('Method not allowed. Use POST to send a gift.', 405)
+}
+
+export async function PUT() {
+  return errorResponse('Method not allowed. Use POST to send a gift.', 405)
+}
+
+export async function DELETE() {
+  return errorResponse('Method not allowed. Use POST to send a gift.', 405)
+}
