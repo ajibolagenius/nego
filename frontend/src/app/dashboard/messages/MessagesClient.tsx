@@ -441,6 +441,29 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {/* Quick Actions for Clients chatting with Talents */}
+                    {userRole === 'client' && selectedConversation.other_user?.role === 'talent' && (
+                      <>
+                        <GiftCoins
+                          talentId={selectedConversation.other_user.id}
+                          talentName={selectedConversation.other_user.display_name || 'Talent'}
+                          senderId={userId}
+                          senderBalance={walletBalance}
+                          onSuccess={() => {
+                            // Refresh wallet balance
+                            supabase.from('wallets').select('balance').eq('user_id', userId).single()
+                              .then(({ data }) => data && setWalletBalance(data.balance))
+                          }}
+                        />
+                        <Link
+                          href={getTalentUrl(selectedConversation.other_user)}
+                          className="p-2 rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                          title="View Profile & Book"
+                        >
+                          <CalendarPlus size={20} />
+                        </Link>
+                      </>
+                    )}
                     <button className="p-2 rounded-full text-white/40 hover:text-white hover:bg-white/10">
                       <Phone size={20} />
                     </button>
