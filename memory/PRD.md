@@ -428,11 +428,11 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 ### Cloudinary Integration ✅ NEW (January 2025)
 - Cloud Name: drhsnjxqj
 - API routes: `/api/cloudinary/signature` and `/api/cloudinary/delete`
+- **Uses Web Crypto API for Edge runtime compatibility (fixes 520 errors)**
 - Client library: `/lib/cloudinary.ts` with upload utilities
 - MediaManager updated to use Cloudinary with progress indicator
 - Supports images and videos up to 50MB
 - Automatic optimization and transformations
-- Uses native crypto for signature generation (serverless compatible)
 
 ## API Routes (Server-Side)
 - `/api/gifts` - POST: Send gift coins (bypasses RLS)
