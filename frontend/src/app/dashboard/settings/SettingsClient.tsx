@@ -179,9 +179,15 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
             </div>
           </div>
 
+          {/* Push Notifications Section */}
+          <div>
+            <h2 className="text-sm font-bold text-white/50 uppercase tracking-wider mb-4">Push Notifications</h2>
+            <PushNotificationManager userId={user.id} />
+          </div>
+
           {/* Notifications Section */}
           <div>
-            <h2 className="text-sm font-bold text-white/50 uppercase tracking-wider mb-4">Notifications</h2>
+            <h2 className="text-sm font-bold text-white/50 uppercase tracking-wider mb-4">Email Notifications</h2>
             <div className="space-y-2">
               <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
                 <div className="flex items-center gap-4">
