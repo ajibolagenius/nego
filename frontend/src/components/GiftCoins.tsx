@@ -166,12 +166,33 @@ export function GiftCoins({
           recipientId: talentId,
           amount: effectiveAmount,
           message: message.trim() || null,
-          senderName: 'Client', // Could be enhanced to use actual user name
+          senderName: 'Client',
           recipientName: talentName,
         }),
       })
 
-      const data = await response.json()
+      // Handle 5xx server errors (including 520)
+      if (response.status >= 500) {
+        console.error('[GiftCoins] Server error:', response.status, response.statusText)
+        setError({ 
+          message: 'Server temporarily unavailable. Please try again in a moment.',
+          field: 'server'
+        })
+        return
+      }
+
+      // Try to parse JSON response
+      let data
+      try {
+        data = await response.json()
+      } catch (parseError) {
+        console.error('[GiftCoins] Failed to parse response:', parseError)
+        setError({ 
+          message: 'Unexpected server response. Please try again.',
+          field: 'server'
+        })
+        return
+      }
 
       if (!response.ok) {
         // Handle specific error cases
