@@ -104,26 +104,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Create records (best effort)
-    await supabase.from('transactions').insert([
-      {
-        user_id: userId,
-        amount: -unlockPrice,
-        coins: -unlockPrice,
-        type: 'unlock',
-        status: 'completed',
-        reference_id: mediaId,
-        description: 'Unlocked premium content'
-      },
-      {
-        user_id: talentId,
-        amount: unlockPrice,
-        coins: unlockPrice,
-        type: 'unlock',
-        status: 'completed',
-        reference_id: mediaId,
-        description: 'Content unlock payment'
-      }
-    ]).catch(() => {})
+    try {
+      await supabase.from('transactions').insert([
+        {
+          user_id: userId,
+          amount: -unlockPrice,
+          coins: -unlockPrice,
+          type: 'unlock',
+          status: 'completed',
+          reference_id: mediaId,
+          description: 'Unlocked premium content'
+        },
+        {
+          user_id: talentId,
+          amount: unlockPrice,
+          coins: unlockPrice,
+          type: 'unlock',
+          status: 'completed',
+          reference_id: mediaId,
+          description: 'Content unlock payment'
+        }
+      ])
+    } catch {
+      // Ignore errors
+    }
 
     return NextResponse.json({
       success: true,
