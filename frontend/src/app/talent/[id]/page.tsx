@@ -42,7 +42,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function TalentProfilePage({ params }: PageProps) {
   const { id } = await params
   const supabase = await createClient()
-  const supabaseAdmin = getAdminClient()
   
   const { data: { user } } = await supabase.auth.getUser()
   
