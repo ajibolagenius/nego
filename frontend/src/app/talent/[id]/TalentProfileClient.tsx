@@ -39,6 +39,83 @@ const serviceIcons: Record<string, Icon> = {
   'camera': Camera,
 }
 
+// Gallery Section with Free/Premium Tabs
+function GallerySection({ media }: { media: Media[] }) {
+  const [activeTab, setActiveTab] = useState<'free' | 'premium'>('free')
+  
+  const freeMedia = media.filter(m => !m.is_premium)
+  const premiumMedia = media.filter(m => m.is_premium)
+  const currentMedia = activeTab === 'free' ? freeMedia : premiumMedia
+  
+  // Don't render if no media at all
+  if (media.length === 0) return null
+  
+  return (
+    <div className="mb-8" data-testid="talent-gallery">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-white">Gallery</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab('free')}
+            data-testid="gallery-tab-free"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              activeTab === 'free'
+                ? 'bg-green-500 text-white'
+                : 'bg-white/5 text-white/60 hover:bg-white/10'
+            }`}
+          >
+            <Eye size={14} />
+            Free ({freeMedia.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('premium')}
+            data-testid="gallery-tab-premium"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              activeTab === 'premium'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                : 'bg-white/5 text-white/60 hover:bg-white/10'
+            }`}
+          >
+            <Crown size={14} weight="fill" />
+            Premium ({premiumMedia.length})
+          </button>
+        </div>
+      </div>
+      
+      {currentMedia.length === 0 ? (
+        <div className="text-center py-8 rounded-xl bg-white/5 border border-white/10">
+          <p className="text-white/50 text-sm">
+            {activeTab === 'premium' 
+              ? 'No premium content available' 
+              : 'No free content available'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-3">
+          {currentMedia.map((item) => (
+            <div key={item.id} className="aspect-square rounded-xl overflow-hidden relative group">
+              <Image
+                src={item.url}
+                alt="Gallery"
+                fill
+                className={`object-cover ${item.is_premium ? 'blur-lg' : ''}`}
+              />
+              {item.is_premium && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <div className="text-center">
+                    <Lock size={24} className="text-white mx-auto mb-1" />
+                    <p className="text-white text-xs">{item.unlock_price} coins</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function TalentProfileClient({ talent, currentUser, wallet, userId }: TalentProfileClientProps) {
   const router = useRouter()
   const [liked, setLiked] = useState(false)
