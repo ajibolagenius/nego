@@ -316,6 +316,7 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 - Insufficient balance warning with "Top Up" link
 - Creates transaction records for both sender and recipient
 - Triggers notification to talent
+- Modal dismisses on outside click
 - Components: `/app/frontend/src/components/GiftCoins.tsx`
 - Database: `gifts` table (run `supabase_media_gifting.sql`)
 
@@ -327,6 +328,36 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 - Time formatting (Just now, 2h ago, etc.)
 - Deep links to related content (bookings, wallet, etc.)
 - Components: `/app/frontend/src/app/dashboard/notifications/`
+
+### Premium Content Unlock ✅ NEW (January 2025)
+- Premium media shows blurred in gallery
+- "Unlock for X coins" button on each premium item
+- Deducts coins from user, adds to talent
+- Creates transaction records for both parties
+- Shows "Unlocked" badge after purchase
+- Insufficient balance warning
+
+### Talent URL Slugs ✅ NEW (January 2025)
+- New route: `/t/[slug]` for cleaner talent URLs
+- Uses username if available, otherwise generates slug from display_name
+- Fallback to UUID-based URL (`/talent/[id]`) still works
+- Helper: `/app/frontend/src/lib/talent-url.ts`
+- All talent links updated throughout the app
+
+### Wallet Page Redesign ✅ NEW (January 2025)
+- New gradient balance card with decorative elements
+- Quick stats: Received/Spent totals
+- Tabbed interface: Buy Coins / History
+- Improved coin package cards with badges
+- Transaction history with type-specific icons
+- "How Coins Work" info section
+
+### Favorites & Share ✅ FIXED (January 2025)
+- Favorite button uses `useFavorites` hook for persistence
+- Share button shows dropdown with:
+  - Copy Link (copies to clipboard)
+  - Share on X (opens Twitter intent)
+  - Web Share API support on mobile
 
 ---
 
@@ -346,10 +377,13 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 *Reviews System: ✅ COMPLETE*
 *Forgot Password: ✅ COMPLETE*
 *Admin Digest: ✅ COMPLETE*
-*Favorites: ✅ FIXED*
+*Favorites: ✅ COMPLETE*
 *Vercel Cron: ✅ CONFIGURED*
 *Media Manager: ✅ COMPLETE*
 *Gift Coins: ✅ COMPLETE*
+*Premium Unlock: ✅ COMPLETE*
+*Talent URLs: ✅ COMPLETE*
+*Wallet Redesign: ✅ COMPLETE*
 
 ## Cron Jobs (vercel.json)
 - `/api/bookings/expire` - Every hour (0 * * * *)
