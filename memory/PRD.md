@@ -14,10 +14,10 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 | Frontend | Next.js 14 (App Router), Shadcn/UI + Tailwind CSS ✅ |
 | Backend | Supabase (Auth, Database, API) ✅ |
 | Database | PostgreSQL (Supabase) ✅ |
-| Media Storage | Supabase Storage ✅ |
+| Media Storage | Cloudinary ✅ NEW |
 | Payments | Paystack (react-paystack) ✅ |
 | Webcam | react-webcam ✅ |
-| Email | Resend ✅ NEW |
+| Email | Resend ✅ |
 
 ---
 
