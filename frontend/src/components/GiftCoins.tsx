@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { Gift, Coin, X, SpinnerGap, Check, Warning } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
