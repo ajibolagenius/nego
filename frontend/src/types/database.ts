@@ -84,7 +84,7 @@ export interface Media {
   created_at: string
 }
 
-export type TransactionType = 'purchase' | 'unlock' | 'booking' | 'refund' | 'payout' | 'withdrawal'
+export type TransactionType = 'purchase' | 'unlock' | 'booking' | 'refund' | 'payout' | 'withdrawal' | 'gift'
 export type TransactionStatus = 'pending' | 'completed' | 'failed' | 'refunded'
 
 export interface Transaction {
