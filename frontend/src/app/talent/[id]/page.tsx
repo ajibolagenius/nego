@@ -42,7 +42,7 @@ export default async function TalentProfilePage({ params }: PageProps) {
     redirect('/login')
   }
 
-  // Fetch talent profile with reviews
+  // Fetch talent profile (without media - we'll fetch that separately with admin client)
   const { data: talent, error } = await supabase
     .from('profiles')
     .select(`
@@ -57,13 +57,6 @@ export default async function TalentProfilePage({ params }: PageProps) {
           icon,
           description
         )
-      ),
-      media (
-        id,
-        url,
-        type,
-        is_premium,
-        unlock_price
       )
     `)
     .eq('id', id)
@@ -72,6 +65,19 @@ export default async function TalentProfilePage({ params }: PageProps) {
 
   if (error || !talent) {
     notFound()
+  }
+
+  // Fetch ALL media (including premium) using admin client to bypass RLS
+  const { data: media } = await supabaseAdmin
+    .from('media')
+    .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
+    .eq('talent_id', id)
+    .order('created_at', { ascending: false })
+
+  // Attach media to talent object
+  const talentWithMedia = {
+    ...talent,
+    media: media || []
   }
 
   // Fetch reviews for this talent
