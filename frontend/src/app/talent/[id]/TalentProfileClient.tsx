@@ -186,11 +186,6 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
               <ArrowLeft size={24} />
             </button>
             <div className="flex items-center gap-3">
-              {/* Debug info - remove after testing */}
-              <div className="hidden">
-                <span data-testid="debug-user-role">{currentUser?.role || 'no-role'}</span>
-                <span data-testid="debug-user-id">{userId || 'no-id'}</span>
-              </div>
               {/* Gift Coins Button - Only show for logged in clients */}
               {currentUser && currentUser.role === 'client' && (
                 <GiftCoins
