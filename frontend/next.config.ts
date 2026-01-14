@@ -11,6 +11,14 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'customer-assets.emergentagent.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'rmaqeotgpfvdtnvcfpox.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+      },
     ],
   },
 };
