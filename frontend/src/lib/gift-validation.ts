@@ -48,9 +48,9 @@ export interface GiftRequest {
   senderId: string
   recipientId: string
   amount: number
-  message?: string | null
-  senderName?: string
-  recipientName?: string
+  message: string | null
+  senderName: string
+  recipientName: string
 }
 
 /**
