@@ -131,32 +131,40 @@ export async function POST(request: NextRequest) {
       // Ignore errors
     }
 
-    await supabase.from('transactions').insert([
-      {
-        user_id: senderId,
-        amount: -amount,
-        coins: -amount,
-        type: 'gift',
-        status: 'completed',
-        description: `Gift to ${recipientName || 'Talent'}`
-      },
-      {
-        user_id: recipientId,
-        amount: amount,
-        coins: amount,
-        type: 'gift',
-        status: 'completed',
-        description: `Gift from ${senderName || 'Someone'}`
-      }
-    ]).catch(() => {})
+    try {
+      await supabase.from('transactions').insert([
+        {
+          user_id: senderId,
+          amount: -amount,
+          coins: -amount,
+          type: 'gift',
+          status: 'completed',
+          description: `Gift to ${recipientName || 'Talent'}`
+        },
+        {
+          user_id: recipientId,
+          amount: amount,
+          coins: amount,
+          type: 'gift',
+          status: 'completed',
+          description: `Gift from ${senderName || 'Someone'}`
+        }
+      ])
+    } catch {
+      // Ignore errors
+    }
 
-    await supabase.from('notifications').insert({
-      user_id: recipientId,
-      type: 'general',
-      title: 'You received a gift! 🎁',
-      message: `${senderName || 'Someone'} sent you ${amount} coins`,
-      data: { gift_amount: amount, sender_id: senderId }
-    }).catch(() => {})
+    try {
+      await supabase.from('notifications').insert({
+        user_id: recipientId,
+        type: 'general',
+        title: 'You received a gift! 🎁',
+        message: `${senderName || 'Someone'} sent you ${amount} coins`,
+        data: { gift_amount: amount, sender_id: senderId }
+      })
+    } catch {
+      // Ignore errors
+    }
 
     return NextResponse.json({
       success: true,
