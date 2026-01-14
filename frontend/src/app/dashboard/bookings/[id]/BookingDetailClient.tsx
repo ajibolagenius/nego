@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { WriteReviewModal } from '@/components/Reviews'
+import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile, Wallet, BookingStatus, Review } from '@/types/database'
 
 interface BookingWithTalent {
