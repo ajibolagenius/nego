@@ -198,35 +198,34 @@ export function DashboardClient({ user, profile, wallet, featuredTalents = [], a
 
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+            <Link href="/dashboard/wallet" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
               <div className="flex items-center justify-between mb-3">
                 <Coin size={24} weight="duotone" className="text-[#df2531]" />
-                <span className="text-green-400 text-xs">+15%</span>
               </div>
               <p className="text-white/50 text-xs mb-1">Coin Balance</p>
-              <p className="text-white text-xl font-bold">{wallet?.balance || 0}</p>
-            </div>
-            <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+              <p className="text-white text-xl font-bold">{wallet?.balance?.toLocaleString() || 0}</p>
+            </Link>
+            <Link href="/dashboard/bookings" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
               <div className="flex items-center justify-between mb-3">
                 <CalendarCheck size={24} weight="duotone" className="text-[#df2531]" />
               </div>
               <p className="text-white/50 text-xs mb-1">Active Bookings</p>
-              <p className="text-white text-xl font-bold">0</p>
-            </div>
-            <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+              <p className="text-white text-xl font-bold">{activeBookings}</p>
+            </Link>
+            <Link href="/dashboard/favorites" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
               <div className="flex items-center justify-between mb-3">
                 <Heart size={24} weight="duotone" className="text-[#df2531]" />
               </div>
               <p className="text-white/50 text-xs mb-1">Favorites</p>
-              <p className="text-white text-xl font-bold">0</p>
-            </div>
-            <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+              <p className="text-white text-xl font-bold">{favoritesCount}</p>
+            </Link>
+            <Link href="/dashboard/profile" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
               <div className="flex items-center justify-between mb-3">
                 <User size={24} weight="duotone" className="text-[#df2531]" />
               </div>
               <p className="text-white/50 text-xs mb-1">Profile Status</p>
               <p className="text-white text-xl font-bold">{profile?.is_verified ? 'Verified' : 'Pending'}</p>
-            </div>
+            </Link>
           </div>
 
           {/* Featured Talents */}
