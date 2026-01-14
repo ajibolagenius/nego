@@ -8,7 +8,7 @@ import {
   ArrowLeft, User, PencilSimple, Plus, Trash, Image as ImageIcon,
   CurrencyDollar, CalendarCheck, Clock, Eye, EyeSlash, Star,
   CaretRight, Coin, CheckCircle, XCircle, Hourglass, X,
-  Camera, MapPin, Sparkle, Receipt, ChartLine, Icon, Bank, Money
+  Camera, MapPin, Sparkle, Receipt, ChartLine, Icon, Bank, Money, Gift
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
