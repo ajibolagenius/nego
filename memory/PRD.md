@@ -132,7 +132,7 @@ Nego is a managed talent marketplace connecting service providers (Talent) with 
 /dashboard/verify        # Webcam verification gate (+ MobileBottomNav)
 /dashboard/talent        # Talent dashboard (5 tabs incl. Withdrawals + MobileBottomNav)
 
-/talent/[id]             # Talent profile
+/talent/[id]             # Legacy talent profile (REDIRECTS to /t/[slug])
 
 /admin                   # Admin dashboard (mobile responsive + AdminMobileNav)
 /admin/verifications     # Review verifications (mobile responsive)
@@ -359,6 +359,14 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
   - Copy Link (copies to clipboard)
   - Share on X (opens Twitter intent)
   - Web Share API support on mobile
+
+---
+
+### Legacy Route Deprecation ✅ NEW (January 2025)
+- `/talent/[id]` route now redirects to `/t/[slug]` format
+- Uses `getTalentUrl()` helper to generate the new URL
+- `/t/[slug]` handles both username/slug and UUID-based lookups
+- Maintains backwards compatibility for existing links
 
 ---
 
