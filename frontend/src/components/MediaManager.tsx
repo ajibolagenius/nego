@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { 
   Image as ImageIcon, Plus, Trash, X, Upload, Lock, Eye,
-  SpinnerGap, Check, Crown, Star
+  SpinnerGap, Check, Crown, Star, SortAscending, SortDescending,
+  VideoCamera, FunnelSimple, GridFour, List
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 
@@ -25,6 +26,9 @@ interface MediaManagerProps {
 }
 
 type MediaTab = 'free' | 'premium'
+type SortOption = 'newest' | 'oldest'
+type FilterOption = 'all' | 'images' | 'videos'
+type ViewMode = 'grid' | 'list'
 
 export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) {
   const [activeTab, setActiveTab] = useState<MediaTab>('free')
@@ -37,11 +41,35 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
   const [unlockPrice, setUnlockPrice] = useState('50')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   
+  // Sorting and filtering states
+  const [sortBy, setSortBy] = useState<SortOption>('newest')
+  const [filterBy, setFilterBy] = useState<FilterOption>('all')
+  const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const [showFilters, setShowFilters] = useState(false)
+  
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const freeMedia = media.filter(m => !m.is_premium)
   const premiumMedia = media.filter(m => m.is_premium)
-  const currentMedia = activeTab === 'free' ? freeMedia : premiumMedia
+  
+  // Apply sorting and filtering
+  const currentMedia = useMemo(() => {
+    let filtered = activeTab === 'free' ? freeMedia : premiumMedia
+    
+    // Apply type filter
+    if (filterBy === 'images') {
+      filtered = filtered.filter(m => m.type === 'image' || !m.url.match(/\.(mp4|webm|ogg|mov)$/i))
+    } else if (filterBy === 'videos') {
+      filtered = filtered.filter(m => m.type === 'video' || m.url.match(/\.(mp4|webm|ogg|mov)$/i))
+    }
+    
+    // Apply sorting
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime()
+      const dateB = new Date(b.created_at).getTime()
+      return sortBy === 'newest' ? dateB - dateA : dateA - dateB
+    })
+  }, [activeTab, freeMedia, premiumMedia, sortBy, filterBy])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
