@@ -178,16 +178,23 @@ export async function POST(request: NextRequest) {
         status: 'completed',
         description: `Gift from ${senderName || 'Someone'}`
       }
-    ]).catch(() => {})
+    ])
+    } catch {
+      // Ignore transaction record errors
+    }
 
     // Create notification
-    await supabase.from('notifications').insert({
-      user_id: recipientId,
-      type: 'general',
-      title: 'You received a gift! 🎁',
-      message: `${senderName || 'Someone'} sent you ${amount} coins`,
-      data: { gift_amount: amount, sender_id: senderId }
-    }).catch(() => {})
+    try {
+      await supabase.from('notifications').insert({
+        user_id: recipientId,
+        type: 'general',
+        title: 'You received a gift! 🎁',
+        message: `${senderName || 'Someone'} sent you ${amount} coins`,
+        data: { gift_amount: amount, sender_id: senderId }
+      })
+    } catch {
+      // Ignore notification errors
+    }
 
     return NextResponse.json({
       success: true,
