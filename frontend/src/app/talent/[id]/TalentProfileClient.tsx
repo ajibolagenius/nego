@@ -287,6 +287,7 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
   const [error, setError] = useState('')
   const [showShareMenu, setShowShareMenu] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [startingChat, setStartingChat] = useState(false)
 
   const isLiked = favoritesLoaded && isFavorite(talent.id)
   const activeServices = talent.talent_menus?.filter(m => m.is_active) || []
@@ -304,6 +305,57 @@ export function TalentProfileClient({ talent, currentUser, wallet, userId }: Tal
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price)} coins`
+  }
+
+  // Start or open conversation with talent
+  const handleStartChat = async () => {
+    if (currentUser?.role === 'talent') {
+      alert('Talents cannot message other talents.')
+      return
+    }
+    
+    setStartingChat(true)
+    const supabase = createClient()
+    
+    try {
+      // Check if conversation already exists
+      const { data: existingConv } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`and(participant_1.eq.${userId},participant_2.eq.${talent.id}),and(participant_1.eq.${talent.id},participant_2.eq.${userId})`)
+        .single()
+
+      if (existingConv) {
+        // Navigate to existing conversation
+        router.push(`/dashboard/messages?conversation=${existingConv.id}`)
+        return
+      }
+
+      // Create new conversation
+      const { data: newConv, error: convError } = await supabase
+        .from('conversations')
+        .insert({
+          participant_1: userId,
+          participant_2: talent.id,
+          last_message_at: new Date().toISOString()
+        })
+        .select('id')
+        .single()
+
+      if (convError) {
+        console.error('Failed to create conversation:', convError)
+        alert('Failed to start conversation. Please try again.')
+        return
+      }
+
+      // Navigate to new conversation
+      router.push(`/dashboard/messages?conversation=${newConv.id}`)
+    } catch (err) {
+      console.error('Chat error:', err)
+      alert('Failed to start conversation')
+    } finally {
+      setStartingChat(false)
+    }
   }
 
   const handleFavoriteToggle = () => {
