@@ -1,18 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { 
   ArrowLeft, MapPin, Star, Heart, Share, Circle,
   Check, Calendar, Clock, SpinnerGap, X, ShieldCheck,
-  ForkKnife, CalendarCheck, Airplane, Lock, Camera, Coin, Warning, ChatCircle, Crown, Eye
+  ForkKnife, CalendarCheck, Airplane, Lock, Camera, Coin, Warning, ChatCircle, Crown, Eye,
+  ShareNetwork, Copy, CheckCircle
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { ReviewCard, ReviewSummary } from '@/components/Reviews'
 import { GiftCoins } from '@/components/GiftCoins'
+import { useFavorites } from '@/hooks/useFavorites'
 import type { Profile, ServiceType, TalentMenu, Media, Wallet, Review } from '@/types/database'
 import type { Icon } from '@phosphor-icons/react'
 
