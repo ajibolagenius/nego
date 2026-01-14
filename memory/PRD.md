@@ -380,10 +380,22 @@ SENDER_EMAIL=Nego <onboarding@resend.dev>
 *Favorites: ✅ COMPLETE*
 *Vercel Cron: ✅ CONFIGURED*
 *Media Manager: ✅ COMPLETE*
-*Gift Coins: ✅ COMPLETE*
-*Premium Unlock: ✅ COMPLETE*
+*Gift Coins: ✅ COMPLETE (Server-side API)*
+*Premium Unlock: ✅ COMPLETE (Server-side API)*
 *Talent URLs: ✅ COMPLETE*
 *Wallet Redesign: ✅ COMPLETE*
+*Gallery Lightbox: ✅ COMPLETE*
+*Video Support: ✅ COMPLETE*
+
+## API Routes (Server-Side)
+- `/api/gifts` - POST: Send gift coins (bypasses RLS)
+- `/api/media/unlock` - POST: Unlock premium content (bypasses RLS)
+- `/api/media` - GET: Fetch all media including premium (bypasses RLS)
+- `/api/transactions/create` - POST: Create transaction for Paystack
+- `/api/webhooks/paystack` - POST: Paystack webhook handler
+- `/api/email/send` - POST: Send transactional emails
+- `/api/bookings/expire` - POST: Expire stale bookings (Cron)
+- `/api/admin/digest` - POST: Send admin digest (Cron)
 
 ## Cron Jobs (vercel.json)
 - `/api/bookings/expire` - Every hour (0 * * * *)
