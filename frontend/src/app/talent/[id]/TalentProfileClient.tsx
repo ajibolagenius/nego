@@ -53,6 +53,7 @@ function GallerySection({ media, userId, userBalance, onUnlock }: GallerySection
   const [activeTab, setActiveTab] = useState<'free' | 'premium'>('free')
   const [unlocking, setUnlocking] = useState<string | null>(null)
   const [unlockedMedia, setUnlockedMedia] = useState<Set<string>>(new Set())
+  const [lightboxItem, setLightboxItem] = useState<Media | null>(null)
   
   const freeMedia = media.filter(m => !m.is_premium)
   const premiumMedia = media.filter(m => m.is_premium)
@@ -61,7 +62,8 @@ function GallerySection({ media, userId, userBalance, onUnlock }: GallerySection
   // Don't render if no media at all
   if (media.length === 0) return null
 
-  const handleUnlock = async (item: Media) => {
+  const handleUnlock = async (item: Media, e?: React.MouseEvent) => {
+    e?.stopPropagation()
     if (userBalance < item.unlock_price) {
       alert(`Insufficient balance. You need ${item.unlock_price} coins to unlock this content.`)
       return
@@ -81,6 +83,19 @@ function GallerySection({ media, userId, userBalance, onUnlock }: GallerySection
   }
 
   const isUnlocked = (mediaId: string) => unlockedMedia.has(mediaId)
+
+  const openLightbox = (item: Media) => {
+    // Only open lightbox if not premium or if unlocked
+    if (!item.is_premium || isUnlocked(item.id)) {
+      setLightboxItem(item)
+    }
+  }
+
+  const closeLightbox = () => setLightboxItem(null)
+
+  const isVideo = (url: string) => {
+    return url.match(/\.(mp4|webm|ogg|mov)$/i) !== null
+  }
   
   return (
     <div className="mb-8" data-testid="talent-gallery">
@@ -116,30 +131,62 @@ function GallerySection({ media, userId, userBalance, onUnlock }: GallerySection
       
       {currentMedia.length === 0 ? (
         <div className="text-center py-8 rounded-xl bg-white/5 border border-white/10">
-          <p className="text-white/50 text-sm">
-            {activeTab === 'premium' 
-              ? 'No premium content available' 
-              : 'No free content available'}
-          </p>
+          {activeTab === 'premium' ? (
+            <div className="flex flex-col items-center gap-2">
+              <Crown size={32} weight="duotone" className="text-amber-500/50" />
+              <p className="text-white/50 text-sm">No premium content available yet</p>
+              <p className="text-white/30 text-xs">Premium content will appear here</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <Camera size={32} weight="duotone" className="text-white/30" />
+              <p className="text-white/50 text-sm">No free content available</p>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-3">
           {currentMedia.map((item) => {
             const unlocked = isUnlocked(item.id)
             const showBlur = item.is_premium && !unlocked
+            const canOpen = !item.is_premium || unlocked
             
             return (
-              <div key={item.id} className="aspect-square rounded-xl overflow-hidden relative group">
-                <Image
-                  src={item.url}
-                  alt="Gallery"
-                  fill
-                  className={`object-cover transition-all ${showBlur ? 'blur-xl scale-110' : ''}`}
-                />
+              <div 
+                key={item.id} 
+                className={`aspect-square rounded-xl overflow-hidden relative group ${canOpen ? 'cursor-pointer' : ''}`}
+                onClick={() => canOpen && openLightbox(item)}
+              >
+                {isVideo(item.url) ? (
+                  <video
+                    src={item.url}
+                    className={`w-full h-full object-cover transition-all ${showBlur ? 'blur-xl scale-110' : ''}`}
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <Image
+                    src={item.url}
+                    alt="Gallery"
+                    fill
+                    className={`object-cover transition-all ${showBlur ? 'blur-xl scale-110' : ''}`}
+                  />
+                )}
+                
+                {/* Video indicator */}
+                {isVideo(item.url) && !showBlur && (
+                  <div className="absolute bottom-2 right-2 bg-black/60 rounded-full p-1.5">
+                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                )}
+                
+                {/* Premium locked overlay */}
                 {item.is_premium && !unlocked && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/60">
                     <button
-                      onClick={() => handleUnlock(item)}
+                      onClick={(e) => handleUnlock(item, e)}
                       disabled={unlocking === item.id}
                       className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:from-amber-500/30 hover:to-orange-500/30 transition-all"
                     >
@@ -161,15 +208,66 @@ function GallerySection({ media, userId, userBalance, onUnlock }: GallerySection
                     </button>
                   </div>
                 )}
+                
+                {/* Unlocked badge */}
                 {unlocked && (
                   <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-green-500/80 text-white text-[10px] font-medium flex items-center gap-1">
                     <CheckCircle size={12} weight="bold" />
                     Unlocked
                   </div>
                 )}
+                
+                {/* Hover overlay for clickable items */}
+                {canOpen && (
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {lightboxItem && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+          onClick={closeLightbox}
+        >
+          <button 
+            className="absolute top-4 right-4 text-white/70 hover:text-white z-50"
+            onClick={closeLightbox}
+          >
+            <X size={32} />
+          </button>
+          
+          <div 
+            className="relative max-w-4xl max-h-[90vh] w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isVideo(lightboxItem.url) ? (
+              <video
+                src={lightboxItem.url}
+                className="w-full h-full max-h-[90vh] object-contain rounded-lg"
+                controls
+                autoPlay
+                playsInline
+              />
+            ) : (
+              <Image
+                src={lightboxItem.url}
+                alt="Gallery full view"
+                width={1200}
+                height={800}
+                className="w-full h-auto max-h-[90vh] object-contain rounded-lg"
+              />
+            )}
+          </div>
         </div>
       )}
     </div>
