@@ -54,94 +54,25 @@ export function GiftCoins({ talentId, talentName, senderId, senderBalance, onSuc
     setError('')
 
     try {
-      const supabase = createClient()
-
-      // Deduct from sender's wallet
-      const { error: deductError } = await supabase
-        .from('wallets')
-        .update({ balance: senderBalance - effectiveAmount })
-        .eq('user_id', senderId)
-
-      if (deductError) throw deductError
-
-      // Add to recipient's wallet - use RPC or direct update
-      // First try to get recipient wallet
-      const { data: recipientWallet, error: fetchError } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('user_id', talentId)
-        .single()
-
-      if (fetchError) {
-        // If wallet doesn't exist, create it with the gift amount
-        const { error: createError } = await supabase
-          .from('wallets')
-          .insert({ 
-            user_id: talentId, 
-            balance: effectiveAmount,
-            escrow_balance: 0 
-          })
-        
-        if (createError) {
-          // Rollback sender's wallet
-          await supabase
-            .from('wallets')
-            .update({ balance: senderBalance })
-            .eq('user_id', senderId)
-          throw createError
-        }
-      } else {
-        // Update existing wallet
-        const newBalance = (recipientWallet?.balance || 0) + effectiveAmount
-        const { error: addError } = await supabase
-          .from('wallets')
-          .update({ balance: newBalance })
-          .eq('user_id', talentId)
-
-        if (addError) {
-          // Rollback sender's wallet
-          await supabase
-            .from('wallets')
-            .update({ balance: senderBalance })
-            .eq('user_id', senderId)
-          throw addError
-        }
-      }
-
-      // Create gift record
-      const { error: giftError } = await supabase
-        .from('gifts')
-        .insert({
-          sender_id: senderId,
-          recipient_id: talentId,
+      // Use server-side API to handle gift transaction (bypasses RLS)
+      const response = await fetch('/api/gifts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          senderId,
+          recipientId: talentId,
           amount: effectiveAmount,
-          message: message || null
+          message: message || null,
+          senderName: 'Client',
+          recipientName: talentName
         })
+      })
 
-      if (giftError) {
-        console.error('Gift record error:', giftError)
-        // Continue anyway, the transfer was successful
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send gift')
       }
-
-      // Create transaction records
-      await supabase.from('transactions').insert([
-        {
-          user_id: senderId,
-          amount: -effectiveAmount,
-          coins: -effectiveAmount,
-          type: 'gift',
-          status: 'completed',
-          description: `Gift to ${talentName}`
-        },
-        {
-          user_id: talentId,
-          amount: effectiveAmount,
-          coins: effectiveAmount,
-          type: 'gift',
-          status: 'completed',
-          description: `Gift received`
-        }
-      ])
 
       setSuccess(true)
       setTimeout(() => {
