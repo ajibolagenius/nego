@@ -197,8 +197,8 @@ class TestMediaUnlockAPI:
         assert "error" in data
         assert "Invalid ID format" in data["error"]
     
-    def test_unlock_nonexistent_user_returns_404(self):
-        """POST /api/media/unlock with non-existent user should return 404"""
+    def test_unlock_nonexistent_user_returns_error(self):
+        """POST /api/media/unlock with non-existent user should return error"""
         user_id = str(uuid.uuid4())
         media_id = str(uuid.uuid4())
         talent_id = str(uuid.uuid4())
@@ -212,6 +212,7 @@ class TestMediaUnlockAPI:
             },
             headers={"Content-Type": "application/json"}
         )
+        # API returns 404 for wallet not found
         assert response.status_code == 404
         data = response.json()
         assert "error" in data
