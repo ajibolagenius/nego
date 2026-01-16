@@ -3,32 +3,32 @@ import { redirect } from 'next/navigation'
 import { FavoritesClient } from './FavoritesClient'
 
 export const metadata = {
-  title: 'Favorites - Nego',
-  description: 'Your saved talents on Nego',
+    title: 'Saved Favorites - Nego',
+    description: 'View and manage your saved favorite talents on Nego',
 }
 
 export default async function FavoritesPage() {
-  const supabase = await createClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
-    redirect('/login')
-  }
+    const supabase = await createClient()
 
-  // Fetch user profile to get role
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  const userRole = profile?.role === 'talent' ? 'talent' : 'client'
+    if (!user) {
+        redirect('/login')
+    }
 
-  return (
-    <FavoritesClient 
-      userId={user.id}
-      userRole={userRole}
-    />
-  )
+    // Fetch user profile to get role
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+    const userRole = profile?.role === 'talent' ? 'talent' : 'client'
+
+    return (
+        <FavoritesClient
+            userId={user.id}
+            userRole={userRole}
+        />
+    )
 }
