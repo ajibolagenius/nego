@@ -20,7 +20,6 @@ const legalLinks = [
 const socials = [
     { icon: Globe, href: 'https://nego.com', label: 'Visit our website' },
     { icon: TwitterLogo, href: 'https://twitter.com/nego', label: 'Follow us on Twitter' },
-    { icon: DiscordLogo, href: 'https://discord.gg/nego', label: 'Join our Discord community' },
     { icon: InstagramLogo, href: 'https://instagram.com/nego', label: 'Follow us on Instagram' },
 ]
 
