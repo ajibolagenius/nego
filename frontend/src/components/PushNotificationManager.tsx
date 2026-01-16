@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Bell, BellRinging, BellSlash, Check, X } from '@phosphor-icons/react'
+import { Bell, BellRinging, BellSlash, Check, X, SpinnerGap } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
 
 interface PushNotificationManagerProps {
@@ -28,6 +28,27 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
         // Check if already subscribed
         checkSubscription()
     }, [])
+
+    // Handle Escape key to close modal and body scroll lock
+    useEffect(() => {
+        if (!showPrompt) return
+
+        // Prevent body scroll when modal is open
+        document.body.style.overflow = 'hidden'
+
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && !loading) {
+                setShowPrompt(false)
+            }
+        }
+
+        document.addEventListener('keydown', handleEscape)
+        
+        return () => {
+            document.body.style.overflow = ''
+            document.removeEventListener('keydown', handleEscape)
+        }
+    }, [showPrompt, loading])
 
     const checkSubscription = async () => {
         try {
@@ -234,51 +255,78 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
             {/* Confirmation Modal */}
             {showPrompt && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-                    onClick={() => setShowPrompt(false)}
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                    onClick={() => !loading && setShowPrompt(false)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="push-notification-modal-title"
+                    aria-describedby="push-notification-modal-description"
                 >
                     <div
-                        className="bg-[#0a0a0f] rounded-2xl w-full max-w-sm border border-white/10 p-6"
+                        className="bg-[#0a0a0f] rounded-2xl w-full max-w-sm border border-white/10 p-6 relative"
                         onClick={(e) => e.stopPropagation()}
                     >
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setShowPrompt(false)}
+                            disabled={loading}
+                            className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors disabled:opacity-50"
+                            aria-label="Close notification prompt"
+                        >
+                            <X size={20} aria-hidden="true" />
+                        </button>
+
                         <div className="text-center mb-6">
                             <div className="w-16 h-16 rounded-full bg-[#df2531]/20 flex items-center justify-center mx-auto mb-4">
-                                <BellRinging size={32} weight="fill" className="text-[#df2531]" />
+                                <BellRinging size={32} weight="fill" className="text-[#df2531]" aria-hidden="true" />
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">Stay Updated</h3>
-                            <p className="text-white/60 text-sm">
+                            <h3 id="push-notification-modal-title" className="text-xl font-bold text-white mb-2">Stay Updated</h3>
+                            <p id="push-notification-modal-description" className="text-white/60 text-sm">
                                 Enable browser notifications to get instant updates about gifts, booking requests, messages, and other important activities on Nego.
                             </p>
                         </div>
 
-                        <div className="space-y-2 mb-6">
-                            <div className="flex items-center gap-2 text-white/50 text-sm">
-                                <Check size={16} className="text-green-400" />
+                        <div className="space-y-2 mb-6" role="list">
+                            <div className="flex items-center gap-2 text-white/50 text-sm" role="listitem">
+                                <Check size={16} className="text-green-400 shrink-0" aria-hidden="true" />
                                 <span>New gift received</span>
                             </div>
-                            <div className="flex items-center gap-2 text-white/50 text-sm">
-                                <Check size={16} className="text-green-400" />
+                            <div className="flex items-center gap-2 text-white/50 text-sm" role="listitem">
+                                <Check size={16} className="text-green-400 shrink-0" aria-hidden="true" />
                                 <span>Booking requests & updates</span>
                             </div>
-                            <div className="flex items-center gap-2 text-white/50 text-sm">
-                                <Check size={16} className="text-green-400" />
+                            <div className="flex items-center gap-2 text-white/50 text-sm" role="listitem">
+                                <Check size={16} className="text-green-400 shrink-0" aria-hidden="true" />
                                 <span>New messages</span>
                             </div>
                         </div>
 
                         <div className="flex gap-3">
                             <button
+                                type="button"
                                 onClick={() => setShowPrompt(false)}
-                                className="flex-1 py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors"
+                                disabled={loading}
+                                className="flex-1 py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors disabled:opacity-50"
+                                aria-label="Not now, close prompt"
                             >
                                 Not Now
                             </button>
                             <button
+                                type="button"
                                 onClick={subscribeToNotifications}
                                 disabled={loading}
-                                className="flex-1 py-3 rounded-xl bg-[#df2531] text-white font-medium hover:bg-[#c41f2a] transition-colors disabled:opacity-50"
+                                className="flex-1 py-3 rounded-xl bg-[#df2531] text-white font-medium hover:bg-[#c41f2a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                aria-label="Enable push notifications"
                             >
-                                {loading ? 'Enabling...' : 'Enable'}
+                                {loading ? (
+                                    <>
+                                        <SpinnerGap size={18} className="animate-spin" aria-hidden="true" />
+                                        <span className="sr-only">Enabling notifications...</span>
+                                        Enabling...
+                                    </>
+                                ) : (
+                                    'Enable'
+                                )}
                             </button>
                         </div>
                     </div>

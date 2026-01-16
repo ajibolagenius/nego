@@ -572,23 +572,28 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
                                         </div>
                                     )}
 
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label htmlFor="new-password" className="text-white/60 text-sm mb-2 block">
-                                                New Password
-                                            </label>
-                                            <div className="relative">
-                                                <input
-                                                    id="new-password"
-                                                    type={showNewPassword ? 'text' : 'password'}
-                                                    value={newPassword}
-                                                    onChange={(e) => setNewPassword(e.target.value)}
-                                                    placeholder="Enter new password"
-                                                    autoComplete="new-password"
-                                                    aria-label="New password"
-                                                    aria-describedby="password-strength"
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors"
-                                                />
+                                    <form onSubmit={(e) => {
+                                        e.preventDefault()
+                                        handlePasswordChange()
+                                    }}>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label htmlFor="new-password" className="text-white/60 text-sm mb-2 block">
+                                                    New Password
+                                                </label>
+                                                <div className="relative">
+                                                    <input
+                                                        id="new-password"
+                                                        type={showNewPassword ? 'text' : 'password'}
+                                                        value={newPassword}
+                                                        onChange={(e) => setNewPassword(e.target.value)}
+                                                        placeholder="Enter new password"
+                                                        autoComplete="new-password"
+                                                        aria-label="New password"
+                                                        aria-describedby="password-strength"
+                                                        required
+                                                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors"
+                                                    />
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowNewPassword(!showNewPassword)}
@@ -650,22 +655,23 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
                                             )}
                                         </div>
 
-                                        <div>
-                                            <label htmlFor="confirm-password" className="text-white/60 text-sm mb-2 block">
-                                                Confirm New Password
-                                            </label>
-                                            <div className="relative">
-                                                <input
-                                                    id="confirm-password"
-                                                    type={showConfirmPassword ? 'text' : 'password'}
-                                                    value={confirmPassword}
-                                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                                    placeholder="Confirm new password"
-                                                    autoComplete="new-password"
-                                                    aria-label="Confirm new password"
-                                                    aria-describedby="password-match"
-                                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors"
-                                                />
+                                            <div>
+                                                <label htmlFor="confirm-password" className="text-white/60 text-sm mb-2 block">
+                                                    Confirm New Password
+                                                </label>
+                                                <div className="relative">
+                                                    <input
+                                                        id="confirm-password"
+                                                        type={showConfirmPassword ? 'text' : 'password'}
+                                                        value={confirmPassword}
+                                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                                        placeholder="Confirm new password"
+                                                        autoComplete="new-password"
+                                                        aria-label="Confirm new password"
+                                                        aria-describedby="password-match"
+                                                        required
+                                                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors"
+                                                    />
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -689,42 +695,44 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
                                                         </>
                                                     )}
                                                 </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div className="flex gap-3 mt-6">
-                                        <Button
-                                            onClick={() => {
-                                                setShowPasswordModal(false)
-                                                setPasswordError('')
-                                                setNewPassword('')
-                                                setConfirmPassword('')
-                                            }}
-                                            variant="ghost"
-                                            className="flex-1 text-white/60 hover:text-white"
-                                            disabled={passwordLoading}
-                                            aria-label="Cancel password change"
-                                        >
-                                            Cancel
-                                        </Button>
-                                        <Button
-                                            onClick={handlePasswordChange}
-                                            disabled={passwordLoading || !isPasswordValid || newPassword !== confirmPassword}
-                                            className="flex-1 bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold disabled:opacity-50"
-                                            aria-label="Update password"
-                                        >
-                                            {passwordLoading ? (
-                                                <>
-                                                    <SpinnerGap size={20} className="animate-spin mr-2" aria-hidden="true" />
-                                                    <span className="sr-only">Updating password...</span>
-                                                    Updating...
-                                                </>
-                                            ) : (
-                                                'Update Password'
-                                            )}
-                                        </Button>
-                                    </div>
+                                        <div className="flex gap-3 mt-6">
+                                            <Button
+                                                type="button"
+                                                onClick={() => {
+                                                    setShowPasswordModal(false)
+                                                    setPasswordError('')
+                                                    setNewPassword('')
+                                                    setConfirmPassword('')
+                                                }}
+                                                variant="ghost"
+                                                className="flex-1 text-white/60 hover:text-white"
+                                                disabled={passwordLoading}
+                                                aria-label="Cancel password change"
+                                            >
+                                                Cancel
+                                            </Button>
+                                            <Button
+                                                type="submit"
+                                                disabled={passwordLoading || !isPasswordValid || newPassword !== confirmPassword}
+                                                className="flex-1 bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold disabled:opacity-50"
+                                                aria-label="Update password"
+                                            >
+                                                {passwordLoading ? (
+                                                    <>
+                                                        <SpinnerGap size={20} className="animate-spin mr-2" aria-hidden="true" />
+                                                        <span className="sr-only">Updating password...</span>
+                                                        Updating...
+                                                    </>
+                                                ) : (
+                                                    'Update Password'
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </form>
                                 </>
                             )}
                         </div>
