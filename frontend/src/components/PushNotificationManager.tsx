@@ -43,7 +43,7 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
         }
 
         document.addEventListener('keydown', handleEscape)
-        
+
         return () => {
             document.body.style.overflow = ''
             document.removeEventListener('keydown', handleEscape)
