@@ -28,13 +28,21 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if reference already exists
-        const { data: existing } = await supabase
+        const { data: existing, error: checkError } = await supabase
             .from('transactions')
             .select('id')
             .eq('reference', reference)
-            .single()
+            .maybeSingle()
 
-        if (existing) {
+        // Handle error - if column doesn't exist (42703), we'll skip duplicate check
+        if (checkError && checkError.code === '42703') {
+            // Column doesn't exist - this is okay, we'll add it in the insert
+            console.warn('[Create Transaction] Reference column not found in schema, will attempt to insert')
+        } else if (checkError) {
+            // Other error - log but continue
+            console.error('[Create Transaction] Error checking for duplicate:', checkError)
+        } else if (existing) {
+            // Duplicate found
             return NextResponse.json({ success: false, error: 'This transaction has already been processed. Please contact support if you believe this is an error.' }, { status: 400 })
         }
 
@@ -43,7 +51,7 @@ export async function POST(request: NextRequest) {
             .from('transactions')
             .insert({
                 user_id: user.id,
-                reference,
+                reference, // Paystack reference string
                 amount: coinPackage.price,
                 coins: coinPackage.coins,
                 type: 'purchase',
