@@ -15,6 +15,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ReviewCard, ReviewSummary } from '@/components/Reviews'
 import { GiftCoins } from '@/components/GiftCoins'
 import { GiftLeaderboard } from '@/components/GiftLeaderboard'
+import { MediaLightbox } from '@/components/MediaLightbox'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useWallet } from '@/hooks/useWallet'
 import type { Profile, ServiceType, TalentMenu, Media, Wallet, Review } from '@/types/database'
@@ -49,13 +50,13 @@ interface GallerySectionProps {
     userId: string
     userBalance: number
     onUnlock: (mediaId: string, unlockPrice: number) => Promise<boolean>
+    onOpenLightbox: (media: Media) => void
 }
 
-function GallerySection({ media, userId, userBalance, onUnlock }: GallerySectionProps) {
+function GallerySection({ media, userId, userBalance, onUnlock, onOpenLightbox }: GallerySectionProps) {
     const [activeTab, setActiveTab] = useState<'free' | 'premium'>('free')
     const [unlocking, setUnlocking] = useState<string | null>(null)
     const [unlockedMedia, setUnlockedMedia] = useState<Set<string>>(new Set())
-    const [lightboxItem, setLightboxItem] = useState<Media | null>(null)
 
     const freeMedia = media.filter(m => !m.is_premium)
     const premiumMedia = media.filter(m => m.is_premium)
@@ -112,14 +113,12 @@ function GallerySection({ media, userId, userBalance, onUnlock }: GallerySection
 
     const isUnlocked = (mediaId: string) => unlockedMedia.has(mediaId)
 
-    const openLightbox = (item: Media) => {
+    const handleOpenLightbox = (item: Media) => {
         // Only open lightbox if not premium or if unlocked
         if (!item.is_premium || isUnlocked(item.id)) {
-            setLightboxItem(item)
+            onOpenLightbox(item)
         }
     }
-
-    const closeLightbox = () => setLightboxItem(null)
 
     const isVideo = (url: string) => {
         return url.match(/\.(mp4|webm|ogg|mov)$/i) !== null
@@ -181,7 +180,7 @@ function GallerySection({ media, userId, userBalance, onUnlock }: GallerySection
                             <div
                                 key={item.id}
                                 className={`aspect-square rounded-xl overflow-hidden relative group ${canOpen ? 'cursor-pointer' : ''}`}
-                                onClick={() => canOpen && openLightbox(item)}
+                                onClick={() => canOpen && handleOpenLightbox(item)}
                             >
                                 {isVideo(item.url) ? (
                                     <video
@@ -258,48 +257,6 @@ function GallerySection({ media, userId, userBalance, onUnlock }: GallerySection
                     })}
                 </div>
             )}
-
-            {/* Lightbox Modal */}
-            {lightboxItem && (
-                <div
-                    className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4"
-                    onClick={closeLightbox}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="lightbox-title"
-                >
-                    <button
-                        className="absolute top-4 right-4 text-white/70 hover:text-white z-[10000] transition-colors"
-                        onClick={closeLightbox}
-                        aria-label="Close lightbox"
-                    >
-                        <X size={32} weight="duotone" aria-hidden="true" />
-                    </button>
-
-                    <div
-                        className="relative max-w-4xl max-h-[90vh] w-full"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {isVideo(lightboxItem.url) ? (
-                            <video
-                                src={lightboxItem.url}
-                                className="w-full h-full max-h-[90vh] object-contain rounded-lg"
-                                controls
-                                autoPlay
-                                playsInline
-                            />
-                        ) : (
-                            <Image
-                                src={lightboxItem.url}
-                                alt="Gallery full view"
-                                width={1200}
-                                height={800}
-                                className="w-full h-auto max-h-[90vh] object-contain rounded-lg"
-                            />
-                        )}
-                    </div>
-                </div>
-            )}
         </div>
     )
 }
@@ -326,6 +283,35 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
     // Date/time validation states
     const [dateError, setDateError] = useState('')
     const [timeError, setTimeError] = useState('')
+
+    // Lightbox state - standalone for all media
+    const [lightboxMedia, setLightboxMedia] = useState<Media | null>(null)
+    const [lightboxIndex, setLightboxIndex] = useState<number>(-1)
+    const [unlockedMediaIds, setUnlockedMediaIds] = useState<Set<string>>(new Set())
+
+    // Fetch unlocked media on mount to support lightbox navigation
+    useEffect(() => {
+        const fetchUnlockedMedia = async () => {
+            if (!userId || !talent.media || talent.media.length === 0) return
+
+            try {
+                const supabase = createClient()
+                const { data, error } = await supabase
+                    .from('user_unlocks')
+                    .select('media_id')
+                    .eq('user_id', userId)
+                    .in('media_id', talent.media.map(m => m.id))
+
+                if (!error && data) {
+                    setUnlockedMediaIds(new Set(data.map(u => u.media_id)))
+                }
+            } catch (err) {
+                console.error('[TalentProfile] Error fetching unlocked media:', err)
+            }
+        }
+
+        fetchUnlockedMedia()
+    }, [userId, talent.media])
 
     const isLiked = favoritesLoaded && isFavorite(talent.id)
     const activeServices = talent.talent_menus?.filter(m => m.is_active) || []
@@ -527,6 +513,8 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
 
             // Update local balance
             setCurrentBalance(data.newUserBalance)
+            // Update unlocked media set for lightbox navigation
+            setUnlockedMediaIds(prev => new Set([...prev, mediaId]))
             return true
         } catch (err) {
             console.error('[TalentProfile] Unlock error:', err)
@@ -534,6 +522,43 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
             setError(errorMessage)
             setShowErrorBanner(true)
             return false
+        }
+    }
+
+    // Lightbox handlers - standalone for all media (free and premium)
+    const getAllViewableMedia = (): Media[] => {
+        // Get all media that can be viewed (free or unlocked premium)
+        const allMedia = talent.media || []
+        return allMedia.filter(m => !m.is_premium || unlockedMediaIds.has(m.id))
+    }
+
+    const handleOpenLightbox = (media: Media) => {
+        const allMedia = getAllViewableMedia()
+        const index = allMedia.findIndex(m => m.id === media.id)
+        setLightboxIndex(index)
+        setLightboxMedia(media)
+    }
+
+    const handleCloseLightbox = () => {
+        setLightboxMedia(null)
+        setLightboxIndex(-1)
+    }
+
+    const handleNextMedia = () => {
+        const allMedia = getAllViewableMedia()
+        if (lightboxIndex < allMedia.length - 1) {
+            const nextIndex = lightboxIndex + 1
+            setLightboxIndex(nextIndex)
+            setLightboxMedia(allMedia[nextIndex])
+        }
+    }
+
+    const handlePreviousMedia = () => {
+        if (lightboxIndex > 0) {
+            const prevIndex = lightboxIndex - 1
+            const allMedia = getAllViewableMedia()
+            setLightboxIndex(prevIndex)
+            setLightboxMedia(allMedia[prevIndex])
         }
     }
 
@@ -909,6 +934,7 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                     userId={userId}
                     userBalance={currentBalance}
                     onUnlock={handleUnlockMedia}
+                    onOpenLightbox={handleOpenLightbox}
                 />
 
                 {/* Gift Leaderboard */}
@@ -1207,6 +1233,16 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                     </div>
                 </div>
             )}
+
+            {/* Standalone Media Lightbox - works for both free and premium media */}
+            <MediaLightbox
+                media={lightboxMedia}
+                onClose={handleCloseLightbox}
+                onNext={handleNextMedia}
+                onPrevious={handlePreviousMedia}
+                hasNext={lightboxIndex >= 0 && lightboxIndex < (getAllViewableMedia().length - 1)}
+                hasPrevious={lightboxIndex > 0}
+            />
         </div>
     )
 }
