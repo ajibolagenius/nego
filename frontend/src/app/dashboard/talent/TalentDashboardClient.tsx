@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -108,6 +108,16 @@ export function TalentDashboardClient({
 
     // Real-time wallet synchronization
     const { wallet } = useWallet({ userId: user.id, initialWallet })
+
+    // Real-time data state
+    const [bookingsState, setBookingsState] = useState<BookingWithClient[]>(bookings)
+    const [transactionsState, setTransactionsState] = useState<Transaction[]>(transactions)
+    const [giftsReceivedState, setGiftsReceivedState] = useState<GiftReceived[]>(giftsReceived)
+    
+    // Channel refs for cleanup
+    const bookingsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+    const transactionsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+    const giftsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
     const [activeTab, setActiveTab] = useState<'overview' | 'services' | 'media' | 'bookings' | 'earnings' | 'withdrawals'>('overview')
     const [isAddingService, setIsAddingService] = useState(false)
@@ -361,18 +371,140 @@ export function TalentDashboardClient({
         s => !menu.some(m => m.service_type_id === s.id)
     )
 
-    // Stats
-    const totalEarnings = bookings
+    // Real-time subscriptions for earnings data
+    useEffect(() => {
+        // Cleanup existing channels
+        if (bookingsChannelRef.current) {
+            supabase.removeChannel(bookingsChannelRef.current)
+        }
+        if (transactionsChannelRef.current) {
+            supabase.removeChannel(transactionsChannelRef.current)
+        }
+        if (giftsChannelRef.current) {
+            supabase.removeChannel(giftsChannelRef.current)
+        }
+
+        // Bookings subscription - for completed bookings earnings
+        const bookingsChannel = supabase
+            .channel(`talent-bookings:${user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'bookings',
+                    filter: `talent_id=eq.${user.id}`,
+                },
+                async () => {
+                    // Refetch bookings when they change (status updates, new bookings, etc.)
+                    const { data: updatedBookings } = await supabase
+                        .from('bookings')
+                        .select(`
+                            *,
+                            client:profiles!bookings_client_id_fkey(display_name, avatar_url)
+                        `)
+                        .eq('talent_id', user.id)
+                        .order('created_at', { ascending: false })
+                        .limit(10)
+                    
+                    if (updatedBookings) {
+                        setBookingsState(updatedBookings as BookingWithClient[])
+                    }
+                }
+            )
+            .subscribe()
+
+        // Transactions subscription - for earnings breakdown
+        const transactionsChannel = supabase
+            .channel(`talent-transactions:${user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'transactions',
+                    filter: `user_id=eq.${user.id}`,
+                },
+                async (payload) => {
+                    // Refetch all earning transactions when any transaction changes
+                    const { data: updatedTransactions } = await supabase
+                        .from('transactions')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .gt('amount', 0)
+                        .in('type', ['gift', 'premium_unlock', 'booking'])
+                        .order('created_at', { ascending: false })
+                    
+                    if (updatedTransactions) {
+                        setTransactionsState(updatedTransactions as Transaction[])
+                    }
+                }
+            )
+            .subscribe()
+
+        // Gifts subscription - for gifts received
+        const giftsChannel = supabase
+            .channel(`talent-gifts:${user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'gifts',
+                    filter: `recipient_id=eq.${user.id}`,
+                },
+                async (payload) => {
+                    const newGift = payload.new
+                    // Fetch sender info
+                    const { data: sender } = await supabase
+                        .from('profiles')
+                        .select('display_name, avatar_url')
+                        .eq('id', newGift.sender_id)
+                        .single()
+                    
+                    setGiftsReceivedState(prev => [{
+                        ...newGift,
+                        sender: sender ? {
+                            display_name: sender.display_name,
+                            avatar_url: sender.avatar_url
+                        } : null
+                    } as GiftReceived, ...prev])
+                }
+            )
+            .subscribe()
+
+        bookingsChannelRef.current = bookingsChannel
+        transactionsChannelRef.current = transactionsChannel
+        giftsChannelRef.current = giftsChannel
+
+        return () => {
+            if (bookingsChannelRef.current) {
+                supabase.removeChannel(bookingsChannelRef.current)
+                bookingsChannelRef.current = null
+            }
+            if (transactionsChannelRef.current) {
+                supabase.removeChannel(transactionsChannelRef.current)
+                transactionsChannelRef.current = null
+            }
+            if (giftsChannelRef.current) {
+                supabase.removeChannel(giftsChannelRef.current)
+                giftsChannelRef.current = null
+            }
+        }
+    }, [user.id, supabase])
+
+    // Stats - using real-time state
+    const totalEarnings = bookingsState
         .filter(b => b.status === 'completed')
         .reduce((sum, b) => sum + b.total_price, 0)
 
-    const pendingBookings = bookings.filter(b => b.status === 'payment_pending' || b.status === 'verification_pending').length
-    const completedBookings = bookings.filter(b => b.status === 'completed').length
+    const pendingBookings = bookingsState.filter(b => b.status === 'payment_pending' || b.status === 'verification_pending').length
+    const completedBookings = bookingsState.filter(b => b.status === 'completed').length
 
-    // Calculate earnings breakdown
-    const giftEarnings = transactions.filter(t => t.type === 'gift').reduce((sum, t) => sum + t.amount, 0)
-    const unlockEarnings = transactions.filter(t => t.type === 'premium_unlock').reduce((sum, t) => sum + t.amount, 0)
-    const bookingEarnings = transactions.filter(t => t.type === 'booking').reduce((sum, t) => sum + t.amount, 0)
+    // Calculate earnings breakdown - using real-time state
+    const giftEarnings = transactionsState.filter(t => t.type === 'gift').reduce((sum, t) => sum + t.amount, 0)
+    const unlockEarnings = transactionsState.filter(t => t.type === 'premium_unlock').reduce((sum, t) => sum + t.amount, 0)
+    const bookingEarnings = transactionsState.filter(t => t.type === 'booking').reduce((sum, t) => sum + t.amount, 0)
     const totalAllEarnings = giftEarnings + unlockEarnings + bookingEarnings
 
     const tabs = [
@@ -641,8 +773,7 @@ export function TalentDashboardClient({
                                     aria-selected={isActive}
                                     aria-controls={`tabpanel-${tab.id}`}
                                     id={`tab-${tab.id}`}
-                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${
-                                        isActive
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${isActive
                                             ? 'bg-[#df2531] text-white shadow-lg shadow-[#df2531]/30'
                                             : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
                                         }`}
@@ -770,7 +901,7 @@ export function TalentDashboardClient({
                                             <h4 className="text-lg font-bold text-white mb-1">Add New Service</h4>
                                             <p className="text-white/50 text-sm">Select a service type and set your pricing</p>
                                         </div>
-                                        <button 
+                                        <button
                                             onClick={() => {
                                                 setIsAddingService(false)
                                                 setNewServiceId('')
@@ -825,11 +956,10 @@ export function TalentDashboardClient({
                                                 aria-label="Service price in coins"
                                                 aria-invalid={!!priceError}
                                                 aria-describedby={priceError ? 'price-error' : 'price-help'}
-                                                className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white focus:outline-none transition-colors ${
-                                                    priceError 
-                                                        ? 'border-red-500/50 focus:border-red-500 focus:ring-2 focus:ring-red-500/50' 
+                                                className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white focus:outline-none transition-colors ${priceError
+                                                        ? 'border-red-500/50 focus:border-red-500 focus:ring-2 focus:ring-red-500/50'
                                                         : 'border-white/10 focus:border-[#df2531] focus:ring-2 focus:ring-[#df2531]/50'
-                                                }`}
+                                                    }`}
                                             />
                                             {priceError && (
                                                 <p id="price-error" className="text-red-400 text-xs mt-1.5 flex items-center gap-1" role="alert">
@@ -932,11 +1062,10 @@ export function TalentDashboardClient({
                                                 onClick={() => handleToggleAvailability(item.id, item.is_active)}
                                                 aria-label={item.is_active ? `Hide ${item.service_type?.name} service` : `Show ${item.service_type?.name} service`}
                                                 aria-pressed={item.is_active}
-                                                className={`p-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black ${
-                                                    item.is_active
+                                                className={`p-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black ${item.is_active
                                                         ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 focus:ring-green-500'
                                                         : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 focus:ring-red-500'
-                                                }`}
+                                                    }`}
                                             >
                                                 {item.is_active ? (
                                                     <Eye size={20} weight="duotone" aria-hidden="true" />
@@ -972,12 +1101,12 @@ export function TalentDashboardClient({
                     {activeTab === 'bookings' && (
                         <div className="space-y-4" role="tabpanel" id="tabpanel-bookings" aria-labelledby="tab-bookings">
                             {/* Pending Action Alert - Enhanced */}
-                            {bookings.filter(b => b.status === 'verification_pending').length > 0 && (
+                            {bookingsState.filter(b => b.status === 'verification_pending').length > 0 && (
                                 <div className="flex items-center gap-4 p-5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 animate-fade-in-up" role="alert">
                                     <Hourglass size={28} weight="duotone" className="shrink-0" aria-hidden="true" />
                                     <div className="flex-1">
                                         <p className="font-semibold text-base mb-1">
-                                            You have {bookings.filter(b => b.status === 'verification_pending').length} booking{bookings.filter(b => b.status === 'verification_pending').length > 1 ? 's' : ''} awaiting your response
+                                            You have {bookingsState.filter(b => b.status === 'verification_pending').length} booking{bookingsState.filter(b => b.status === 'verification_pending').length > 1 ? 's' : ''} awaiting your response
                                         </p>
                                         <p className="text-sm text-blue-400/80 leading-relaxed">
                                             Review and accept or decline these bookings to proceed. Quick responses improve your rating.
@@ -991,14 +1120,14 @@ export function TalentDashboardClient({
                                     <h3 className="text-2xl font-bold text-white mb-1">Recent Bookings</h3>
                                     <p className="text-white/50 text-sm">Manage your client bookings and appointments</p>
                                 </div>
-                                {bookings.length > 0 && (
+                                {bookingsState.length > 0 && (
                                     <span className="text-white/40 text-sm">
-                                        {bookings.length} {bookings.length === 1 ? 'booking' : 'bookings'} total
+                                        {bookingsState.length} {bookingsState.length === 1 ? 'booking' : 'bookings'} total
                                     </span>
                                 )}
                             </div>
 
-                            {bookings.length === 0 ? (
+                            {bookingsState.length === 0 ? (
                                 <div className="text-center py-16 rounded-2xl bg-white/5 border border-white/10">
                                     <CalendarCheck size={64} weight="duotone" className="text-white/20 mx-auto mb-5" aria-hidden="true" />
                                     <p className="text-white/60 font-medium mb-2 text-lg">No bookings yet</p>
@@ -1016,7 +1145,7 @@ export function TalentDashboardClient({
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {bookings.map((booking) => {
+                                    {bookingsState.map((booking) => {
                                         const status = statusColors[booking.status] || statusColors.payment_pending
                                         const StatusIcon = status.icon
                                         const needsAction = status.needsAction
@@ -1026,8 +1155,8 @@ export function TalentDashboardClient({
                                                 key={booking.id}
                                                 href={`/dashboard/bookings/${booking.id}`}
                                                 className={`flex items-center gap-4 p-4 rounded-xl border transition-colors ${needsAction
-                                                        ? 'bg-blue-500/5 border-blue-500/30 hover:bg-blue-500/10'
-                                                        : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                                    ? 'bg-blue-500/5 border-blue-500/30 hover:bg-blue-500/10'
+                                                    : 'bg-white/5 border-white/10 hover:bg-white/10'
                                                     }`}
                                             >
                                                 <div className="w-12 h-12 rounded-full bg-white/10 overflow-hidden relative shrink-0">
@@ -1126,7 +1255,7 @@ export function TalentDashboardClient({
                                     <Gift size={24} weight="duotone" className="text-pink-400" aria-hidden="true" />
                                     Recent Gifts Received
                                 </h3>
-                                {giftsReceived.length === 0 ? (
+                                {giftsReceivedState.length === 0 ? (
                                     <div className="p-12 rounded-2xl bg-white/5 border border-white/10 text-center">
                                         <Gift size={64} weight="duotone" className="text-white/20 mx-auto mb-5" aria-hidden="true" />
                                         <p className="text-white/60 font-medium mb-2 text-lg">No gifts received yet</p>
@@ -1136,7 +1265,7 @@ export function TalentDashboardClient({
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        {giftsReceived.map((gift) => (
+                                        {giftsReceivedState.map((gift) => (
                                             <div
                                                 key={gift.id}
                                                 className="flex items-center gap-4 p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-pink-500/30 transition-all group"
@@ -1169,7 +1298,7 @@ export function TalentDashboardClient({
                                     <Receipt size={24} weight="duotone" className="text-white/60" aria-hidden="true" />
                                     Transaction History
                                 </h3>
-                                {transactions.length === 0 ? (
+                                {transactionsState.length === 0 ? (
                                     <div className="p-12 rounded-2xl bg-white/5 border border-white/10 text-center">
                                         <Receipt size={64} weight="duotone" className="text-white/20 mx-auto mb-5" aria-hidden="true" />
                                         <p className="text-white/60 font-medium mb-2 text-lg">No transactions yet</p>
@@ -1179,18 +1308,17 @@ export function TalentDashboardClient({
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        {transactions.slice(0, 10).map((tx) => (
+                                        {transactionsState.slice(0, 10).map((tx) => (
                                             <div
                                                 key={tx.id}
                                                 className="flex items-center gap-4 p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group"
                                             >
-                                                <div className={`w-12 h-12 rounded-full flex items-center justify-center border transition-colors ${
-                                                    tx.type === 'gift' 
-                                                        ? 'bg-pink-500/20 border-pink-500/30 group-hover:border-pink-500/50' 
-                                                        : tx.type === 'premium_unlock' 
+                                                <div className={`w-12 h-12 rounded-full flex items-center justify-center border transition-colors ${tx.type === 'gift'
+                                                        ? 'bg-pink-500/20 border-pink-500/30 group-hover:border-pink-500/50'
+                                                        : tx.type === 'premium_unlock'
                                                             ? 'bg-amber-500/20 border-amber-500/30 group-hover:border-amber-500/50'
                                                             : 'bg-blue-500/20 border-blue-500/30 group-hover:border-blue-500/50'
-                                                }`}>
+                                                    }`}>
                                                     {tx.type === 'gift' ? (
                                                         <Gift size={24} weight="duotone" className="text-pink-400" aria-hidden="true" />
                                                     ) : tx.type === 'premium_unlock' ? (
@@ -1299,7 +1427,7 @@ export function TalentDashboardClient({
                                     <Money size={64} weight="duotone" className="text-white/20 mx-auto mb-5" aria-hidden="true" />
                                     <p className="text-white/60 font-medium mb-2 text-lg">No withdrawals yet</p>
                                     <p className="text-white/40 text-sm max-w-md mx-auto leading-relaxed">
-                                        Your withdrawal history will appear here once you make your first withdrawal request. 
+                                        Your withdrawal history will appear here once you make your first withdrawal request.
                                         All withdrawals are processed securely within 24-48 hours.
                                     </p>
                                 </div>
@@ -1310,7 +1438,7 @@ export function TalentDashboardClient({
 
                 {/* Withdrawal Modal - Enhanced */}
                 {showWithdrawalModal && (
-                    <div 
+                    <div
                         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm"
                         onClick={(e) => {
                             if (e.target === e.currentTarget) {
@@ -1463,7 +1591,7 @@ export function TalentDashboardClient({
                                     )}
                                 </Button>
                                 <p className="text-white/40 text-xs text-center mt-4 leading-relaxed">
-                                    Your withdrawal request will be reviewed and processed within 24-48 hours. 
+                                    Your withdrawal request will be reviewed and processed within 24-48 hours.
                                     You&apos;ll receive a notification once it&apos;s approved.
                                 </p>
                             </div>
