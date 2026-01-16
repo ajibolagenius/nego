@@ -139,9 +139,8 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
     return (
         <>
             <div className="min-h-screen bg-black pt-16 lg:pt-0 pb-24 lg:pb-0">
-                {/* Header with gradient background */}
+                {/* Header */}
                 <div className="relative">
-                    <div className="absolute inset-0 h-48 bg-gradient-to-b from-[#df2531]/20 to-transparent" />
 
                     <header className="sticky top-16 lg:top-0 z-40 bg-black/60 backdrop-blur-xl border-b border-white/10">
                         <div className="max-w-2xl mx-auto px-4 py-4">
@@ -235,13 +234,15 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
 
                     {/* Avatar & Name Section */}
                     <div className="flex flex-col items-center text-center -mt-8 relative z-10">
-                        <div className="relative mb-4">
-                            <ProfileImageUpload
-                                userId={user.id}
-                                currentImageUrl={avatarUrl}
-                                displayName={displayName}
-                                onUploadComplete={handleImageUpload}
-                            />
+                        <div className="relative mb-4 group">
+                            <div className="group-hover:scale-105 transition-transform duration-300">
+                                <ProfileImageUpload
+                                    userId={user.id}
+                                    currentImageUrl={avatarUrl}
+                                    displayName={displayName}
+                                    onUploadComplete={handleImageUpload}
+                                />
+                            </div>
                         </div>
 
                         {isEditing ? (
@@ -318,25 +319,25 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
 
                     {/* Stats Cards */}
                     <div className="grid grid-cols-3 gap-3">
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 text-center">
-                            <Coin size={24} weight="duotone" className="text-amber-400 mx-auto mb-2" />
+                        <div className="group p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300 text-center">
+                            <Coin size={24} weight="duotone" className="text-amber-400 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
                             <p className="text-2xl font-bold text-white">{wallet?.balance || 0}</p>
                             <p className="text-white/40 text-xs">Coins</p>
                         </div>
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 text-center">
-                            <CalendarCheck size={24} weight="duotone" className="text-[#df2531] mx-auto mb-2" />
+                        <div className="group p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300 text-center">
+                            <CalendarCheck size={24} weight="duotone" className="text-[#df2531] mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
                             <p className="text-2xl font-bold text-white">{bookingCount}</p>
                             <p className="text-white/40 text-xs">Bookings</p>
                         </div>
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 text-center">
-                            <Calendar size={24} weight="duotone" className="text-blue-400 mx-auto mb-2" />
+                        <div className="group p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300 text-center">
+                            <Calendar size={24} weight="duotone" className="text-blue-400 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
                             <p className="text-sm font-bold text-white">{profile?.created_at ? formatDate(profile.created_at) : 'N/A'}</p>
                             <p className="text-white/40 text-xs">Joined</p>
                         </div>
                     </div>
 
                     {/* Bio Section */}
-                    <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300">
                         <h3 className="text-sm font-bold text-white/50 uppercase tracking-wider mb-3">About</h3>
                         {isEditing ? (
                             <div>
@@ -365,11 +366,11 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
                     </div>
 
                     {/* Account Info */}
-                    <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300">
                         <h3 className="text-sm font-bold text-white/50 uppercase tracking-wider mb-4">Account</h3>
                         <div className="space-y-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                <div className="group w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                                     <Envelope size={18} className="text-white/60" />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -379,7 +380,7 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                <div className="group w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                                     <User size={18} className="text-white/60" />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -394,27 +395,27 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
                     <div className="space-y-2">
                         <Link
                             href="/dashboard/settings"
-                            className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                            className="group flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 hover:bg-white/10 transition-all duration-300"
                         >
                             <p className="text-white font-medium">Settings</p>
-                            <CaretRight size={20} className="text-white/40" />
+                            <CaretRight size={20} className="text-white/40 group-hover:translate-x-1 transition-transform duration-300" />
                         </Link>
 
                         <Link
                             href="/dashboard/wallet"
-                            className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                            className="group flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 hover:bg-white/10 transition-all duration-300"
                         >
                             <p className="text-white font-medium">Wallet & Transactions</p>
-                            <CaretRight size={20} className="text-white/40" />
+                            <CaretRight size={20} className="text-white/40 group-hover:translate-x-1 transition-transform duration-300" />
                         </Link>
 
                         {userRole === 'talent' && (
                             <Link
                                 href="/dashboard/talent"
-                                className="flex items-center justify-between p-4 rounded-xl bg-[#df2531]/10 border border-[#df2531]/20 hover:bg-[#df2531]/20 transition-colors"
+                                className="group flex items-center justify-between p-4 rounded-xl bg-[#df2531]/10 border border-[#df2531]/20 hover:border-[#df2531]/30 hover:bg-[#df2531]/20 transition-all duration-300"
                             >
                                 <p className="text-[#df2531] font-medium">Talent Dashboard</p>
-                                <CaretRight size={20} className="text-[#df2531]/60" />
+                                <CaretRight size={20} className="text-[#df2531]/60 group-hover:translate-x-1 transition-transform duration-300" />
                             </Link>
                         )}
                     </div>
