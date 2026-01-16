@@ -39,9 +39,10 @@ export default async function MessagesPage() {
         })
     participantIds.delete(user.id)
 
+    // Fetch COMPLETE profile data for all participants (talents)
     const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, display_name, avatar_url, role, is_verified')
+        .select('*')
         .in('id', Array.from(participantIds))
 
     const profileMap = new Map(profiles?.map(p => [p.id, p]) || [])

@@ -291,15 +291,19 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
               src={booking.talent.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80'}
               alt={booking.talent.display_name || 'Talent'}
               fill
+              sizes="64px"
               className="object-cover"
             />
           </div>
           <div className="flex-1">
-            <p className="text-white font-semibold">{booking.talent.display_name}</p>
+            <p className="text-white font-semibold">{booking.talent.display_name || 'Talent'}</p>
             <p className="text-white/50 text-sm flex items-center gap-1">
-              <MapPin size={14} />
-              {booking.talent.location}
+              <MapPin size={14} weight="duotone" aria-hidden="true" />
+              {booking.talent.location || 'Location not specified'}
             </p>
+            {booking.talent.bio && (
+              <p className="text-white/40 text-xs mt-1 line-clamp-2">{booking.talent.bio}</p>
+            )}
           </div>
           <CaretRight size={20} className="text-white/40" />
         </Link>

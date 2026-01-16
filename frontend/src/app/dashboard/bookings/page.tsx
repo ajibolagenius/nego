@@ -26,12 +26,13 @@ export default async function BookingsPage() {
   // Fetch bookings based on role
   const isClient = profile?.role === 'client'
   
+  // Fetch bookings with COMPLETE profile data
   const { data: bookings } = await supabase
     .from('bookings')
     .select(`
       *,
-      talent:profiles!bookings_talent_id_fkey(id, display_name, avatar_url, location),
-      client:profiles!bookings_client_id_fkey(id, display_name, avatar_url)
+      talent:profiles!bookings_talent_id_fkey (*),
+      client:profiles!bookings_client_id_fkey (*)
     `)
     .eq(isClient ? 'client_id' : 'talent_id', user.id)
     .order('created_at', { ascending: false })

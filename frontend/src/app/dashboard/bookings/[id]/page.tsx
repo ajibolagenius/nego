@@ -21,23 +21,13 @@ export default async function BookingDetailPage({ params }: PageProps) {
     redirect('/login')
   }
 
-  // Fetch booking with related data
+  // Fetch booking with COMPLETE related profile data
   const { data: booking, error } = await supabase
     .from('bookings')
     .select(`
       *,
-      talent:profiles!bookings_talent_id_fkey (
-        id,
-        display_name,
-        avatar_url,
-        location
-      ),
-      client:profiles!bookings_client_id_fkey (
-        id,
-        display_name,
-        avatar_url,
-        location
-      )
+      talent:profiles!bookings_talent_id_fkey (*),
+      client:profiles!bookings_client_id_fkey (*)
     `)
     .eq('id', id)
     .single()

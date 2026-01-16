@@ -31,14 +31,14 @@ export default async function VerifyPage({ searchParams }: VerifyPageProps) {
   // Get booking ID from query params
   const bookingId = params.booking
 
-  // Fetch the specific booking if provided
+  // Fetch the specific booking with COMPLETE talent profile data
   let booking = null
   if (bookingId) {
     const { data } = await supabase
       .from('bookings')
       .select(`
         *,
-        talent:profiles!bookings_talent_id_fkey(display_name, avatar_url, location)
+        talent:profiles!bookings_talent_id_fkey (*)
       `)
       .eq('id', bookingId)
       .eq('client_id', user.id)

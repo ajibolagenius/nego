@@ -235,6 +235,7 @@ function TalentCard({ talent, formatPrice, userId }: { talent: TalentWithMenu; f
           src={talent.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80'}
           alt={talent.display_name || 'Talent'}
           fill
+          sizes="(max-width: 768px) 50vw, 33vw"
           className="object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
@@ -279,12 +280,15 @@ function TalentCard({ talent, formatPrice, userId }: { talent: TalentWithMenu; f
 
         {/* Bottom Info */}
         <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className="flex items-center gap-1.5 text-white/80 text-sm mb-1">
-            <MapPin size={14} weight="fill" />
-            <span>{talent.location || 'Lagos'}</span>
+          <h3 className="text-white font-medium text-sm mb-1 truncate">
+            {talent.display_name || 'Talent'}
+          </h3>
+          <div className="flex items-center gap-1.5 text-white/80 text-xs mb-1">
+            <MapPin size={12} weight="fill" aria-hidden="true" />
+            <span>{talent.location || 'Location not specified'}</span>
           </div>
           {minPrice > 0 && (
-            <p className="text-white font-semibold">
+            <p className="text-white font-semibold text-sm">
               From {formatPrice(minPrice)}
             </p>
           )}

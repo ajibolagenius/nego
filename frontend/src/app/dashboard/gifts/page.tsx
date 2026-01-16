@@ -23,23 +23,23 @@ export default async function GiftHistoryPage() {
         .eq('id', user.id)
         .single()
 
-    // Fetch sent gifts with recipient info
+    // Fetch sent gifts with COMPLETE recipient profile data
     const { data: sentGifts } = await supabase
         .from('gifts')
         .select(`
       *,
-      recipient:profiles!gifts_recipient_id_fkey(id, display_name, avatar_url)
+      recipient:profiles!gifts_recipient_id_fkey (*)
     `)
         .eq('sender_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50)
 
-    // Fetch received gifts with sender info
+    // Fetch received gifts with COMPLETE sender profile data
     const { data: receivedGifts } = await supabase
         .from('gifts')
         .select(`
       *,
-      sender:profiles!gifts_sender_id_fkey(id, display_name, avatar_url)
+      sender:profiles!gifts_sender_id_fkey (*)
     `)
         .eq('recipient_id', user.id)
         .order('created_at', { ascending: false })

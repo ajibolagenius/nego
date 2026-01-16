@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import Webcam from 'react-webcam'
 import { createClient } from '@/lib/supabase/client'
@@ -15,12 +16,9 @@ import { MobileBottomNav } from '@/components/MobileBottomNav'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Booking, Verification } from '@/types/database'
 
+// Use complete Profile type for talent
 interface BookingWithTalent extends Omit<Booking, 'talent'> {
-    talent: {
-        display_name: string
-        avatar_url: string | null
-        location: string | null
-    } | null
+    talent: Profile | null
 }
 
 interface VerifyClientProps {
@@ -606,22 +604,35 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                 <div className="max-w-2xl mx-auto px-4 py-6">
                     {/* Booking Info */}
                     <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300 mb-6 animate-fade-in-up">
-                        <div className="w-14 h-14 rounded-xl bg-white/10 overflow-hidden shrink-0">
+                        <div className="w-14 h-14 rounded-xl bg-white/10 overflow-hidden shrink-0 relative">
                             {booking.talent?.avatar_url ? (
-                                <img
+                                <Image
                                     src={booking.talent.avatar_url}
                                     alt={booking.talent.display_name || 'Talent'}
-                                    className="w-full h-full object-cover"
+                                    fill
+                                    sizes="56px"
+                                    className="object-cover"
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                    <User size={24} className="text-white/40" aria-hidden="true" />
+                                    <User size={24} weight="duotone" className="text-white/40" aria-hidden="true" />
                                 </div>
                             )}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-white font-medium truncate">{booking.talent?.display_name || 'Talent'}</p>
+                            <div className="flex items-center gap-2 mb-1">
+                                <p className="text-white font-medium truncate">{booking.talent?.display_name || 'Talent'}</p>
+                                {booking.talent?.is_verified && (
+                                    <ShieldCheck size={16} weight="duotone" className="text-[#df2531]" aria-label="Verified talent" />
+                                )}
+                            </div>
                             <p className="text-white/40 text-sm">Booking #{booking.id.slice(0, 8)}</p>
+                            {booking.talent?.location && (
+                                <p className="text-white/30 text-xs mt-1 flex items-center gap-1">
+                                    <MapPin size={12} weight="duotone" aria-hidden="true" />
+                                    {booking.talent.location}
+                                </p>
+                            )}
                         </div>
                         <div className="text-right shrink-0">
                             <p className="text-white font-bold">{booking.total_price} coins</p>

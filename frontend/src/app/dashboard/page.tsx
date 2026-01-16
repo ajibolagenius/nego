@@ -33,21 +33,21 @@ export default async function DashboardPage() {
   // Generate random limit between 8 and 16
   const randomLimit = Math.floor(Math.random() * 9) + 8 // 8 to 16
 
-  // Fetch featured talents (random selection of talents)
+  // Fetch featured talents with COMPLETE profile data (random selection of talents)
   const { data: featuredTalents } = await supabase
     .from('profiles')
     .select(`
-      id,
-      display_name,
-      username,
-      avatar_url,
-      location,
-      status,
-      starting_price,
-      is_verified,
+      *,
       talent_menus (
+        id,
         price,
-        is_active
+        is_active,
+        service_type:service_types (
+          id,
+          name,
+          icon,
+          description
+        )
       )
     `)
     .eq('role', 'talent')
@@ -71,29 +71,12 @@ export default async function DashboardPage() {
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id)
 
-  // Transform data to include starting_price
-  const talents = shuffledTalents.map(talent => {
-    // Get the minimum active price from talent_menus, or fallback to starting_price
-    const activePrices = talent.talent_menus?.filter((m: { is_active: boolean; price: number }) => m.is_active).map((m: { price: number }) => m.price) || []
-    const minPrice = activePrices.length > 0 ? Math.min(...activePrices) : (talent.starting_price || 100000)
-    
-    return {
-      id: talent.id,
-      display_name: talent.display_name || 'Talent',
-      username: talent.username,
-      avatar_url: talent.avatar_url,
-      location: talent.location || 'Lagos',
-      status: (talent.status === 'online' ? 'online' : 'offline') as 'online' | 'offline',
-      starting_price: minPrice
-    }
-  })
-
   return (
     <DashboardClient 
       user={user} 
       profile={profile} 
       wallet={wallet} 
-      featuredTalents={talents}
+      featuredTalents={shuffledTalents}
       activeBookings={activeBookingsCount || 0}
       favoritesCount={favoritesCount || 0}
     />

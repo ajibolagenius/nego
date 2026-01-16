@@ -806,11 +806,12 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                 {/* Profile Header */}
                 <div className="flex flex-col md:flex-row gap-6 mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                     {/* Avatar */}
-                    <div className="relative w-full md:w-72 aspect-[3/4] rounded-2xl overflow-hidden flex-shrink-0">
+                    <div className="relative w-full md:w-72 aspect-[3/4] rounded-2xl overflow-hidden shrink-0">
                         <Image
                             src={talent.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80'}
                             alt={talent.display_name || 'Talent'}
                             fill
+                            sizes="(max-width: 768px) 100vw, 288px"
                             className="object-cover"
                         />
                         {/* Status */}
@@ -839,15 +840,26 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                                         <ShieldCheck size={24} weight="duotone" className="text-[#df2531]" aria-label="Verified talent" />
                                     )}
                                 </div>
-                                <div className="flex items-center gap-4 text-white/60">
+                                <div className="flex items-center gap-4 text-white/60 flex-wrap">
+                                    {talent.username && (
+                                        <span className="flex items-center gap-1.5">
+                                            <span className="text-white/40">@</span>
+                                            {talent.username}
+                                        </span>
+                                    )}
                                     <span className="flex items-center gap-1.5">
                                         <MapPin size={16} weight="duotone" aria-hidden="true" />
-                                        {talent.location || 'Lagos'}
+                                        {talent.location || 'Location not specified'}
                                     </span>
                                     <span className="flex items-center gap-1.5">
                                         <Star size={16} weight="duotone" className="text-amber-400" aria-hidden="true" />
                                         {(talent.average_rating || 0).toFixed(1)} ({talent.review_count || 0} reviews)
                                     </span>
+                                    {talent.full_name && talent.full_name !== talent.display_name && (
+                                        <span className="text-white/40 text-sm">
+                                            {talent.full_name}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -863,15 +875,19 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                         <div className="grid grid-cols-3 gap-4">
                             <div className="bg-white/5 rounded-xl p-4 text-center">
                                 <p className="text-white/50 text-xs mb-1">Starting From</p>
-                                <p className="text-white font-bold">{formatPrice(talent.starting_price || 0)}</p>
+                                <p className="text-white font-bold">
+                                    {activeServices.length > 0
+                                        ? formatPrice(Math.min(...activeServices.map(s => s.price)))
+                                        : formatPrice(talent.starting_price || 0)}
+                                </p>
                             </div>
                             <div className="bg-white/5 rounded-xl p-4 text-center">
                                 <p className="text-white/50 text-xs mb-1">Response</p>
                                 <p className="text-white font-bold">~30 min</p>
                             </div>
                             <div className="bg-white/5 rounded-xl p-4 text-center">
-                                <p className="text-white/50 text-xs mb-1">Completed</p>
-                                <p className="text-white font-bold">128 dates</p>
+                                <p className="text-white/50 text-xs mb-1">Reviews</p>
+                                <p className="text-white font-bold">{talent.review_count || 0}</p>
                             </div>
                         </div>
                     </div>

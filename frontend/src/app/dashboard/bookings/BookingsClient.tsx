@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { 
   ArrowLeft, CalendarCheck, User, MapPin, Clock, 
   CheckCircle, XCircle, Hourglass, CaretRight, Coin,
@@ -11,18 +12,10 @@ import { MobileBottomNav } from '@/components/MobileBottomNav'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Booking } from '@/types/database'
 
+// Use complete Profile type for talent and client
 interface BookingWithParties extends Omit<Booking, 'talent' | 'client'> {
-  talent: {
-    id: string
-    display_name: string
-    avatar_url: string | null
-    location: string | null
-  } | null
-  client: {
-    id: string
-    display_name: string
-    avatar_url: string | null
-  } | null
+  talent: Profile | null
+  client: Profile | null
 }
 
 interface BookingsClientProps {
@@ -167,12 +160,18 @@ export function BookingsClient({ user, profile, bookings, isClient }: BookingsCl
                 >
                   <div className="flex items-center gap-4">
                     {/* Avatar */}
-                    <div className="w-14 h-14 rounded-xl bg-white/10 overflow-hidden flex-shrink-0">
+                    <div className="w-14 h-14 rounded-xl bg-white/10 overflow-hidden shrink-0 relative">
                       {otherParty?.avatar_url ? (
-                        <img src={otherParty.avatar_url} alt="" className="w-full h-full object-cover" />
+                        <Image
+                          src={otherParty.avatar_url}
+                          alt={otherParty?.display_name || 'User avatar'}
+                          fill
+                          sizes="56px"
+                          className="object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <User size={24} className="text-white/40" />
+                          <User size={24} weight="duotone" className="text-white/40" aria-hidden="true" />
                         </div>
                       )}
                     </div>
@@ -183,6 +182,11 @@ export function BookingsClient({ user, profile, bookings, isClient }: BookingsCl
                         <h3 className="text-white font-semibold truncate">
                           {otherParty?.display_name || 'Unknown'}
                         </h3>
+                        {otherParty?.is_verified && otherParty?.role === 'talent' && (
+                          <span className="px-1.5 py-0.5 rounded bg-[#df2531]/20 text-[#df2531] text-[10px] font-medium">
+                            ✓ Verified
+                          </span>
+                        )}
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${status.bg} ${status.text}`}>
                           {status.label}
                         </span>
@@ -191,23 +195,33 @@ export function BookingsClient({ user, profile, bookings, isClient }: BookingsCl
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-white/50 text-sm">
                         {booking.scheduled_at && (
                           <span className="flex items-center gap-1">
-                            <CalendarCheck size={14} />
+                            <CalendarCheck size={14} weight="duotone" aria-hidden="true" />
                             {formatDate(booking.scheduled_at)}
                           </span>
                         )}
                         {booking.scheduled_at && (
                           <span className="flex items-center gap-1">
-                            <Clock size={14} />
+                            <Clock size={14} weight="duotone" aria-hidden="true" />
                             {formatTime(booking.scheduled_at)}
                           </span>
                         )}
                         {isClient && booking.talent?.location && (
                           <span className="flex items-center gap-1">
-                            <MapPin size={14} />
-                            {booking.talent.location}
+                            <MapPin size={14} weight="duotone" aria-hidden="true" />
+                            {booking.talent.location || 'Location not specified'}
+                          </span>
+                        )}
+                        {!isClient && booking.client?.location && (
+                          <span className="flex items-center gap-1">
+                            <MapPin size={14} weight="duotone" aria-hidden="true" />
+                            {booking.client.location || 'Location not specified'}
                           </span>
                         )}
                       </div>
+                      {/* Bio preview for talents */}
+                      {isClient && booking.talent?.bio && (
+                        <p className="text-white/40 text-xs mt-1 line-clamp-1">{booking.talent.bio}</p>
+                      )}
                     </div>
 
                     {/* Price & Arrow */}

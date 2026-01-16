@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -346,12 +347,18 @@ export function TalentDashboardClient({
                     {/* Profile Header */}
                     <div className="flex flex-col md:flex-row gap-6 mb-8">
                         <div className="relative">
-                            <div className="w-24 h-24 rounded-2xl bg-white/10 overflow-hidden">
+                            <div className="w-24 h-24 rounded-2xl bg-white/10 overflow-hidden relative">
                                 {profile?.avatar_url ? (
-                                    <img src={profile.avatar_url} alt={profile.display_name || ''} className="w-full h-full object-cover" />
+                                    <Image
+                                        src={profile.avatar_url}
+                                        alt={profile.display_name || 'Profile avatar'}
+                                        fill
+                                        sizes="96px"
+                                        className="object-cover"
+                                    />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center">
-                                        <User size={40} weight="duotone" className="text-white/40" />
+                                        <User size={40} weight="duotone" className="text-white/40" aria-hidden="true" />
                                     </div>
                                 )}
                             </div>

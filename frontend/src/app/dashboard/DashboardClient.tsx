@@ -19,21 +19,26 @@ import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet as WalletType } from '@/types/database'
 import { getTalentUrl } from '@/lib/talent-url'
 
-interface FeaturedTalent {
-    id: string
-    display_name: string
-    username?: string | null
-    avatar_url: string | null
-    location: string
-    status: 'online' | 'offline'
-    starting_price: number
+// Use full Profile type with talent_menus for featured talents
+interface TalentWithMenu extends Profile {
+    talent_menus?: Array<{
+        id: string
+        price: number
+        is_active: boolean
+        service_type?: {
+            id: string
+            name: string
+            icon: string | null
+            description: string | null
+        }
+    }>
 }
 
 interface DashboardClientProps {
     user: SupabaseUser
     profile: Profile | null
     wallet: WalletType | null
-    featuredTalents?: FeaturedTalent[]
+    featuredTalents?: TalentWithMenu[]
     activeBookings?: number
     favoritesCount?: number
 }
@@ -95,6 +100,19 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
         }).format(price)} coins`
+    }
+
+    // Helper to get minimum price from talent menus
+    const getMinPrice = (talent: TalentWithMenu): number => {
+        if (talent.talent_menus && talent.talent_menus.length > 0) {
+            const activePrices = talent.talent_menus
+                .filter(m => m.is_active)
+                .map(m => m.price)
+            if (activePrices.length > 0) {
+                return Math.min(...activePrices)
+            }
+        }
+        return talent.starting_price || 0
     }
 
     return (
@@ -253,31 +271,49 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                                         <div className="aspect-[3/4] relative overflow-hidden">
                                             <Image
                                                 src={talent.avatar_url || 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80'}
-                                                alt={talent.display_name}
+                                                alt={talent.display_name || 'Talent'}
                                                 fill
+                                                sizes="(max-width: 768px) 50vw, 25vw"
                                                 className="object-cover transition-transform duration-500 group-hover:scale-110"
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
 
                                             {/* Status */}
                                             <div className="absolute top-3 right-3">
-                                                <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${talent.status === 'online'
-                                                        ? 'bg-green-500/20 text-green-400'
-                                                        : 'bg-white/10 text-white/60'
+                                                <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${talent.status === 'online'
+                                                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                        : talent.status === 'booked'
+                                                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                            : 'bg-white/10 text-white/60 border border-white/10'
                                                     }`}>
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${talent.status === 'online' ? 'bg-green-400' : 'bg-white/40'
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${talent.status === 'online' ? 'bg-green-400' : talent.status === 'booked' ? 'bg-amber-400' : 'bg-white/40'
                                                         }`} />
-                                                    {talent.status === 'online' ? 'Online' : 'Offline'}
+                                                    {talent.status === 'online' ? 'Online' : talent.status === 'booked' ? 'Booked' : 'Offline'}
                                                 </span>
                                             </div>
 
+                                            {/* Verified Badge */}
+                                            {talent.is_verified && (
+                                                <div className="absolute top-3 left-3">
+                                                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#df2531]/90 text-white text-xs backdrop-blur-sm">
+                                                        <span className="text-[10px]">✓</span>
+                                                        Verified
+                                                    </span>
+                                                </div>
+                                            )}
+
                                             {/* Info */}
                                             <div className="absolute bottom-3 left-3 right-3">
+                                                <h3 className="text-white font-medium text-sm mb-1 truncate">
+                                                    {talent.display_name || 'Talent'}
+                                                </h3>
                                                 <div className="flex items-center gap-1.5 text-white/80 text-xs mb-1">
-                                                    <MapPin size={12} weight="fill" />
-                                                    <span>{talent.location}</span>
+                                                    <MapPin size={12} weight="fill" aria-hidden="true" />
+                                                    <span>{talent.location || 'Location not specified'}</span>
                                                 </div>
-                                                <p className="text-white/60 text-xs">From {formatPrice(talent.starting_price)}</p>
+                                                {getMinPrice(talent) > 0 && (
+                                                    <p className="text-white/60 text-xs">From {formatPrice(getMinPrice(talent))}</p>
+                                                )}
                                             </div>
                                         </div>
                                     </Link>
