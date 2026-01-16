@@ -989,7 +989,7 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                         />
                         {/* Gradient Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                        
+
                         {/* Status Badge */}
                         <div className="absolute top-4 left-4">
                             <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium backdrop-blur-md border ${talent.status === 'online'
@@ -1137,8 +1137,8 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                                         aria-pressed={isSelected}
                                     >
                                         <div className="flex items-center gap-4 flex-1 min-w-0">
-                                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-all ${isSelected 
-                                                ? 'bg-[#df2531] shadow-lg shadow-[#df2531]/30' 
+                                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-all ${isSelected
+                                                ? 'bg-[#df2531] shadow-lg shadow-[#df2531]/30'
                                                 : 'bg-white/10 group-hover:bg-white/20'
                                                 }`}>
                                                 <IconComponent size={24} weight="duotone" className="text-white" aria-hidden="true" />
@@ -1154,8 +1154,8 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                                             <div className="text-right">
                                                 <p className="text-white font-bold text-lg">{formatPrice(service.price)}</p>
                                             </div>
-                                            <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${isSelected 
-                                                ? 'bg-[#df2531] border-[#df2531] shadow-lg shadow-[#df2531]/30' 
+                                            <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${isSelected
+                                                ? 'bg-[#df2531] border-[#df2531] shadow-lg shadow-[#df2531]/30'
                                                 : 'border-white/30 group-hover:border-white/50'
                                                 }`} aria-hidden="true">
                                                 {isSelected && <Check size={16} weight="bold" className="text-white" />}
@@ -1228,7 +1228,7 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                                     ))}
 
                                     {talent.reviews.length > 5 && (
-                                        <button 
+                                        <button
                                             className="w-full py-4 text-center text-[#df2531] hover:text-[#c41f2a] text-sm font-semibold transition-colors rounded-xl hover:bg-[#df2531]/10"
                                             aria-label={`View all ${talent.review_count} reviews`}
                                         >
@@ -1404,8 +1404,8 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                                                 aria-describedby={dateError ? 'date-error' : undefined}
                                                 aria-required="true"
                                                 className={`w-full bg-white/5 border rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none transition-colors ${dateError
-                                                        ? 'border-red-500/50 focus:border-red-500'
-                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                    ? 'border-red-500/50 focus:border-red-500'
+                                                    : 'border-white/10 focus:border-[#df2531]/50'
                                                     }`}
                                             />
                                         </div>
@@ -1438,8 +1438,8 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                                                 aria-describedby={timeError ? 'time-error' : undefined}
                                                 aria-required="true"
                                                 className={`w-full bg-white/5 border rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none transition-colors ${timeError
-                                                        ? 'border-red-500/50 focus:border-red-500'
-                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                    ? 'border-red-500/50 focus:border-red-500'
+                                                    : 'border-white/10 focus:border-[#df2531]/50'
                                                     }`}
                                             />
                                         </div>
@@ -1494,10 +1494,10 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                                             </p>
                                         </div>
                                     </div>
-                                    <Link 
-                                        href="/dashboard/wallet" 
-                                        className={`px-4 py-2 rounded-lg text-sm font-semibold hover:underline transition-colors ${hasInsufficientBalance 
-                                            ? 'text-amber-400 hover:bg-amber-500/20' 
+                                    <Link
+                                        href="/dashboard/wallet"
+                                        className={`px-4 py-2 rounded-lg text-sm font-semibold hover:underline transition-colors ${hasInsufficientBalance
+                                            ? 'text-amber-400 hover:bg-amber-500/20'
                                             : 'text-[#df2531] hover:bg-[#df2531]/20'
                                             }`}
                                         aria-label="Go to wallet to top up coins"
