@@ -9,7 +9,8 @@ import {
     ArrowLeft, User, PencilSimple, Plus, Trash, Image as ImageIcon,
     CurrencyDollar, CalendarCheck, Clock, Eye, EyeSlash, Star,
     CaretRight, Coin, CheckCircle, XCircle, Hourglass, X,
-    Camera, MapPin, Sparkle, Receipt, ChartLine, Icon, Bank, Money, Gift
+    Camera, MapPin, Sparkle, Receipt, ChartLine, Icon, Bank, Money, Gift,
+    Warning, SpinnerGap
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
@@ -395,8 +396,8 @@ export function TalentDashboardClient({
                                     <ArrowLeft size={24} />
                                 </Link>
                                 <div>
-                                    <h1 className="text-xl font-bold text-white">Talent Dashboard</h1>
-                                    <p className="text-white/50 text-sm">Manage your profile & services</p>
+                                    <h1 className="text-2xl font-bold text-white">Talent Dashboard</h1>
+                                    <p className="text-white/60 text-sm">Manage your profile, services, and bookings</p>
                                 </div>
                             </div>
 
@@ -588,59 +589,65 @@ export function TalentDashboardClient({
                         </div>
                     )}
 
-                    {/* Stats Cards */}
+                    {/* Stats Cards - Enhanced */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                            <div className="flex items-center gap-2 text-white/50 text-sm mb-2">
-                                <Coin size={16} />
-                                <span>Balance</span>
+                        <div className="p-5 rounded-2xl bg-gradient-to-br from-[#df2531]/20 to-transparent border border-[#df2531]/30 hover:border-[#df2531]/50 transition-colors">
+                            <div className="flex items-center gap-2 text-white/60 text-xs mb-2.5 uppercase tracking-wide">
+                                <Coin size={18} weight="duotone" aria-hidden="true" />
+                                <span>Available Balance</span>
                             </div>
-                            <p className="text-2xl font-bold text-white">{wallet?.balance || 0}</p>
-                            <p className="text-white/40 text-xs">coins</p>
+                            <p className="text-3xl font-bold text-white mb-1">{(wallet?.balance || 0).toLocaleString()}</p>
+                            <p className="text-white/50 text-xs">coins available</p>
                         </div>
 
-                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                            <div className="flex items-center gap-2 text-white/50 text-sm mb-2">
-                                <Receipt size={16} />
-                                <span>Earnings</span>
+                        <div className="p-5 rounded-2xl bg-gradient-to-br from-green-500/20 to-transparent border border-green-500/30 hover:border-green-500/50 transition-colors">
+                            <div className="flex items-center gap-2 text-white/60 text-xs mb-2.5 uppercase tracking-wide">
+                                <Receipt size={18} weight="duotone" aria-hidden="true" />
+                                <span>Total Earnings</span>
                             </div>
-                            <p className="text-2xl font-bold text-green-400">{totalEarnings}</p>
-                            <p className="text-white/40 text-xs">coins earned</p>
+                            <p className="text-3xl font-bold text-green-400 mb-1">{totalEarnings.toLocaleString()}</p>
+                            <p className="text-white/50 text-xs">coins earned</p>
                         </div>
 
-                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                            <div className="flex items-center gap-2 text-white/50 text-sm mb-2">
-                                <Hourglass size={16} />
-                                <span>Pending</span>
+                        <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/20 to-transparent border border-amber-500/30 hover:border-amber-500/50 transition-colors">
+                            <div className="flex items-center gap-2 text-white/60 text-xs mb-2.5 uppercase tracking-wide">
+                                <Hourglass size={18} weight="duotone" aria-hidden="true" />
+                                <span>Pending Actions</span>
                             </div>
-                            <p className="text-2xl font-bold text-amber-400">{pendingBookings}</p>
-                            <p className="text-white/40 text-xs">bookings</p>
+                            <p className="text-3xl font-bold text-amber-400 mb-1">{pendingBookings}</p>
+                            <p className="text-white/50 text-xs">bookings awaiting response</p>
                         </div>
 
-                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                            <div className="flex items-center gap-2 text-white/50 text-sm mb-2">
-                                <CheckCircle size={16} />
+                        <div className="p-5 rounded-2xl bg-gradient-to-br from-white/10 to-transparent border border-white/20 hover:border-white/30 transition-colors">
+                            <div className="flex items-center gap-2 text-white/60 text-xs mb-2.5 uppercase tracking-wide">
+                                <CheckCircle size={18} weight="duotone" aria-hidden="true" />
                                 <span>Completed</span>
                             </div>
-                            <p className="text-2xl font-bold text-white">{completedBookings}</p>
-                            <p className="text-white/40 text-xs">bookings</p>
+                            <p className="text-3xl font-bold text-white mb-1">{completedBookings}</p>
+                            <p className="text-white/50 text-xs">successful bookings</p>
                         </div>
                     </div>
 
-                    {/* Tabs */}
-                    <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+                    {/* Tabs - Enhanced */}
+                    <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide" role="tablist" aria-label="Dashboard sections">
                         {tabs.map((tab) => {
                             const Icon = tab.icon
+                            const isActive = activeTab === tab.id
                             return (
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${activeTab === tab.id
-                                            ? 'bg-[#df2531] text-white'
-                                            : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                                    role="tab"
+                                    aria-selected={isActive}
+                                    aria-controls={`tabpanel-${tab.id}`}
+                                    id={`tab-${tab.id}`}
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${
+                                        isActive
+                                            ? 'bg-[#df2531] text-white shadow-lg shadow-[#df2531]/30'
+                                            : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
                                         }`}
                                 >
-                                    <Icon size={18} />
+                                    <Icon size={18} weight={isActive ? "duotone" : "regular"} aria-hidden="true" />
                                     {tab.label}
                                 </button>
                             )
@@ -649,58 +656,87 @@ export function TalentDashboardClient({
 
                     {/* Tab Content */}
                     {activeTab === 'overview' && (
-                        <div className="space-y-6">
+                        <div className="space-y-6" role="tabpanel" id="tabpanel-overview" aria-labelledby="tab-overview">
+                            {/* Quick Stats - Enhanced */}
                             <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-                                <h3 className="text-lg font-bold text-white mb-4">Quick Stats</h3>
+                                <div className="flex items-center justify-between mb-5">
+                                    <h3 className="text-xl font-bold text-white">Quick Overview</h3>
+                                    <Link
+                                        href={getTalentUrl({ id: user.id, username: profile?.username, display_name: profile?.display_name })}
+                                        className="text-[#df2531] hover:text-[#c41f2a] text-sm font-medium flex items-center gap-1.5 transition-colors"
+                                        aria-label="View your public profile"
+                                    >
+                                        <Eye size={16} weight="duotone" aria-hidden="true" />
+                                        View Profile
+                                    </Link>
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-white/50 text-sm">Services Listed</p>
-                                        <p className="text-2xl font-bold text-white">{menu.length}</p>
+                                    <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                        <p className="text-white/60 text-xs mb-1.5 uppercase tracking-wide">Services Listed</p>
+                                        <p className="text-3xl font-bold text-white">{menu.length}</p>
+                                        <p className="text-white/40 text-xs mt-1">active services</p>
                                     </div>
-                                    <div>
-                                        <p className="text-white/50 text-sm">Gallery Items</p>
-                                        <p className="text-2xl font-bold text-white">{media.length}</p>
+                                    <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                        <p className="text-white/60 text-xs mb-1.5 uppercase tracking-wide">Gallery Items</p>
+                                        <p className="text-3xl font-bold text-white">{media.length}</p>
+                                        <p className="text-white/40 text-xs mt-1">photos & videos</p>
                                     </div>
-                                    <div>
-                                        <p className="text-white/50 text-sm">Starting Price</p>
-                                        <p className="text-xl font-bold text-white">
+                                    <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                        <p className="text-white/60 text-xs mb-1.5 uppercase tracking-wide">Starting Price</p>
+                                        <p className="text-2xl font-bold text-white">
                                             {menu.length > 0
-                                                ? `${Math.min(...menu.map(m => m.price))} coins`
+                                                ? `${Math.min(...menu.map(m => m.price)).toLocaleString()} coins`
                                                 : 'Not set'
                                             }
                                         </p>
+                                        <p className="text-white/40 text-xs mt-1">lowest service price</p>
                                     </div>
-                                    <div>
-                                        <p className="text-white/50 text-sm">Profile Status</p>
-                                        <p className={`text-lg font-bold capitalize ${profile?.is_verified ? 'text-green-400' : 'text-amber-400'
+                                    <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                        <p className="text-white/60 text-xs mb-1.5 uppercase tracking-wide">Verification</p>
+                                        <p className={`text-xl font-bold capitalize flex items-center gap-2 ${profile?.is_verified ? 'text-green-400' : 'text-amber-400'
                                             }`}>
-                                            {profile?.is_verified ? 'verified' : 'pending verification'}
+                                            {profile?.is_verified ? (
+                                                <>
+                                                    <CheckCircle size={20} weight="duotone" aria-hidden="true" />
+                                                    Verified
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Hourglass size={20} weight="duotone" aria-hidden="true" />
+                                                    Pending
+                                                </>
+                                            )}
                                         </p>
+                                        <p className="text-white/40 text-xs mt-1">profile status</p>
                                     </div>
                                 </div>
                             </div>
 
+                            {/* Tips Section - Enhanced */}
                             <div className="p-6 rounded-2xl bg-gradient-to-br from-[#df2531]/20 to-transparent border border-[#df2531]/30">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <Sparkle size={24} weight="duotone" className="text-[#df2531]" />
-                                    <h3 className="text-lg font-bold text-white">Tips to Get More Bookings</h3>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <Sparkle size={28} weight="duotone" className="text-[#df2531]" aria-hidden="true" />
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white">Tips to Get More Bookings</h3>
+                                        <p className="text-white/50 text-sm">Follow these best practices to maximize your bookings</p>
+                                    </div>
                                 </div>
-                                <ul className="space-y-2 text-white/70 text-sm">
-                                    <li className="flex items-center gap-2">
-                                        <CheckCircle size={16} className="text-green-400 flex-shrink-0" />
-                                        Add at least 5 high-quality photos to your gallery
+                                <ul className="space-y-3 text-white/80 text-sm">
+                                    <li className="flex items-start gap-3">
+                                        <CheckCircle size={18} weight="duotone" className="text-green-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                                        <span>Add at least 5 high-quality photos to your gallery to showcase your work and attract clients</span>
                                     </li>
-                                    <li className="flex items-center gap-2">
-                                        <CheckCircle size={16} className="text-green-400 flex-shrink-0" />
-                                        List all services with competitive pricing
+                                    <li className="flex items-start gap-3">
+                                        <CheckCircle size={18} weight="duotone" className="text-green-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                                        <span>List all your services with competitive pricing to give clients clear options</span>
                                     </li>
-                                    <li className="flex items-center gap-2">
-                                        <CheckCircle size={16} className="text-green-400 flex-shrink-0" />
-                                        Complete your profile verification
+                                    <li className="flex items-start gap-3">
+                                        <CheckCircle size={18} weight="duotone" className="text-green-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                                        <span>Complete your profile verification to build trust and increase visibility</span>
                                     </li>
-                                    <li className="flex items-center gap-2">
-                                        <CheckCircle size={16} className="text-green-400 flex-shrink-0" />
-                                        Respond quickly to booking requests
+                                    <li className="flex items-start gap-3">
+                                        <CheckCircle size={18} weight="duotone" className="text-green-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                                        <span>Respond quickly to booking requests to improve your response rate and client satisfaction</span>
                                     </li>
                                 </ul>
                             </div>
@@ -708,117 +744,213 @@ export function TalentDashboardClient({
                     )}
 
                     {activeTab === 'services' && (
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-bold text-white">Your Services ({menu.length})</h3>
+                        <div className="space-y-4" role="tabpanel" id="tabpanel-services" aria-labelledby="tab-services">
+                            <div className="flex items-center justify-between flex-wrap gap-4">
+                                <div>
+                                    <h3 className="text-2xl font-bold text-white mb-1">Your Services</h3>
+                                    <p className="text-white/50 text-sm">Manage your service offerings and pricing</p>
+                                </div>
                                 {!isAddingService && availableServices.length > 0 && (
                                     <button
                                         onClick={() => setIsAddingService(true)}
-                                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#df2531] text-white text-sm font-medium hover:bg-[#df2531]/80 transition-colors"
+                                        aria-label="Add a new service"
+                                        className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#df2531] text-white text-sm font-semibold hover:bg-[#df2531]/80 transition-colors shadow-lg shadow-[#df2531]/20 hover:shadow-[#df2531]/30 focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
                                     >
-                                        <Plus size={18} />
+                                        <Plus size={18} weight="duotone" aria-hidden="true" />
                                         Add Service
                                     </button>
                                 )}
                             </div>
 
-                            {/* Add Service Form */}
+                            {/* Add Service Form - Enhanced */}
                             {isAddingService && (
-                                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-4">
+                                <div className="p-6 rounded-xl bg-white/5 border border-white/10 space-y-5 animate-fade-in-up">
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-medium text-white">Add New Service</h4>
-                                        <button onClick={() => setIsAddingService(false)} className="text-white/40 hover:text-white">
-                                            <X size={20} />
+                                        <div>
+                                            <h4 className="text-lg font-bold text-white mb-1">Add New Service</h4>
+                                            <p className="text-white/50 text-sm">Select a service type and set your pricing</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => {
+                                                setIsAddingService(false)
+                                                setNewServiceId('')
+                                                setNewServicePrice('')
+                                                setPriceError('')
+                                            }}
+                                            aria-label="Cancel adding service"
+                                            className="text-white/40 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
+                                        >
+                                            <X size={20} weight="duotone" aria-hidden="true" />
                                         </button>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                         <div>
-                                            <label className="block text-white/50 text-sm mb-2">Service Type</label>
+                                            <label htmlFor="service-type" className="block text-white/70 text-sm mb-2 font-medium">
+                                                Service Type <span className="text-red-400" aria-label="required">*</span>
+                                            </label>
                                             <select
+                                                id="service-type"
                                                 value={newServiceId}
                                                 onChange={(e) => setNewServiceId(e.target.value)}
-                                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531]"
+                                                aria-label="Select service type"
+                                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531] focus:ring-2 focus:ring-[#df2531]/50 transition-colors"
                                             >
-                                                <option value="" className="bg-black">Select a service</option>
+                                                <option value="" className="bg-black">Select a service type</option>
                                                 {availableServices.map((service) => (
                                                     <option key={service.id} value={service.id} className="bg-black">
                                                         {service.name}
                                                     </option>
                                                 ))}
                                             </select>
+                                            {availableServices.length === 0 && (
+                                                <p className="text-white/40 text-xs mt-2">All available services have been added</p>
+                                            )}
                                         </div>
 
                                         <div>
-                                            <label className="block text-white/50 text-sm mb-2">Price (in coins)</label>
+                                            <label htmlFor="service-price" className="block text-white/70 text-sm mb-2 font-medium">
+                                                Price (in coins) <span className="text-red-400" aria-label="required">*</span>
+                                            </label>
                                             <input
+                                                id="service-price"
                                                 type="number"
                                                 value={newServicePrice}
                                                 onChange={(e) => {
                                                     setNewServicePrice(e.target.value)
                                                     if (e.target.value) validatePrice(e.target.value)
                                                 }}
-                                                placeholder={`Min. ${MIN_SERVICE_PRICE.toLocaleString()}`}
+                                                placeholder={`Minimum: ${MIN_SERVICE_PRICE.toLocaleString()}`}
                                                 min={MIN_SERVICE_PRICE}
-                                                className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white focus:outline-none transition-colors ${priceError ? 'border-red-500/50 focus:border-red-500' : 'border-white/10 focus:border-[#df2531]'
-                                                    }`}
+                                                aria-label="Service price in coins"
+                                                aria-invalid={!!priceError}
+                                                aria-describedby={priceError ? 'price-error' : 'price-help'}
+                                                className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white focus:outline-none transition-colors ${
+                                                    priceError 
+                                                        ? 'border-red-500/50 focus:border-red-500 focus:ring-2 focus:ring-red-500/50' 
+                                                        : 'border-white/10 focus:border-[#df2531] focus:ring-2 focus:ring-[#df2531]/50'
+                                                }`}
                                             />
                                             {priceError && (
-                                                <p className="text-red-400 text-xs mt-1">{priceError}</p>
+                                                <p id="price-error" className="text-red-400 text-xs mt-1.5 flex items-center gap-1" role="alert">
+                                                    <Warning size={14} weight="duotone" aria-hidden="true" />
+                                                    {priceError}
+                                                </p>
                                             )}
-                                            <p className="text-white/30 text-xs mt-1">Minimum: ₦{MIN_SERVICE_PRICE.toLocaleString()}</p>
+                                            <p id="price-help" className="text-white/40 text-xs mt-1.5">
+                                                Minimum: ₦{MIN_SERVICE_PRICE.toLocaleString()} ({MIN_SERVICE_PRICE.toLocaleString()} coins)
+                                            </p>
                                         </div>
                                     </div>
 
-                                    <Button
-                                        onClick={handleAddService}
-                                        disabled={!newServiceId || !newServicePrice || isSaving || !!priceError}
-                                        className="btn-primary"
-                                    >
-                                        {isSaving ? 'Adding...' : 'Add Service'}
-                                    </Button>
+                                    <div className="flex gap-3 pt-2">
+                                        <Button
+                                            onClick={handleAddService}
+                                            disabled={!newServiceId || !newServicePrice || isSaving || !!priceError}
+                                            aria-label={isSaving ? 'Adding service...' : 'Add service'}
+                                            className="flex-1 bg-[#df2531] hover:bg-[#c41f2a] text-white font-semibold py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#df2531]/20 hover:shadow-[#df2531]/30 transition-all"
+                                        >
+                                            {isSaving ? (
+                                                <>
+                                                    <SpinnerGap size={18} className="animate-spin mr-2" aria-hidden="true" />
+                                                    Adding Service...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Plus size={18} weight="duotone" className="mr-2" aria-hidden="true" />
+                                                    Add Service
+                                                </>
+                                            )}
+                                        </Button>
+                                        <Button
+                                            onClick={() => {
+                                                setIsAddingService(false)
+                                                setNewServiceId('')
+                                                setNewServicePrice('')
+                                                setPriceError('')
+                                            }}
+                                            variant="ghost"
+                                            className="text-white/60 hover:text-white border border-white/10"
+                                            disabled={isSaving}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
 
-                            {/* Services List */}
+                            {/* Services List - Enhanced */}
                             {menu.length === 0 ? (
-                                <div className="text-center py-12 rounded-2xl bg-white/5 border border-white/10">
-                                    <CurrencyDollar size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
-                                    <p className="text-white/50 mb-2">No services listed yet</p>
-                                    <p className="text-white/30 text-sm">Add services to start receiving bookings</p>
+                                <div className="text-center py-16 rounded-2xl bg-white/5 border border-white/10">
+                                    <CurrencyDollar size={64} weight="duotone" className="text-white/20 mx-auto mb-5" aria-hidden="true" />
+                                    <p className="text-white/60 font-medium mb-2 text-lg">No services listed yet</p>
+                                    <p className="text-white/40 text-sm mb-6 max-w-md mx-auto leading-relaxed">
+                                        Add services to start receiving bookings. Clients can browse and book your services based on your pricing.
+                                    </p>
+                                    {availableServices.length > 0 && (
+                                        <Button
+                                            onClick={() => setIsAddingService(true)}
+                                            className="bg-[#df2531] hover:bg-[#c41f2a] text-white font-semibold px-6 py-3 rounded-xl shadow-lg shadow-[#df2531]/20"
+                                            aria-label="Add your first service"
+                                        >
+                                            <Plus size={20} weight="duotone" className="mr-2" aria-hidden="true" />
+                                            Add Your First Service
+                                        </Button>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="space-y-3">
                                     {menu.map((item) => (
                                         <div
                                             key={item.id}
-                                            className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10"
+                                            className="flex items-center gap-4 p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all group"
                                         >
-                                            <div className="w-10 h-10 rounded-full bg-[#df2531]/10 flex items-center justify-center text-xl">
+                                            <div className="w-12 h-12 rounded-xl bg-[#df2531]/10 flex items-center justify-center text-2xl border border-[#df2531]/20 group-hover:border-[#df2531]/40 transition-colors">
                                                 {item.service_type?.icon}
                                             </div>
 
-                                            <div className="flex-1">
-                                                <p className="text-white font-medium">{item.service_type?.name}</p>
-                                                <p className="text-white/50 text-sm">{item.price} coins</p>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <p className="text-white font-semibold">{item.service_type?.name}</p>
+                                                    {item.is_active ? (
+                                                        <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-medium border border-green-500/30">
+                                                            Active
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-xs font-medium border border-red-500/30">
+                                                            Hidden
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-white/60 text-sm font-medium">{formatPrice(item.price)}</p>
+                                                {item.service_type?.description && (
+                                                    <p className="text-white/40 text-xs mt-1 line-clamp-1">{item.service_type.description}</p>
+                                                )}
                                             </div>
 
                                             <button
                                                 onClick={() => handleToggleAvailability(item.id, item.is_active)}
-                                                className={`p-2 rounded-lg transition-colors ${item.is_active
-                                                        ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
-                                                        : 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                                                    }`}
-                                                title={item.is_active ? 'Available - Click to hide' : 'Hidden - Click to show'}
+                                                aria-label={item.is_active ? `Hide ${item.service_type?.name} service` : `Show ${item.service_type?.name} service`}
+                                                aria-pressed={item.is_active}
+                                                className={`p-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black ${
+                                                    item.is_active
+                                                        ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 focus:ring-green-500'
+                                                        : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 focus:ring-red-500'
+                                                }`}
                                             >
-                                                {item.is_active ? <Eye size={20} /> : <EyeSlash size={20} />}
+                                                {item.is_active ? (
+                                                    <Eye size={20} weight="duotone" aria-hidden="true" />
+                                                ) : (
+                                                    <EyeSlash size={20} weight="duotone" aria-hidden="true" />
+                                                )}
                                             </button>
 
                                             <button
                                                 onClick={() => handleDeleteService(item.id)}
-                                                className="p-2 rounded-lg bg-white/5 text-white/40 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                                                aria-label={`Delete ${item.service_type?.name} service`}
+                                                className="p-3 rounded-lg bg-white/5 text-white/40 hover:bg-red-500/10 hover:text-red-400 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
                                             >
-                                                <Trash size={20} />
+                                                <Trash size={20} weight="duotone" aria-hidden="true" />
                                             </button>
                                         </div>
                                     ))}
@@ -828,33 +960,59 @@ export function TalentDashboardClient({
                     )}
 
                     {activeTab === 'media' && (
-                        <MediaManager
-                            talentId={user.id}
-                            media={media}
-                            onRefresh={() => router.refresh()}
-                        />
+                        <div role="tabpanel" id="tabpanel-media" aria-labelledby="tab-media">
+                            <MediaManager
+                                talentId={user.id}
+                                media={media}
+                                onRefresh={() => router.refresh()}
+                            />
+                        </div>
                     )}
 
                     {activeTab === 'bookings' && (
-                        <div className="space-y-4">
-                            {/* Pending Action Alert */}
+                        <div className="space-y-4" role="tabpanel" id="tabpanel-bookings" aria-labelledby="tab-bookings">
+                            {/* Pending Action Alert - Enhanced */}
                             {bookings.filter(b => b.status === 'verification_pending').length > 0 && (
-                                <div className="flex items-center gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400">
-                                    <Hourglass size={24} weight="duotone" />
+                                <div className="flex items-center gap-4 p-5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 animate-fade-in-up" role="alert">
+                                    <Hourglass size={28} weight="duotone" className="shrink-0" aria-hidden="true" />
                                     <div className="flex-1">
-                                        <p className="font-medium">You have {bookings.filter(b => b.status === 'verification_pending').length} booking(s) awaiting your response</p>
-                                        <p className="text-sm text-blue-400/70">Accept or decline to proceed</p>
+                                        <p className="font-semibold text-base mb-1">
+                                            You have {bookings.filter(b => b.status === 'verification_pending').length} booking{bookings.filter(b => b.status === 'verification_pending').length > 1 ? 's' : ''} awaiting your response
+                                        </p>
+                                        <p className="text-sm text-blue-400/80 leading-relaxed">
+                                            Review and accept or decline these bookings to proceed. Quick responses improve your rating.
+                                        </p>
                                     </div>
                                 </div>
                             )}
 
-                            <h3 className="text-lg font-bold text-white">Recent Bookings ({bookings.length})</h3>
+                            <div className="flex items-center justify-between flex-wrap gap-4">
+                                <div>
+                                    <h3 className="text-2xl font-bold text-white mb-1">Recent Bookings</h3>
+                                    <p className="text-white/50 text-sm">Manage your client bookings and appointments</p>
+                                </div>
+                                {bookings.length > 0 && (
+                                    <span className="text-white/40 text-sm">
+                                        {bookings.length} {bookings.length === 1 ? 'booking' : 'bookings'} total
+                                    </span>
+                                )}
+                            </div>
 
                             {bookings.length === 0 ? (
-                                <div className="text-center py-12 rounded-2xl bg-white/5 border border-white/10">
-                                    <CalendarCheck size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
-                                    <p className="text-white/50 mb-2">No bookings yet</p>
-                                    <p className="text-white/30 text-sm">Bookings will appear here when clients book your services</p>
+                                <div className="text-center py-16 rounded-2xl bg-white/5 border border-white/10">
+                                    <CalendarCheck size={64} weight="duotone" className="text-white/20 mx-auto mb-5" aria-hidden="true" />
+                                    <p className="text-white/60 font-medium mb-2 text-lg">No bookings yet</p>
+                                    <p className="text-white/40 text-sm mb-6 max-w-md mx-auto leading-relaxed">
+                                        Bookings will appear here when clients book your services. Make sure your profile is complete and services are listed to attract bookings.
+                                    </p>
+                                    <Link
+                                        href="/dashboard/browse"
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#df2531] hover:bg-[#c41f2a] text-white text-sm font-semibold transition-colors shadow-lg shadow-[#df2531]/20"
+                                        aria-label="Browse other talents"
+                                    >
+                                        <Eye size={18} weight="duotone" aria-hidden="true" />
+                                        View Talent Profiles
+                                    </Link>
                                 </div>
                             ) : (
                                 <div className="space-y-3">
@@ -872,12 +1030,18 @@ export function TalentDashboardClient({
                                                         : 'bg-white/5 border-white/10 hover:bg-white/10'
                                                     }`}
                                             >
-                                                <div className="w-12 h-12 rounded-full bg-white/10 overflow-hidden">
+                                                <div className="w-12 h-12 rounded-full bg-white/10 overflow-hidden relative shrink-0">
                                                     {booking.client?.avatar_url ? (
-                                                        <img src={booking.client.avatar_url} alt="" className="w-full h-full object-cover" />
+                                                        <Image
+                                                            src={booking.client.avatar_url}
+                                                            alt={booking.client.display_name || 'Client'}
+                                                            fill
+                                                            sizes="48px"
+                                                            className="object-cover"
+                                                        />
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center">
-                                                            <User size={24} weight="duotone" className="text-white/40" />
+                                                            <User size={24} weight="duotone" className="text-white/40" aria-hidden="true" />
                                                         </div>
                                                     )}
                                                 </div>
@@ -896,17 +1060,17 @@ export function TalentDashboardClient({
                                                     </p>
                                                 </div>
 
-                                                <div className="text-right">
-                                                    <p className="text-white font-bold">{booking.total_price} coins</p>
-                                                    <p className="text-white/40 text-xs">{formatDate(booking.created_at)}</p>
+                                                <div className="text-right shrink-0">
+                                                    <p className="text-white font-bold text-lg">{formatPrice(booking.total_price)}</p>
+                                                    <p className="text-white/50 text-xs mt-0.5">{formatDate(booking.created_at)}</p>
                                                 </div>
 
-                                                <div className={`px-3 py-1 rounded-full ${status.bg} ${status.text} text-xs font-medium flex items-center gap-1`}>
-                                                    <StatusIcon size={14} weight="bold" />
+                                                <div className={`px-3 py-1.5 rounded-full ${status.bg} ${status.text} text-xs font-semibold flex items-center gap-1.5 shrink-0 border ${status.text.includes('green') ? 'border-green-500/30' : status.text.includes('amber') ? 'border-amber-500/30' : status.text.includes('blue') ? 'border-blue-500/30' : 'border-white/10'}`}>
+                                                    <StatusIcon size={14} weight="duotone" aria-hidden="true" />
                                                     <span className="capitalize">{booking.status.replace('_', ' ')}</span>
                                                 </div>
 
-                                                <CaretRight size={20} className="text-white/40" />
+                                                <CaretRight size={20} weight="duotone" className="text-white/40 shrink-0" aria-hidden="true" />
                                             </Link>
                                         )
                                     })}
@@ -915,72 +1079,83 @@ export function TalentDashboardClient({
                         </div>
                     )}
 
-                    {/* Earnings Tab */}
+                    {/* Earnings Tab - Enhanced */}
                     {activeTab === 'earnings' && (
-                        <div className="space-y-6">
-                            {/* Earnings Summary Cards */}
+                        <div className="space-y-6" role="tabpanel" id="tabpanel-earnings" aria-labelledby="tab-earnings">
+                            <div>
+                                <h3 className="text-2xl font-bold text-white mb-1">Earnings Overview</h3>
+                                <p className="text-white/50 text-sm">Track your income from gifts, content unlocks, and bookings</p>
+                            </div>
+
+                            {/* Earnings Summary Cards - Enhanced */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="p-4 rounded-2xl bg-gradient-to-br from-green-500/20 to-transparent border border-green-500/30">
-                                    <p className="text-white/60 text-xs mb-1">Total Earnings</p>
-                                    <p className="text-2xl font-bold text-white">{totalAllEarnings.toLocaleString()}</p>
-                                    <p className="text-green-400 text-xs">coins</p>
+                                <div className="p-5 rounded-2xl bg-gradient-to-br from-green-500/20 to-transparent border border-green-500/30 hover:border-green-500/50 transition-colors">
+                                    <p className="text-white/60 text-xs mb-2 uppercase tracking-wide">Total Earnings</p>
+                                    <p className="text-3xl font-bold text-white mb-1">{totalAllEarnings.toLocaleString()}</p>
+                                    <p className="text-green-400 text-xs font-medium">coins earned</p>
                                 </div>
-                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Gift size={14} className="text-pink-400" />
-                                        <p className="text-white/60 text-xs">From Gifts</p>
+                                <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-pink-500/30 transition-colors">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Gift size={18} weight="duotone" className="text-pink-400" aria-hidden="true" />
+                                        <p className="text-white/60 text-xs uppercase tracking-wide">From Gifts</p>
                                     </div>
-                                    <p className="text-xl font-bold text-white">{giftEarnings.toLocaleString()}</p>
+                                    <p className="text-2xl font-bold text-white">{giftEarnings.toLocaleString()}</p>
+                                    <p className="text-white/40 text-xs mt-1">coins</p>
                                 </div>
-                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Eye size={14} className="text-amber-400" />
-                                        <p className="text-white/60 text-xs">Content Unlocks</p>
+                                <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-500/30 transition-colors">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Eye size={18} weight="duotone" className="text-amber-400" aria-hidden="true" />
+                                        <p className="text-white/60 text-xs uppercase tracking-wide">Content Unlocks</p>
                                     </div>
-                                    <p className="text-xl font-bold text-white">{unlockEarnings.toLocaleString()}</p>
+                                    <p className="text-2xl font-bold text-white">{unlockEarnings.toLocaleString()}</p>
+                                    <p className="text-white/40 text-xs mt-1">coins</p>
                                 </div>
-                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <CalendarCheck size={14} className="text-blue-400" />
-                                        <p className="text-white/60 text-xs">Bookings</p>
+                                <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-blue-500/30 transition-colors">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <CalendarCheck size={18} weight="duotone" className="text-blue-400" aria-hidden="true" />
+                                        <p className="text-white/60 text-xs uppercase tracking-wide">Bookings</p>
                                     </div>
-                                    <p className="text-xl font-bold text-white">{bookingEarnings.toLocaleString()}</p>
+                                    <p className="text-2xl font-bold text-white">{bookingEarnings.toLocaleString()}</p>
+                                    <p className="text-white/40 text-xs mt-1">coins</p>
                                 </div>
                             </div>
 
-                            {/* Recent Gifts Received */}
+                            {/* Recent Gifts Received - Enhanced */}
                             <div>
-                                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                    <Gift size={20} className="text-pink-400" />
+                                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                                    <Gift size={24} weight="duotone" className="text-pink-400" aria-hidden="true" />
                                     Recent Gifts Received
                                 </h3>
                                 {giftsReceived.length === 0 ? (
-                                    <div className="p-8 rounded-2xl bg-white/5 border border-white/10 text-center">
-                                        <Gift size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
-                                        <p className="text-white/50">No gifts received yet</p>
-                                        <p className="text-white/30 text-sm mt-1">When clients send you gifts, they&apos;ll appear here</p>
+                                    <div className="p-12 rounded-2xl bg-white/5 border border-white/10 text-center">
+                                        <Gift size={64} weight="duotone" className="text-white/20 mx-auto mb-5" aria-hidden="true" />
+                                        <p className="text-white/60 font-medium mb-2 text-lg">No gifts received yet</p>
+                                        <p className="text-white/40 text-sm max-w-md mx-auto leading-relaxed">
+                                            When clients send you gifts, they&apos;ll appear here. Gifts are a great way for clients to show appreciation!
+                                        </p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                         {giftsReceived.map((gift) => (
                                             <div
                                                 key={gift.id}
-                                                className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10"
+                                                className="flex items-center gap-4 p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-pink-500/30 transition-all group"
                                             >
-                                                <div className="w-10 h-10 rounded-full bg-pink-500/20 flex items-center justify-center">
-                                                    <Gift size={20} className="text-pink-400" />
+                                                <div className="w-12 h-12 rounded-full bg-pink-500/20 flex items-center justify-center border border-pink-500/30 group-hover:border-pink-500/50 transition-colors shrink-0">
+                                                    <Gift size={24} weight="duotone" className="text-pink-400" aria-hidden="true" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-white font-medium">
+                                                    <p className="text-white font-semibold mb-1">
                                                         {gift.sender?.display_name || 'Anonymous'}
                                                     </p>
                                                     {gift.message && (
-                                                        <p className="text-white/40 text-sm truncate">&quot;{gift.message}&quot;</p>
+                                                        <p className="text-white/60 text-sm line-clamp-2">&quot;{gift.message}&quot;</p>
                                                     )}
+                                                    <p className="text-white/40 text-xs mt-1.5">{formatDate(gift.created_at)}</p>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="text-white font-bold text-green-400">+{gift.amount}</p>
-                                                    <p className="text-white/40 text-xs">{formatDate(gift.created_at)}</p>
+                                                <div className="text-right shrink-0">
+                                                    <p className="text-white font-bold text-green-400 text-lg">+{gift.amount.toLocaleString()}</p>
+                                                    <p className="text-white/50 text-xs mt-0.5">coins</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -988,41 +1163,52 @@ export function TalentDashboardClient({
                                 )}
                             </div>
 
-                            {/* Recent Transactions */}
+                            {/* Recent Transactions - Enhanced */}
                             <div>
-                                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                    <Receipt size={20} className="text-white/60" />
+                                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                                    <Receipt size={24} weight="duotone" className="text-white/60" aria-hidden="true" />
                                     Transaction History
                                 </h3>
                                 {transactions.length === 0 ? (
-                                    <div className="p-8 rounded-2xl bg-white/5 border border-white/10 text-center">
-                                        <Receipt size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
-                                        <p className="text-white/50">No transactions yet</p>
+                                    <div className="p-12 rounded-2xl bg-white/5 border border-white/10 text-center">
+                                        <Receipt size={64} weight="duotone" className="text-white/20 mx-auto mb-5" aria-hidden="true" />
+                                        <p className="text-white/60 font-medium mb-2 text-lg">No transactions yet</p>
+                                        <p className="text-white/40 text-sm max-w-md mx-auto leading-relaxed">
+                                            Your transaction history will appear here as you receive payments from gifts, content unlocks, and bookings.
+                                        </p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                         {transactions.slice(0, 10).map((tx) => (
                                             <div
                                                 key={tx.id}
-                                                className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10"
+                                                className="flex items-center gap-4 p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group"
                                             >
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'gift' ? 'bg-pink-500/20' :
-                                                        tx.type === 'premium_unlock' ? 'bg-amber-500/20' :
-                                                            'bg-blue-500/20'
-                                                    }`}>
-                                                    {tx.type === 'gift' ? <Gift size={20} className="text-pink-400" /> :
-                                                        tx.type === 'premium_unlock' ? <Eye size={20} className="text-amber-400" /> :
-                                                            <CalendarCheck size={20} className="text-blue-400" />}
+                                                <div className={`w-12 h-12 rounded-full flex items-center justify-center border transition-colors ${
+                                                    tx.type === 'gift' 
+                                                        ? 'bg-pink-500/20 border-pink-500/30 group-hover:border-pink-500/50' 
+                                                        : tx.type === 'premium_unlock' 
+                                                            ? 'bg-amber-500/20 border-amber-500/30 group-hover:border-amber-500/50'
+                                                            : 'bg-blue-500/20 border-blue-500/30 group-hover:border-blue-500/50'
+                                                }`}>
+                                                    {tx.type === 'gift' ? (
+                                                        <Gift size={24} weight="duotone" className="text-pink-400" aria-hidden="true" />
+                                                    ) : tx.type === 'premium_unlock' ? (
+                                                        <Eye size={24} weight="duotone" className="text-amber-400" aria-hidden="true" />
+                                                    ) : (
+                                                        <CalendarCheck size={24} weight="duotone" className="text-blue-400" aria-hidden="true" />
+                                                    )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-white font-medium capitalize">
+                                                    <p className="text-white font-semibold capitalize mb-1">
                                                         {tx.type.replace('_', ' ')}
                                                     </p>
-                                                    <p className="text-white/40 text-sm truncate">{tx.description}</p>
+                                                    <p className="text-white/60 text-sm line-clamp-2">{tx.description}</p>
+                                                    <p className="text-white/40 text-xs mt-1.5">{formatDate(tx.created_at)}</p>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="text-white font-bold text-green-400">+{tx.amount}</p>
-                                                    <p className="text-white/40 text-xs">{formatDate(tx.created_at)}</p>
+                                                <div className="text-right shrink-0">
+                                                    <p className="text-white font-bold text-green-400 text-lg">+{tx.amount.toLocaleString()}</p>
+                                                    <p className="text-white/50 text-xs mt-0.5">coins</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -1032,162 +1218,254 @@ export function TalentDashboardClient({
                         </div>
                     )}
 
-                    {/* Withdrawals Tab */}
+                    {/* Withdrawals Tab - Enhanced */}
                     {activeTab === 'withdrawals' && (
-                        <div className="space-y-6">
-                            {/* Balance Card */}
-                            <div className="p-6 rounded-2xl bg-gradient-to-br from-[#df2531]/20 to-transparent border border-[#df2531]/30">
-                                <div className="flex items-center justify-between mb-4">
+                        <div className="space-y-6" role="tabpanel" id="tabpanel-withdrawals" aria-labelledby="tab-withdrawals">
+                            <div>
+                                <h3 className="text-2xl font-bold text-white mb-1">Withdrawals</h3>
+                                <p className="text-white/50 text-sm">Request withdrawals to your bank account</p>
+                            </div>
+
+                            {/* Balance Card - Enhanced */}
+                            <div className="p-6 rounded-2xl bg-gradient-to-br from-[#df2531]/20 to-transparent border border-[#df2531]/30 shadow-lg shadow-[#df2531]/10">
+                                <div className="flex items-center justify-between mb-5">
                                     <div>
-                                        <p className="text-white/60 text-sm">Available Balance</p>
-                                        <p className="text-3xl font-bold text-white">{(wallet?.balance || 0).toLocaleString()} coins</p>
-                                        <p className="text-white/40 text-sm">≈ ₦{(wallet?.balance || 0).toLocaleString()}</p>
+                                        <p className="text-white/60 text-xs mb-1.5 uppercase tracking-wide">Available Balance</p>
+                                        <p className="text-4xl font-bold text-white mb-1">{(wallet?.balance || 0).toLocaleString()}</p>
+                                        <p className="text-white/50 text-sm">coins ≈ ₦{(wallet?.balance || 0).toLocaleString()}</p>
                                     </div>
-                                    <div className="w-16 h-16 rounded-2xl bg-[#df2531]/20 flex items-center justify-center">
-                                        <Coin size={32} weight="duotone" className="text-[#df2531]" />
+                                    <div className="w-20 h-20 rounded-2xl bg-[#df2531]/20 flex items-center justify-center border border-[#df2531]/30">
+                                        <Coin size={40} weight="duotone" className="text-[#df2531]" aria-hidden="true" />
                                     </div>
                                 </div>
 
                                 <Button
                                     onClick={() => setShowWithdrawalModal(true)}
                                     disabled={(wallet?.balance || 0) < 10000}
-                                    className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-3 rounded-xl disabled:opacity-50"
+                                    aria-label={(wallet?.balance || 0) < 10000 ? 'Minimum withdrawal is 10,000 coins' : 'Request withdrawal'}
+                                    className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#df2531]/30 hover:shadow-[#df2531]/40 transition-all"
                                 >
-                                    <Bank size={20} className="mr-2" />
+                                    <Bank size={22} weight="duotone" className="mr-2" aria-hidden="true" />
                                     Request Withdrawal
                                 </Button>
                                 {(wallet?.balance || 0) < 10000 && (
-                                    <p className="text-white/40 text-xs text-center mt-2">
-                                        Minimum withdrawal: 10,000 coins
-                                    </p>
+                                    <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
+                                        <Warning size={18} weight="duotone" className="text-amber-400 shrink-0" aria-hidden="true" />
+                                        <p className="text-amber-400 text-sm">
+                                            Minimum withdrawal: <span className="font-semibold">10,000 coins</span>
+                                        </p>
+                                    </div>
                                 )}
                             </div>
 
-                            {/* Withdrawal Info */}
-                            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                                <h4 className="text-white font-medium mb-2">Withdrawal Information</h4>
-                                <ul className="space-y-2 text-white/60 text-sm">
-                                    <li className="flex items-center gap-2">
-                                        <CheckCircle size={14} className="text-green-400" />
-                                        Minimum withdrawal: 10,000 coins
+                            {/* Withdrawal Info - Enhanced */}
+                            <div className="p-6 rounded-xl bg-white/5 border border-white/10">
+                                <h4 className="text-white font-bold mb-4 flex items-center gap-2">
+                                    <Bank size={20} weight="duotone" className="text-[#df2531]" aria-hidden="true" />
+                                    Withdrawal Information
+                                </h4>
+                                <ul className="space-y-3 text-white/70 text-sm">
+                                    <li className="flex items-start gap-3">
+                                        <CheckCircle size={18} weight="duotone" className="text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
+                                        <div>
+                                            <span className="font-semibold">Minimum withdrawal:</span> 10,000 coins (₦10,000)
+                                        </div>
                                     </li>
-                                    <li className="flex items-center gap-2">
-                                        <CheckCircle size={14} className="text-green-400" />
-                                        Processing time: 24-48 hours
+                                    <li className="flex items-start gap-3">
+                                        <CheckCircle size={18} weight="duotone" className="text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
+                                        <div>
+                                            <span className="font-semibold">Processing time:</span> 24-48 hours after approval
+                                        </div>
                                     </li>
-                                    <li className="flex items-center gap-2">
-                                        <CheckCircle size={14} className="text-green-400" />
-                                        Supported banks: All Nigerian banks
+                                    <li className="flex items-start gap-3">
+                                        <CheckCircle size={18} weight="duotone" className="text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
+                                        <div>
+                                            <span className="font-semibold">Supported banks:</span> All Nigerian banks and fintech platforms
+                                        </div>
                                     </li>
-                                    <li className="flex items-center gap-2">
-                                        <CheckCircle size={14} className="text-green-400" />
-                                        No withdrawal fees
+                                    <li className="flex items-start gap-3">
+                                        <CheckCircle size={18} weight="duotone" className="text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
+                                        <div>
+                                            <span className="font-semibold">Fees:</span> No withdrawal fees - you receive the full amount
+                                        </div>
                                     </li>
                                 </ul>
                             </div>
 
-                            {/* Recent Withdrawals Placeholder */}
+                            {/* Recent Withdrawals Placeholder - Enhanced */}
                             <div>
-                                <h4 className="text-lg font-bold text-white mb-4">Recent Withdrawals</h4>
-                                <div className="text-center py-12 rounded-2xl bg-white/5 border border-white/10">
-                                    <Money size={48} weight="duotone" className="text-white/20 mx-auto mb-4" />
-                                    <p className="text-white/50 mb-2">No withdrawals yet</p>
-                                    <p className="text-white/30 text-sm">Your withdrawal history will appear here</p>
+                                <h4 className="text-xl font-bold text-white mb-4">Withdrawal History</h4>
+                                <div className="text-center py-16 rounded-2xl bg-white/5 border border-white/10">
+                                    <Money size={64} weight="duotone" className="text-white/20 mx-auto mb-5" aria-hidden="true" />
+                                    <p className="text-white/60 font-medium mb-2 text-lg">No withdrawals yet</p>
+                                    <p className="text-white/40 text-sm max-w-md mx-auto leading-relaxed">
+                                        Your withdrawal history will appear here once you make your first withdrawal request. 
+                                        All withdrawals are processed securely within 24-48 hours.
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* Withdrawal Modal */}
+                {/* Withdrawal Modal - Enhanced */}
                 {showWithdrawalModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div
-                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-                            onClick={() => setShowWithdrawalModal(false)}
-                        />
-                        <div className="relative bg-[#1a1a1a] rounded-2xl p-6 max-w-md w-full border border-white/10">
+                    <div 
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm"
+                        onClick={(e) => {
+                            if (e.target === e.currentTarget) {
+                                setShowWithdrawalModal(false)
+                                setWithdrawalAmount('')
+                                setBankName('')
+                                setAccountNumber('')
+                                setAccountName('')
+                            }
+                        }}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="withdrawal-modal-title"
+                    >
+                        <div className="relative bg-[#1a1a1a] rounded-2xl p-6 max-w-md w-full border border-white/10 shadow-2xl animate-fade-in-up">
                             <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-xl font-bold text-white">Request Withdrawal</h3>
+                                <div>
+                                    <h3 id="withdrawal-modal-title" className="text-2xl font-bold text-white mb-1">Request Withdrawal</h3>
+                                    <p className="text-white/50 text-sm">Enter your bank details to withdraw your earnings</p>
+                                </div>
                                 <button
-                                    onClick={() => setShowWithdrawalModal(false)}
-                                    className="text-white/40 hover:text-white"
+                                    onClick={() => {
+                                        setShowWithdrawalModal(false)
+                                        setWithdrawalAmount('')
+                                        setBankName('')
+                                        setAccountNumber('')
+                                        setAccountName('')
+                                    }}
+                                    aria-label="Close withdrawal modal"
+                                    className="text-white/40 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
                                 >
-                                    <X size={24} />
+                                    <X size={24} weight="duotone" aria-hidden="true" />
                                 </button>
                             </div>
 
-                            <div className="space-y-4">
-                                {/* Amount */}
+                            <div className="space-y-5">
+                                {/* Amount - Enhanced */}
                                 <div>
-                                    <label className="block text-white/70 text-sm mb-2">Amount (coins)</label>
+                                    <label htmlFor="withdrawal-amount" className="block text-white/70 text-sm mb-2 font-medium">
+                                        Withdrawal Amount (coins) <span className="text-red-400" aria-label="required">*</span>
+                                    </label>
                                     <input
+                                        id="withdrawal-amount"
                                         type="number"
                                         value={withdrawalAmount}
-                                        onChange={(e) => setWithdrawalAmount(e.target.value)}
-                                        placeholder="Enter amount"
+                                        onChange={(e) => {
+                                            const value = e.target.value
+                                            const numValue = parseInt(value)
+                                            if (value === '' || (numValue >= 10000 && numValue <= (wallet?.balance || 0))) {
+                                                setWithdrawalAmount(value)
+                                            }
+                                        }}
+                                        placeholder="Enter amount (min: 10,000)"
+                                        min={10000}
                                         max={wallet?.balance || 0}
-                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531]"
+                                        aria-label="Withdrawal amount in coins"
+                                        aria-describedby="available-balance"
+                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-lg font-semibold focus:outline-none focus:border-[#df2531] focus:ring-2 focus:ring-[#df2531]/50 transition-colors"
                                     />
-                                    <p className="text-white/40 text-xs mt-1">
-                                        Available: {(wallet?.balance || 0).toLocaleString()} coins
+                                    <p id="available-balance" className="text-white/50 text-xs mt-2 flex items-center gap-1.5">
+                                        <Coin size={14} weight="duotone" aria-hidden="true" />
+                                        Available: <span className="font-semibold text-white">{(wallet?.balance || 0).toLocaleString()} coins</span>
                                     </p>
+                                    {withdrawalAmount && parseInt(withdrawalAmount) < 10000 && (
+                                        <p className="text-amber-400 text-xs mt-1.5 flex items-center gap-1.5" role="alert">
+                                            <Warning size={14} weight="duotone" aria-hidden="true" />
+                                            Minimum withdrawal is 10,000 coins
+                                        </p>
+                                    )}
                                 </div>
 
-                                {/* Bank Name */}
+                                {/* Bank Name - Enhanced */}
                                 <div>
-                                    <label className="block text-white/70 text-sm mb-2">Bank Name</label>
+                                    <label htmlFor="bank-name" className="block text-white/70 text-sm mb-2 font-medium">
+                                        Bank Name <span className="text-red-400" aria-label="required">*</span>
+                                    </label>
                                     <select
+                                        id="bank-name"
                                         value={bankName}
                                         onChange={(e) => setBankName(e.target.value)}
-                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531]"
+                                        aria-label="Select your bank"
+                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531] focus:ring-2 focus:ring-[#df2531]/50 transition-colors"
                                     >
-                                        <option value="" className="bg-black">Select bank</option>
+                                        <option value="" className="bg-black">Select your bank</option>
                                         <option value="Access Bank" className="bg-black">Access Bank</option>
-                                        <option value="First Bank" className="bg-black">First Bank</option>
-                                        <option value="GTBank" className="bg-black">GTBank</option>
-                                        <option value="UBA" className="bg-black">UBA</option>
+                                        <option value="First Bank" className="bg-black">First Bank of Nigeria</option>
+                                        <option value="GTBank" className="bg-black">Guaranty Trust Bank (GTBank)</option>
+                                        <option value="UBA" className="bg-black">United Bank for Africa (UBA)</option>
                                         <option value="Zenith Bank" className="bg-black">Zenith Bank</option>
                                         <option value="Kuda Bank" className="bg-black">Kuda Bank</option>
                                         <option value="Opay" className="bg-black">Opay</option>
                                         <option value="Palmpay" className="bg-black">Palmpay</option>
-                                        <option value="Other" className="bg-black">Other</option>
+                                        <option value="Other" className="bg-black">Other Bank</option>
                                     </select>
                                 </div>
 
-                                {/* Account Number */}
+                                {/* Account Number - Enhanced */}
                                 <div>
-                                    <label className="block text-white/70 text-sm mb-2">Account Number</label>
+                                    <label htmlFor="account-number" className="block text-white/70 text-sm mb-2 font-medium">
+                                        Account Number <span className="text-red-400" aria-label="required">*</span>
+                                    </label>
                                     <input
+                                        id="account-number"
                                         type="text"
                                         value={accountNumber}
                                         onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                                        placeholder="10-digit account number"
+                                        placeholder="Enter 10-digit account number"
                                         maxLength={10}
-                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531]"
+                                        aria-label="Bank account number"
+                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531] focus:ring-2 focus:ring-[#df2531]/50 transition-colors"
                                     />
+                                    <p className="text-white/40 text-xs mt-1.5">10-digit NUBAN account number</p>
                                 </div>
 
-                                {/* Account Name */}
+                                {/* Account Name - Enhanced */}
                                 <div>
-                                    <label className="block text-white/70 text-sm mb-2">Account Name</label>
+                                    <label htmlFor="account-name" className="block text-white/70 text-sm mb-2 font-medium">
+                                        Account Name <span className="text-red-400" aria-label="required">*</span>
+                                    </label>
                                     <input
+                                        id="account-name"
                                         type="text"
                                         value={accountName}
                                         onChange={(e) => setAccountName(e.target.value)}
-                                        placeholder="Name on account"
-                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531]"
+                                        placeholder="Name as it appears on your bank account"
+                                        aria-label="Account holder name"
+                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#df2531] focus:ring-2 focus:ring-[#df2531]/50 transition-colors"
                                     />
+                                    <p className="text-white/40 text-xs mt-1.5">Must match the name on your bank account</p>
                                 </div>
 
-                                {/* Submit Button */}
+                                {/* Submit Button - Enhanced */}
                                 <Button
                                     onClick={handleWithdrawal}
-                                    disabled={isWithdrawing || !withdrawalAmount || !bankName || !accountNumber || !accountName}
-                                    className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-3 rounded-xl disabled:opacity-50 mt-4"
+                                    disabled={isWithdrawing || !withdrawalAmount || !bankName || !accountNumber || !accountName || parseInt(withdrawalAmount) < 10000}
+                                    aria-label={isWithdrawing ? 'Submitting withdrawal request...' : 'Submit withdrawal request'}
+                                    className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed mt-4 shadow-lg shadow-[#df2531]/30 hover:shadow-[#df2531]/40 transition-all"
                                 >
-                                    {isWithdrawing ? 'Submitting...' : 'Submit Request'}
+                                    {isWithdrawing ? (
+                                        <>
+                                            <SpinnerGap size={20} className="animate-spin mr-2" aria-hidden="true" />
+                                            <span className="sr-only">Submitting withdrawal request...</span>
+                                            Submitting Request...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Bank size={20} weight="duotone" className="mr-2" aria-hidden="true" />
+                                            Submit Withdrawal Request
+                                        </>
+                                    )}
                                 </Button>
+                                <p className="text-white/40 text-xs text-center mt-4 leading-relaxed">
+                                    Your withdrawal request will be reviewed and processed within 24-48 hours. 
+                                    You&apos;ll receive a notification once it&apos;s approved.
+                                </p>
                             </div>
                         </div>
                     </div>
