@@ -92,6 +92,22 @@ export async function POST(request: NextRequest) {
 
             // Provide user-friendly error messages
             if (errorMsg.includes('balance') || errorMsg.includes('insufficient')) {
+                // Create low balance notification
+                try {
+                    await supabase.from('notifications').insert({
+                        user_id: senderId,
+                        type: 'low_balance',
+                        title: 'Insufficient Balance ⚠️',
+                        message: `You don't have enough coins to send this gift. Please top up your wallet.`,
+                        data: {
+                            required_amount: amount,
+                            error: errorMsg,
+                        },
+                    })
+                } catch (notifError) {
+                    console.error('[Gift API] Failed to create low balance notification:', notifError)
+                }
+
                 return errorResponse('Insufficient balance. Please top up your wallet.', 400, 'balance')
             }
             if (errorMsg.includes('wallet')) {
@@ -99,6 +115,49 @@ export async function POST(request: NextRequest) {
             }
 
             return errorResponse(errorMsg, 400)
+        }
+
+        // Create notifications for both sender and recipient
+        try {
+            // Notification for sender
+            await supabase.from('notifications').insert({
+                user_id: senderId,
+                type: 'gift_sent',
+                title: 'Gift Sent! 🎁',
+                message: `You sent ${amount.toLocaleString()} coins to ${recipientName}. Your new balance is ${resultObj.new_balance?.toLocaleString() || 0} coins.`,
+                data: {
+                    gift_id: resultObj.gift_id,
+                    recipient_id: recipientId,
+                    recipient_name: recipientName,
+                    amount: amount,
+                    new_balance: resultObj.new_balance,
+                },
+            })
+
+            // Notification for recipient (if not already created by trigger)
+            // The trigger should handle this, but we'll ensure it exists
+            const { data: recipientProfile } = await supabase
+                .from('profiles')
+                .select('display_name')
+                .eq('id', recipientId)
+                .single()
+
+            // Check for low balance warning for sender
+            if (resultObj.new_balance && resultObj.new_balance < 100) {
+                await supabase.from('notifications').insert({
+                    user_id: senderId,
+                    type: 'low_balance',
+                    title: 'Low Balance Warning ⚠️',
+                    message: `Your balance is low (${resultObj.new_balance.toLocaleString()} coins). Consider topping up to continue enjoying our services.`,
+                    data: {
+                        current_balance: resultObj.new_balance,
+                        threshold: 100,
+                    },
+                })
+            }
+        } catch (notifError) {
+            console.error('[Gift API] Failed to create notifications:', notifError)
+            // Don't fail the gift if notification fails
         }
 
         // Success!

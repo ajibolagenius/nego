@@ -9,6 +9,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Wallet } from '@/types/database'
 
+// Note: We use a separate supabase instance for notifications to avoid circular dependencies
+const getSupabaseForNotifications = () => createClient()
+
 interface UseWalletOptions {
     userId: string
     initialWallet?: Wallet | null
@@ -93,7 +96,26 @@ export function useWallet({ userId, initialWallet, autoRefresh = true }: UseWall
                 },
                 (payload) => {
                     console.log('[useWallet] Real-time wallet UPDATE:', payload.new)
-                    setWallet(payload.new as Wallet)
+                    const updatedWallet = payload.new as Wallet
+                    setWallet(updatedWallet)
+
+                    // Check for low balance and create notification if needed
+                    // Only notify if balance is below 100 coins and wasn't already low
+                    if (updatedWallet.balance < 100 && wallet && wallet.balance >= 100) {
+                        // Balance just dropped below threshold
+                        getSupabaseForNotifications().from('notifications').insert({
+                            user_id: userId,
+                            type: 'low_balance',
+                            title: 'Low Balance Warning ⚠️',
+                            message: `Your balance is low (${updatedWallet.balance.toLocaleString()} coins). Consider topping up to continue enjoying our services.`,
+                            data: {
+                                current_balance: updatedWallet.balance,
+                                threshold: 100,
+                            },
+                        }).catch(err => {
+                            console.error('[useWallet] Failed to create low balance notification:', err)
+                        })
+                    }
                 }
             )
             .on(

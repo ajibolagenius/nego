@@ -58,11 +58,64 @@ export async function POST(request: NextRequest) {
         if (!rpcError && rpcData) {
             if (!rpcData.success) {
                 console.error('[Media Unlock] RPC error:', rpcData.error)
+
+                // Create failure notification if insufficient balance
+                if (rpcData.error?.includes('balance') || rpcData.error?.includes('insufficient')) {
+                    try {
+                        await supabase.from('notifications').insert({
+                            user_id: userId,
+                            type: 'low_balance',
+                            title: 'Insufficient Balance ⚠️',
+                            message: `You don't have enough coins to unlock this content. ${rpcData.error}`,
+                            data: {
+                                media_id: mediaId,
+                                unlock_price: unlockPrice,
+                                error: rpcData.error,
+                            },
+                        })
+                    } catch (notifError) {
+                        console.error('[Media Unlock] Failed to create notification:', notifError)
+                    }
+                }
+
                 return NextResponse.json(
                     { success: false, error: rpcData.error || 'Failed to unlock content' },
                     { status: 400 }
                 )
             }
+
+            // Create success notification
+            try {
+                await supabase.from('notifications').insert({
+                    user_id: userId,
+                    type: 'media_unlocked',
+                    title: 'Content Unlocked! 🔓',
+                    message: `You successfully unlocked premium content. Your new balance is ${rpcData.new_balance?.toLocaleString() || 0} coins.`,
+                    data: {
+                        media_id: mediaId,
+                        unlock_price: unlockPrice,
+                        new_balance: rpcData.new_balance,
+                    },
+                })
+
+                // Check for low balance warning (below 100 coins)
+                if (rpcData.new_balance && rpcData.new_balance < 100) {
+                    await supabase.from('notifications').insert({
+                        user_id: userId,
+                        type: 'low_balance',
+                        title: 'Low Balance Warning ⚠️',
+                        message: `Your balance is low (${rpcData.new_balance.toLocaleString()} coins). Consider topping up to continue enjoying our services.`,
+                        data: {
+                            current_balance: rpcData.new_balance,
+                            threshold: 100,
+                        },
+                    })
+                }
+            } catch (notifError) {
+                console.error('[Media Unlock] Failed to create notifications:', notifError)
+                // Don't fail the unlock if notification fails
+            }
+
             return NextResponse.json({
                 success: true,
                 message: rpcData.message || 'Content unlocked successfully',
@@ -89,6 +142,19 @@ export async function POST(request: NextRequest) {
         }
 
         if (userWallet.balance < unlockPrice) {
+            // Create low balance notification
+            await supabase.from('notifications').insert({
+                user_id: userId,
+                type: 'low_balance',
+                title: 'Insufficient Balance ⚠️',
+                message: `You don't have enough coins to unlock this content. You have ${userWallet.balance.toLocaleString()} coins but need ${unlockPrice.toLocaleString()} coins. Please top up your wallet.`,
+                data: {
+                    current_balance: userWallet.balance,
+                    required_amount: unlockPrice,
+                    shortfall: unlockPrice - userWallet.balance,
+                },
+            })
+
             return NextResponse.json(
                 { success: false, error: `Insufficient balance. You need ${unlockPrice} coins but only have ${userWallet.balance} coins.` },
                 { status: 400 }
@@ -144,16 +210,16 @@ export async function POST(request: NextRequest) {
             )
         }
 
-    // Create media unlock record in user_unlocks table
-    try {
-      await supabase.from('user_unlocks').insert({
-        user_id: userId,
-        media_id: mediaId
-      })
-    } catch (err) {
-      console.warn('[Media Unlock] Failed to create unlock record (may already exist):', err)
-      // Ignore duplicate key errors - content may already be unlocked
-    }
+        // Create media unlock record in user_unlocks table
+        try {
+            await supabase.from('user_unlocks').insert({
+                user_id: userId,
+                media_id: mediaId
+            })
+        } catch (err) {
+            console.warn('[Media Unlock] Failed to create unlock record (may already exist):', err)
+            // Ignore duplicate key errors - content may already be unlocked
+        }
 
         // Create transaction records
         try {
@@ -181,10 +247,39 @@ export async function POST(request: NextRequest) {
             // Ignore transaction record errors
         }
 
+        const newBalance = userWallet.balance - unlockPrice
+
+        // Create success notification for user
+        await supabase.from('notifications').insert({
+            user_id: userId,
+            type: 'media_unlocked',
+            title: 'Content Unlocked! 🔓',
+            message: `You successfully unlocked premium content for ${unlockPrice} coins. Your new balance is ${newBalance.toLocaleString()} coins.`,
+            data: {
+                media_id: mediaId,
+                unlock_price: unlockPrice,
+                new_balance: newBalance,
+            },
+        })
+
+        // Check for low balance warning (below 100 coins)
+        if (newBalance < 100) {
+            await supabase.from('notifications').insert({
+                user_id: userId,
+                type: 'low_balance',
+                title: 'Low Balance Warning ⚠️',
+                message: `Your balance is low (${newBalance.toLocaleString()} coins). Consider topping up to continue enjoying our services.`,
+                data: {
+                    current_balance: newBalance,
+                    threshold: 100,
+                },
+            })
+        }
+
         return NextResponse.json({
             success: true,
             message: 'Content unlocked successfully',
-            newUserBalance: userWallet.balance - unlockPrice
+            newUserBalance: newBalance
         })
 
     } catch (error) {

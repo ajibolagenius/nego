@@ -56,14 +56,17 @@ const transactionConfig: Record<string, { icon: typeof Coin; color: string; bg: 
 function PaymentModal({
     pkg,
     email,
+    userId,
     onClose,
     onSuccess
 }: {
     pkg: CoinPackage
     email: string
+    userId: string
     onClose: () => void
     onSuccess: () => void
 }) {
+    const supabase = createClient()
     const [isProcessing, setIsProcessing] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [paystackLoaded, setPaystackLoaded] = useState(false)
@@ -125,6 +128,23 @@ function PaymentModal({
             const errorMessage = err instanceof Error ? err.message : 'Payment failed'
             setError(errorMessage)
             setIsProcessing(false)
+
+            // Create failure notification
+            try {
+                await supabase.from('notifications').insert({
+                    user_id: user.id,
+                    type: 'purchase_failed',
+                    title: 'Purchase Failed ❌',
+                    message: `Your purchase attempt failed: ${errorMessage}. Please try again or contact support.`,
+                    data: {
+                        package_id: pkg.id,
+                        package_name: pkg.displayName,
+                        error: errorMessage,
+                    },
+                })
+            } catch (notifError) {
+                console.error('[PaymentModal] Failed to create failure notification:', notifError)
+            }
         }
     }
 
@@ -474,6 +494,7 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                     <PaymentModal
                         pkg={selectedPackage}
                         email={user.email || ''}
+                        userId={user.id}
                         onClose={() => setSelectedPackage(null)}
                         onSuccess={handlePaymentSuccess}
                     />
@@ -615,8 +636,8 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                             aria-pressed={activeTab === 'buy'}
                             aria-label="Buy coins tab"
                             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${activeTab === 'buy'
-                                    ? 'bg-[#df2531] text-white'
-                                    : 'text-white/60 hover:text-white'
+                                ? 'bg-[#df2531] text-white'
+                                : 'text-white/60 hover:text-white'
                                 }`}
                         >
                             <Lightning size={18} weight="fill" aria-hidden="true" />
@@ -628,8 +649,8 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                             aria-pressed={activeTab === 'history'}
                             aria-label="Transaction history tab"
                             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${activeTab === 'history'
-                                    ? 'bg-[#df2531] text-white'
-                                    : 'text-white/60 hover:text-white'
+                                ? 'bg-[#df2531] text-white'
+                                : 'text-white/60 hover:text-white'
                                 }`}
                         >
                             <Receipt size={18} aria-hidden="true" />
@@ -655,10 +676,10 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                                         onClick={() => handlePurchaseClick(pkg)}
                                         aria-label={`Buy ${pkg.coins.toLocaleString()} coins for ${formatNaira(pkg.price)}`}
                                         className={`relative p-5 rounded-2xl border transition-all duration-300 text-left group hover:scale-[1.02] ${pkg.bestValue
-                                                ? 'border-green-500/50 bg-green-500/5 hover:border-green-500'
-                                                : pkg.popular
-                                                    ? 'border-[#df2531]/50 bg-[#df2531]/5 hover:border-[#df2531]'
-                                                    : 'border-white/10 bg-white/5 hover:border-white/30'
+                                            ? 'border-green-500/50 bg-green-500/5 hover:border-green-500'
+                                            : pkg.popular
+                                                ? 'border-[#df2531]/50 bg-[#df2531]/5 hover:border-[#df2531]'
+                                                : 'border-white/10 bg-white/5 hover:border-white/30'
                                             }`}
                                     >
                                         {pkg.popular && (
