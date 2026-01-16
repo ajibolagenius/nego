@@ -7,164 +7,161 @@ import { Heart, Lock, Sparkle, Crown, Star, SpinnerGap } from '@phosphor-icons/r
 import { Button } from '@/components/ui/button'
 
 const fallbackImages = [
-  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80",
-  "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80",
-  "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80",
+    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80",
+    "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80",
+    "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80",
 ]
 
 const benefits = [
-  { icon: Crown, label: 'Priority Access' },
-  { icon: Star, label: 'Exclusive Content' },
-  { icon: Sparkle, label: 'VIP Support' },
+    { icon: Crown, label: 'Priority Access' },
+    { icon: Star, label: 'Exclusive Content' },
+    { icon: Sparkle, label: 'VIP Support' },
 ]
 
 interface PrivateContent {
-  id: string
-  image_url: string
-  is_locked: boolean
-  unlock_price: number
+    id: string
+    image_url: string
+    is_locked: boolean
+    unlock_price: number
 }
 
 export function PremiumSection() {
-  const [isVisible, setIsVisible] = useState(false)
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
-  const [privateContent, setPrivateContent] = useState<PrivateContent[]>([])
-  const [loading, setLoading] = useState(true)
-  const sectionRef = useRef<HTMLElement>(null)
+    const [isVisible, setIsVisible] = useState(false)
+    const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+    const [privateContent, setPrivateContent] = useState<PrivateContent[]>([])
+    const [loading, setLoading] = useState(true)
+    const sectionRef = useRef<HTMLElement>(null)
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setIsVisible(true) },
-      { threshold: 0.2 }
-    )
-    if (sectionRef.current) observer.observe(sectionRef.current)
-    return () => observer.disconnect()
-  }, [])
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting) setIsVisible(true) },
+            { threshold: 0.2 }
+        )
+        if (sectionRef.current) observer.observe(sectionRef.current)
+        return () => observer.disconnect()
+    }, [])
 
-  useEffect(() => {
-    // For landing page, use mock data
-    // Real data will be fetched in authenticated views
-    setPrivateContent(fallbackImages.map((img, i) => ({
-      id: `fallback-${i}`,
-      image_url: img,
-      is_locked: true,
-      unlock_price: 50 + i * 25
-    })))
-    setLoading(false)
-  }, [])
+    useEffect(() => {
+        // For landing page, use mock data
+        // Real data will be fetched in authenticated views
+        setPrivateContent(fallbackImages.map((img, i) => ({
+            id: `fallback-${i}`,
+            image_url: img,
+            is_locked: true,
+            unlock_price: 50 + i * 25
+        })))
+        setLoading(false)
+    }, [])
 
-  const lockedImages = privateContent.length > 0 
-    ? privateContent.map(c => c.image_url)
-    : fallbackImages
+    const lockedImages = privateContent.length > 0
+        ? privateContent.map(c => c.image_url)
+        : fallbackImages
 
-  return (
-    <section ref={sectionRef} id="premium" className="relative py-16 md:py-24 lg:py-32 bg-black overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0">
-        <div className={`absolute top-1/4 right-1/4 w-96 h-96 bg-[#df2531]/10 rounded-full blur-[150px] transition-all duration-1000 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
-        <div className={`absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#df2531]/10 to-transparent transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`} />
-      </div>
+    return (
+        <section ref={sectionRef} id="premium" className="relative py-16 md:py-24 lg:py-32 bg-black overflow-hidden">
+            {/* Animated background */}
+            <div className="absolute inset-0">
+                <div className={`absolute top-1/4 right-1/4 w-96 h-96 bg-[#df2531]/10 rounded-full blur-[150px] transition-all duration-1000 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
+                <div className={`absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#df2531]/10 to-transparent transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`} />
+            </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center">
-          
-          {/* Text Content */}
-          <div className={`transition-all duration-700 ${
-            isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'
-          }`}>
-            <p className="text-[#df2531]/80 tracking-[0.3em] uppercase text-xs font-medium mb-4">
-              Get Premium Account
-            </p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-6">
-              UNLOCK ALL<br />PRIVATE CONTENT
-            </h2>
-            <p className="text-white/50 text-base md:text-lg leading-relaxed mb-8 max-w-lg">
-              Get exclusive access to premium profiles, private galleries, and priority booking. 
-              Premium members enjoy verified talent content and dedicated support.
-            </p>
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center">
 
-            {/* Benefits */}
-            <div className="flex flex-wrap gap-3 mb-8">
-              {benefits.map((benefit, index) => (
-                <div 
-                  key={index}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:border-[#df2531]/30 hover:bg-[#df2531]/10 transition-all duration-500 cursor-pointer ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                  }`}
-                  style={{ transitionDelay: `${0.4 + index * 0.1}s` }}
-                >
-                  <benefit.icon size={16} weight="duotone" className="text-[#df2531]" />
-                  <span className="text-white text-sm">{benefit.label}</span>
+                    {/* Text Content */}
+                    <div className={`transition-all duration-700 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'
+                        }`}>
+                        <p className="text-[#df2531]/80 tracking-[0.3em] uppercase text-xs font-medium mb-4">
+                            Get Premium Account
+                        </p>
+                        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-6">
+                            UNLOCK ALL<br />PRIVATE CONTENT
+                        </h2>
+                        <p className="text-white/60 text-base md:text-lg leading-relaxed mb-8 max-w-lg">
+                            Get exclusive access to premium profiles, private galleries, and priority booking.
+                            Premium members enjoy verified talent content, dedicated support, and an elevated experience
+                            tailored to your preferences.
+                        </p>
+
+                        {/* Benefits */}
+                        <div className="flex flex-wrap gap-3 mb-8">
+                            {benefits.map((benefit, index) => (
+                                <div
+                                    key={index}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:border-[#df2531]/30 hover:bg-[#df2531]/10 transition-all duration-500 cursor-pointer ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                                        }`}
+                                    style={{ transitionDelay: `${0.4 + index * 0.1}s` }}
+                                >
+                                    <benefit.icon size={16} weight="duotone" className="text-[#df2531]" />
+                                    <span className="text-white text-sm">{benefit.label}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className={`transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '0.6s' }}>
+                            <Link href="/register" aria-label="Sign up for premium account">
+                                <Button className="group bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold px-10 py-6 rounded-full shadow-lg shadow-[#df2531]/30 hover:shadow-[#df2531]/50 transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black">
+                                    <span className="flex items-center gap-2">
+                                        Get Premium Access
+                                        <Sparkle size={18} weight="fill" className="transition-transform duration-300 group-hover:rotate-12" aria-hidden="true" />
+                                    </span>
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+
+                    {/* 3 Locked Image Cards */}
+                    <div className={`transition-all duration-700 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
+                        }`} style={{ transitionDelay: '0.3s' }}>
+                        {loading ? (
+                            <div className="flex items-center justify-center py-20">
+                                <SpinnerGap size={40} weight="bold" className="text-[#df2531] animate-spin" />
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-3 gap-4">
+                                {lockedImages.map((image, index) => (
+                                    <div
+                                        key={index}
+                                        data-testid={`locked-content-${index}`}
+                                        className={`relative aspect-[3/4] rounded-xl md:rounded-2xl overflow-hidden border-2 border-[#df2531]/30 group cursor-pointer transition-all duration-500 hover:border-[#df2531] ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                                            }`}
+                                        style={{
+                                            transitionDelay: `${0.4 + index * 0.15}s`,
+                                            transform: index === 1 ? 'translateY(-20px)' : 'translateY(0)'
+                                        }}
+                                        onMouseEnter={() => setHoveredCard(index)}
+                                        onMouseLeave={() => setHoveredCard(null)}
+                                    >
+                                        <Image
+                                            src={image}
+                                            alt={`Premium locked content ${index + 1} - Unlock to view exclusive content`}
+                                            fill
+                                            sizes="(max-width: 768px) 33vw, 25vw"
+                                            className="object-cover blur-md transition-all duration-500 group-hover:blur-sm group-hover:scale-105"
+                                        />
+                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center transition-all duration-500 group-hover:bg-[#df2531]/20">
+                                            <div className={`relative transition-all duration-500 ${hoveredCard === index ? 'scale-110' : 'scale-100'}`}>
+                                                <Heart size={32} weight="duotone" className="text-white" />
+                                                <Lock size={14} weight="fill" className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                                            </div>
+                                        </div>
+
+                                        {/* Hover label with price */}
+                                        <div className={`absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent transition-all duration-500 ${hoveredCard === index ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                                            }`}>
+                                            <p className="text-white text-xs font-medium text-center">
+                                                {privateContent[index]?.unlock_price
+                                                    ? `${privateContent[index].unlock_price} coins to unlock`
+                                                    : 'Unlock to View'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
-              ))}
             </div>
-
-            <div className={`transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`} style={{ transitionDelay: '0.6s' }}>
-              <Link href="/register">
-                <Button className="group bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold px-10 py-6 rounded-full shadow-lg shadow-[#df2531]/30 hover:shadow-[#df2531]/50 transition-all duration-300 hover:scale-105 active:scale-95">
-                  <span className="flex items-center gap-2">
-                    Get Now
-                    <Sparkle size={18} weight="fill" className="transition-transform duration-300 group-hover:rotate-12" />
-                  </span>
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          {/* 3 Locked Image Cards */}
-          <div className={`transition-all duration-700 ${
-            isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
-          }`} style={{ transitionDelay: '0.3s' }}>
-            {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <SpinnerGap size={40} weight="bold" className="text-[#df2531] animate-spin" />
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-4">
-                {lockedImages.map((image, index) => (
-                  <div 
-                    key={index}
-                    data-testid={`locked-content-${index}`}
-                    className={`relative aspect-[3/4] rounded-xl md:rounded-2xl overflow-hidden border-2 border-[#df2531]/30 group cursor-pointer transition-all duration-500 hover:border-[#df2531] ${
-                      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                    }`}
-                    style={{ 
-                      transitionDelay: `${0.4 + index * 0.15}s`,
-                      transform: index === 1 ? 'translateY(-20px)' : 'translateY(0)'
-                    }}
-                    onMouseEnter={() => setHoveredCard(index)}
-                    onMouseLeave={() => setHoveredCard(null)}
-                  >
-                    <Image
-                      src={image}
-                      alt={`Locked content ${index + 1}`}
-                      fill
-                      className="object-cover blur-md transition-all duration-500 group-hover:blur-sm group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center transition-all duration-500 group-hover:bg-[#df2531]/20">
-                      <div className={`relative transition-all duration-500 ${hoveredCard === index ? 'scale-110' : 'scale-100'}`}>
-                        <Heart size={32} weight="duotone" className="text-white" />
-                        <Lock size={14} weight="fill" className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                      </div>
-                    </div>
-                    
-                    {/* Hover label with price */}
-                    <div className={`absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent transition-all duration-500 ${
-                      hoveredCard === index ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                    }`}>
-                      <p className="text-white text-xs font-medium text-center">
-                        {privateContent[index]?.unlock_price 
-                          ? `${privateContent[index].unlock_price} coins to unlock`
-                          : 'Unlock to View'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </section>
-  )
+        </section>
+    )
 }
