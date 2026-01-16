@@ -108,8 +108,8 @@ function GallerySection({ media, userId, userBalance, onUnlock }: GallerySection
                         onClick={() => setActiveTab('free')}
                         data-testid="gallery-tab-free"
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${activeTab === 'free'
-                                ? 'bg-green-500 text-white'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10'
                             }`}
                     >
                         <Eye size={14} />
@@ -119,8 +119,8 @@ function GallerySection({ media, userId, userBalance, onUnlock }: GallerySection
                         onClick={() => setActiveTab('premium')}
                         data-testid="gallery-tab-premium"
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${activeTab === 'premium'
-                                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10'
+                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10'
                             }`}
                     >
                         <Crown size={14} weight="fill" />
@@ -288,9 +288,14 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
     const [bookingNotes, setBookingNotes] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const [showErrorBanner, setShowErrorBanner] = useState(false)
     const [showShareMenu, setShowShareMenu] = useState(false)
     const [copied, setCopied] = useState(false)
     const [startingChat, setStartingChat] = useState(false)
+
+    // Date/time validation states
+    const [dateError, setDateError] = useState('')
+    const [timeError, setTimeError] = useState('')
 
     const isLiked = favoritesLoaded && isFavorite(talent.id)
     const activeServices = talent.talent_menus?.filter(m => m.is_active) || []
@@ -310,23 +315,87 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
         }).format(price)} coins`
     }
 
+    // Validate booking date (must be future date)
+    const validateBookingDate = (date: string): string | null => {
+        if (!date) return null
+
+        const selectedDate = new Date(date)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        selectedDate.setHours(0, 0, 0, 0)
+
+        if (selectedDate < today) {
+            return 'Please select a future date'
+        }
+        return null
+    }
+
+    // Validate booking time (must be at least 1 hour ahead)
+    const validateBookingTime = (date: string, time: string): string | null => {
+        if (!date || !time) return null
+
+        const now = new Date()
+        const selectedDateTime = new Date(`${date}T${time}`)
+        const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000)
+
+        if (selectedDateTime <= oneHourFromNow) {
+            return 'Please select a time at least 1 hour from now'
+        }
+        return null
+    }
+
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        setBookingDate(value)
+        const error = validateBookingDate(value)
+        setDateError(error || '')
+
+        // Also validate time if both are set
+        if (value && bookingTime) {
+            const timeErr = validateBookingTime(value, bookingTime)
+            setTimeError(timeErr || '')
+        }
+    }
+
+    const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        setBookingTime(value)
+
+        // Validate time if date is also set
+        if (bookingDate) {
+            const error = validateBookingTime(bookingDate, value)
+            setTimeError(error || '')
+        } else {
+            setTimeError('')
+        }
+    }
+
     // Start or open conversation with talent
     const handleStartChat = async () => {
         if (currentUser?.role === 'talent') {
-            alert('Talents cannot message other talents.')
+            setError('Talents cannot message other talents.')
+            setShowErrorBanner(true)
             return
         }
 
         setStartingChat(true)
+        setError('')
+        setShowErrorBanner(false)
         const supabase = createClient()
 
         try {
             // Check if conversation already exists
-            const { data: existingConv } = await supabase
+            const { data: existingConv, error: checkError } = await supabase
                 .from('conversations')
                 .select('id')
                 .or(`and(participant_1.eq.${userId},participant_2.eq.${talent.id}),and(participant_1.eq.${talent.id},participant_2.eq.${userId})`)
                 .single()
+
+            if (checkError && checkError.code !== 'PGRST116') {
+                // PGRST116 is "not found" which is expected if no conversation exists
+                console.error('[TalentProfile] Error checking conversation:', checkError)
+                throw new Error('Failed to check for existing conversation. Please try again.')
+            }
 
             if (existingConv) {
                 // Navigate to existing conversation
@@ -346,16 +415,17 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                 .single()
 
             if (convError) {
-                console.error('Failed to create conversation:', convError)
-                alert('Failed to start conversation. Please try again.')
-                return
+                console.error('[TalentProfile] Failed to create conversation:', convError)
+                throw new Error('Failed to start conversation. Please try again.')
             }
 
             // Navigate to new conversation
             router.push(`/dashboard/messages?conversation=${newConv.id}`)
         } catch (err) {
-            console.error('Chat error:', err)
-            alert('Failed to start conversation')
+            console.error('[TalentProfile] Chat error:', err)
+            const errorMessage = err instanceof Error ? err.message : 'Failed to start chat. Please try again.'
+            setError(errorMessage)
+            setShowErrorBanner(true)
         } finally {
             setStartingChat(false)
         }
@@ -399,7 +469,11 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
     }
 
     const handleUnlockMedia = async (mediaId: string, unlockPrice: number): Promise<boolean> => {
-        if (currentBalance < unlockPrice) return false
+        if (currentBalance < unlockPrice) {
+            setError(`Insufficient balance. You need ${unlockPrice} coins to unlock this content.`)
+            setShowErrorBanner(true)
+            return false
+        }
 
         try {
             // Use server-side API to handle unlock transaction (bypasses RLS)
@@ -416,15 +490,19 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
 
             const data = await response.json()
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to unlock content')
+            if (!response.ok || !data.success) {
+                const errorMessage = data.error || 'Failed to unlock content. Please try again.'
+                throw new Error(errorMessage)
             }
 
             // Update local balance
             setCurrentBalance(data.newUserBalance)
             return true
         } catch (err) {
-            console.error('Unlock error:', err)
+            console.error('[TalentProfile] Unlock error:', err)
+            const errorMessage = err instanceof Error ? err.message : 'Failed to unlock content. Please try again.'
+            setError(errorMessage)
+            setShowErrorBanner(true)
             return false
         }
     }
@@ -440,22 +518,36 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
     const handleBooking = async () => {
         if (selectedServices.length === 0) {
             setError('Please select at least one service')
+            setShowErrorBanner(true)
             return
         }
 
         if (!bookingDate || !bookingTime) {
             setError('Please select date and time')
+            setShowErrorBanner(true)
+            return
+        }
+
+        // Validate date and time
+        const dateErr = validateBookingDate(bookingDate)
+        const timeErr = validateBookingTime(bookingDate, bookingTime)
+
+        if (dateErr || timeErr) {
+            setError(dateErr || timeErr || 'Please fix the date/time errors')
+            setShowErrorBanner(true)
             return
         }
 
         // Check balance before proceeding
         if (hasInsufficientBalance) {
             setError('Insufficient balance. Please top up your wallet.')
+            setShowErrorBanner(true)
             return
         }
 
         setLoading(true)
         setError('')
+        setShowErrorBanner(false)
 
         try {
             const supabase = createClient()
@@ -526,6 +618,8 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to create booking'
             setError(errorMessage)
+            setShowErrorBanner(true)
+            console.error('[TalentProfile] Booking error:', err)
         } finally {
             setLoading(false)
         }
@@ -533,15 +627,38 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
 
     return (
         <div className="min-h-screen bg-black pt-16">
+            {/* Error Banner */}
+            {showErrorBanner && error && (
+                <div className="fixed top-16 left-0 right-0 z-50 bg-red-500/10 border-b border-red-500/20 px-4 py-3 animate-fade-in-up">
+                    <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-1">
+                            <Warning size={20} weight="duotone" className="text-red-400 shrink-0" aria-hidden="true" />
+                            <p className="text-red-400 text-sm" role="alert">{error}</p>
+                        </div>
+                        <button
+                            onClick={() => {
+                                setShowErrorBanner(false)
+                                setError('')
+                            }}
+                            className="text-red-400 hover:text-red-300 transition-colors"
+                            aria-label="Dismiss error"
+                        >
+                            <X size={20} aria-hidden="true" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
-            <header className="sticky top-16 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
+            <header className={`sticky ${showErrorBanner ? 'top-28' : 'top-16'} z-40 bg-black/80 backdrop-blur-xl border-b border-white/10 transition-all duration-300`}>
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
                         <button
                             onClick={() => router.back()}
                             className="text-white/60 hover:text-white transition-colors"
+                            aria-label="Go back"
                         >
-                            <ArrowLeft size={24} />
+                            <ArrowLeft size={24} weight="duotone" aria-hidden="true" />
                         </button>
                         <div className="flex items-center gap-3">
                             {/* Gift Coins Button - Only show for logged in clients */}
@@ -632,7 +749,7 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
 
             <div className="max-w-4xl mx-auto px-4 py-6">
                 {/* Profile Header */}
-                <div className="flex flex-col md:flex-row gap-6 mb-8">
+                <div className="flex flex-col md:flex-row gap-6 mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                     {/* Avatar */}
                     <div className="relative w-full md:w-72 aspect-[3/4] rounded-2xl overflow-hidden flex-shrink-0">
                         <Image
@@ -644,10 +761,10 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                         {/* Status */}
                         <div className="absolute top-4 left-4">
                             <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm ${talent.status === 'online'
-                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                    : talent.status === 'booked'
-                                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                        : 'bg-white/10 text-white/60 border border-white/10'
+                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                : talent.status === 'booked'
+                                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                    : 'bg-white/10 text-white/60 border border-white/10'
                                 }`}>
                                 <Circle size={8} weight="fill" />
                                 {talent.status === 'online' ? 'Online Now' : talent.status === 'booked' ? 'Currently Booked' : 'Offline'}
@@ -664,16 +781,16 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                                         {talent.display_name || 'Anonymous'}
                                     </h1>
                                     {talent.is_verified && (
-                                        <ShieldCheck size={24} weight="fill" className="text-[#df2531]" />
+                                        <ShieldCheck size={24} weight="duotone" className="text-[#df2531]" aria-label="Verified talent" />
                                     )}
                                 </div>
                                 <div className="flex items-center gap-4 text-white/60">
                                     <span className="flex items-center gap-1.5">
-                                        <MapPin size={16} weight="fill" />
+                                        <MapPin size={16} weight="duotone" aria-hidden="true" />
                                         {talent.location || 'Lagos'}
                                     </span>
                                     <span className="flex items-center gap-1.5">
-                                        <Star size={16} weight="fill" className="text-amber-400" />
+                                        <Star size={16} weight="duotone" className="text-amber-400" aria-hidden="true" />
                                         {(talent.average_rating || 0).toFixed(1)} ({talent.review_count || 0} reviews)
                                     </span>
                                 </div>
@@ -711,7 +828,9 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
 
                     {activeServices.length === 0 ? (
                         <div className="bg-white/5 rounded-xl p-8 text-center border border-white/10">
+                            <Calendar size={32} weight="duotone" className="text-white/20 mx-auto mb-2" aria-hidden="true" />
                             <p className="text-white/50">No services available</p>
+                            <p className="text-white/30 text-sm mt-1">This talent hasn&apos;t added any services yet</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -724,14 +843,16 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                                         key={service.id}
                                         onClick={() => toggleService(service.id)}
                                         className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${isSelected
-                                                ? 'bg-[#df2531]/10 border-[#df2531]/50'
-                                                : 'bg-white/5 border-white/10 hover:border-white/20'
+                                            ? 'bg-[#df2531]/10 border-[#df2531]/50'
+                                            : 'bg-white/5 border-white/10 hover:border-white/20'
                                             }`}
+                                        aria-label={`${isSelected ? 'Deselect' : 'Select'} ${service.service_type?.name} service`}
+                                        aria-pressed={isSelected}
                                     >
                                         <div className="flex items-center gap-4">
                                             <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isSelected ? 'bg-[#df2531]' : 'bg-white/10'
                                                 }`}>
-                                                <IconComponent size={20} className="text-white" />
+                                                <IconComponent size={20} weight="duotone" className="text-white" aria-hidden="true" />
                                             </div>
                                             <div className="text-left">
                                                 <p className="text-white font-medium">{service.service_type?.name}</p>
@@ -741,7 +862,7 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                                         <div className="flex items-center gap-4">
                                             <span className="text-white font-bold">{formatPrice(service.price)}</span>
                                             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-[#df2531] border-[#df2531]' : 'border-white/30'
-                                                }`}>
+                                                }`} aria-hidden="true">
                                                 {isSelected && <Check size={14} weight="bold" className="text-white" />}
                                             </div>
                                         </div>
@@ -850,8 +971,8 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                                     onClick={() => setShowBookingModal(true)}
                                     disabled={hasInsufficientBalance}
                                     className={`font-bold px-8 py-3 rounded-xl ${hasInsufficientBalance
-                                            ? 'bg-white/10 text-white/50 cursor-not-allowed'
-                                            : 'bg-[#df2531] hover:bg-[#c41f2a] text-white'
+                                        ? 'bg-white/10 text-white/50 cursor-not-allowed'
+                                        : 'bg-[#df2531] hover:bg-[#c41f2a] text-white'
                                         }`}
                                 >
                                     {hasInsufficientBalance ? 'Insufficient Balance' : 'Book Now'}
@@ -864,24 +985,40 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
 
             {/* Booking Modal */}
             {showBookingModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-[#0a0a0f] rounded-2xl w-full max-w-lg border border-white/10 overflow-hidden">
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                    onClick={() => setShowBookingModal(false)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="booking-modal-title"
+                >
+                    <div
+                        className="bg-[#0a0a0f] rounded-2xl w-full max-w-lg border border-white/10 overflow-hidden animate-fade-in-up"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-6 border-b border-white/10">
-                            <h2 className="text-xl font-bold text-white">Confirm Booking</h2>
+                            <h2 id="booking-modal-title" className="text-xl font-bold text-white">Confirm Booking</h2>
                             <button
-                                onClick={() => setShowBookingModal(false)}
-                                className="text-white/60 hover:text-white"
+                                onClick={() => {
+                                    setShowBookingModal(false)
+                                    setError('')
+                                    setDateError('')
+                                    setTimeError('')
+                                }}
+                                className="text-white/60 hover:text-white transition-colors"
+                                aria-label="Close booking modal"
                             >
-                                <X size={24} />
+                                <X size={24} aria-hidden="true" />
                             </button>
                         </div>
 
                         {/* Modal Body */}
                         <div className="p-6 space-y-6">
-                            {error && (
-                                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                                    {error}
+                            {error && !showErrorBanner && (
+                                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-3" role="alert">
+                                    <Warning size={20} weight="duotone" className="shrink-0 mt-0.5" aria-hidden="true" />
+                                    <span>{error}</span>
                                 </div>
                             )}
 
@@ -906,29 +1043,62 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                             {/* Date & Time */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-white/70 text-sm mb-2">Date</label>
+                                    <label htmlFor="booking-date" className="block text-white/70 text-sm mb-2">
+                                        Date <span className="text-red-400">*</span>
+                                    </label>
                                     <div className="relative">
-                                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
+                                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} weight="duotone" aria-hidden="true" />
                                         <input
+                                            id="booking-date"
                                             type="date"
                                             value={bookingDate}
-                                            onChange={(e) => setBookingDate(e.target.value)}
+                                            onChange={handleDateChange}
                                             min={new Date().toISOString().split('T')[0]}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-[#df2531]/50"
+                                            aria-label="Booking date"
+                                            aria-invalid={dateError ? 'true' : 'false'}
+                                            aria-describedby={dateError ? 'date-error' : undefined}
+                                            className={`w-full bg-white/5 border rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none transition-colors ${dateError
+                                                    ? 'border-red-500/50 focus:border-red-500'
+                                                    : 'border-white/10 focus:border-[#df2531]/50'
+                                                }`}
                                         />
                                     </div>
+                                    {dateError && (
+                                        <p id="date-error" className="text-red-400 text-xs mt-1" role="alert">
+                                            {dateError}
+                                        </p>
+                                    )}
                                 </div>
                                 <div>
-                                    <label className="block text-white/70 text-sm mb-2">Time</label>
+                                    <label htmlFor="booking-time" className="block text-white/70 text-sm mb-2">
+                                        Time <span className="text-red-400">*</span>
+                                    </label>
                                     <div className="relative">
-                                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
+                                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} weight="duotone" aria-hidden="true" />
                                         <input
+                                            id="booking-time"
                                             type="time"
                                             value={bookingTime}
-                                            onChange={(e) => setBookingTime(e.target.value)}
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-[#df2531]/50"
+                                            onChange={handleTimeChange}
+                                            aria-label="Booking time"
+                                            aria-invalid={timeError ? 'true' : 'false'}
+                                            aria-describedby={timeError ? 'time-error' : undefined}
+                                            className={`w-full bg-white/5 border rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none transition-colors ${timeError
+                                                    ? 'border-red-500/50 focus:border-red-500'
+                                                    : 'border-white/10 focus:border-[#df2531]/50'
+                                                }`}
                                         />
                                     </div>
+                                    {timeError && (
+                                        <p id="time-error" className="text-red-400 text-xs mt-1" role="alert">
+                                            {timeError}
+                                        </p>
+                                    )}
+                                    {!timeError && bookingDate && bookingTime && (
+                                        <p className="text-green-400 text-xs mt-1">
+                                            ✓ Time slot available
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
@@ -946,8 +1116,8 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
 
                             {/* Wallet Balance */}
                             <div className={`p-4 rounded-xl border ${hasInsufficientBalance
-                                    ? 'bg-amber-500/10 border-amber-500/20'
-                                    : 'bg-[#df2531]/10 border-[#df2531]/20'
+                                ? 'bg-amber-500/10 border-amber-500/20'
+                                : 'bg-[#df2531]/10 border-[#df2531]/20'
                                 }`}>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -979,16 +1149,23 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                         <div className="p-6 border-t border-white/10">
                             <Button
                                 onClick={handleBooking}
-                                disabled={loading || hasInsufficientBalance}
-                                className={`w-full font-bold py-4 rounded-xl disabled:opacity-50 ${hasInsufficientBalance
-                                        ? 'bg-white/10 text-white/50 cursor-not-allowed'
-                                        : 'bg-[#df2531] hover:bg-[#c41f2a] text-white'
+                                disabled={loading || hasInsufficientBalance || !!dateError || !!timeError}
+                                className={`w-full font-bold py-4 rounded-xl disabled:opacity-50 ${hasInsufficientBalance || dateError || timeError
+                                    ? 'bg-white/10 text-white/50 cursor-not-allowed'
+                                    : 'bg-[#df2531] hover:bg-[#c41f2a] text-white'
                                     }`}
+                                aria-label="Confirm booking and pay"
                             >
                                 {loading ? (
-                                    <SpinnerGap size={20} className="animate-spin" />
+                                    <>
+                                        <SpinnerGap size={20} className="animate-spin mr-2" aria-hidden="true" />
+                                        <span className="sr-only">Processing booking...</span>
+                                        Processing...
+                                    </>
                                 ) : hasInsufficientBalance ? (
                                     'Insufficient Balance'
+                                ) : dateError || timeError ? (
+                                    'Fix Date/Time Errors'
                                 ) : (
                                     `Confirm & Pay ${totalPrice} coins`
                                 )}

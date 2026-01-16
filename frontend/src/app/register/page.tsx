@@ -1,298 +1,543 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeSlash, Envelope, Lock, User, SpinnerGap, GoogleLogo, UserCircle, Briefcase } from '@phosphor-icons/react'
+import { Eye, EyeSlash, Envelope, Lock, User, SpinnerGap, GoogleLogo, UserCircle, Briefcase, Check, X } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 
 type UserRole = 'client' | 'talent'
 
+// Email validation regex
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Password requirements
+interface PasswordRequirements {
+    minLength: boolean
+    hasUppercase: boolean
+    hasLowercase: boolean
+    hasNumber: boolean
+}
+
+const checkPasswordStrength = (password: string): PasswordRequirements => {
+    return {
+        minLength: password.length >= 8,
+        hasUppercase: /[A-Z]/.test(password),
+        hasLowercase: /[a-z]/.test(password),
+        hasNumber: /[0-9]/.test(password),
+    }
+}
+
+const isPasswordStrong = (requirements: PasswordRequirements): boolean => {
+    return Object.values(requirements).every(req => req === true)
+}
+
 export default function RegisterPage() {
-  const router = useRouter()
-  
-  const [step, setStep] = useState(1)
-  const [role, setRole] = useState<UserRole>('client')
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+    const router = useRouter()
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+    const [step, setStep] = useState(1)
+    const [role, setRole] = useState<UserRole>('client')
+    const [name, setName] = useState('')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
 
-    try {
-      const supabase = createClient()
-      
-      // Sign up with role in metadata - DB trigger will handle profile creation
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: name,
-            role: role,
-          },
-        },
-      })
-
-      if (error) throw error
-
-      // Redirect based on session status
-      if (data.user && data.session) {
-        // User is logged in, redirect to dashboard (role-based routing happens there)
-        if (role === 'talent') {
-          window.location.href = '/dashboard/talent'
-        } else {
-          window.location.href = '/dashboard'
-        }
-      } else if (data.user && !data.session) {
-        // Email confirmation might be required
-        setError('Account created! Please check your email to confirm, then sign in.')
-        router.push('/login')
-      }
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleGoogleSignup = async () => {
-    // Store the selected role in localStorage to retrieve after OAuth callback
-    localStorage.setItem('pending_oauth_role', role)
-    
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+    // Validation states
+    const [nameError, setNameError] = useState('')
+    const [nameValid, setNameValid] = useState(false)
+    const [emailError, setEmailError] = useState('')
+    const [emailValid, setEmailValid] = useState(false)
+    const [passwordRequirements, setPasswordRequirements] = useState<PasswordRequirements>({
+        minLength: false,
+        hasUppercase: false,
+        hasLowercase: false,
+        hasNumber: false,
     })
-    
-    if (error) {
-      setError(error.message)
+
+    // Validate name
+    const validateName = useCallback((value: string) => {
+        const trimmed = value.trim()
+        if (!trimmed) {
+            setNameError('')
+            setNameValid(false)
+            return false
+        }
+        if (trimmed.length < 2) {
+            setNameError('Name must be at least 2 characters')
+            setNameValid(false)
+            return false
+        }
+        if (trimmed.length > 100) {
+            setNameError('Name must be 100 characters or less')
+            setNameValid(false)
+            return false
+        }
+        setNameError('')
+        setNameValid(true)
+        return true
+    }, [])
+
+    // Validate email
+    const validateEmail = useCallback((value: string) => {
+        const normalized = value.trim().toLowerCase()
+        if (!normalized) {
+            setEmailError('')
+            setEmailValid(false)
+            return false
+        }
+        if (!emailRegex.test(normalized)) {
+            setEmailError('Please enter a valid email address')
+            setEmailValid(false)
+            return false
+        }
+        setEmailError('')
+        setEmailValid(true)
+        return true
+    }, [])
+
+    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        setName(value)
+        validateName(value)
     }
-  }
 
-  return (
-    <main className="min-h-screen bg-black flex items-center justify-center p-4 pt-20">
-      {/* Background effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-[#df2531]/10 rounded-full blur-[150px]" />
-        <div className="absolute bottom-1/4 left-1/4 w-72 h-72 bg-[#df2531]/5 rounded-full blur-[120px]" />
-      </div>
+    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        setEmail(value)
+        validateEmail(value)
+    }
 
-      <div className="relative w-full max-w-md">
-        {/* Logo */}
-        <Link href="/" className="flex justify-center mb-8">
-          <span className="text-3xl logo-font">
-            <span className="text-white">NEGO</span>
-            <span className="text-[#df2531]">.</span>
-          </span>
-        </Link>
+    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        setPassword(value)
+        setPasswordRequirements(checkPasswordStrength(value))
+    }
 
-        {/* Card */}
-        <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10">
-          {step === 1 ? (
-            <>
-              {/* Step 1: Choose Role */}
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-white mb-2">Join Nego</h1>
-                <p className="text-white/50 text-sm">Choose how you want to use Nego</p>
-              </div>
+    const handleRegister = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
+        setError('')
 
-              <div className="space-y-4 mb-8">
-                {/* Client option */}
-                <button
-                  onClick={() => setRole('client')}
-                  className={`w-full p-5 rounded-xl border-2 transition-all duration-300 text-left ${
-                    role === 'client'
-                      ? 'border-[#df2531] bg-[#df2531]/10'
-                      : 'border-white/10 bg-white/5 hover:border-white/20'
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      role === 'client' ? 'bg-[#df2531]' : 'bg-white/10'
-                    }`}>
-                      <UserCircle size={24} weight="duotone" className="text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-semibold mb-1">I&apos;m a Client</h3>
-                      <p className="text-white/50 text-sm">Browse and book elite talent for events and companionship</p>
-                    </div>
-                  </div>
-                </button>
+        // Validate all fields
+        const nameValidated = validateName(name)
+        const emailValidated = validateEmail(email)
+        const passwordStrong = isPasswordStrong(passwordRequirements)
 
-                {/* Talent option */}
-                <button
-                  onClick={() => setRole('talent')}
-                  className={`w-full p-5 rounded-xl border-2 transition-all duration-300 text-left ${
-                    role === 'talent'
-                      ? 'border-[#df2531] bg-[#df2531]/10'
-                      : 'border-white/10 bg-white/5 hover:border-white/20'
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      role === 'talent' ? 'bg-[#df2531]' : 'bg-white/10'
-                    }`}>
-                      <Briefcase size={24} weight="duotone" className="text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-white font-semibold mb-1">I&apos;m a Talent</h3>
-                      <p className="text-white/50 text-sm">Create your profile and connect with discerning clients</p>
-                    </div>
-                  </div>
-                </button>
-              </div>
+        if (!nameValidated || !emailValidated || !passwordStrong) {
+            setError('Please fix the errors in the form before submitting')
+            setLoading(false)
+            return
+        }
 
-              <Button
-                onClick={() => setStep(2)}
-                className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-3 rounded-xl"
-              >
-                Continue
-              </Button>
-            </>
-          ) : (
-            <>
-              {/* Step 2: Registration Form */}
-              <div className="text-center mb-8">
-                <button
-                  onClick={() => setStep(1)}
-                  className="text-white/50 text-sm hover:text-white mb-4 flex items-center justify-center gap-1 mx-auto"
-                >
-                  ← Back
-                </button>
-                <h1 className="text-2xl font-bold text-white mb-2">Create Account</h1>
-                <p className="text-white/50 text-sm">
-                  Signing up as a {role === 'client' ? 'Client' : 'Talent'}
-                </p>
-              </div>
+        try {
+            const supabase = createClient()
 
-              {/* Error message */}
-              {error && (
-                <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                  {error}
+            // Sign up with role in metadata - DB trigger will handle profile creation
+            const { data, error } = await supabase.auth.signUp({
+                email: email.trim().toLowerCase(),
+                password,
+                options: {
+                    data: {
+                        full_name: name.trim(),
+                        role: role,
+                    },
+                },
+            })
+
+            if (error) {
+                // Better error handling
+                if (error.message.includes('already registered') || error.message.includes('already exists')) {
+                    throw new Error('An account with this email already exists. Please sign in instead.')
+                }
+                throw error
+            }
+
+            // Redirect based on session status
+            if (data.user && data.session) {
+                // User is logged in, redirect to dashboard (role-based routing happens there)
+                if (role === 'talent') {
+                    router.push('/dashboard/talent')
+                    router.refresh()
+                } else {
+                    router.push('/dashboard')
+                    router.refresh()
+                }
+            } else if (data.user && !data.session) {
+                // Email confirmation might be required
+                setError('Account created! Please check your email to confirm, then sign in.')
+                setTimeout(() => {
+                    router.push('/login')
+                }, 2000)
+            }
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'An error occurred while creating your account. Please try again.'
+            setError(errorMessage)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleGoogleSignup = async () => {
+        // Store the selected role in localStorage to retrieve after OAuth callback
+        localStorage.setItem('pending_oauth_role', role)
+
+        const supabase = createClient()
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: `${window.location.origin}/auth/callback`,
+            },
+        })
+
+        if (error) {
+            setError(error.message)
+        }
+    }
+
+    const passwordStrong = isPasswordStrong(passwordRequirements)
+
+    return (
+        <main className="min-h-screen bg-black flex items-center justify-center p-4 pt-20">
+            {/* Background effects */}
+            <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-[#df2531]/10 rounded-full blur-[150px]" />
+                <div className="absolute bottom-1/4 left-1/4 w-72 h-72 bg-[#df2531]/5 rounded-full blur-[120px]" />
+            </div>
+
+            <div className="relative w-full max-w-md">
+                {/* Logo */}
+                <Link href="/" className="flex justify-center mb-8 animate-fade-in-up" aria-label="Nego home">
+                    <span className="text-3xl logo-font">
+                        <span className="text-white">NEGO</span>
+                        <span className="text-[#df2531]">.</span>
+                    </span>
+                </Link>
+
+                {/* Card */}
+                <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10">
+                    {step === 1 ? (
+                        <div className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+                            {/* Step 1: Choose Role */}
+                            <div className="text-center mb-8">
+                                <h1 className="text-2xl font-bold text-white mb-2">Join Nego</h1>
+                                <p className="text-white/50 text-sm">Choose how you want to use Nego</p>
+                            </div>
+
+                            <div className="space-y-4 mb-8">
+                                {/* Client option */}
+                                <button
+                                    onClick={() => setRole('client')}
+                                    className={`w-full p-5 rounded-xl border-2 transition-all duration-300 text-left ${role === 'client'
+                                            ? 'border-[#df2531] bg-[#df2531]/10'
+                                            : 'border-white/10 bg-white/5 hover:border-white/20'
+                                        }`}
+                                    aria-label="Select client role"
+                                    aria-pressed={role === 'client'}
+                                >
+                                    <div className="flex items-start gap-4">
+                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${role === 'client' ? 'bg-[#df2531]' : 'bg-white/10'
+                                            }`}>
+                                            <UserCircle size={24} weight="duotone" className="text-white" aria-hidden="true" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-white font-semibold mb-1">I&apos;m a Client</h3>
+                                            <p className="text-white/50 text-sm">Browse and book elite talent for events and companionship</p>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                {/* Talent option */}
+                                <button
+                                    onClick={() => setRole('talent')}
+                                    className={`w-full p-5 rounded-xl border-2 transition-all duration-300 text-left ${role === 'talent'
+                                            ? 'border-[#df2531] bg-[#df2531]/10'
+                                            : 'border-white/10 bg-white/5 hover:border-white/20'
+                                        }`}
+                                    aria-label="Select talent role"
+                                    aria-pressed={role === 'talent'}
+                                >
+                                    <div className="flex items-start gap-4">
+                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${role === 'talent' ? 'bg-[#df2531]' : 'bg-white/10'
+                                            }`}>
+                                            <Briefcase size={24} weight="duotone" className="text-white" aria-hidden="true" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-white font-semibold mb-1">I&apos;m a Talent</h3>
+                                            <p className="text-white/50 text-sm">Create your profile and connect with discerning clients</p>
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
+
+                            <Button
+                                onClick={() => setStep(2)}
+                                className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-3 rounded-xl"
+                                aria-label="Continue to registration form"
+                            >
+                                Continue
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                            {/* Step 2: Registration Form */}
+                            <div className="text-center mb-8">
+                                <button
+                                    onClick={() => setStep(1)}
+                                    className="text-white/50 text-sm hover:text-white mb-4 flex items-center justify-center gap-1 mx-auto transition-colors"
+                                    aria-label="Go back to role selection"
+                                >
+                                    ← Back
+                                </button>
+                                <h1 className="text-2xl font-bold text-white mb-2">Create Account</h1>
+                                <p className="text-white/50 text-sm">
+                                    Signing up as a {role === 'client' ? 'Client' : 'Talent'}
+                                </p>
+                            </div>
+
+                            {/* Error message */}
+                            {error && (
+                                <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-3" role="alert">
+                                    <X size={20} className="shrink-0 mt-0.5" aria-hidden="true" />
+                                    <span>{error}</span>
+                                </div>
+                            )}
+
+                            {/* Form */}
+                            <form onSubmit={handleRegister} noValidate className="space-y-5">
+                                {/* Name */}
+                                <div>
+                                    <label htmlFor="register-name" className="block text-white/70 text-sm mb-2">
+                                        Full Name
+                                    </label>
+                                    <div className="relative">
+                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} aria-hidden="true" />
+                                        <input
+                                            id="register-name"
+                                            type="text"
+                                            value={name}
+                                            onChange={handleNameChange}
+                                            placeholder="John Doe"
+                                            autoComplete="name"
+                                            required
+                                            aria-label="Full name"
+                                            aria-invalid={nameError ? 'true' : 'false'}
+                                            aria-describedby={nameError ? 'name-error' : undefined}
+                                            className={`w-full bg-white/5 border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none transition-colors ${nameError
+                                                    ? 'border-red-500/50 focus:border-red-500'
+                                                    : nameValid
+                                                        ? 'border-green-500/50 focus:border-green-500'
+                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                }`}
+                                        />
+                                        {nameValid && (
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                <Check size={18} className="text-green-400" aria-hidden="true" />
+                                            </div>
+                                        )}
+                                        {nameError && (
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                <X size={18} className="text-red-400" aria-hidden="true" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    {nameError && (
+                                        <p id="name-error" className="text-red-400 text-xs mt-1" role="alert">
+                                            {nameError}
+                                        </p>
+                                    )}
+                                    {!nameError && nameValid && (
+                                        <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
+                                            <Check size={14} aria-hidden="true" />
+                                            Name looks good
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Email */}
+                                <div>
+                                    <label htmlFor="register-email" className="block text-white/70 text-sm mb-2">
+                                        Email
+                                    </label>
+                                    <div className="relative">
+                                        <Envelope className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} aria-hidden="true" />
+                                        <input
+                                            id="register-email"
+                                            type="email"
+                                            value={email}
+                                            onChange={handleEmailChange}
+                                            placeholder="you@example.com"
+                                            autoComplete="email"
+                                            required
+                                            aria-label="Email address"
+                                            aria-invalid={emailError ? 'true' : 'false'}
+                                            aria-describedby={emailError ? 'email-error' : undefined}
+                                            className={`w-full bg-white/5 border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none transition-colors ${emailError
+                                                    ? 'border-red-500/50 focus:border-red-500'
+                                                    : emailValid
+                                                        ? 'border-green-500/50 focus:border-green-500'
+                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                }`}
+                                        />
+                                        {emailValid && (
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                <Check size={18} className="text-green-400" aria-hidden="true" />
+                                            </div>
+                                        )}
+                                        {emailError && (
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                <X size={18} className="text-red-400" aria-hidden="true" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    {emailError && (
+                                        <p id="email-error" className="text-red-400 text-xs mt-1" role="alert">
+                                            {emailError}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Password */}
+                                <div>
+                                    <label htmlFor="register-password" className="block text-white/70 text-sm mb-2">
+                                        Password
+                                    </label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} aria-hidden="true" />
+                                        <input
+                                            id="register-password"
+                                            type={showPassword ? 'text' : 'password'}
+                                            value={password}
+                                            onChange={handlePasswordChange}
+                                            placeholder="Create a strong password"
+                                            autoComplete="new-password"
+                                            required
+                                            aria-label="Password"
+                                            aria-describedby="password-requirements"
+                                            className={`w-full bg-white/5 border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none transition-colors ${password && !passwordStrong
+                                                    ? 'border-amber-500/50 focus:border-amber-500'
+                                                    : passwordStrong
+                                                        ? 'border-green-500/50 focus:border-green-500'
+                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                }`}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                        >
+                                            {showPassword ? <EyeSlash size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+                                        </button>
+                                    </div>
+
+                                    {/* Password requirements */}
+                                    {password && (
+                                        <div id="password-requirements" className="mt-2 space-y-1.5">
+                                            <p className="text-white/50 text-xs mb-2">Password requirements:</p>
+                                            <div className="flex items-center gap-2 text-xs">
+                                                {passwordRequirements.minLength ? (
+                                                    <Check size={14} className="text-green-400 shrink-0" aria-hidden="true" />
+                                                ) : (
+                                                    <X size={14} className="text-red-400 shrink-0" aria-hidden="true" />
+                                                )}
+                                                <span className={passwordRequirements.minLength ? 'text-green-400' : 'text-white/50'}>
+                                                    At least 8 characters
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs">
+                                                {passwordRequirements.hasUppercase ? (
+                                                    <Check size={14} className="text-green-400 shrink-0" aria-hidden="true" />
+                                                ) : (
+                                                    <X size={14} className="text-red-400 shrink-0" aria-hidden="true" />
+                                                )}
+                                                <span className={passwordRequirements.hasUppercase ? 'text-green-400' : 'text-white/50'}>
+                                                    One uppercase letter
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs">
+                                                {passwordRequirements.hasLowercase ? (
+                                                    <Check size={14} className="text-green-400 shrink-0" aria-hidden="true" />
+                                                ) : (
+                                                    <X size={14} className="text-red-400 shrink-0" aria-hidden="true" />
+                                                )}
+                                                <span className={passwordRequirements.hasLowercase ? 'text-green-400' : 'text-white/50'}>
+                                                    One lowercase letter
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs">
+                                                {passwordRequirements.hasNumber ? (
+                                                    <Check size={14} className="text-green-400 shrink-0" aria-hidden="true" />
+                                                ) : (
+                                                    <X size={14} className="text-red-400 shrink-0" aria-hidden="true" />
+                                                )}
+                                                <span className={passwordRequirements.hasNumber ? 'text-green-400' : 'text-white/50'}>
+                                                    One number
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Terms */}
+                                <p className="text-white/40 text-xs">
+                                    By creating an account, you agree to our{' '}
+                                    <Link href="/terms" className="text-[#df2531] hover:underline">Terms of Service</Link>
+                                    {' '}and{' '}
+                                    <Link href="/privacy" className="text-[#df2531] hover:underline">Privacy Policy</Link>
+                                </p>
+
+                                {/* Submit button */}
+                                <Button
+                                    type="submit"
+                                    disabled={loading || !nameValid || !emailValid || !passwordStrong}
+                                    className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-3 rounded-xl transition-all duration-300 disabled:opacity-50"
+                                    aria-label="Create account"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <SpinnerGap size={20} className="animate-spin mr-2" aria-hidden="true" />
+                                            <span className="sr-only">Creating account...</span>
+                                            Creating account...
+                                        </>
+                                    ) : (
+                                        'Create Account'
+                                    )}
+                                </Button>
+                            </form>
+
+                            {/* Divider */}
+                            <div className="flex items-center gap-4 my-6" aria-hidden="true">
+                                <div className="flex-1 h-px bg-white/10" />
+                                <span className="text-white/30 text-sm">or</span>
+                                <div className="flex-1 h-px bg-white/10" />
+                            </div>
+
+                            {/* Google signup */}
+                            <Button
+                                type="button"
+                                onClick={handleGoogleSignup}
+                                disabled={loading}
+                                className="w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-3"
+                                aria-label="Continue with Google"
+                            >
+                                <GoogleLogo size={20} weight="bold" aria-hidden="true" />
+                                Continue with Google
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* Login link */}
+                    <p className="text-center text-white/50 text-sm mt-6">
+                        Already have an account?{' '}
+                        <Link href="/login" className="text-[#df2531] hover:underline" aria-label="Sign in">
+                            Sign in
+                        </Link>
+                    </p>
                 </div>
-              )}
-
-              {/* Form */}
-              <form onSubmit={handleRegister} className="space-y-5">
-                {/* Name */}
-                <div>
-                  <label className="block text-white/70 text-sm mb-2">Full Name</label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="John Doe"
-                      required
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="block text-white/70 text-sm mb-2">Email</label>
-                  <div className="relative">
-                    <Envelope className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      required
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                {/* Password */}
-                <div>
-                  <label className="block text-white/70 text-sm mb-2">Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Min. 6 characters"
-                      required
-                      minLength={6}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
-                    >
-                      {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Terms */}
-                <p className="text-white/40 text-xs">
-                  By creating an account, you agree to our{' '}
-                  <Link href="/terms" className="text-[#df2531] hover:underline">Terms of Service</Link>
-                  {' '}and{' '}
-                  <Link href="/privacy" className="text-[#df2531] hover:underline">Privacy Policy</Link>
-                </p>
-
-                {/* Submit button */}
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-3 rounded-xl transition-all duration-300 disabled:opacity-50"
-                >
-                  {loading ? (
-                    <SpinnerGap size={20} className="animate-spin" />
-                  ) : (
-                    'Create Account'
-                  )}
-                </Button>
-              </form>
-
-              {/* Divider */}
-              <div className="flex items-center gap-4 my-6">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-white/30 text-sm">or</span>
-                <div className="flex-1 h-px bg-white/10" />
-              </div>
-
-              {/* Google signup */}
-              <Button
-                type="button"
-                onClick={handleGoogleSignup}
-                disabled={loading}
-                className="w-full bg-white/5 hover:bg-white/10 text-white border border-white/10 py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-3"
-              >
-                <GoogleLogo size={20} weight="bold" />
-                Continue with Google
-              </Button>
-            </>
-          )}
-
-          {/* Login link */}
-          <p className="text-center text-white/50 text-sm mt-6">
-            Already have an account?{' '}
-            <Link href="/login" className="text-[#df2531] hover:underline">
-              Sign in
-            </Link>
-          </p>
-        </div>
-      </div>
-    </main>
-  )
+            </div>
+        </main>
+    )
 }
