@@ -338,9 +338,20 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                 },
                 (payload) => {
                     console.log('[Real-time] Transaction UPDATE received:', payload.new)
+                    const updatedTransaction = payload.new as Transaction
                     setTransactions(prev => prev.map(t =>
-                        t.id === payload.new.id ? { ...t, ...payload.new } as Transaction : t
+                        t.id === updatedTransaction.id ? { ...t, ...updatedTransaction } as Transaction : t
                     ))
+
+                    // If transaction status changed to 'completed', refresh wallet
+                    // This handles Paystack webhook updates
+                    if (updatedTransaction.status === 'completed' && updatedTransaction.type === 'purchase') {
+                        console.log('[Real-time] Purchase transaction completed, refreshing wallet...')
+                        // Small delay to ensure database has updated wallet
+                        setTimeout(() => {
+                            refreshWallet()
+                        }, 500)
+                    }
                 }
             )
             .subscribe((status) => {
@@ -378,14 +389,33 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
         setSelectedPackage(pkg)
     }
 
-    const handlePaymentSuccess = () => {
+    const handlePaymentSuccess = async () => {
         setPurchasedCoins(selectedPackage?.coins || 0)
         setSelectedPackage(null)
         setShowSuccess(true)
-        // Refresh wallet after successful payment
+
+        // Refresh wallet immediately
+        await refreshWallet()
+
+        // Poll for wallet update (webhook processing can take 2-5 seconds)
+        // The real-time subscription should handle this, but polling ensures we get the update
+        let attempts = 0
+        const maxAttempts = 10 // 10 attempts over 5 seconds
+        const pollInterval = setInterval(async () => {
+            attempts++
+            await refreshWallet()
+
+            // Stop polling after max attempts
+            if (attempts >= maxAttempts) {
+                clearInterval(pollInterval)
+            }
+        }, 500) // Check every 500ms
+
+        // Cleanup after max time (5 seconds)
         setTimeout(() => {
-            refreshWallet()
-        }, 1000)
+            clearInterval(pollInterval)
+            refreshWallet() // Final refresh
+        }, 5000)
     }
 
     const handleSuccessClose = () => {
