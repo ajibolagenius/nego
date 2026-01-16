@@ -3,40 +3,40 @@ import { redirect } from 'next/navigation'
 import { DashboardClient } from './DashboardClient'
 
 export const metadata = {
-  title: 'Dashboard - Nego',
-  description: 'Your personal dashboard on Nego',
+    title: 'Dashboard - Nego',
+    description: 'Your personal dashboard on Nego',
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
-    redirect('/login')
-  }
+    const supabase = await createClient()
 
-  // Fetch user profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  // Fetch wallet
-  const { data: wallet } = await supabase
-    .from('wallets')
-    .select('*')
-    .eq('user_id', user.id)
-    .single()
+    if (!user) {
+        redirect('/login')
+    }
 
-  // Generate random limit between 8 and 16
-  const randomLimit = Math.floor(Math.random() * 9) + 8 // 8 to 16
+    // Fetch user profile
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
 
-  // Fetch featured talents with COMPLETE profile data (random selection of talents)
-  const { data: featuredTalents } = await supabase
-    .from('profiles')
-    .select(`
+    // Fetch wallet
+    const { data: wallet } = await supabase
+        .from('wallets')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+    // Generate random limit between 8 and 16
+    const randomLimit = Math.floor(Math.random() * 9) + 8 // 8 to 16
+
+    // Fetch featured talents with COMPLETE profile data (random selection of talents)
+    const { data: featuredTalents } = await supabase
+        .from('profiles')
+        .select(`
       *,
       talent_menus (
         id,
@@ -50,35 +50,35 @@ export default async function DashboardPage() {
         )
       )
     `)
-    .eq('role', 'talent')
-    .limit(50) // Fetch more to randomize from
+        .eq('role', 'talent')
+        .limit(50) // Fetch more to randomize from
 
-  // Shuffle and pick random talents
-  const shuffledTalents = (featuredTalents || [])
-    .sort(() => Math.random() - 0.5)
-    .slice(0, randomLimit)
+    // Shuffle and pick random talents
+    const shuffledTalents = (featuredTalents || [])
+        .sort(() => Math.random() - 0.5)
+        .slice(0, randomLimit)
 
-  // Fetch active bookings count
-  const { count: activeBookingsCount } = await supabase
-    .from('bookings')
-    .select('*', { count: 'exact', head: true })
-    .eq(profile?.role === 'talent' ? 'talent_id' : 'client_id', user.id)
-    .in('status', ['pending', 'accepted', 'payment_pending'])
+    // Fetch active bookings count
+    const { count: activeBookingsCount } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq(profile?.role === 'talent' ? 'talent_id' : 'client_id', user.id)
+        .in('status', ['pending', 'accepted', 'payment_pending'])
 
-  // Fetch favorites count (for clients)
-  const { count: favoritesCount } = await supabase
-    .from('favorites')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
+    // Fetch favorites count (for clients)
+    const { count: favoritesCount } = await supabase
+        .from('favorites')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
 
-  return (
-    <DashboardClient 
-      user={user} 
-      profile={profile} 
-      wallet={wallet} 
-      featuredTalents={shuffledTalents}
-      activeBookings={activeBookingsCount || 0}
-      favoritesCount={favoritesCount || 0}
-    />
-  )
+    return (
+        <DashboardClient
+            user={user}
+            profile={profile}
+            wallet={wallet}
+            featuredTalents={shuffledTalents}
+            activeBookings={activeBookingsCount || 0}
+            favoritesCount={favoritesCount || 0}
+        />
+    )
 }

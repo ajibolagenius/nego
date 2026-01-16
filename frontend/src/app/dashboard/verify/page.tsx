@@ -3,66 +3,66 @@ import { redirect } from 'next/navigation'
 import { VerifyClient } from './VerifyClient'
 
 export const metadata = {
-  title: 'Verify Identity - Nego',
-  description: 'Complete identity verification for your booking',
+    title: 'Verify Identity - Nego',
+    description: 'Complete identity verification for your booking',
 }
 
 interface VerifyPageProps {
-  searchParams: Promise<{ booking?: string }>
+    searchParams: Promise<{ booking?: string }>
 }
 
 export default async function VerifyPage({ searchParams }: VerifyPageProps) {
-  const supabase = await createClient()
-  const params = await searchParams
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
-    redirect('/login')
-  }
+    const supabase = await createClient()
+    const params = await searchParams
 
-  // Fetch user profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  // Get booking ID from query params
-  const bookingId = params.booking
+    if (!user) {
+        redirect('/login')
+    }
 
-  // Fetch the specific booking with COMPLETE talent profile data
-  let booking = null
-  if (bookingId) {
-    const { data } = await supabase
-      .from('bookings')
-      .select(`
+    // Fetch user profile
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+    // Get booking ID from query params
+    const bookingId = params.booking
+
+    // Fetch the specific booking with COMPLETE talent profile data
+    let booking = null
+    if (bookingId) {
+        const { data } = await supabase
+            .from('bookings')
+            .select(`
         *,
         talent:profiles!bookings_talent_id_fkey (*)
       `)
-      .eq('id', bookingId)
-      .eq('client_id', user.id)
-      .single()
-    booking = data
-  }
+            .eq('id', bookingId)
+            .eq('client_id', user.id)
+            .single()
+        booking = data
+    }
 
-  // Fetch existing verification if any
-  let verification = null
-  if (bookingId) {
-    const { data } = await supabase
-      .from('verifications')
-      .select('*')
-      .eq('booking_id', bookingId)
-      .single()
-    verification = data
-  }
+    // Fetch existing verification if any
+    let verification = null
+    if (bookingId) {
+        const { data } = await supabase
+            .from('verifications')
+            .select('*')
+            .eq('booking_id', bookingId)
+            .single()
+        verification = data
+    }
 
-  return (
-    <VerifyClient 
-      user={user} 
-      profile={profile}
-      booking={booking}
-      verification={verification}
-    />
-  )
+    return (
+        <VerifyClient
+            user={user}
+            profile={profile}
+            booking={booking}
+            verification={verification}
+        />
+    )
 }
