@@ -15,8 +15,7 @@
 
 # docs
 docs/
-frontend/docs
-frontend/database
+
 /database
 
 # next.js
