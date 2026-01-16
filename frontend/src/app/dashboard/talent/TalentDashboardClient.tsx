@@ -113,7 +113,7 @@ export function TalentDashboardClient({
     const [bookingsState, setBookingsState] = useState<BookingWithClient[]>(bookings)
     const [transactionsState, setTransactionsState] = useState<Transaction[]>(transactions)
     const [giftsReceivedState, setGiftsReceivedState] = useState<GiftReceived[]>(giftsReceived)
-    
+
     // Channel refs for cleanup
     const bookingsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
     const transactionsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
@@ -406,7 +406,7 @@ export function TalentDashboardClient({
                         .eq('talent_id', user.id)
                         .order('created_at', { ascending: false })
                         .limit(10)
-                    
+
                     if (updatedBookings) {
                         setBookingsState(updatedBookings as BookingWithClient[])
                     }
@@ -434,7 +434,7 @@ export function TalentDashboardClient({
                         .gt('amount', 0)
                         .in('type', ['gift', 'premium_unlock', 'booking'])
                         .order('created_at', { ascending: false })
-                    
+
                     if (updatedTransactions) {
                         setTransactionsState(updatedTransactions as Transaction[])
                     }
@@ -461,7 +461,7 @@ export function TalentDashboardClient({
                         .select('display_name, avatar_url')
                         .eq('id', newGift.sender_id)
                         .single()
-                    
+
                     setGiftsReceivedState(prev => [{
                         ...newGift,
                         sender: sender ? {
@@ -774,8 +774,8 @@ export function TalentDashboardClient({
                                     aria-controls={`tabpanel-${tab.id}`}
                                     id={`tab-${tab.id}`}
                                     className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${isActive
-                                            ? 'bg-[#df2531] text-white shadow-lg shadow-[#df2531]/30'
-                                            : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
+                                        ? 'bg-[#df2531] text-white shadow-lg shadow-[#df2531]/30'
+                                        : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
                                         }`}
                                 >
                                     <Icon size={18} weight={isActive ? "duotone" : "regular"} aria-hidden="true" />
@@ -957,8 +957,8 @@ export function TalentDashboardClient({
                                                 aria-invalid={!!priceError}
                                                 aria-describedby={priceError ? 'price-error' : 'price-help'}
                                                 className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white focus:outline-none transition-colors ${priceError
-                                                        ? 'border-red-500/50 focus:border-red-500 focus:ring-2 focus:ring-red-500/50'
-                                                        : 'border-white/10 focus:border-[#df2531] focus:ring-2 focus:ring-[#df2531]/50'
+                                                    ? 'border-red-500/50 focus:border-red-500 focus:ring-2 focus:ring-red-500/50'
+                                                    : 'border-white/10 focus:border-[#df2531] focus:ring-2 focus:ring-[#df2531]/50'
                                                     }`}
                                             />
                                             {priceError && (
@@ -1063,8 +1063,8 @@ export function TalentDashboardClient({
                                                 aria-label={item.is_active ? `Hide ${item.service_type?.name} service` : `Show ${item.service_type?.name} service`}
                                                 aria-pressed={item.is_active}
                                                 className={`p-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black ${item.is_active
-                                                        ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 focus:ring-green-500'
-                                                        : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 focus:ring-red-500'
+                                                    ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 focus:ring-green-500'
+                                                    : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 focus:ring-red-500'
                                                     }`}
                                             >
                                                 {item.is_active ? (
@@ -1314,10 +1314,10 @@ export function TalentDashboardClient({
                                                 className="flex items-center gap-4 p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group"
                                             >
                                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center border transition-colors ${tx.type === 'gift'
-                                                        ? 'bg-pink-500/20 border-pink-500/30 group-hover:border-pink-500/50'
-                                                        : tx.type === 'premium_unlock'
-                                                            ? 'bg-amber-500/20 border-amber-500/30 group-hover:border-amber-500/50'
-                                                            : 'bg-blue-500/20 border-blue-500/30 group-hover:border-blue-500/50'
+                                                    ? 'bg-pink-500/20 border-pink-500/30 group-hover:border-pink-500/50'
+                                                    : tx.type === 'premium_unlock'
+                                                        ? 'bg-amber-500/20 border-amber-500/30 group-hover:border-amber-500/50'
+                                                        : 'bg-blue-500/20 border-blue-500/30 group-hover:border-blue-500/50'
                                                     }`}>
                                                     {tx.type === 'gift' ? (
                                                         <Gift size={24} weight="duotone" className="text-pink-400" aria-hidden="true" />
