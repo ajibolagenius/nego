@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -61,6 +61,30 @@ function GallerySection({ media, userId, userBalance, onUnlock }: GallerySection
     const premiumMedia = media.filter(m => m.is_premium)
     const currentMedia = activeTab === 'free' ? freeMedia : premiumMedia
 
+    // Fetch unlocked media from database on mount
+    useEffect(() => {
+        const fetchUnlockedMedia = async () => {
+            try {
+                const supabase = createClient()
+                const { data, error } = await supabase
+                    .from('user_unlocks')
+                    .select('media_id')
+                    .eq('user_id', userId)
+                    .in('media_id', media.map(m => m.id))
+
+                if (!error && data) {
+                    setUnlockedMedia(new Set(data.map(u => u.media_id)))
+                }
+            } catch (err) {
+                console.error('[GallerySection] Error fetching unlocked media:', err)
+            }
+        }
+
+        if (userId && media.length > 0) {
+            fetchUnlockedMedia()
+        }
+    }, [userId, media])
+
     // Don't render if no media at all
     if (media.length === 0) return null
 
@@ -76,9 +100,11 @@ function GallerySection({ media, userId, userBalance, onUnlock }: GallerySection
             const success = await onUnlock(item.id, item.unlock_price)
             if (success) {
                 setUnlockedMedia(prev => new Set([...prev, item.id]))
+                // Refresh page to show unlocked content
+                window.location.reload()
             }
         } catch (err) {
-            console.error('Unlock failed:', err)
+            console.error('[GallerySection] Unlock failed:', err)
         } finally {
             setUnlocking(null)
         }
@@ -236,14 +262,18 @@ function GallerySection({ media, userId, userBalance, onUnlock }: GallerySection
             {/* Lightbox Modal */}
             {lightboxItem && (
                 <div
-                    className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+                    className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4"
                     onClick={closeLightbox}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="lightbox-title"
                 >
                     <button
-                        className="absolute top-4 right-4 text-white/70 hover:text-white z-50"
+                        className="absolute top-4 right-4 text-white/70 hover:text-white z-[10000] transition-colors"
                         onClick={closeLightbox}
+                        aria-label="Close lightbox"
                     >
-                        <X size={32} />
+                        <X size={32} weight="duotone" aria-hidden="true" />
                     </button>
 
                     <div

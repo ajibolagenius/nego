@@ -144,15 +144,16 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Create media unlock record
-        try {
-            await supabase.from('media_unlocks').insert({
-                user_id: userId,
-                media_id: mediaId
-            })
-        } catch {
-            // Ignore media unlock record errors
-        }
+    // Create media unlock record in user_unlocks table
+    try {
+      await supabase.from('user_unlocks').insert({
+        user_id: userId,
+        media_id: mediaId
+      })
+    } catch (err) {
+      console.warn('[Media Unlock] Failed to create unlock record (may already exist):', err)
+      // Ignore duplicate key errors - content may already be unlocked
+    }
 
         // Create transaction records
         try {
