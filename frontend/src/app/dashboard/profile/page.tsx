@@ -4,7 +4,7 @@ import { ProfileClient } from './ProfileClient'
 
 export const metadata = {
   title: 'Profile - Nego',
-  description: 'Manage your profile on Nego',
+  description: 'View and manage your profile, update your information, and see your account statistics on Nego',
 }
 
 export default async function ProfilePage() {
@@ -30,11 +30,19 @@ export default async function ProfilePage() {
     .eq('user_id', user.id)
     .single()
 
-  // Fetch user's booking count
-  const { count: bookingCount } = await supabase
-    .from('bookings')
-    .select('*', { count: 'exact', head: true })
-    .eq('client_id', user.id)
+  // Fetch user's booking count (both as client and talent)
+  const [clientBookings, talentBookings] = await Promise.all([
+    supabase
+      .from('bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('client_id', user.id),
+    supabase
+      .from('bookings')
+      .select('*', { count: 'exact', head: true })
+      .eq('talent_id', user.id)
+  ])
+
+  const bookingCount = (clientBookings.count || 0) + (talentBookings.count || 0)
 
   return (
     <ProfileClient 
