@@ -337,13 +337,68 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                     table: 'profiles',
                     filter: `id=eq.${talentId}`,
                 },
-                (payload) => {
+                async (payload) => {
                     console.log('[TalentProfile] Real-time profile UPDATE:', payload.new)
                     const updatedProfile = payload.new as Profile
-                    setTalent(prev => ({
-                        ...prev,
-                        ...updatedProfile,
-                    }))
+                    // Refetch full profile data to ensure all fields are updated (including nested relations)
+                    try {
+                        const { data: fullProfile } = await supabase
+                            .from('profiles')
+                            .select(`
+                                *,
+                                talent_menus (
+                                    id,
+                                    talent_id,
+                                    service_type_id,
+                                    price,
+                                    is_active,
+                                    created_at,
+                                    service_type:service_types (
+                                        id,
+                                        name,
+                                        icon,
+                                        description
+                                    )
+                                )
+                            `)
+                            .eq('id', talentId)
+                            .single()
+
+                        if (fullProfile) {
+                            // Map talent_menus to proper structure
+                            const menusData = (fullProfile.talent_menus || []).map((m: any) => {
+                                const serviceType = Array.isArray(m.service_type) ? m.service_type[0] : m.service_type
+                                return {
+                                    id: m.id,
+                                    talent_id: m.talent_id || talentId,
+                                    service_type_id: m.service_type_id,
+                                    price: m.price,
+                                    is_active: m.is_active,
+                                    created_at: m.created_at,
+                                    service_type: serviceType
+                                }
+                            })
+
+                            setTalent(prev => ({
+                                ...prev,
+                                ...fullProfile,
+                                talent_menus: menusData,
+                            }))
+                        } else {
+                            // Fallback to simple update if full fetch fails
+                            setTalent(prev => ({
+                                ...prev,
+                                ...updatedProfile,
+                            }))
+                        }
+                    } catch (err) {
+                        console.error('[TalentProfile] Error refreshing profile:', err)
+                        // Fallback to simple update
+                        setTalent(prev => ({
+                            ...prev,
+                            ...updatedProfile,
+                        }))
+                    }
                 }
             )
             .subscribe((status) => {
