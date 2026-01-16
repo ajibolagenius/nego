@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { MediaManager } from '@/components/MediaManager'
+import { ProfileImageUpload } from '@/components/ProfileImageUpload'
 import { useWallet } from '@/hooks/useWallet'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -114,7 +115,13 @@ export function TalentDashboardClient({
     const [isSaving, setIsSaving] = useState(false)
     const [editingBio, setEditingBio] = useState(false)
     const [bioText, setBioText] = useState(profile?.bio || '')
+    const [editingProfile, setEditingProfile] = useState(false)
+    const [displayName, setDisplayName] = useState(profile?.display_name || '')
+    const [location, setLocation] = useState(profile?.location || '')
+    const [showAvatarUpload, setShowAvatarUpload] = useState(false)
     const [priceError, setPriceError] = useState('')
+    const [profileError, setProfileError] = useState<string | null>(null)
+    const [profileSuccess, setProfileSuccess] = useState(false)
 
     // Withdrawal state
     const [showWithdrawalModal, setShowWithdrawalModal] = useState(false)
@@ -270,21 +277,82 @@ export function TalentDashboardClient({
 
     const handleSaveBio = async () => {
         setIsSaving(true)
+        setProfileError(null)
         try {
             const { error } = await supabase
                 .from('profiles')
-                .update({ bio: bioText })
+                .update({ bio: bioText.trim(), updated_at: new Date().toISOString() })
                 .eq('id', user.id)
 
             if (error) throw error
             setEditingBio(false)
+            setProfileSuccess(true)
             router.refresh()
+            setTimeout(() => setProfileSuccess(false), 3000)
         } catch (error) {
             console.error('Error updating bio:', error)
-            alert('Failed to update bio')
+            setProfileError('Failed to update bio. Please try again.')
         } finally {
             setIsSaving(false)
         }
+    }
+
+    const handleSaveProfile = async () => {
+        setIsSaving(true)
+        setProfileError(null)
+        setProfileSuccess(false)
+
+        // Validation
+        if (!displayName.trim()) {
+            setProfileError('Display name is required')
+            setIsSaving(false)
+            return
+        }
+        if (displayName.length > 50) {
+            setProfileError('Display name must be 50 characters or less')
+            setIsSaving(false)
+            return
+        }
+        if (location.length > 100) {
+            setProfileError('Location must be 100 characters or less')
+            setIsSaving(false)
+            return
+        }
+
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({
+                    display_name: displayName.trim(),
+                    location: location.trim(),
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', user.id)
+
+            if (error) throw error
+            setEditingProfile(false)
+            setProfileSuccess(true)
+            router.refresh()
+            setTimeout(() => setProfileSuccess(false), 3000)
+        } catch (error) {
+            console.error('Error updating profile:', error)
+            setProfileError('Failed to update profile. Please try again.')
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const handleCancelProfile = () => {
+        setDisplayName(profile?.display_name || '')
+        setLocation(profile?.location || '')
+        setProfileError(null)
+        setProfileSuccess(false)
+        setEditingProfile(false)
+    }
+
+    const handleAvatarUploadComplete = (url: string) => {
+        setShowAvatarUpload(false)
+        router.refresh()
     }
 
     // Available services that aren't already in menu
@@ -362,26 +430,97 @@ export function TalentDashboardClient({
                                     </div>
                                 )}
                             </div>
-                            <button className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-[#df2531] flex items-center justify-center text-white hover:bg-[#df2531]/80 transition-colors">
-                                <Camera size={16} />
+                            <button
+                                onClick={() => setShowAvatarUpload(true)}
+                                className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-[#df2531] flex items-center justify-center text-white hover:bg-[#df2531]/80 transition-colors"
+                                aria-label="Upload profile picture"
+                            >
+                                <Camera size={16} aria-hidden="true" />
                             </button>
                         </div>
 
                         <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                                <h2 className="text-2xl font-bold text-white">{profile?.display_name || 'Your Name'}</h2>
-                                {profile?.is_verified && (
-                                    <div className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
-                                        Verified
-                                    </div>
-                                )}
-                            </div>
+                            {/* Success/Error Messages */}
+                            {profileSuccess && (
+                                <div className="mb-4 p-3 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 text-sm">
+                                    Profile updated successfully!
+                                </div>
+                            )}
+                            {profileError && (
+                                <div className="mb-4 p-3 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-sm">
+                                    {profileError}
+                                </div>
+                            )}
 
-                            {profile?.location && (
-                                <p className="flex items-center gap-2 text-white/50 text-sm mb-3">
-                                    <MapPin size={14} />
-                                    {profile.location}
-                                </p>
+                            {editingProfile ? (
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-white/70 text-sm mb-2">Display Name *</label>
+                                        <input
+                                            type="text"
+                                            value={displayName}
+                                            onChange={(e) => setDisplayName(e.target.value)}
+                                            maxLength={50}
+                                            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-[#df2531]"
+                                            placeholder="Your display name"
+                                        />
+                                        <p className="text-white/40 text-xs mt-1">{displayName.length}/50 characters</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-white/70 text-sm mb-2">Location</label>
+                                        <input
+                                            type="text"
+                                            value={location}
+                                            onChange={(e) => setLocation(e.target.value)}
+                                            maxLength={100}
+                                            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-[#df2531]"
+                                            placeholder="Your location (e.g., Lagos, Nigeria)"
+                                        />
+                                        <p className="text-white/40 text-xs mt-1">{location.length}/100 characters</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            onClick={handleSaveProfile}
+                                            disabled={isSaving}
+                                            className="btn-primary text-sm py-2"
+                                        >
+                                            {isSaving ? 'Saving...' : 'Save Changes'}
+                                        </Button>
+                                        <Button
+                                            onClick={handleCancelProfile}
+                                            variant="ghost"
+                                            className="text-white/50"
+                                            disabled={isSaving}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <h2 className="text-2xl font-bold text-white">{profile?.display_name || 'Your Name'}</h2>
+                                        {profile?.is_verified && (
+                                            <div className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
+                                                Verified
+                                            </div>
+                                        )}
+                                        <button
+                                            onClick={() => setEditingProfile(true)}
+                                            className="text-white/40 hover:text-white transition-colors"
+                                            aria-label="Edit profile"
+                                        >
+                                            <PencilSimple size={18} />
+                                        </button>
+                                    </div>
+
+                                    {profile?.location && (
+                                        <p className="flex items-center gap-2 text-white/50 text-sm mb-3">
+                                            <MapPin size={14} weight="duotone" aria-hidden="true" />
+                                            {profile.location}
+                                        </p>
+                                    )}
+                                </>
                             )}
 
                             {editingBio ? (
@@ -424,6 +563,30 @@ export function TalentDashboardClient({
                             )}
                         </div>
                     </div>
+
+                    {/* Avatar Upload Modal */}
+                    {showAvatarUpload && (
+                        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-[#1a1a1a] rounded-2xl border border-white/10 p-6 max-w-md w-full">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-xl font-bold text-white">Upload Profile Picture</h3>
+                                    <button
+                                        onClick={() => setShowAvatarUpload(false)}
+                                        className="text-white/40 hover:text-white transition-colors"
+                                        aria-label="Close"
+                                    >
+                                        <X size={24} />
+                                    </button>
+                                </div>
+                                <ProfileImageUpload
+                                    userId={user.id}
+                                    currentImageUrl={profile?.avatar_url || null}
+                                    displayName={profile?.display_name || 'Profile'}
+                                    onUploadComplete={handleAvatarUploadComplete}
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     {/* Stats Cards */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

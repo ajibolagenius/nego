@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -49,11 +49,12 @@ interface GallerySectionProps {
     media: Media[]
     userId: string
     userBalance: number
+    talentName: string
     onUnlock: (mediaId: string, unlockPrice: number) => Promise<boolean>
     onOpenLightbox: (media: Media) => void
 }
 
-function GallerySection({ media, userId, userBalance, onUnlock, onOpenLightbox }: GallerySectionProps) {
+function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOpenLightbox }: GallerySectionProps) {
     const [activeTab, setActiveTab] = useState<'free' | 'premium'>('free')
     const [unlocking, setUnlocking] = useState<string | null>(null)
     const [unlockedMedia, setUnlockedMedia] = useState<Set<string>>(new Set())
@@ -127,45 +128,53 @@ function GallerySection({ media, userId, userBalance, onUnlock, onOpenLightbox }
     return (
         <div className="mb-8" data-testid="talent-gallery">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-white">Gallery</h2>
+                <div>
+                    <h2 className="text-2xl font-bold text-white mb-1">Media Gallery</h2>
+                    <p className="text-white/50 text-sm">Browse photos and videos from {talentName || 'this talent'}</p>
+                </div>
                 <div className="flex gap-2">
                     <button
                         onClick={() => setActiveTab('free')}
                         data-testid="gallery-tab-free"
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${activeTab === 'free'
-                            ? 'bg-green-500 text-white'
-                            : 'bg-white/5 text-white/60 hover:bg-white/10'
+                        aria-label={`View ${freeMedia.length} free media items`}
+                        aria-pressed={activeTab === 'free'}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeTab === 'free'
+                            ? 'bg-green-500 text-white shadow-lg shadow-green-500/20'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                             }`}
                     >
-                        <Eye size={14} />
-                        Free ({freeMedia.length})
+                        <Eye size={16} weight="duotone" aria-hidden="true" />
+                        Free <span className="ml-1">({freeMedia.length})</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('premium')}
                         data-testid="gallery-tab-premium"
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${activeTab === 'premium'
-                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
-                            : 'bg-white/5 text-white/60 hover:bg-white/10'
+                        aria-label={`View ${premiumMedia.length} premium media items`}
+                        aria-pressed={activeTab === 'premium'}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${activeTab === 'premium'
+                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20'
+                            : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                             }`}
                     >
-                        <Crown size={14} weight="fill" />
-                        Premium ({premiumMedia.length})
+                        <Crown size={16} weight="fill" aria-hidden="true" />
+                        Premium <span className="ml-1">({premiumMedia.length})</span>
                     </button>
                 </div>
             </div>
 
             {currentMedia.length === 0 ? (
-                <div className="text-center py-8 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-center py-12 rounded-xl bg-white/5 border border-white/10">
                     {activeTab === 'premium' ? (
-                        <div className="flex flex-col items-center gap-2">
-                            <Crown size={32} weight="duotone" className="text-amber-500/50" />
-                            <p className="text-white/50 text-sm">No premium content available yet</p>
-                            <p className="text-white/30 text-xs">Premium content will appear here</p>
+                        <div className="flex flex-col items-center gap-3">
+                            <Crown size={48} weight="duotone" className="text-amber-500/50" aria-hidden="true" />
+                            <p className="text-white/60 font-medium">No premium content available</p>
+                            <p className="text-white/40 text-sm">Premium content will appear here when added</p>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center gap-2">
-                            <Camera size={32} weight="duotone" className="text-white/30" />
-                            <p className="text-white/50 text-sm">No free content available</p>
+                        <div className="flex flex-col items-center gap-3">
+                            <Camera size={48} weight="duotone" className="text-white/30" aria-hidden="true" />
+                            <p className="text-white/60 font-medium">No free content available</p>
+                            <p className="text-white/40 text-sm">Check the premium tab for exclusive content</p>
                         </div>
                     )}
                 </div>
@@ -209,25 +218,31 @@ function GallerySection({ media, userId, userBalance, onUnlock, onOpenLightbox }
 
                                 {/* Premium locked overlay */}
                                 {item.is_premium && !unlocked && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm">
                                         <button
                                             onClick={(e) => handleUnlock(item, e)}
                                             disabled={unlocking === item.id}
-                                            className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:from-amber-500/30 hover:to-orange-500/30 transition-all"
+                                            className="flex flex-col items-center gap-2.5 p-5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:from-amber-500/30 hover:to-orange-500/30 transition-all disabled:opacity-50"
+                                            aria-label={`Unlock premium content for ${item.unlock_price} coins`}
                                         >
                                             {unlocking === item.id ? (
-                                                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                <>
+                                                    <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
+                                                    <span className="text-white text-xs font-medium">Unlocking...</span>
+                                                </>
                                             ) : (
                                                 <>
-                                                    <Lock size={24} className="text-amber-400" />
-                                                    <span className="text-white text-xs font-medium">
-                                                        Unlock for {item.unlock_price} coins
-                                                    </span>
-                                                    {userBalance < item.unlock_price && (
-                                                        <span className="text-red-400 text-[10px]">
-                                                            Need {item.unlock_price - userBalance} more
+                                                    <Lock size={28} weight="duotone" className="text-amber-400" aria-hidden="true" />
+                                                    <div className="text-center">
+                                                        <span className="text-white text-sm font-semibold block">
+                                                            Unlock for {item.unlock_price} coins
                                                         </span>
-                                                    )}
+                                                        {userBalance < item.unlock_price && (
+                                                            <span className="text-red-400 text-xs mt-1 block">
+                                                                Need {item.unlock_price - userBalance} more coins
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </>
                                             )}
                                         </button>
@@ -261,12 +276,19 @@ function GallerySection({ media, userId, userBalance, onUnlock, onOpenLightbox }
     )
 }
 
-export function TalentProfileClient({ talent, currentUser, wallet: initialWallet, userId }: TalentProfileClientProps) {
+export function TalentProfileClient({ talent: initialTalent, currentUser, wallet: initialWallet, userId }: TalentProfileClientProps) {
     const router = useRouter()
+    const supabase = createClient()
     const { isFavorite, toggleFavorite, isLoaded: favoritesLoaded } = useFavorites(userId)
 
     // Real-time wallet synchronization
     const { wallet } = useWallet({ userId, initialWallet, autoRefresh: true })
+
+    // Real-time talent profile synchronization - updates when talent edits their profile
+    const [talent, setTalent] = useState<TalentWithDetails>(initialTalent)
+    const profileChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+    const mediaChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+    const servicesChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
     const [selectedServices, setSelectedServices] = useState<string[]>([])
     const [showBookingModal, setShowBookingModal] = useState(false)
@@ -289,13 +311,163 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
     const [lightboxIndex, setLightboxIndex] = useState<number>(-1)
     const [unlockedMediaIds, setUnlockedMediaIds] = useState<Set<string>>(new Set())
 
+    // Real-time profile synchronization - updates when talent edits profile in dashboard
+    useEffect(() => {
+        const talentId = talent.id
+
+        // Cleanup existing channels
+        if (profileChannelRef.current) {
+            supabase.removeChannel(profileChannelRef.current)
+        }
+        if (mediaChannelRef.current) {
+            supabase.removeChannel(mediaChannelRef.current)
+        }
+        if (servicesChannelRef.current) {
+            supabase.removeChannel(servicesChannelRef.current)
+        }
+
+        // Subscribe to profile updates (display_name, bio, location, avatar_url, etc.)
+        const profileChannel = supabase
+            .channel(`talent-profile:${talentId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'profiles',
+                    filter: `id=eq.${talentId}`,
+                },
+                (payload) => {
+                    console.log('[TalentProfile] Real-time profile UPDATE:', payload.new)
+                    const updatedProfile = payload.new as Profile
+                    setTalent(prev => ({
+                        ...prev,
+                        ...updatedProfile,
+                    }))
+                }
+            )
+            .subscribe((status) => {
+                console.log('[TalentProfile] Profile channel subscription status:', status)
+            })
+
+        // Subscribe to media updates (new media added/removed)
+        const mediaChannel = supabase
+            .channel(`talent-media:${talentId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'media',
+                    filter: `talent_id=eq.${talentId}`,
+                },
+                async (payload) => {
+                    console.log('[TalentProfile] Real-time media change:', payload.eventType)
+                    // Refresh media list - use regular client (RLS will filter premium)
+                    try {
+                        const { data: mediaData } = await supabase
+                            .from('media')
+                            .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
+                            .eq('talent_id', talentId)
+                            .order('created_at', { ascending: false })
+
+                        if (mediaData) {
+                            setTalent(prev => ({
+                                ...prev,
+                                media: mediaData,
+                            }))
+                        }
+                    } catch (err) {
+                        console.error('[TalentProfile] Error refreshing media:', err)
+                    }
+                }
+            )
+            .subscribe((status) => {
+                console.log('[TalentProfile] Media channel subscription status:', status)
+            })
+
+        // Subscribe to talent_menus updates (services added/updated/removed)
+        const servicesChannel = supabase
+            .channel(`talent-services:${talentId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'talent_menus',
+                    filter: `talent_id=eq.${talentId}`,
+                },
+                async (payload) => {
+                    console.log('[TalentProfile] Real-time services change:', payload.eventType)
+                    // Refresh services list
+                    try {
+                        const { data: menusData } = await supabase
+                            .from('talent_menus')
+                            .select(`
+                                id,
+                                price,
+                                is_active,
+                                service_type:service_types (
+                                    id,
+                                    name,
+                                    icon,
+                                    description
+                                )
+                            `)
+                            .eq('talent_id', talentId)
+
+                        if (menusData) {
+                            setTalent(prev => ({
+                                ...prev,
+                                talent_menus: menusData.map((m: any) => {
+                                    const serviceType = Array.isArray(m.service_type) ? m.service_type[0] : m.service_type
+                                    return {
+                                        id: m.id,
+                                        talent_id: m.talent_id || talentId,
+                                        service_type_id: m.service_type_id,
+                                        price: m.price,
+                                        is_active: m.is_active,
+                                        service_type: serviceType as ServiceType,
+                                    }
+                                }) as (TalentMenu & { service_type: ServiceType })[],
+                            }))
+                        }
+                    } catch (err) {
+                        console.error('[TalentProfile] Error refreshing services:', err)
+                    }
+                }
+            )
+            .subscribe((status) => {
+                console.log('[TalentProfile] Services channel subscription status:', status)
+            })
+
+        profileChannelRef.current = profileChannel
+        mediaChannelRef.current = mediaChannel
+        servicesChannelRef.current = servicesChannel
+
+        return () => {
+            console.log('[TalentProfile] Cleaning up real-time channels')
+            if (profileChannelRef.current) {
+                supabase.removeChannel(profileChannelRef.current)
+                profileChannelRef.current = null
+            }
+            if (mediaChannelRef.current) {
+                supabase.removeChannel(mediaChannelRef.current)
+                mediaChannelRef.current = null
+            }
+            if (servicesChannelRef.current) {
+                supabase.removeChannel(servicesChannelRef.current)
+                servicesChannelRef.current = null
+            }
+        }
+    }, [talent.id, supabase])
+
     // Fetch unlocked media on mount to support lightbox navigation
     useEffect(() => {
         const fetchUnlockedMedia = async () => {
             if (!userId || !talent.media || talent.media.length === 0) return
 
             try {
-                const supabase = createClient()
                 const { data, error } = await supabase
                     .from('user_unlocks')
                     .select('media_id')
@@ -311,7 +483,7 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
         }
 
         fetchUnlockedMedia()
-    }, [userId, talent.media])
+    }, [userId, talent.media, supabase])
 
     const isLiked = favoritesLoaded && isFavorite(talent.id)
     const activeServices = talent.talent_menus?.filter(m => m.is_active) || []
@@ -803,105 +975,149 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
             </header>
 
             <div className="max-w-4xl mx-auto px-4 py-6">
-                {/* Profile Header */}
+                {/* Profile Header - Redesigned */}
                 <div className="flex flex-col md:flex-row gap-6 mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-                    {/* Avatar */}
-                    <div className="relative w-full md:w-72 aspect-[3/4] rounded-2xl overflow-hidden shrink-0">
+                    {/* Avatar Section */}
+                    <div className="relative w-full md:w-72 aspect-[3/4] rounded-2xl overflow-hidden shrink-0 group">
                         <Image
                             src={talent.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80'}
-                            alt={talent.display_name || 'Talent'}
+                            alt={talent.display_name || 'Talent profile picture'}
                             fill
                             sizes="(max-width: 768px) 100vw, 288px"
-                            className="object-cover"
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            priority
                         />
-                        {/* Status */}
+                        {/* Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        
+                        {/* Status Badge */}
                         <div className="absolute top-4 left-4">
-                            <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm ${talent.status === 'online'
-                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                            <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium backdrop-blur-md border ${talent.status === 'online'
+                                ? 'bg-green-500/20 text-green-400 border-green-500/30 shadow-lg shadow-green-500/20'
                                 : talent.status === 'booked'
-                                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                    : 'bg-white/10 text-white/60 border border-white/10'
-                                }`}>
-                                <Circle size={8} weight="fill" />
+                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/30 shadow-lg shadow-amber-500/20'
+                                    : 'bg-white/10 text-white/60 border-white/10'
+                                }`}
+                                role="status"
+                                aria-label={`Talent is ${talent.status === 'online' ? 'online now' : talent.status === 'booked' ? 'currently booked' : 'offline'}`}
+                            >
+                                <Circle size={8} weight="fill" className={talent.status === 'online' ? 'animate-pulse' : ''} aria-hidden="true" />
                                 {talent.status === 'online' ? 'Online Now' : talent.status === 'booked' ? 'Currently Booked' : 'Offline'}
                             </span>
                         </div>
-                    </div>
 
-                    {/* Info */}
-                    <div className="flex-1">
-                        <div className="flex items-start justify-between mb-4">
-                            <div>
-                                <div className="flex items-center gap-2 mb-2">
-                                    <h1 className="text-2xl md:text-3xl font-bold text-white">
-                                        {talent.display_name || 'Anonymous'}
-                                    </h1>
-                                    {talent.is_verified && (
-                                        <ShieldCheck size={24} weight="duotone" className="text-[#df2531]" aria-label="Verified talent" />
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-4 text-white/60 flex-wrap">
-                                    {talent.username && (
-                                        <span className="flex items-center gap-1.5">
-                                            <span className="text-white/40">@</span>
-                                            {talent.username}
-                                        </span>
-                                    )}
-                                    <span className="flex items-center gap-1.5">
-                                        <MapPin size={16} weight="duotone" aria-hidden="true" />
-                                        {talent.location || 'Location not specified'}
-                                    </span>
-                                    <span className="flex items-center gap-1.5">
-                                        <Star size={16} weight="duotone" className="text-amber-400" aria-hidden="true" />
-                                        {(talent.average_rating || 0).toFixed(1)} ({talent.review_count || 0} reviews)
-                                    </span>
-                                    {talent.full_name && talent.full_name !== talent.display_name && (
-                                        <span className="text-white/40 text-sm">
-                                            {talent.full_name}
-                                        </span>
-                                    )}
+                        {/* Verified Badge on Avatar */}
+                        {talent.is_verified && (
+                            <div className="absolute top-4 right-4">
+                                <div className="w-10 h-10 rounded-full bg-[#df2531]/90 backdrop-blur-md border border-[#df2531]/50 flex items-center justify-center shadow-lg" aria-label="Verified talent">
+                                    <ShieldCheck size={20} weight="fill" className="text-white" aria-hidden="true" />
                                 </div>
                             </div>
+                        )}
+                    </div>
+
+                    {/* Profile Info Section - Enhanced */}
+                    <div className="flex-1 space-y-4">
+                        {/* Name and Verification */}
+                        <div>
+                            <div className="flex items-center gap-3 mb-3">
+                                <h1 className="text-3xl md:text-4xl font-bold text-white">
+                                    {talent.display_name || 'Talent'}
+                                </h1>
+                                {talent.is_verified && (
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#df2531]/20 border border-[#df2531]/30" aria-label="Verified talent">
+                                        <ShieldCheck size={16} weight="duotone" className="text-[#df2531]" aria-hidden="true" />
+                                        <span className="text-[#df2531] text-xs font-medium">Verified</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Metadata Row */}
+                            <div className="flex flex-wrap items-center gap-4 text-white/70 text-sm">
+                                {talent.username && (
+                                    <span className="flex items-center gap-1.5" aria-label={`Username: ${talent.username}`}>
+                                        <span className="text-white/40" aria-hidden="true">@</span>
+                                        <span className="font-medium">{talent.username}</span>
+                                    </span>
+                                )}
+                                {talent.location && (
+                                    <span className="flex items-center gap-1.5" aria-label={`Location: ${talent.location}`}>
+                                        <MapPin size={16} weight="duotone" className="text-white/50" aria-hidden="true" />
+                                        {talent.location}
+                                    </span>
+                                )}
+                                {talent.review_count && talent.review_count > 0 && (
+                                    <span className="flex items-center gap-1.5" aria-label={`Rating: ${(talent.average_rating || 0).toFixed(1)} out of 5 stars from ${talent.review_count} reviews`}>
+                                        <Star size={16} weight="duotone" className="text-amber-400" aria-hidden="true" />
+                                        <span className="font-semibold text-amber-400">{(talent.average_rating || 0).toFixed(1)}</span>
+                                        <span className="text-white/50">({talent.review_count} {talent.review_count === 1 ? 'review' : 'reviews'})</span>
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Full Name (if different from display name) */}
+                            {talent.full_name && talent.full_name !== talent.display_name && (
+                                <p className="text-white/50 text-sm mt-2" aria-label={`Full name: ${talent.full_name}`}>
+                                    {talent.full_name}
+                                </p>
+                            )}
                         </div>
 
-                        {/* Bio */}
-                        {talent.bio && (
-                            <p className="text-white/70 mb-6 leading-relaxed">
-                                {talent.bio}
-                            </p>
+                        {/* Bio Section - Enhanced */}
+                        {talent.bio ? (
+                            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                                <h2 className="text-white/50 text-xs font-medium mb-2 uppercase tracking-wide">About</h2>
+                                <p className="text-white/80 leading-relaxed whitespace-pre-wrap">
+                                    {talent.bio}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="bg-white/5 rounded-xl p-4 border border-white/10 border-dashed">
+                                <p className="text-white/40 text-sm italic">No bio available yet</p>
+                            </div>
                         )}
 
-                        {/* Quick Stats */}
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="bg-white/5 rounded-xl p-4 text-center">
-                                <p className="text-white/50 text-xs mb-1">Starting From</p>
-                                <p className="text-white font-bold">
+                        {/* Quick Stats - Enhanced */}
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="bg-white/5 rounded-xl p-4 text-center border border-white/10 hover:border-[#df2531]/30 transition-colors">
+                                <p className="text-white/50 text-xs mb-1.5 uppercase tracking-wide">Starting From</p>
+                                <p className="text-white font-bold text-lg">
                                     {activeServices.length > 0
                                         ? formatPrice(Math.min(...activeServices.map(s => s.price)))
                                         : formatPrice(talent.starting_price || 0)}
                                 </p>
                             </div>
-                            <div className="bg-white/5 rounded-xl p-4 text-center">
-                                <p className="text-white/50 text-xs mb-1">Response</p>
-                                <p className="text-white font-bold">~30 min</p>
+                            <div className="bg-white/5 rounded-xl p-4 text-center border border-white/10 hover:border-white/20 transition-colors">
+                                <p className="text-white/50 text-xs mb-1.5 uppercase tracking-wide">Response Time</p>
+                                <p className="text-white font-bold text-lg">~30 min</p>
                             </div>
-                            <div className="bg-white/5 rounded-xl p-4 text-center">
-                                <p className="text-white/50 text-xs mb-1">Reviews</p>
-                                <p className="text-white font-bold">{talent.review_count || 0}</p>
+                            <div className="bg-white/5 rounded-xl p-4 text-center border border-white/10 hover:border-white/20 transition-colors">
+                                <p className="text-white/50 text-xs mb-1.5 uppercase tracking-wide">Total Reviews</p>
+                                <p className="text-white font-bold text-lg">{talent.review_count || 0}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Services Menu */}
+                {/* Services Menu - Enhanced */}
                 <div className="mb-8">
-                    <h2 className="text-xl font-bold text-white mb-4">Services & Pricing</h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 className="text-2xl font-bold text-white mb-1">Services & Pricing</h2>
+                            <p className="text-white/50 text-sm">Select the services you&apos;d like to book</p>
+                        </div>
+                        {activeServices.length > 0 && (
+                            <span className="text-white/40 text-sm">
+                                {activeServices.length} {activeServices.length === 1 ? 'service' : 'services'} available
+                            </span>
+                        )}
+                    </div>
 
                     {activeServices.length === 0 ? (
-                        <div className="bg-white/5 rounded-xl p-8 text-center border border-white/10">
-                            <Calendar size={32} weight="duotone" className="text-white/20 mx-auto mb-2" aria-hidden="true" />
-                            <p className="text-white/50">No services available</p>
-                            <p className="text-white/30 text-sm mt-1">This talent hasn&apos;t added any services yet</p>
+                        <div className="bg-white/5 rounded-xl p-12 text-center border border-white/10">
+                            <Calendar size={48} weight="duotone" className="text-white/20 mx-auto mb-4" aria-hidden="true" />
+                            <p className="text-white/60 font-medium mb-2">No services available</p>
+                            <p className="text-white/40 text-sm">This talent hasn&apos;t added any services yet. Check back later!</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -913,28 +1129,36 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                                     <button
                                         key={service.id}
                                         onClick={() => toggleService(service.id)}
-                                        className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${isSelected
-                                            ? 'bg-[#df2531]/10 border-[#df2531]/50'
-                                            : 'bg-white/5 border-white/10 hover:border-white/20'
+                                        className={`group w-full flex items-center justify-between p-5 rounded-xl border transition-all duration-200 ${isSelected
+                                            ? 'bg-[#df2531]/10 border-[#df2531]/50 shadow-lg shadow-[#df2531]/10'
+                                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
                                             }`}
-                                        aria-label={`${isSelected ? 'Deselect' : 'Select'} ${service.service_type?.name} service`}
+                                        aria-label={`${isSelected ? 'Deselect' : 'Select'} ${service.service_type?.name} service for ${formatPrice(service.price)}`}
                                         aria-pressed={isSelected}
                                     >
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isSelected ? 'bg-[#df2531]' : 'bg-white/10'
+                                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-all ${isSelected 
+                                                ? 'bg-[#df2531] shadow-lg shadow-[#df2531]/30' 
+                                                : 'bg-white/10 group-hover:bg-white/20'
                                                 }`}>
-                                                <IconComponent size={20} weight="duotone" className="text-white" aria-hidden="true" />
+                                                <IconComponent size={24} weight="duotone" className="text-white" aria-hidden="true" />
                                             </div>
-                                            <div className="text-left">
-                                                <p className="text-white font-medium">{service.service_type?.name}</p>
-                                                <p className="text-white/50 text-sm">{service.service_type?.description}</p>
+                                            <div className="text-left flex-1 min-w-0">
+                                                <p className="text-white font-semibold text-base mb-1">{service.service_type?.name}</p>
+                                                {service.service_type?.description && (
+                                                    <p className="text-white/60 text-sm line-clamp-2">{service.service_type.description}</p>
+                                                )}
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-white font-bold">{formatPrice(service.price)}</span>
-                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-[#df2531] border-[#df2531]' : 'border-white/30'
+                                        <div className="flex items-center gap-4 shrink-0">
+                                            <div className="text-right">
+                                                <p className="text-white font-bold text-lg">{formatPrice(service.price)}</p>
+                                            </div>
+                                            <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${isSelected 
+                                                ? 'bg-[#df2531] border-[#df2531] shadow-lg shadow-[#df2531]/30' 
+                                                : 'border-white/30 group-hover:border-white/50'
                                                 }`} aria-hidden="true">
-                                                {isSelected && <Check size={14} weight="bold" className="text-white" />}
+                                                {isSelected && <Check size={16} weight="bold" className="text-white" />}
                                             </div>
                                         </div>
                                     </button>
@@ -949,24 +1173,37 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                     media={talent.media || []}
                     userId={userId}
                     userBalance={currentBalance}
+                    talentName={talent.display_name || 'this talent'}
                     onUnlock={handleUnlockMedia}
                     onOpenLightbox={handleOpenLightbox}
                 />
 
-                {/* Gift Leaderboard */}
+                {/* Gift Leaderboard - Enhanced */}
                 <div className="mb-8">
+                    <div className="mb-4">
+                        <h2 className="text-2xl font-bold text-white mb-1">Top Supporters</h2>
+                        <p className="text-white/50 text-sm">See who&apos;s been showing {talent.display_name || 'this talent'} the most love</p>
+                    </div>
                     <GiftLeaderboard talentId={talent.id} />
                 </div>
 
-                {/* Reviews Section */}
+                {/* Reviews Section - Enhanced */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                            <ChatCircle size={24} weight="duotone" className="text-[#df2531]" />
-                            Reviews
-                        </h2>
+                        <div>
+                            <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
+                                <ChatCircle size={28} weight="duotone" className="text-[#df2531]" aria-hidden="true" />
+                                Reviews & Ratings
+                            </h2>
+                            {talent.review_count && talent.review_count > 0 && (
+                                <p className="text-white/50 text-sm">What clients are saying about {talent.display_name || 'this talent'}</p>
+                            )}
+                        </div>
                         {talent.review_count && talent.review_count > 0 && (
-                            <span className="text-white/50 text-sm">{talent.review_count} total</span>
+                            <div className="text-right">
+                                <p className="text-white/40 text-xs mb-1">Total Reviews</p>
+                                <p className="text-white font-bold text-lg">{talent.review_count}</p>
+                            </div>
                         )}
                     </div>
 
@@ -980,7 +1217,7 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
 
                             {/* Review List */}
                             {talent.reviews && talent.reviews.length > 0 && (
-                                <div className="mt-4 space-y-4">
+                                <div className="mt-6 space-y-4">
                                     {talent.reviews.slice(0, 5).map((review) => (
                                         <ReviewCard
                                             key={review.id}
@@ -991,7 +1228,10 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                                     ))}
 
                                     {talent.reviews.length > 5 && (
-                                        <button className="w-full py-3 text-center text-[#df2531] hover:text-[#c41f2a] text-sm font-medium transition-colors">
+                                        <button 
+                                            className="w-full py-4 text-center text-[#df2531] hover:text-[#c41f2a] text-sm font-semibold transition-colors rounded-xl hover:bg-[#df2531]/10"
+                                            aria-label={`View all ${talent.review_count} reviews`}
+                                        >
                                             View all {talent.review_count} reviews
                                         </button>
                                     )}
@@ -999,55 +1239,75 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                             )}
                         </>
                     ) : (
-                        <div className="text-center py-8 rounded-2xl bg-white/5 border border-white/10">
-                            <Star size={32} weight="duotone" className="text-white/20 mx-auto mb-2" />
-                            <p className="text-white/50">No reviews yet</p>
-                            <p className="text-white/30 text-sm">Be the first to leave a review!</p>
+                        <div className="text-center py-12 rounded-2xl bg-white/5 border border-white/10">
+                            <Star size={48} weight="duotone" className="text-white/20 mx-auto mb-4" aria-hidden="true" />
+                            <p className="text-white/60 font-medium mb-2">No reviews yet</p>
+                            <p className="text-white/40 text-sm">Be the first to share your experience!</p>
                         </div>
                     )}
                 </div>
 
-                {/* Booking Summary - Fixed Bottom */}
+                {/* Booking Summary - Fixed Bottom - Enhanced */}
                 {selectedServices.length > 0 && (
-                    <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-white/10 p-4 z-50">
+                    <div className="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur-xl border-t border-white/10 p-4 z-50 shadow-2xl">
                         <div className="max-w-4xl mx-auto">
                             {/* Low Balance Warning */}
                             {hasInsufficientBalance && (
-                                <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                                    <Warning size={20} weight="duotone" className="text-amber-400 flex-shrink-0" />
+                                <div className="flex items-center gap-3 mb-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 animate-fade-in-up" role="alert">
+                                    <Warning size={24} weight="duotone" className="text-amber-400 shrink-0" aria-hidden="true" />
                                     <div className="flex-1">
-                                        <p className="text-amber-400 text-sm font-medium">Insufficient Balance</p>
-                                        <p className="text-amber-400/70 text-xs">You need {totalPrice - userBalance} more coins to book</p>
+                                        <p className="text-amber-400 text-sm font-semibold mb-1">Insufficient Balance</p>
+                                        <p className="text-amber-400/80 text-xs">You need <span className="font-bold">{totalPrice - userBalance}</span> more coins to complete this booking</p>
                                     </div>
                                     <Link
                                         href="/dashboard/wallet"
-                                        className="px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium hover:bg-amber-500/30 transition-colors"
+                                        className="px-4 py-2 rounded-full bg-amber-500/20 text-amber-400 text-xs font-semibold hover:bg-amber-500/30 transition-colors whitespace-nowrap"
+                                        aria-label="Go to wallet to top up coins"
                                     >
-                                        Top Up
+                                        Top Up Now
                                     </Link>
                                 </div>
                             )}
 
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-white/50 text-sm">{selectedServices.length} service(s) selected</p>
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-white text-xl font-bold">{totalPrice} coins</p>
-                                        <span className="text-white/40">•</span>
-                                        <p className={`text-sm ${hasInsufficientBalance ? 'text-amber-400' : 'text-green-400'}`}>
-                                            Balance: {userBalance} coins
-                                        </p>
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-white/60 text-xs mb-1.5 uppercase tracking-wide">
+                                        {selectedServices.length} {selectedServices.length === 1 ? 'service' : 'services'} selected
+                                    </p>
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        <div>
+                                            <p className="text-white text-2xl font-bold">{totalPrice}</p>
+                                            <p className="text-white/50 text-xs">coins total</p>
+                                        </div>
+                                        <span className="text-white/20 text-xl" aria-hidden="true">•</span>
+                                        <div>
+                                            <p className={`text-lg font-semibold ${hasInsufficientBalance ? 'text-amber-400' : 'text-green-400'}`}>
+                                                {userBalance} coins
+                                            </p>
+                                            <p className="text-white/50 text-xs">your balance</p>
+                                        </div>
                                     </div>
                                 </div>
                                 <Button
                                     onClick={() => setShowBookingModal(true)}
                                     disabled={hasInsufficientBalance}
-                                    className={`font-bold px-8 py-3 rounded-xl ${hasInsufficientBalance
+                                    aria-label={hasInsufficientBalance ? 'Insufficient balance to book' : `Book ${selectedServices.length} services for ${totalPrice} coins`}
+                                    className={`font-bold px-8 py-4 rounded-xl text-base transition-all ${hasInsufficientBalance
                                         ? 'bg-white/10 text-white/50 cursor-not-allowed'
-                                        : 'bg-[#df2531] hover:bg-[#c41f2a] text-white'
+                                        : 'bg-[#df2531] hover:bg-[#c41f2a] text-white shadow-lg shadow-[#df2531]/20 hover:shadow-[#df2531]/30'
                                         }`}
                                 >
-                                    {hasInsufficientBalance ? 'Insufficient Balance' : 'Book Now'}
+                                    {hasInsufficientBalance ? (
+                                        <>
+                                            <Warning size={20} weight="duotone" className="mr-2" aria-hidden="true" />
+                                            Insufficient Balance
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CalendarCheck size={20} weight="duotone" className="mr-2" aria-hidden="true" />
+                                            Book Now
+                                        </>
+                                    )}
                                 </Button>
                             </div>
                         </div>
@@ -1070,7 +1330,10 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                     >
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-6 border-b border-white/10">
-                            <h2 id="booking-modal-title" className="text-xl font-bold text-white">Confirm Booking</h2>
+                            <div>
+                                <h2 id="booking-modal-title" className="text-2xl font-bold text-white mb-1">Confirm Your Booking</h2>
+                                <p className="text-white/50 text-sm">Review your selection and schedule your appointment</p>
+                            </div>
                             <button
                                 onClick={() => {
                                     setShowBookingModal(false)
@@ -1078,7 +1341,7 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                                     setDateError('')
                                     setTimeError('')
                                 }}
-                                className="text-white/60 hover:text-white transition-colors"
+                                className="text-white/60 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10"
                                 aria-label="Close booking modal"
                             >
                                 <X size={24} aria-hidden="true" />
@@ -1094,123 +1357,159 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                                 </div>
                             )}
 
-                            {/* Selected Services Summary */}
-                            <div className="bg-white/5 rounded-xl p-4">
-                                <p className="text-white/50 text-sm mb-3">Selected Services</p>
-                                {activeServices
-                                    .filter(s => selectedServices.includes(s.id))
-                                    .map(s => (
-                                        <div key={s.id} className="flex justify-between text-white py-1">
-                                            <span>{s.service_type?.name}</span>
-                                            <span>{formatPrice(s.price)}</span>
-                                        </div>
-                                    ))
-                                }
-                                <div className="border-t border-white/10 mt-3 pt-3 flex justify-between text-white font-bold">
-                                    <span>Total</span>
-                                    <span>{formatPrice(totalPrice)}</span>
+                            {/* Selected Services Summary - Enhanced */}
+                            <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                                    <CalendarCheck size={20} weight="duotone" className="text-[#df2531]" aria-hidden="true" />
+                                    Selected Services
+                                </h3>
+                                <div className="space-y-2 mb-4">
+                                    {activeServices
+                                        .filter(s => selectedServices.includes(s.id))
+                                        .map(s => (
+                                            <div key={s.id} className="flex justify-between items-center text-white py-2 px-3 rounded-lg bg-white/5">
+                                                <span className="font-medium">{s.service_type?.name}</span>
+                                                <span className="font-bold text-[#df2531]">{formatPrice(s.price)}</span>
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                                <div className="border-t border-white/10 pt-4 flex justify-between items-center">
+                                    <span className="text-white font-semibold text-lg">Total Amount</span>
+                                    <span className="text-white font-bold text-xl">{formatPrice(totalPrice)}</span>
                                 </div>
                             </div>
 
-                            {/* Date & Time */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label htmlFor="booking-date" className="block text-white/70 text-sm mb-2">
-                                        Date <span className="text-red-400">*</span>
-                                    </label>
-                                    <div className="relative">
-                                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} weight="duotone" aria-hidden="true" />
-                                        <input
-                                            id="booking-date"
-                                            type="date"
-                                            value={bookingDate}
-                                            onChange={handleDateChange}
-                                            min={new Date().toISOString().split('T')[0]}
-                                            aria-label="Booking date"
-                                            aria-invalid={dateError ? 'true' : 'false'}
-                                            aria-describedby={dateError ? 'date-error' : undefined}
-                                            className={`w-full bg-white/5 border rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none transition-colors ${dateError
-                                                    ? 'border-red-500/50 focus:border-red-500'
-                                                    : 'border-white/10 focus:border-[#df2531]/50'
-                                                }`}
-                                        />
-                                    </div>
-                                    {dateError && (
-                                        <p id="date-error" className="text-red-400 text-xs mt-1" role="alert">
-                                            {dateError}
-                                        </p>
-                                    )}
-                                </div>
-                                <div>
-                                    <label htmlFor="booking-time" className="block text-white/70 text-sm mb-2">
-                                        Time <span className="text-red-400">*</span>
-                                    </label>
-                                    <div className="relative">
-                                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} weight="duotone" aria-hidden="true" />
-                                        <input
-                                            id="booking-time"
-                                            type="time"
-                                            value={bookingTime}
-                                            onChange={handleTimeChange}
-                                            aria-label="Booking time"
-                                            aria-invalid={timeError ? 'true' : 'false'}
-                                            aria-describedby={timeError ? 'time-error' : undefined}
-                                            className={`w-full bg-white/5 border rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none transition-colors ${timeError
-                                                    ? 'border-red-500/50 focus:border-red-500'
-                                                    : 'border-white/10 focus:border-[#df2531]/50'
-                                                }`}
-                                        />
-                                    </div>
-                                    {timeError && (
-                                        <p id="time-error" className="text-red-400 text-xs mt-1" role="alert">
-                                            {timeError}
-                                        </p>
-                                    )}
-                                    {!timeError && bookingDate && bookingTime && (
-                                        <p className="text-green-400 text-xs mt-1">
-                                            ✓ Time slot available
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Notes */}
+                            {/* Date & Time - Enhanced */}
                             <div>
-                                <label className="block text-white/70 text-sm mb-2">Notes (optional)</label>
+                                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                                    <Clock size={20} weight="duotone" className="text-[#df2531]" aria-hidden="true" />
+                                    Schedule Your Appointment
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label htmlFor="booking-date" className="block text-white/70 text-sm mb-2 font-medium">
+                                            Select Date <span className="text-red-400" aria-label="required">*</span>
+                                        </label>
+                                        <div className="relative">
+                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} weight="duotone" aria-hidden="true" />
+                                            <input
+                                                id="booking-date"
+                                                type="date"
+                                                value={bookingDate}
+                                                onChange={handleDateChange}
+                                                min={new Date().toISOString().split('T')[0]}
+                                                aria-label="Booking date"
+                                                aria-invalid={dateError ? 'true' : 'false'}
+                                                aria-describedby={dateError ? 'date-error' : undefined}
+                                                aria-required="true"
+                                                className={`w-full bg-white/5 border rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none transition-colors ${dateError
+                                                        ? 'border-red-500/50 focus:border-red-500'
+                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                    }`}
+                                            />
+                                        </div>
+                                        {dateError && (
+                                            <p id="date-error" className="text-red-400 text-xs mt-1.5 flex items-center gap-1" role="alert">
+                                                <Warning size={14} weight="duotone" aria-hidden="true" />
+                                                {dateError}
+                                            </p>
+                                        )}
+                                        {!dateError && bookingDate && (
+                                            <p className="text-green-400 text-xs mt-1.5 flex items-center gap-1">
+                                                <CheckCircle size={14} weight="duotone" aria-hidden="true" />
+                                                Date selected
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="booking-time" className="block text-white/70 text-sm mb-2 font-medium">
+                                            Select Time <span className="text-red-400" aria-label="required">*</span>
+                                        </label>
+                                        <div className="relative">
+                                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} weight="duotone" aria-hidden="true" />
+                                            <input
+                                                id="booking-time"
+                                                type="time"
+                                                value={bookingTime}
+                                                onChange={handleTimeChange}
+                                                aria-label="Booking time"
+                                                aria-invalid={timeError ? 'true' : 'false'}
+                                                aria-describedby={timeError ? 'time-error' : undefined}
+                                                aria-required="true"
+                                                className={`w-full bg-white/5 border rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none transition-colors ${timeError
+                                                        ? 'border-red-500/50 focus:border-red-500'
+                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                    }`}
+                                            />
+                                        </div>
+                                        {timeError && (
+                                            <p id="time-error" className="text-red-400 text-xs mt-1.5 flex items-center gap-1" role="alert">
+                                                <Warning size={14} weight="duotone" aria-hidden="true" />
+                                                {timeError}
+                                            </p>
+                                        )}
+                                        {!timeError && bookingDate && bookingTime && (
+                                            <p className="text-green-400 text-xs mt-1.5 flex items-center gap-1">
+                                                <CheckCircle size={14} weight="duotone" aria-hidden="true" />
+                                                Time slot available
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Notes - Enhanced */}
+                            <div>
+                                <label htmlFor="booking-notes" className="block text-white/70 text-sm mb-2 font-medium">
+                                    Special Requests or Notes <span className="text-white/40 text-xs font-normal">(optional)</span>
+                                </label>
                                 <textarea
+                                    id="booking-notes"
                                     value={bookingNotes}
                                     onChange={(e) => setBookingNotes(e.target.value)}
-                                    placeholder="Any special requests or information..."
-                                    rows={3}
+                                    placeholder="Any special requests, dietary preferences, or information that would help make your experience better..."
+                                    rows={4}
+                                    maxLength={500}
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 resize-none"
+                                    aria-label="Special requests or notes for the booking"
                                 />
+                                <p className="text-white/40 text-xs mt-1.5 text-right">
+                                    {bookingNotes.length}/500 characters
+                                </p>
                             </div>
 
-                            {/* Wallet Balance */}
-                            <div className={`p-4 rounded-xl border ${hasInsufficientBalance
+                            {/* Wallet Balance - Enhanced */}
+                            <div className={`p-5 rounded-xl border ${hasInsufficientBalance
                                 ? 'bg-amber-500/10 border-amber-500/20'
                                 : 'bg-[#df2531]/10 border-[#df2531]/20'
                                 }`}>
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-3">
-                                        <Coin size={24} weight="duotone" className={hasInsufficientBalance ? 'text-amber-400' : 'text-[#df2531]'} />
+                                        <Coin size={28} weight="duotone" className={hasInsufficientBalance ? 'text-amber-400' : 'text-[#df2531]'} aria-hidden="true" />
                                         <div>
-                                            <p className="text-white/50 text-xs">Your Balance</p>
-                                            <p className={`font-bold ${hasInsufficientBalance ? 'text-amber-400' : 'text-white'}`}>
-                                                {userBalance} coins
+                                            <p className="text-white/50 text-xs mb-0.5 uppercase tracking-wide">Your Wallet Balance</p>
+                                            <p className={`font-bold text-xl ${hasInsufficientBalance ? 'text-amber-400' : 'text-white'}`}>
+                                                {userBalance.toLocaleString()} coins
                                             </p>
                                         </div>
                                     </div>
-                                    <Link href="/dashboard/wallet" className={`text-sm hover:underline ${hasInsufficientBalance ? 'text-amber-400' : 'text-[#df2531]'
-                                        }`}>
-                                        Top up
+                                    <Link 
+                                        href="/dashboard/wallet" 
+                                        className={`px-4 py-2 rounded-lg text-sm font-semibold hover:underline transition-colors ${hasInsufficientBalance 
+                                            ? 'text-amber-400 hover:bg-amber-500/20' 
+                                            : 'text-[#df2531] hover:bg-[#df2531]/20'
+                                            }`}
+                                        aria-label="Go to wallet to top up coins"
+                                    >
+                                        Top Up
                                     </Link>
                                 </div>
                                 {hasInsufficientBalance && (
-                                    <div className="mt-3 pt-3 border-t border-amber-500/20 flex items-center gap-2">
-                                        <Warning size={16} className="text-amber-400" />
+                                    <div className="pt-3 border-t border-amber-500/20 flex items-center gap-2">
+                                        <Warning size={18} weight="duotone" className="text-amber-400 shrink-0" aria-hidden="true" />
                                         <p className="text-amber-400 text-sm">
-                                            You need <span className="font-bold">{totalPrice - userBalance}</span> more coins
+                                            You need <span className="font-bold">{totalPrice - userBalance}</span> more coins to complete this booking
                                         </p>
                                     </div>
                                 )}
@@ -1222,29 +1521,41 @@ export function TalentProfileClient({ talent, currentUser, wallet: initialWallet
                             <Button
                                 onClick={handleBooking}
                                 disabled={loading || hasInsufficientBalance || !!dateError || !!timeError}
-                                className={`w-full font-bold py-4 rounded-xl disabled:opacity-50 ${hasInsufficientBalance || dateError || timeError
+                                className={`w-full font-bold py-4 rounded-xl text-base transition-all disabled:opacity-50 ${hasInsufficientBalance || dateError || timeError
                                     ? 'bg-white/10 text-white/50 cursor-not-allowed'
-                                    : 'bg-[#df2531] hover:bg-[#c41f2a] text-white'
+                                    : 'bg-[#df2531] hover:bg-[#c41f2a] text-white shadow-lg shadow-[#df2531]/20 hover:shadow-[#df2531]/30'
                                     }`}
-                                aria-label="Confirm booking and pay"
+                                aria-label={loading ? 'Processing booking...' : hasInsufficientBalance ? 'Insufficient balance to book' : dateError || timeError ? 'Please fix date and time errors' : `Confirm booking and pay ${totalPrice} coins`}
                             >
                                 {loading ? (
                                     <>
                                         <SpinnerGap size={20} className="animate-spin mr-2" aria-hidden="true" />
                                         <span className="sr-only">Processing booking...</span>
-                                        Processing...
+                                        Processing Booking...
                                     </>
                                 ) : hasInsufficientBalance ? (
-                                    'Insufficient Balance'
+                                    <>
+                                        <Warning size={20} weight="duotone" className="mr-2" aria-hidden="true" />
+                                        Insufficient Balance
+                                    </>
                                 ) : dateError || timeError ? (
-                                    'Fix Date/Time Errors'
+                                    <>
+                                        <Warning size={20} weight="duotone" className="mr-2" aria-hidden="true" />
+                                        Fix Date/Time Errors
+                                    </>
                                 ) : (
-                                    `Confirm & Pay ${totalPrice} coins`
+                                    <>
+                                        <CheckCircle size={20} weight="duotone" className="mr-2" aria-hidden="true" />
+                                        Confirm & Pay {totalPrice.toLocaleString()} coins
+                                    </>
                                 )}
                             </Button>
-                            <p className="text-white/40 text-xs text-center mt-3">
-                                Payment will be held in escrow until service is completed
-                            </p>
+                            <div className="mt-4 p-3 rounded-lg bg-white/5 border border-white/10">
+                                <p className="text-white/60 text-xs text-center leading-relaxed">
+                                    <Lock size={14} weight="duotone" className="inline mr-1.5 text-white/40" aria-hidden="true" />
+                                    Payment will be held securely in escrow until your service is completed
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
