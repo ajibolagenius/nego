@@ -30,6 +30,11 @@ export function MessagesClient({ userId, conversations: initialConversations, us
     const inputRef = useRef<HTMLInputElement>(null)
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+    // Channel refs for real-time subscriptions
+    const messageChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+    const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+    const conversationsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+
     const [conversations, setConversations] = useState(initialConversations)
     const [selectedConversation, setSelectedConversation] = useState<(Conversation & { other_user?: Profile | null }) | null>(null)
     const [messages, setMessages] = useState<Message[]>([])
@@ -84,7 +89,12 @@ export function MessagesClient({ userId, conversations: initialConversations, us
             if (messagesError) throw messagesError
 
             if (data) {
-                setMessages(data)
+                // Sort messages by created_at to ensure proper order
+                const sortedMessages = [...data].sort((a, b) =>
+                    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                )
+                setMessages(sortedMessages)
+
                 // Mark messages as read
                 const { error: readError } = await supabase
                     .from('messages')
@@ -179,7 +189,13 @@ export function MessagesClient({ userId, conversations: initialConversations, us
             created_at: new Date().toISOString(),
             sender: undefined
         }
-        setMessages(prev => [...prev, tempMessage])
+        setMessages(prev => {
+            const updated = [...prev, tempMessage]
+            // Sort to maintain order
+            return updated.sort((a, b) =>
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            )
+        })
         scrollToBottom()
 
         try {
@@ -199,21 +215,19 @@ export function MessagesClient({ userId, conversations: initialConversations, us
             if (sendError) throw sendError
 
             if (data) {
-                // Replace temp message with real one
-                setMessages(prev => prev.map(m =>
-                    m.id === tempMessage.id ? data : m
-                ))
+                // Replace temp message with real one when received via real-time
+                // The real-time subscription will handle this, but we update optimistically
+                setMessages(prev => {
+                    const filtered = prev.filter(m => m.id !== tempMessage.id)
+                    const updated = [...filtered, data]
+                    // Sort to maintain order
+                    return updated.sort((a, b) =>
+                        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                    )
+                })
 
-                // Update conversation's last_message_at
-                const { error: updateError } = await supabase
-                    .from('conversations')
-                    .update({ last_message_at: new Date().toISOString() })
-                    .eq('id', selectedConversation.id)
-
-                if (updateError) {
-                    console.error('Error updating conversation:', updateError)
-                    // Non-critical error, don't show to user
-                }
+                // Note: last_message_at is updated by database trigger, but we can also update it here
+                // The conversations channel will handle real-time updates
             }
         } catch (err) {
             console.error('Error sending message:', err)
@@ -228,11 +242,10 @@ export function MessagesClient({ userId, conversations: initialConversations, us
 
     // Handle typing indicator
     const handleTyping = useCallback(() => {
-        if (!selectedConversation) return
+        if (!selectedConversation || !typingChannelRef.current) return
 
         // Broadcast typing status
-        const channel = supabase.channel(`typing:${selectedConversation.id}`)
-        channel.send({
+        typingChannelRef.current.send({
             type: 'broadcast',
             event: 'typing',
             payload: { userId, isTyping: true }
@@ -245,13 +258,15 @@ export function MessagesClient({ userId, conversations: initialConversations, us
 
         // Set timeout to stop typing indicator
         typingTimeoutRef.current = setTimeout(() => {
-            channel.send({
-                type: 'broadcast',
-                event: 'typing',
-                payload: { userId, isTyping: false }
-            })
+            if (typingChannelRef.current) {
+                typingChannelRef.current.send({
+                    type: 'broadcast',
+                    event: 'typing',
+                    payload: { userId, isTyping: false }
+                })
+            }
         }, 2000)
-    }, [selectedConversation, userId, supabase])
+    }, [selectedConversation, userId])
 
     // Cleanup typing timeout on unmount
     useEffect(() => {
@@ -262,16 +277,36 @@ export function MessagesClient({ userId, conversations: initialConversations, us
         }
     }, [])
 
-    // Subscribe to new messages and typing indicators
+    // Subscribe to messages for selected conversation
     useEffect(() => {
-        if (!selectedConversation) return
+        if (!selectedConversation) {
+            // Cleanup channels when no conversation is selected
+            if (messageChannelRef.current) {
+                supabase.removeChannel(messageChannelRef.current)
+                messageChannelRef.current = null
+            }
+            if (typingChannelRef.current) {
+                supabase.removeChannel(typingChannelRef.current)
+                typingChannelRef.current = null
+            }
+            return
+        }
 
-        let messageChannel: ReturnType<typeof supabase.channel> | null = null
-        let typingChannel: ReturnType<typeof supabase.channel> | null = null
+        // Cleanup existing channels
+        if (messageChannelRef.current) {
+            supabase.removeChannel(messageChannelRef.current)
+        }
+        if (typingChannelRef.current) {
+            supabase.removeChannel(typingChannelRef.current)
+        }
 
-        // Message subscription
-        messageChannel = supabase
-            .channel(`messages:${selectedConversation.id}`)
+        // Message channel - subscribes to INSERT and UPDATE events
+        const messageChannel = supabase
+            .channel(`messages:${selectedConversation.id}`, {
+                config: {
+                    broadcast: { self: true }
+                }
+            })
             .on(
                 'postgres_changes',
                 {
@@ -281,45 +316,53 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                     filter: `conversation_id=eq.${selectedConversation.id}`,
                 },
                 async (payload) => {
-                    // Only process messages from other users
-                    if (payload.new.sender_id === userId) return
+                    console.log('[Real-time] Message INSERT received:', payload.new.id, 'from:', payload.new.sender_id)
 
                     try {
                         // Fetch the full message with sender info
                         const { data, error: fetchError } = await supabase
                             .from('messages')
                             .select(`
-                *,
-                sender:profiles!messages_sender_id_fkey(id, display_name, avatar_url, is_verified)
-              `)
+                                *,
+                                sender:profiles!messages_sender_id_fkey(id, display_name, avatar_url, is_verified)
+                            `)
                             .eq('id', payload.new.id)
                             .single()
 
                         if (fetchError) {
-                            console.error('Error fetching new message:', fetchError)
+                            console.error('[Real-time] Error fetching new message:', fetchError)
                             return
                         }
 
                         if (data) {
                             setMessages(prev => {
-                                // Avoid duplicates
-                                if (prev.find(m => m.id === data.id)) return prev
-                                return [...prev, data]
+                                // Check for duplicates
+                                if (prev.find(m => m.id === data.id)) {
+                                    console.log('[Real-time] Duplicate message detected, skipping:', data.id)
+                                    return prev
+                                }
+
+                                // Add new message and sort by created_at
+                                const updated = [...prev, data]
+                                return updated.sort((a, b) =>
+                                    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                                )
                             })
 
-                            // Mark as read
-                            const { error: readError } = await supabase
-                                .from('messages')
-                                .update({ is_read: true })
-                                .eq('id', data.id)
+                            // Mark as read if message is from other user
+                            if (data.sender_id !== userId) {
+                                const { error: readError } = await supabase
+                                    .from('messages')
+                                    .update({ is_read: true })
+                                    .eq('id', data.id)
 
-                            if (readError) {
-                                console.error('Error marking message as read:', readError)
-                                // Non-critical error
+                                if (readError) {
+                                    console.error('[Real-time] Error marking message as read:', readError)
+                                }
                             }
                         }
                     } catch (err) {
-                        console.error('Error processing new message:', err)
+                        console.error('[Real-time] Error processing new message:', err)
                     }
                 }
             )
@@ -332,35 +375,159 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                     filter: `conversation_id=eq.${selectedConversation.id}`,
                 },
                 (payload) => {
-                    // Update read status in UI
+                    console.log('[Real-time] Message UPDATE received:', payload.new.id)
+                    // Update message in UI (e.g., read status)
                     setMessages(prev => prev.map(m =>
                         m.id === payload.new.id ? { ...m, is_read: payload.new.is_read } : m
                     ))
                 }
             )
-            .subscribe()
+            .subscribe((status) => {
+                console.log('[Real-time] Message channel subscription status:', status)
+            })
 
-        // Typing indicator subscription
-        typingChannel = supabase
-            .channel(`typing:${selectedConversation.id}`)
+        messageChannelRef.current = messageChannel
+
+        // Typing indicator channel
+        const typingChannel = supabase
+            .channel(`typing:${selectedConversation.id}`, {
+                config: {
+                    broadcast: { self: false }
+                }
+            })
             .on('broadcast', { event: 'typing' }, (payload) => {
                 if (payload.payload.userId !== userId) {
                     setOtherUserTyping(payload.payload.isTyping)
                 }
             })
-            .subscribe()
+            .subscribe((status) => {
+                console.log('[Real-time] Typing channel subscription status:', status)
+            })
+
+        typingChannelRef.current = typingChannel
 
         return () => {
-            if (messageChannel) {
-                supabase.removeChannel(messageChannel)
+            console.log('[Real-time] Cleaning up channels for conversation:', selectedConversation.id)
+            if (messageChannelRef.current) {
+                supabase.removeChannel(messageChannelRef.current)
+                messageChannelRef.current = null
             }
-            if (typingChannel) {
-                supabase.removeChannel(typingChannel)
+            if (typingChannelRef.current) {
+                supabase.removeChannel(typingChannelRef.current)
+                typingChannelRef.current = null
             }
-            // Clear typing indicator on cleanup
             setOtherUserTyping(false)
         }
     }, [selectedConversation, userId, supabase])
+
+    // Subscribe to conversations for real-time updates
+    useEffect(() => {
+        // Cleanup existing conversations channel
+        if (conversationsChannelRef.current) {
+            supabase.removeChannel(conversationsChannelRef.current)
+        }
+
+        // Conversations channel - subscribes to INSERT and UPDATE events
+        // We subscribe to all conversations and filter in the handler
+        const conversationsChannel = supabase
+            .channel('conversations:user', {
+                config: {
+                    broadcast: { self: true }
+                }
+            })
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'conversations',
+                },
+                async (payload) => {
+                    // Filter to only process conversations where user is a participant
+                    const isParticipant = payload.new.participant_1 === userId || payload.new.participant_2 === userId
+                    if (!isParticipant) return
+
+                    console.log('[Real-time] New conversation created:', payload.new.id)
+
+                    try {
+                        // Fetch the other user's profile
+                        const otherUserId = payload.new.participant_1 === userId
+                            ? payload.new.participant_2
+                            : payload.new.participant_1
+
+                        const { data: profile, error: profileError } = await supabase
+                            .from('profiles')
+                            .select('id, display_name, avatar_url, role, is_verified')
+                            .eq('id', otherUserId)
+                            .single()
+
+                        if (profileError) {
+                            console.error('[Real-time] Error fetching profile for new conversation:', profileError)
+                            return
+                        }
+
+                        const newConversation = { ...payload.new, other_user: profile }
+
+                        setConversations(prev => {
+                            // Check for duplicates
+                            if (prev.find(c => c.id === newConversation.id)) {
+                                return prev
+                            }
+                            // Add new conversation and sort by last_message_at
+                            const updated = [newConversation, ...prev]
+                            return updated.sort((a, b) =>
+                                new Date(b.last_message_at || b.created_at).getTime() -
+                                new Date(a.last_message_at || a.created_at).getTime()
+                            )
+                        })
+                    } catch (err) {
+                        console.error('[Real-time] Error processing new conversation:', err)
+                    }
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'conversations',
+                },
+                (payload) => {
+                    // Filter to only process conversations where user is a participant
+                    const isParticipant = payload.new.participant_1 === userId || payload.new.participant_2 === userId
+                    if (!isParticipant) return
+
+                    console.log('[Real-time] Conversation UPDATE received:', payload.new.id, 'last_message_at:', payload.new.last_message_at)
+
+                    // Update conversation in list (e.g., last_message_at)
+                    setConversations(prev => {
+                        const updated = prev.map(conv =>
+                            conv.id === payload.new.id
+                                ? { ...conv, ...payload.new }
+                                : conv
+                        )
+                        // Re-sort by last_message_at descending
+                        return updated.sort((a, b) =>
+                            new Date(b.last_message_at || b.created_at).getTime() -
+                            new Date(a.last_message_at || a.created_at).getTime()
+                        )
+                    })
+                }
+            )
+            .subscribe((status) => {
+                console.log('[Real-time] Conversations channel subscription status:', status)
+            })
+
+        conversationsChannelRef.current = conversationsChannel
+
+        return () => {
+            console.log('[Real-time] Cleaning up conversations channel')
+            if (conversationsChannelRef.current) {
+                supabase.removeChannel(conversationsChannelRef.current)
+                conversationsChannelRef.current = null
+            }
+        }
+    }, [userId, supabase])
 
     // Scroll to bottom when messages change
     useEffect(() => {
