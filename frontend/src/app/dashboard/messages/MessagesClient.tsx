@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { GiftCoins } from '@/components/GiftCoins'
+import { useWallet } from '@/hooks/useWallet'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { Conversation, Message, Profile } from '@/types/database'
 
@@ -43,27 +44,11 @@ export function MessagesClient({ userId, conversations: initialConversations, us
     const [sending, setSending] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [otherUserTyping, setOtherUserTyping] = useState(false)
-    const [walletBalance, setWalletBalance] = useState(0)
     const [error, setError] = useState<string | null>(null)
 
-    // Fetch wallet balance for gift feature
-    useEffect(() => {
-        const fetchWallet = async () => {
-            try {
-                const { data, error: walletError } = await supabase
-                    .from('wallets')
-                    .select('balance')
-                    .eq('user_id', userId)
-                    .single()
-                if (walletError) throw walletError
-                if (data) setWalletBalance(data.balance)
-            } catch (err) {
-                console.error('Error fetching wallet balance:', err)
-                // Non-critical error, don't show to user
-            }
-        }
-        fetchWallet()
-    }, [supabase, userId])
+    // Real-time wallet synchronization for gift feature
+    const { wallet } = useWallet({ userId, autoRefresh: true })
+    const walletBalance = wallet?.balance || 0
 
     // Scroll to bottom of messages
     const scrollToBottom = useCallback(() => {
@@ -763,9 +748,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                                                             senderId={userId}
                                                             senderBalance={walletBalance}
                                                             onSuccess={() => {
-                                                                // Refresh wallet balance
-                                                                supabase.from('wallets').select('balance').eq('user_id', userId).single()
-                                                                    .then(({ data }) => data && setWalletBalance(data.balance))
+                                                                // Wallet will update automatically via real-time subscription
                                                             }}
                                                         />
                                                     </div>

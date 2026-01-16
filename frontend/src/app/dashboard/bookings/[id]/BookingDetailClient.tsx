@@ -11,6 +11,7 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { useWallet } from '@/hooks/useWallet'
 import { WriteReviewModal } from '@/components/Reviews'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile, Wallet, BookingStatus, Review } from '@/types/database'
@@ -45,9 +46,12 @@ const statusConfig: Record<BookingStatus, { label: string; color: string; icon: 
   expired: { label: 'Expired', color: 'text-gray-400 bg-gray-500/10 border-gray-500/30', icon: Hourglass },
 }
 
-export function BookingDetailClient({ booking, wallet, userId }: BookingDetailClientProps) {
+export function BookingDetailClient({ booking, wallet: initialWallet, userId }: BookingDetailClientProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+
+  // Real-time wallet synchronization
+  const { wallet } = useWallet({ userId, initialWallet })
   const [rejectLoading, setRejectLoading] = useState(false)
   const [error, setError] = useState('')
   const [showRejectModal, setShowRejectModal] = useState(false)

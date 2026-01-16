@@ -8,16 +8,17 @@ import {
     Calendar, ChatCircle, MagnifyingGlass, X
 } from '@phosphor-icons/react'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { useWallet } from '@/hooks/useWallet'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
-import type { Profile, Gift as GiftType } from '@/types/database'
+import type { Profile, Gift as GiftType, Wallet } from '@/types/database'
 
 interface GiftHistoryClientProps {
     user: SupabaseUser
     profile: Profile | null
     sentGifts: GiftType[]
     receivedGifts: GiftType[]
-    walletBalance: number
+    wallet: Wallet | null
 }
 
 type TabType = 'received' | 'sent'
@@ -35,10 +36,14 @@ export function GiftHistoryClient({
     profile,
     sentGifts,
     receivedGifts,
-    walletBalance
+    wallet: initialWallet
 }: GiftHistoryClientProps) {
     const [activeTab, setActiveTab] = useState<TabType>('received')
     const [searchQuery, setSearchQuery] = useState('')
+
+    // Real-time wallet synchronization
+    const { wallet } = useWallet({ userId: user.id, initialWallet })
+    const walletBalance = wallet?.balance || 0
 
     // Memoized totals
     const totalReceived = useMemo(() =>

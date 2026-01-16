@@ -45,10 +45,10 @@ export default async function GiftHistoryPage() {
         .order('created_at', { ascending: false })
         .limit(50)
 
-    // Get wallet balance
+    // Get wallet
     const { data: wallet } = await supabase
         .from('wallets')
-        .select('balance')
+        .select('*')
         .eq('user_id', user.id)
         .single()
 
@@ -58,7 +58,7 @@ export default async function GiftHistoryPage() {
             profile={profile}
             sentGifts={sentGifts || []}
             receivedGifts={receivedGifts || []}
-            walletBalance={wallet?.balance || 0}
+            wallet={wallet}
         />
     )
 }
