@@ -4,8 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { 
-  ArrowLeft, Calendar, Clock, MapPin, CheckCircle, 
+import {
+  ArrowLeft, Calendar, Clock, MapPin, CheckCircle,
   SpinnerGap, WarningCircle, CreditCard, ShieldCheck,
   Receipt, Coin, CaretRight, XCircle, User, Star, Hourglass
 } from '@phosphor-icons/react'
@@ -95,7 +95,7 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
 
       // Check wallet balance (if using coins)
       // For demo, we'll just update the booking status
-      
+
       const { error: updateError } = await supabase
         .from('bookings')
         .update({ status: 'verification_pending' })
@@ -174,7 +174,7 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
       // Mark booking as cancelled with reason
       const { error: updateError } = await supabase
         .from('bookings')
-        .update({ 
+        .update({
           status: 'cancelled',
           notes: rejectReason ? `Declined by talent: ${rejectReason}` : 'Declined by talent'
         })
@@ -225,17 +225,25 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
       {/* Header */}
       <header className="sticky top-16 lg:top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => router.back()}
-              className="text-white/60 hover:text-white transition-colors"
-            >
-              <ArrowLeft size={24} />
-            </button>
-            <div>
-              <h1 className="text-lg font-bold text-white">Booking Details</h1>
-              <p className="text-white/50 text-sm">#{booking.id.slice(0, 8)}</p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.back()}
+                className="text-white/60 hover:text-white transition-colors"
+              >
+                <ArrowLeft size={24} />
+              </button>
+              <div>
+                <h1 className="text-lg font-bold text-white">Booking Details</h1>
+                <p className="text-white/50 text-sm">#{booking.id.slice(0, 8)}</p>
+              </div>
             </div>
+            <Link
+              href="/dashboard/bookings"
+              className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white text-sm font-medium transition-colors"
+            >
+              All Bookings
+            </Link>
           </div>
         </div>
       </header>
@@ -270,7 +278,7 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
         )}
 
         {/* Talent Card */}
-        <Link 
+        <Link
           href={getTalentUrl(booking.talent)}
           className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/10 hover:border-white/20 transition-colors"
         >
@@ -568,7 +576,7 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
             <XCircle size={48} weight="fill" className="text-red-400 mx-auto mb-4" />
             <h3 className="text-white font-bold text-lg mb-2">Booking Cancelled</h3>
             <p className="text-white/60 text-sm">
-              {booking.notes?.includes('Declined by talent') 
+              {booking.notes?.includes('Declined by talent')
                 ? 'This booking was declined by the talent.'
                 : 'This booking has been cancelled.'}
             </p>
@@ -587,7 +595,7 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
       {/* Reject Modal */}
       {showRejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
+          <div
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             onClick={() => setShowRejectModal(false)}
           />
@@ -596,7 +604,7 @@ export function BookingDetailClient({ booking, wallet, userId }: BookingDetailCl
             <p className="text-white/60 text-sm mb-4">
               Are you sure you want to decline this booking? The client will be notified.
             </p>
-            
+
             <div className="mb-4">
               <label className="block text-white/70 text-sm mb-2">Reason (optional)</label>
               <textarea
