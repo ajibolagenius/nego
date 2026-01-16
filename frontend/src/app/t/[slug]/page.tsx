@@ -99,23 +99,19 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
     }
 
     // Fetch talent_menus separately to ensure proper data structure
-    const { data: talentMenus } = await supabase
+    // Use same query structure as dashboard for consistency
+    const { data: talentMenus, error: menusError } = await supabase
         .from('talent_menus')
         .select(`
-      id,
-      talent_id,
-      service_type_id,
-      price,
-      is_active,
-      created_at,
-      service_type:service_types (
-        id,
-        name,
-        icon,
-        description
-      )
-    `)
+            *,
+            service_type:service_types(*)
+        `)
         .eq('talent_id', talent.id)
+        .order('created_at', { ascending: true })
+
+    if (menusError) {
+        console.error('[TalentProfile] Error fetching talent_menus:', menusError)
+    }
 
     // Fetch ALL media (including premium) using admin client to bypass RLS
     let media = null
@@ -139,20 +135,39 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
     }
 
     // Attach media and services to talent object with proper structure
+    // Map talent_menus to match expected structure (same as dashboard)
+    const mappedMenus = (talentMenus || []).map((m: any) => {
+        // service_types(*) returns an object, not an array
+        const serviceType = m.service_type
+        return {
+            id: m.id,
+            talent_id: m.talent_id || talent.id,
+            service_type_id: m.service_type_id,
+            price: m.price,
+            is_active: m.is_active,
+            created_at: m.created_at,
+            service_type: serviceType
+        }
+    })
+
     const talentWithMedia = {
         ...talent,
         media: media || [],
-        talent_menus: (talentMenus || []).map((m: any) => {
-            const serviceType = Array.isArray(m.service_type) ? m.service_type[0] : m.service_type
-            return {
-                id: m.id,
-                talent_id: m.talent_id,
-                service_type_id: m.service_type_id,
-                price: m.price,
-                is_active: m.is_active,
-                created_at: m.created_at,
-                service_type: serviceType
-            }
+        talent_menus: mappedMenus
+    }
+
+    // Debug logging (remove in production)
+    if (process.env.NODE_ENV === 'development') {
+        console.log('[TalentProfile] Talent data:', {
+            id: talent.id,
+            display_name: talent.display_name,
+            username: talent.username,
+            bio: talent.bio,
+            location: talent.location,
+            avatar_url: talent.avatar_url,
+            mediaCount: media?.length || 0,
+            menusCount: mappedMenus.length,
+            activeMenusCount: mappedMenus.filter(m => m.is_active).length
         })
     }
 
