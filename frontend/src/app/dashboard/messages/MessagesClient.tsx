@@ -6,8 +6,8 @@ import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import {
     ArrowLeft, PaperPlaneRight, User, Chat, MagnifyingGlass,
-    DotsThree, Phone, VideoCamera, SpinnerGap, CheckCircle, Checks,
-    CalendarPlus, Gift
+    SpinnerGap, CheckCircle, Checks,
+    CalendarPlus
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -407,9 +407,9 @@ export function MessagesClient({ userId, conversations: initialConversations, us
 
     return (
         <>
-            <div className="min-h-screen bg-black pb-16 lg:pb-0">
+            <div className="min-h-screen bg-black pt-16 lg:pt-0 pb-16 lg:pb-0">
                 {/* Header */}
-                <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
+                <div className={`sticky top-16 lg:top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10 ${selectedConversation ? 'hidden md:block' : ''}`}>
                     <div className="max-w-7xl mx-auto px-4 py-4">
                         <div className="flex items-center gap-4">
                             <Link href="/dashboard" className="text-white/60 hover:text-white transition-colors" aria-label="Back to dashboard">
@@ -421,7 +421,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                 </div>
 
                 <div className="max-w-7xl mx-auto">
-                    <div className="flex h-[calc(100vh-80px)]">
+                    <div className="flex h-[calc(100vh-144px)] lg:h-[calc(100vh-80px)]">
                         {/* Conversations List */}
                         <div className={`w-full md:w-80 lg:w-96 border-r border-white/10 flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'
                             }`}>
@@ -542,16 +542,16 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                             {selectedConversation ? (
                                 <>
                                     {/* Chat Header */}
-                                    <div className="p-4 border-b border-white/10 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                onClick={() => setSelectedConversation(null)}
+                                    <div className="sticky top-0 md:relative md:top-0 z-30 bg-black/95 backdrop-blur-xl border-b border-white/10 p-3 md:p-4 flex items-center justify-between">
+                                        <div className="flex items-center gap-2 md:gap-3">
+                                            <Link
+                                                href="/dashboard/messages"
                                                 className="md:hidden text-white/60 hover:text-white transition-colors"
                                                 aria-label="Back to conversations list"
                                             >
-                                                <ArrowLeft size={24} aria-hidden="true" />
-                                            </button>
-                                            <div className="w-10 h-10 rounded-full bg-white/10 overflow-hidden shrink-0">
+                                                <ArrowLeft size={20} className="md:hidden" aria-hidden="true" />
+                                            </Link>
+                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white/10 overflow-hidden shrink-0">
                                                 {selectedConversation.other_user?.avatar_url ? (
                                                     <Image
                                                         src={selectedConversation.other_user.avatar_url}
@@ -564,77 +564,60 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center" aria-hidden="true">
-                                                        <User size={20} className="text-white/40" />
+                                                        <User size={16} className="md:w-5 md:h-5 text-white/40" />
                                                     </div>
                                                 )}
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-white font-medium truncate">
+                                                <p className="text-white font-medium truncate text-sm md:text-base">
                                                     {selectedConversation.other_user?.display_name || 'Unknown'}
                                                 </p>
                                                 {otherUserTyping ? (
-                                                    <p className="text-[#df2531] text-sm animate-pulse" aria-live="polite">
+                                                    <p className="text-[#df2531] text-xs md:text-sm animate-pulse" aria-live="polite">
                                                         <span className="sr-only">User is typing</span>
                                                         typing...
                                                     </p>
                                                 ) : (
-                                                    <p className="text-white/40 text-sm truncate">
+                                                    <p className="text-white/40 text-xs md:text-sm truncate">
                                                         {getRoleLabel(selectedConversation.other_user?.role, selectedConversation.other_user?.is_verified)}
                                                     </p>
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1.5 md:gap-2">
                                             {/* Quick Actions for Clients chatting with Talents */}
                                             {userRole === 'client' && selectedConversation.other_user?.role === 'talent' && (
                                                 <>
-                                                    <GiftCoins
-                                                        talentId={selectedConversation.other_user.id}
-                                                        talentName={selectedConversation.other_user.display_name || 'Talent'}
-                                                        senderId={userId}
-                                                        senderBalance={walletBalance}
-                                                        onSuccess={() => {
-                                                            // Refresh wallet balance
-                                                            supabase.from('wallets').select('balance').eq('user_id', userId).single()
-                                                                .then(({ data }) => data && setWalletBalance(data.balance))
-                                                        }}
-                                                    />
+                                                    {/* Custom Gift Button - Totally different design from talent page */}
+                                                    <div className="[&>button]:!bg-gradient-to-br [&>button]:!from-purple-600 [&>button]:!to-indigo-600 [&>button]:!rounded-lg [&>button]:!p-1.5 [&>button]:!md:p-2 [&>button]:!min-w-0 [&>button]:!w-8 [&>button]:!h-8 [&>button]:!md:w-9 [&>button]:!md:h-9 [&>button]:!flex [&>button]:!items-center [&>button]:!justify-center [&>button]:!border-0 [&>button]:!shadow-md [&>button]:!shadow-purple-500/30 [&>button]:!hover:from-purple-500 [&>button]:!hover:to-indigo-500 [&>button]:!hover:shadow-lg [&>button]:!hover:shadow-purple-500/40 [&>button]:!hover:scale-105 [&>button]:!transition-all [&>button]:!duration-200 [&>button]:!active:scale-95 [&>button]:!text-white [&>button]:!gap-0 [&>button_span]:!hidden [&>button_svg]:!w-4 [&>button_svg]:!h-4 [&>button_svg]:!md:w-5 [&>button_svg]:!md:h-5">
+                                                        <GiftCoins
+                                                            talentId={selectedConversation.other_user.id}
+                                                            talentName={selectedConversation.other_user.display_name || 'Talent'}
+                                                            senderId={userId}
+                                                            senderBalance={walletBalance}
+                                                            onSuccess={() => {
+                                                                // Refresh wallet balance
+                                                                supabase.from('wallets').select('balance').eq('user_id', userId).single()
+                                                                    .then(({ data }) => data && setWalletBalance(data.balance))
+                                                            }}
+                                                        />
+                                                    </div>
                                                     <Link
                                                         href={getTalentUrl(selectedConversation.other_user)}
-                                                        className="p-2 rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                                                        className="px-2 py-1.5 md:px-3 md:py-2 rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-1.5 md:gap-2 text-xs md:text-sm"
                                                         aria-label="View profile and book"
                                                         title="View Profile & Book"
                                                     >
-                                                        <CalendarPlus size={20} aria-hidden="true" />
+                                                        <CalendarPlus size={14} className="md:w-[18px] md:h-[18px]" aria-hidden="true" />
+                                                        <span>Book</span>
                                                     </Link>
                                                 </>
                                             )}
-                                            <button
-                                                className="p-2 rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                                                aria-label="Call"
-                                                title="Call"
-                                            >
-                                                <Phone size={20} aria-hidden="true" />
-                                            </button>
-                                            <button
-                                                className="p-2 rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                                                aria-label="Video call"
-                                                title="Video Call"
-                                            >
-                                                <VideoCamera size={20} aria-hidden="true" />
-                                            </button>
-                                            <button
-                                                className="p-2 rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                                                aria-label="More options"
-                                                title="More Options"
-                                            >
-                                                <DotsThree size={20} weight="bold" aria-hidden="true" />
-                                            </button>
                                         </div>
                                     </div>
 
                                     {/* Messages */}
-                                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                                    <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20 md:pb-4">
                                         {error && (
                                             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4">
                                                 <p className="text-red-400 text-sm">{error}</p>
@@ -664,8 +647,8 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                                                         <div className={`max-w-[70%] ${isOwn ? 'order-1' : ''}`}>
                                                             <div
                                                                 className={`px-4 py-2.5 rounded-2xl ${isOwn
-                                                                        ? 'bg-[#df2531] text-white rounded-br-md'
-                                                                        : 'bg-white/10 text-white rounded-bl-md'
+                                                                    ? 'bg-[#df2531] text-white rounded-br-md'
+                                                                    : 'bg-white/10 text-white rounded-bl-md'
                                                                     }`}
                                                             >
                                                                 <p className="break-words">{message.content}</p>
@@ -693,8 +676,12 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                                     </div>
 
                                     {/* Message Input */}
-                                    <form onSubmit={handleSendMessage} className="p-4 border-t border-white/10">
-                                        <div className="flex items-center gap-3">
+                                    <form
+                                        onSubmit={handleSendMessage}
+                                        className="fixed md:sticky bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/10 p-3 md:p-4"
+                                        style={{ maxWidth: '100%' }}
+                                    >
+                                        <div className="max-w-7xl mx-auto flex items-center gap-2 md:gap-3">
                                             <label htmlFor="message-input" className="sr-only">Type your message</label>
                                             <input
                                                 id="message-input"
@@ -708,24 +695,24 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                                                 placeholder="Type your message..."
                                                 autoComplete="off"
                                                 aria-label="Type your message"
-                                                className="flex-1 bg-white/5 border border-white/10 rounded-full px-5 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50"
+                                                className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 md:px-5 py-2.5 md:py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 text-sm md:text-base"
                                                 data-testid="message-input"
                                             />
                                             <Button
                                                 type="submit"
                                                 disabled={!newMessage.trim() || sending}
-                                                className="w-12 h-12 rounded-full bg-[#df2531] hover:bg-[#df2531]/90 text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#df2531] hover:bg-[#df2531]/90 text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
                                                 data-testid="send-message-btn"
                                                 aria-label={sending ? 'Sending message' : 'Send message'}
                                             >
                                                 {sending ? (
                                                     <>
-                                                        <SpinnerGap size={20} className="animate-spin" aria-hidden="true" />
+                                                        <SpinnerGap size={18} className="md:w-5 md:h-5 animate-spin" aria-hidden="true" />
                                                         <span className="sr-only">Sending</span>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <PaperPlaneRight size={20} weight="fill" aria-hidden="true" />
+                                                        <PaperPlaneRight size={18} className="md:w-5 md:h-5" weight="fill" aria-hidden="true" />
                                                         <span className="sr-only">Send</span>
                                                     </>
                                                 )}
