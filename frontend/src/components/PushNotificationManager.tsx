@@ -35,18 +35,20 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
       const subscription = await registration.pushManager.getSubscription()
       setIsSubscribed(!!subscription)
     } catch (error) {
-      console.error('Error checking subscription:', error)
+      console.error('[PushNotificationManager] Error checking subscription:', error)
+      // Non-critical error, continue without subscription
     }
   }
 
   const registerServiceWorker = async () => {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js')
-      console.log('Service Worker registered:', registration)
+      console.log('[PushNotificationManager] Service Worker registered:', registration)
       return registration
     } catch (error) {
-      console.error('Service Worker registration failed:', error)
-      throw error
+      console.error('[PushNotificationManager] Service Worker registration failed:', error)
+      // Continue even if service worker fails - browser notifications will still work
+      throw new Error('Service Worker registration failed. Browser notifications may still work.')
     }
   }
 
@@ -58,33 +60,58 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
       setPermission(result as PermissionState)
       
       if (result !== 'granted') {
-        throw new Error('Permission denied')
+        throw new Error('Notification permission was denied. Please enable notifications in your browser settings.')
       }
 
-      // Register service worker
-      const registration = await registerServiceWorker()
-      await navigator.serviceWorker.ready
+      // Try to register service worker (optional - browser notifications work without it)
+      try {
+        const registration = await registerServiceWorker()
+        await navigator.serviceWorker.ready
+      } catch (swError) {
+        console.warn('[PushNotificationManager] Service Worker registration failed, continuing with browser notifications:', swError)
+        // Continue - browser notifications will still work
+      }
 
       // Subscribe to push (using VAPID - would need server setup)
       // For now, we'll use browser notifications
       setIsSubscribed(true)
       setShowPrompt(false)
 
-      // Store preference in database
-      const supabase = createClient()
-      await supabase
-        .from('profiles')
-        .update({ push_notifications_enabled: true })
-        .eq('id', userId)
+      // Store preference in database (non-blocking)
+      try {
+        const supabase = createClient()
+        const { error } = await supabase
+          .from('profiles')
+          .update({ push_notifications_enabled: true })
+          .eq('id', userId)
+
+        if (error) {
+          console.warn('[PushNotificationManager] Failed to update database preference:', error)
+          // Continue - notification permission is still granted
+        }
+      } catch (dbError) {
+        console.warn('[PushNotificationManager] Database update failed:', dbError)
+        // Continue - notification permission is still granted
+      }
 
       // Show test notification
-      new Notification('Notifications Enabled! 🔔', {
-        body: 'You will now receive notifications from Nego',
-        icon: '/icon-192.png'
-      })
+      try {
+        new Notification('Notifications Enabled! 🔔', {
+          body: 'You will now receive notifications from Nego',
+          icon: '/icon-192.png',
+          tag: 'nego-notification-enabled'
+        })
+      } catch (notifError) {
+        console.warn('[PushNotificationManager] Failed to show test notification:', notifError)
+      }
 
     } catch (error) {
-      console.error('Subscription error:', error)
+      console.error('[PushNotificationManager] Subscription error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to enable notifications'
+      // Permission denied is handled by the UI state
+      if (errorMessage.includes('denied')) {
+        setPermission('denied')
+      }
     } finally {
       setLoading(false)
     }
@@ -93,24 +120,37 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
   const unsubscribe = async () => {
     setLoading(true)
     try {
-      const registration = await navigator.serviceWorker.ready
-      const subscription = await registration.pushManager.getSubscription()
-      
-      if (subscription) {
-        await subscription.unsubscribe()
+      try {
+        const registration = await navigator.serviceWorker.ready
+        const subscription = await registration.pushManager.getSubscription()
+        
+        if (subscription) {
+          await subscription.unsubscribe()
+        }
+      } catch (swError) {
+        console.warn('[PushNotificationManager] Service Worker unsubscribe failed:', swError)
+        // Continue - we'll still update the database
       }
       
       setIsSubscribed(false)
 
-      // Update database
-      const supabase = createClient()
-      await supabase
-        .from('profiles')
-        .update({ push_notifications_enabled: false })
-        .eq('id', userId)
+      // Update database (non-blocking)
+      try {
+        const supabase = createClient()
+        const { error } = await supabase
+          .from('profiles')
+          .update({ push_notifications_enabled: false })
+          .eq('id', userId)
+
+        if (error) {
+          console.warn('[PushNotificationManager] Failed to update database preference:', error)
+        }
+      } catch (dbError) {
+        console.warn('[PushNotificationManager] Database update failed:', dbError)
+      }
 
     } catch (error) {
-      console.error('Unsubscribe error:', error)
+      console.error('[PushNotificationManager] Unsubscribe error:', error)
     } finally {
       setLoading(false)
     }
@@ -134,13 +174,13 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
 
   if (permission === 'denied') {
     return (
-      <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+      <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20" role="alert">
         <div className="flex items-center gap-3">
-          <BellSlash size={20} className="text-red-400" />
+          <BellSlash size={20} className="text-red-400" aria-hidden="true" />
           <div>
             <p className="text-red-400 text-sm font-medium">Notifications Blocked</p>
             <p className="text-red-400/70 text-xs">
-              Enable notifications in your browser settings
+              Notifications are blocked in your browser. To enable them, go to your browser settings and allow notifications for this site.
             </p>
           </div>
         </div>
@@ -207,7 +247,7 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Stay Updated</h3>
               <p className="text-white/60 text-sm">
-                Enable notifications to get instant updates about gifts, booking requests, and messages.
+                Enable browser notifications to get instant updates about gifts, booking requests, messages, and other important activities on Nego.
               </p>
             </div>
 

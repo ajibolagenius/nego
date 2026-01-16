@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Bell, X, CheckCircle, Clock, XCircle, Money, CalendarCheck, Hourglass, Icon } from '@phosphor-icons/react'
+import { Bell, X, CheckCircle, Clock, XCircle, Money, CalendarCheck, Hourglass, Icon, SpinnerGap } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
 import type { Notification, NotificationType } from '@/types/database'
 
@@ -36,21 +36,35 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const notificationsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const supabase = createClient()
 
   // Fetch notifications
   const fetchNotifications = async () => {
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(10)
+    setLoading(true)
+    setError(null)
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(10)
 
-    if (!error && data) {
-      setNotifications(data as Notification[])
-      setUnreadCount(data.filter((n) => !n.is_read).length)
+      if (fetchError) throw fetchError
+
+      if (data) {
+        setNotifications(data as Notification[])
+        setUnreadCount(data.filter((n) => !n.is_read).length)
+      }
+    } catch (err) {
+      console.error('[NotificationBell] Error fetching notifications:', err)
+      setError('Failed to load notifications')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -58,9 +72,18 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   useEffect(() => {
     fetchNotifications()
 
-    // Subscribe to new notifications
+    // Cleanup existing channel
+    if (notificationsChannelRef.current) {
+      supabase.removeChannel(notificationsChannelRef.current)
+    }
+
+    // Subscribe to new and updated notifications
     const channel = supabase
-      .channel('notifications')
+      .channel(`notification-bell:${userId}`, {
+        config: {
+          broadcast: { self: true }
+        }
+      })
       .on(
         'postgres_changes',
         {
@@ -70,25 +93,61 @@ export function NotificationBell({ userId }: NotificationBellProps) {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
+          console.log('[NotificationBell] Real-time INSERT:', payload.new)
           const newNotification = payload.new as Notification
           setNotifications((prev) => [newNotification, ...prev.slice(0, 9)])
           setUnreadCount((prev) => prev + 1)
           
-          // Play sound or show browser notification
+          // Show browser notification
           if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(newNotification.title, {
-              body: newNotification.message,
-              icon: '/favicon.ico',
-            })
+            try {
+              new Notification(newNotification.title, {
+                body: newNotification.message,
+                icon: '/favicon.ico',
+                tag: `notification-${newNotification.id}`,
+              })
+            } catch (err) {
+              console.error('[NotificationBell] Error showing browser notification:', err)
+            }
           }
         }
       )
-      .subscribe()
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          console.log('[NotificationBell] Real-time UPDATE:', payload.new)
+          const updatedNotification = payload.new as Notification
+          setNotifications((prev) =>
+            prev.map((n) => (n.id === updatedNotification.id ? updatedNotification : n))
+          )
+          // Recalculate unread count
+          setNotifications((current) => {
+            const unread = current.filter((n) => !n.is_read).length
+            setUnreadCount(unread)
+            return current
+          })
+        }
+      )
+      .subscribe((status) => {
+        console.log('[NotificationBell] Channel subscription status:', status)
+      })
+
+    notificationsChannelRef.current = channel
 
     return () => {
-      supabase.removeChannel(channel)
+      console.log('[NotificationBell] Cleaning up notification channel')
+      if (notificationsChannelRef.current) {
+        supabase.removeChannel(notificationsChannelRef.current)
+        notificationsChannelRef.current = null
+      }
     }
-  }, [userId])
+  }, [userId, supabase])
 
   // Request notification permission
   useEffect(() => {
@@ -114,26 +173,43 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id)
     if (unreadIds.length === 0) return
 
-    await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .in('id', unreadIds)
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .in('id', unreadIds)
 
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
-    setUnreadCount(0)
+      if (error) throw error
+
+      // Optimistic update (real-time will confirm)
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
+      setUnreadCount(0)
+    } catch (err) {
+      console.error('[NotificationBell] Error marking all as read:', err)
+      setError('Failed to mark all as read')
+      setTimeout(() => setError(null), 3000)
+    }
   }
 
   // Mark single notification as read
   const markAsRead = async (id: string) => {
-    await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('id', id)
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', id)
 
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-    )
-    setUnreadCount((prev) => Math.max(0, prev - 1))
+      if (error) throw error
+
+      // Optimistic update (real-time will confirm)
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+      )
+      setUnreadCount((prev) => Math.max(0, prev - 1))
+    } catch (err) {
+      console.error('[NotificationBell] Error marking as read:', err)
+      // Non-critical error, don't show to user
+    }
   }
 
   const formatTime = (dateString: string) => {
@@ -162,6 +238,12 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     return '/dashboard'
   }
 
+  // Recalculate unread count when notifications change
+  useEffect(() => {
+    const unread = notifications.filter((n) => !n.is_read).length
+    setUnreadCount(unread)
+  }, [notifications])
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Button */}
@@ -169,10 +251,16 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 rounded-full hover:bg-white/10 transition-colors"
         data-testid="notification-bell"
+        aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+        aria-expanded={isOpen}
+        aria-haspopup="true"
       >
-        <Bell size={22} weight={unreadCount > 0 ? 'fill' : 'regular'} className="text-white" />
+        <Bell size={22} weight={unreadCount > 0 ? 'fill' : 'regular'} className="text-white" aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#df2531] text-white text-xs font-bold flex items-center justify-center animate-pulse">
+          <span 
+            className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#df2531] text-white text-xs font-bold flex items-center justify-center animate-pulse"
+            aria-label={`${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`}
+          >
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -180,26 +268,47 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto top-14 sm:top-full sm:mt-2 w-auto sm:w-96 max-w-[calc(100vw-1rem)] bg-[#1a1a1a] rounded-2xl border border-white/10 shadow-2xl overflow-hidden z-50">
+        <div 
+          className="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto top-14 sm:top-full sm:mt-2 w-auto sm:w-96 max-w-[calc(100vw-1rem)] bg-[#1a1a1a] rounded-2xl border border-white/10 shadow-2xl overflow-hidden z-50"
+          role="menu"
+          aria-label="Notifications menu"
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-white/10">
             <h3 className="text-white font-bold">Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-[#df2531] text-sm hover:underline"
+                className="text-[#df2531] text-sm hover:underline transition-colors"
+                aria-label="Mark all notifications as read"
               >
                 Mark all read
               </button>
             )}
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="px-4 pt-2" role="alert">
+              <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                <p className="text-red-400 text-xs">{error}</p>
+              </div>
+            </div>
+          )}
+
           {/* Notifications List */}
           <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <div className="p-8 text-center">
-                <Bell size={32} className="text-white/20 mx-auto mb-2" />
+            {loading ? (
+              <div className="p-8 text-center" role="status" aria-live="polite">
+                <SpinnerGap size={32} className="text-white/20 mx-auto mb-2 animate-spin" aria-hidden="true" />
+                <p className="text-white/50 text-sm">Loading notifications...</p>
+                <span className="sr-only">Loading notifications</span>
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="p-8 text-center" role="status">
+                <Bell size={32} className="text-white/20 mx-auto mb-2" aria-hidden="true" />
                 <p className="text-white/50 text-sm">No notifications yet</p>
+                <p className="text-white/30 text-xs mt-1">You&apos;re all caught up!</p>
               </div>
             ) : (
               notifications.map((notification) => {
@@ -214,11 +323,13 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                       markAsRead(notification.id)
                       setIsOpen(false)
                     }}
+                    role="menuitem"
                     className={`flex items-start gap-3 p-4 hover:bg-white/5 transition-colors border-b border-white/5 ${
                       !notification.is_read ? 'bg-white/5' : ''
                     }`}
+                    aria-label={`${notification.title}. ${notification.message}`}
                   >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${colorClass}`} aria-hidden="true">
                       <Icon size={20} weight="duotone" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -228,12 +339,12 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                       <p className="text-white/50 text-xs mt-0.5 line-clamp-2">
                         {notification.message}
                       </p>
-                      <p className="text-white/30 text-xs mt-1">
+                      <p className="text-white/30 text-xs mt-1" aria-label={`Created ${formatTime(notification.created_at)}`}>
                         {formatTime(notification.created_at)}
                       </p>
                     </div>
                     {!notification.is_read && (
-                      <div className="w-2 h-2 rounded-full bg-[#df2531] shrink-0 mt-2" />
+                      <div className="w-2 h-2 rounded-full bg-[#df2531] shrink-0 mt-2" aria-label="Unread notification" />
                     )}
                   </Link>
                 )
