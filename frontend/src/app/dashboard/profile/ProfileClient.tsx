@@ -109,7 +109,7 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
             setSuccess(true)
             setIsEditing(false)
             router.refresh()
-            
+
             // Clear success message after 3 seconds
             setTimeout(() => setSuccess(false), 3000)
         } catch (err) {
@@ -270,8 +270,8 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
                         {/* Role Badge */}
                         <div className="flex items-center gap-2 mb-3">
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${userRole === 'talent'
-                                    ? 'bg-[#df2531]/20 text-[#df2531] border border-[#df2531]/30'
-                                    : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                ? 'bg-[#df2531]/20 text-[#df2531] border border-[#df2531]/30'
+                                : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                                 }`}>
                                 {userRole === 'talent' ? 'Talent' : 'Client'}
                             </span>
