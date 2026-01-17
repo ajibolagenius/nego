@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createApiClient } from '@/lib/supabase/api'
 import { AnalyticsClient } from './AnalyticsClient'
 import { cache, CACHE_KEYS } from '@/lib/admin/cache'
 
@@ -8,7 +8,8 @@ export const metadata = {
 }
 
 export default async function AnalyticsPage() {
-    const supabase = await createClient()
+    // Use API client (service role) to bypass RLS for admin operations
+    const supabase = createApiClient()
 
     // Check cache first (5 minute TTL)
     const cacheKey = CACHE_KEYS.ANALYTICS_STATS

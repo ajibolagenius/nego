@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createApiClient } from '@/lib/supabase/api'
 import { VerificationsClient } from './VerificationsClient'
 import type { VerificationWithBooking } from '@/types/admin'
 
@@ -8,7 +8,8 @@ export const metadata = {
 }
 
 export default async function VerificationsPage() {
-  const supabase = await createClient()
+  // Use API client (service role) to bypass RLS for admin operations
+  const supabase = createApiClient()
 
   // Fetch all verifications with booking and client details
   const { data: verifications, error } = await supabase

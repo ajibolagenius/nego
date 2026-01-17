@@ -46,6 +46,8 @@ export async function POST(
     const apiClient = createApiClient()
 
     // Update verification status using API client to bypass RLS
+    // Note: We keep the booking status as 'verification_pending' so talent can accept/decline
+    // The booking will only be set to 'confirmed' when talent accepts it
     const { error: verifyError } = await apiClient
       .from('verifications')
       .update({
@@ -61,24 +63,9 @@ export async function POST(
       )
     }
 
-    // Update booking status to confirmed using API client to bypass RLS
-    const { error: bookingError } = await apiClient
-      .from('bookings')
-      .update({ status: 'confirmed' })
-      .eq('id', bookingId)
-
-    if (bookingError) {
-      // Rollback verification update
-      await apiClient
-        .from('verifications')
-        .update({ status: 'pending' })
-        .eq('booking_id', bookingId)
-
-      return NextResponse.json(
-        { error: `Failed to update booking: ${bookingError.message}` },
-        { status: 500 }
-      )
-    }
+    // Don't update booking status here - keep it as 'verification_pending'
+    // This allows the talent to accept/decline the booking after admin approval
+    // The booking status will be updated to 'confirmed' when talent accepts via /api/bookings/[id]/accept
 
     // Log admin action
     await logAdminAction({

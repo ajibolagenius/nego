@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createApiClient } from '@/lib/supabase/api'
 import { AdminDashboardClient } from './AdminDashboardClient'
 
 export const metadata = {
@@ -7,7 +7,8 @@ export const metadata = {
 }
 
 export default async function AdminDashboardPage() {
-  const supabase = await createClient()
+  // Use API client (service role) to bypass RLS for admin operations
+  const supabase = createApiClient()
 
   // Fetch initial stats
   const [
@@ -19,7 +20,7 @@ export default async function AdminDashboardPage() {
     supabase.from('verifications').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
     supabase.from('bookings').select('*', { count: 'exact', head: true }),
-    supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('type', 'payout').eq('status', 'pending'),
+    supabase.from('withdrawal_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
   ])
 
   return (
