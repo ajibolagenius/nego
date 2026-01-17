@@ -564,54 +564,108 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                 {/* TALENT ACTIONS - Verification Pending (Accept/Reject) */}
                 {booking.status === 'verification_pending' && isTalent && (
                     <div className="space-y-4">
-                        <div className="bg-amber-500/10 rounded-xl p-6 border border-amber-500/20">
-                            <div className="flex items-center gap-3 mb-4">
-                                <User size={24} className="text-amber-400" />
-                                <div>
-                                    <h3 className="text-white font-bold">New Booking Request</h3>
-                                    <p className="text-white/60 text-sm">
-                                        {booking.client?.display_name || 'A client'} wants to book your services
-                                    </p>
+                        {/* Show waiting message if verification is pending admin approval */}
+                        {booking.verification?.status === 'pending' && (
+                            <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/20">
+                                <div className="flex items-start gap-3">
+                                    <ShieldCheck size={24} className="text-blue-400 shrink-0 mt-0.5" />
+                                    <div className="flex-1">
+                                        <h4 className="text-white font-semibold mb-1">Awaiting Admin Verification</h4>
+                                        <p className="text-white/60 text-sm">
+                                            The client's verification is being reviewed by admin. You'll be able to accept or decline once admin approves the verification.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
+                        )}
 
-                            <div className="bg-black/20 rounded-lg p-4 mb-4">
-                                <div className="flex justify-between text-sm mb-2">
-                                    <span className="text-white/60">Total Amount</span>
-                                    <span className="text-white font-bold">{formatPrice(booking.total_price)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-white/60">Date</span>
-                                    <span className="text-white">{formatDate(booking.scheduled_at)}</span>
+                        {/* Show rejection message if verification was rejected */}
+                        {booking.verification?.status === 'rejected' && (
+                            <div className="bg-red-500/10 rounded-xl p-4 border border-red-500/20">
+                                <div className="flex items-start gap-3">
+                                    <XCircle size={24} className="text-red-400 shrink-0 mt-0.5" />
+                                    <div className="flex-1">
+                                        <h4 className="text-white font-semibold mb-1">Verification Rejected</h4>
+                                        <p className="text-white/60 text-sm mb-2">
+                                            The client's verification was rejected by admin. This booking has been cancelled.
+                                        </p>
+                                        {booking.verification.admin_notes && (
+                                            <div className="mt-2 p-3 bg-black/20 rounded-lg">
+                                                <p className="text-white/40 text-xs mb-1 font-medium">Admin's Reason:</p>
+                                                <p className="text-white/70 text-sm">{booking.verification.admin_notes}</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
+                        )}
 
-                            <div className="flex gap-3">
-                                <Button
-                                    onClick={handleAcceptBooking}
-                                    disabled={loading || rejectLoading}
-                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl"
-                                >
-                                    {loading ? (
-                                        <SpinnerGap size={20} className="animate-spin" />
-                                    ) : (
-                                        <>
-                                            <CheckCircle size={20} className="mr-2" />
-                                            Accept
-                                        </>
-                                    )}
-                                </Button>
-                                <Button
-                                    onClick={() => setShowRejectModal(true)}
-                                    disabled={loading || rejectLoading}
-                                    variant="outline"
-                                    className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10 font-bold py-3 rounded-xl"
-                                >
-                                    <XCircle size={20} className="mr-2" />
-                                    Decline
-                                </Button>
+                        {/* Show booking request and action buttons only if verification is approved */}
+                        {booking.verification?.status === 'approved' && (
+                            <div className="bg-amber-500/10 rounded-xl p-6 border border-amber-500/20">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <User size={24} className="text-amber-400" />
+                                    <div>
+                                        <h3 className="text-white font-bold">New Booking Request</h3>
+                                        <p className="text-white/60 text-sm">
+                                            {booking.client?.display_name || 'A client'} wants to book your services
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-black/20 rounded-lg p-4 mb-4">
+                                    <div className="flex justify-between text-sm mb-2">
+                                        <span className="text-white/60">Total Amount</span>
+                                        <span className="text-white font-bold">{formatPrice(booking.total_price)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-white/60">Date</span>
+                                        <span className="text-white">{formatDate(booking.scheduled_at)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <Button
+                                        onClick={handleAcceptBooking}
+                                        disabled={loading || rejectLoading}
+                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl"
+                                    >
+                                        {loading ? (
+                                            <SpinnerGap size={20} className="animate-spin" />
+                                        ) : (
+                                            <>
+                                                <CheckCircle size={20} className="mr-2" />
+                                                Accept
+                                            </>
+                                        )}
+                                    </Button>
+                                    <Button
+                                        onClick={() => setShowRejectModal(true)}
+                                        disabled={loading || rejectLoading}
+                                        variant="outline"
+                                        className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10 font-bold py-3 rounded-xl"
+                                    >
+                                        <XCircle size={20} className="mr-2" />
+                                        Decline
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
+                        )}
+
+                        {/* Show message if verification status is unknown or not yet submitted */}
+                        {!booking.verification && (
+                            <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/20">
+                                <div className="flex items-start gap-3">
+                                    <Hourglass size={24} className="text-blue-400 shrink-0 mt-0.5" />
+                                    <div className="flex-1">
+                                        <h4 className="text-white font-semibold mb-1">Waiting for Client Verification</h4>
+                                        <p className="text-white/60 text-sm">
+                                            The client needs to complete their verification before you can accept or decline this booking.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 

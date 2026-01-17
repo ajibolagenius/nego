@@ -49,16 +49,50 @@ export async function POST(
       )
     }
 
+    // Check if verification has been approved by admin
+    const apiClient = createApiClient()
+    const { data: verification, error: verificationError } = await apiClient
+      .from('verifications')
+      .select('status')
+      .eq('booking_id', id)
+      .maybeSingle()
+
+    if (verificationError) {
+      console.error('[API] Error checking verification:', verificationError)
+      return NextResponse.json(
+        { error: 'Failed to verify booking status. Please try again.' },
+        { status: 500 }
+      )
+    }
+
+    if (!verification) {
+      return NextResponse.json(
+        { error: 'Verification not found. The client must complete verification before you can accept this booking.' },
+        { status: 400 }
+      )
+    }
+
+    if (verification.status !== 'approved') {
+      return NextResponse.json(
+        { 
+          error: verification.status === 'pending' 
+            ? 'This booking is awaiting admin verification approval. Please wait for admin to review the client verification before accepting.'
+            : 'This booking cannot be accepted. The verification has been rejected.'
+        },
+        { status: 400 }
+      )
+    }
+
     console.log('[API] Attempting to update booking:', {
       bookingId: id,
       talentId: user.id,
       currentStatus: booking.status,
-      targetStatus: 'confirmed'
+      targetStatus: 'confirmed',
+      verificationStatus: verification.status
     })
 
     // Use API client (service role) for update to bypass RLS
-    // We've already verified ownership above
-    const apiClient = createApiClient()
+    // We've already verified ownership and verification approval above
     const { data: updatedBookings, error: updateError } = await apiClient
       .from('bookings')
       .update({ status: 'confirmed' })
