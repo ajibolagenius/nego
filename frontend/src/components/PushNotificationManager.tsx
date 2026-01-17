@@ -292,9 +292,9 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
             </button>
 
             {/* Confirmation Modal */}
-            {showPrompt && (
+            {showPrompt && typeof window !== 'undefined' && createPortal(
                 <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                    className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
                     onClick={() => !loading && setShowPrompt(false)}
                     role="dialog"
                     aria-modal="true"
@@ -369,7 +369,8 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     )
