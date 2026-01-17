@@ -26,7 +26,9 @@ interface UseWalletReturn {
 }
 
 export function useWallet({ userId, initialWallet, autoRefresh = true }: UseWalletOptions): UseWalletReturn {
-    const supabase = createClient()
+    // Use ref to store supabase client to avoid recreating on every render
+    const supabaseRef = useRef(createClient())
+    const supabase = supabaseRef.current
     const [wallet, setWallet] = useState<Wallet | null>(initialWallet || null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -149,7 +151,7 @@ export function useWallet({ userId, initialWallet, autoRefresh = true }: UseWall
                 walletChannelRef.current = null
             }
         }
-    }, [userId, autoRefresh, supabase, initialWallet, fetchWallet])
+    }, [userId, autoRefresh, initialWallet, fetchWallet])
 
     return {
         wallet,

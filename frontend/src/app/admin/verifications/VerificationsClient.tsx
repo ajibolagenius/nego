@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import {
@@ -16,7 +16,8 @@ import {
     CaretLeft,
     CaretRight,
     MagnifyingGlass,
-    Funnel
+    Funnel,
+    ArrowClockwise
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -51,6 +52,84 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
     const [showConfirmReject, setShowConfirmReject] = useState(false)
     const verificationChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
+    // Debug logging on mount
+    useEffect(() => {
+        console.log('[VerificationsClient] Initial verifications:', initialVerifications.length)
+        console.log('[VerificationsClient] Initial verifications data:', initialVerifications)
+        if (initialVerifications.length === 0) {
+            console.warn('[VerificationsClient] No verifications received from server')
+        }
+    }, [initialVerifications])
+
+    // Function to refresh verifications
+    const refreshVerifications = useCallback(async () => {
+        try {
+            console.log('[Verifications] Refreshing verifications...')
+            const { data: updatedVerifications, error } = await supabase
+                .from('verifications')
+                .select(`
+                    booking_id,
+                    selfie_url,
+                    full_name,
+                    phone,
+                    gps_coords,
+                    status,
+                    admin_notes,
+                    created_at,
+                    booking:bookings (
+                        id,
+                        total_price,
+                        status,
+                        created_at,
+                        client:profiles!bookings_client_id_fkey (
+                            id,
+                            display_name,
+                            email:full_name,
+                            avatar_url
+                        ),
+                        talent:profiles!bookings_talent_id_fkey (
+                            id,
+                            display_name
+                        )
+                    )
+                `)
+                .order('created_at', { ascending: false })
+
+            if (error) {
+                console.error('[Verifications] Error fetching verifications:', error)
+                console.error('[Verifications] Error details:', JSON.stringify(error, null, 2))
+                toast.error('Failed to refresh verifications', {
+                    description: error.message || 'Unknown error occurred'
+                })
+                return
+            }
+
+            console.log('[Verifications] Raw verifications from DB:', updatedVerifications?.length || 0)
+
+            if (updatedVerifications) {
+                const transformed = updatedVerifications.map(v => ({
+                    ...v,
+                    id: v.booking_id,
+                })) as VerificationWithBooking[]
+                setVerifications(transformed)
+                console.log('[Verifications] Refreshed:', transformed.length, 'verifications')
+                console.log('[Verifications] Pending count:', transformed.filter(v => v.status === 'pending').length)
+
+                if (transformed.length === 0) {
+                    console.warn('[Verifications] No verifications found in database')
+                }
+            } else {
+                console.warn('[Verifications] No verifications data returned')
+                setVerifications([])
+            }
+        } catch (error) {
+            console.error('[Verifications] Error refreshing:', error)
+            toast.error('Failed to refresh verifications', {
+                description: error instanceof Error ? error.message : 'Unknown error'
+            })
+        }
+    }, [supabase])
+
     // Real-time subscription for verifications
     useEffect(() => {
         // Cleanup existing channel
@@ -73,49 +152,20 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                 },
                 async (payload) => {
                     console.log('[Verifications] Real-time change:', payload.eventType, payload.new)
-
-                    // Refetch verifications to get updated data with relations
-                    const { data: updatedVerifications } = await supabase
-                        .from('verifications')
-                        .select(`
-              booking_id,
-              selfie_url,
-              full_name,
-              phone,
-              gps_coords,
-              status,
-              admin_notes,
-              created_at,
-              booking:bookings (
-                id,
-                total_price,
-                status,
-                created_at,
-                client:profiles!bookings_client_id_fkey (
-                  id,
-                  display_name,
-                  email:full_name,
-                  avatar_url
-                ),
-                talent:profiles!bookings_talent_id_fkey (
-                  id,
-                  display_name
-                )
-              )
-            `)
-                        .order('created_at', { ascending: false })
-
-                    if (updatedVerifications) {
-                        const transformed = updatedVerifications.map(v => ({
-                            ...v,
-                            id: v.booking_id,
-                        })) as Verification[]
-                        setVerifications(transformed)
-                    }
+                    // Refresh verifications when changes occur
+                    await refreshVerifications()
                 }
             )
             .subscribe((status) => {
                 console.log('[Verifications] Channel subscription status:', status)
+                if (status === 'SUBSCRIBED') {
+                    console.log('[Verifications] Successfully subscribed to real-time updates')
+                } else if (status === 'CHANNEL_ERROR') {
+                    console.error('[Verifications] Channel subscription error')
+                    toast.error('Real-time updates unavailable', {
+                        description: 'Please refresh the page manually to see updates.'
+                    })
+                }
             })
 
         verificationChannelRef.current = verificationChannel
@@ -126,7 +176,7 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                 verificationChannelRef.current = null
             }
         }
-    }, [supabase])
+    }, [supabase, refreshVerifications])
 
     const filteredVerifications = verifications.filter((v) => {
         // Filter by status
@@ -302,14 +352,24 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                         </Tooltip>
                     </div>
                 </div>
-                <button
-                    onClick={handleExport}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
-                    aria-label="Export verifications to CSV"
-                >
-                    <Download size={18} aria-hidden="true" />
-                    <span className="text-sm font-medium">Export CSV</span>
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={refreshVerifications}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+                        aria-label="Refresh verifications"
+                    >
+                        <ArrowClockwise size={18} aria-hidden="true" />
+                        <span className="text-sm font-medium hidden sm:inline">Refresh</span>
+                    </button>
+                    <button
+                        onClick={handleExport}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+                        aria-label="Export verifications to CSV"
+                    >
+                        <Download size={18} aria-hidden="true" />
+                        <span className="text-sm font-medium hidden sm:inline">Export CSV</span>
+                    </button>
+                </div>
             </div>
 
             {/* Search and Filters */}

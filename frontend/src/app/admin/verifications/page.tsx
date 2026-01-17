@@ -11,7 +11,7 @@ export default async function VerificationsPage() {
   const supabase = await createClient()
 
   // Fetch all verifications with booking and client details
-  const { data: verifications } = await supabase
+  const { data: verifications, error } = await supabase
     .from('verifications')
     .select(`
       booking_id,
@@ -41,11 +41,18 @@ export default async function VerificationsPage() {
     `)
     .order('created_at', { ascending: false })
 
+  // Log errors for debugging
+  if (error) {
+    console.error('[VerificationsPage] Error fetching verifications:', error)
+  }
+
   // Transform data to include id field (use booking_id as id)
   const transformedVerifications: VerificationWithBooking[] = (verifications || []).map(v => ({
     ...v,
     id: v.booking_id, // Use booking_id as unique identifier
   }))
+
+  console.log('[VerificationsPage] Loaded verifications:', transformedVerifications.length)
 
   return <VerificationsClient verifications={transformedVerifications} />
 }

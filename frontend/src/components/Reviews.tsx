@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Star, User, ChatCircle, PaperPlaneTilt, SpinnerGap, X, Warning } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'

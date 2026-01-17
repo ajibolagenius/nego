@@ -1,0 +1,143 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { createApiClient } from '@/lib/supabase/api'
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+    const { reason } = body
+    const supabase = await createClient()
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Fetch the booking to verify ownership
+    const { data: booking, error: fetchError } = await supabase
+      .from('bookings')
+      .select('id, talent_id, status')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !booking) {
+      return NextResponse.json(
+        { error: 'Booking not found' },
+        { status: 404 }
+      )
+    }
+
+    // Verify user is the talent for this booking
+    if (booking.talent_id !== user.id) {
+      return NextResponse.json(
+        { error: 'You are not authorized to decline this booking' },
+        { status: 403 }
+      )
+    }
+
+    // Verify booking is in the correct status
+    if (booking.status !== 'verification_pending') {
+      return NextResponse.json(
+        { error: `Booking cannot be declined. Current status: ${booking.status}` },
+        { status: 400 }
+      )
+    }
+
+    console.log('[API] Attempting to decline booking:', {
+      bookingId: id,
+      talentId: user.id,
+      currentStatus: booking.status,
+      reason: reason
+    })
+
+    // Use API client (service role) for update to bypass RLS
+    // We've already verified ownership above
+    const apiClient = createApiClient()
+    const { data: updatedBookings, error: updateError } = await apiClient
+      .from('bookings')
+      .update({
+        status: 'cancelled',
+        notes: reason ? `Declined by talent: ${reason}` : 'Declined by talent'
+      })
+      .eq('id', id)
+      .select()
+
+    console.log('[API] Update result:', {
+      updatedCount: updatedBookings?.length || 0,
+      hasError: !!updateError,
+      error: updateError,
+      updatedBookings
+    })
+
+    if (updateError) {
+      console.error('[API] Error declining booking:', updateError)
+      console.error('[API] Error details:', JSON.stringify(updateError, null, 2))
+      return NextResponse.json(
+        { error: `Failed to update booking: ${updateError.message}` },
+        { status: 500 }
+      )
+    }
+
+    if (!updatedBookings || updatedBookings.length === 0) {
+      // Try to fetch the booking again to see its current state
+      const { data: currentBooking } = await supabase
+        .from('bookings')
+        .select('id, talent_id, status')
+        .eq('id', id)
+        .single()
+
+      console.error('[API] No booking was updated.', {
+        bookingId: id,
+        currentBookingState: currentBooking,
+        expectedTalentId: user.id,
+        actualTalentId: currentBooking?.talent_id,
+        expectedStatus: 'verification_pending',
+        actualStatus: currentBooking?.status
+      })
+
+      if (currentBooking) {
+        if (currentBooking.talent_id !== user.id) {
+          return NextResponse.json(
+            { error: 'You are not authorized to decline this booking' },
+            { status: 403 }
+          )
+        }
+        if (currentBooking.status !== 'verification_pending') {
+          return NextResponse.json(
+            { error: `Booking status has changed. Current status: ${currentBooking.status}` },
+            { status: 400 }
+          )
+        }
+      }
+
+      return NextResponse.json(
+        { error: 'Failed to update booking. The booking may have been modified or you may not have permission to update it.' },
+        { status: 500 }
+      )
+    }
+
+    const updatedBooking = updatedBookings[0]
+
+    // TODO: Refund client's coins in a production app
+
+    return NextResponse.json({
+      success: true,
+      booking: updatedBooking,
+      message: 'Booking declined successfully'
+    })
+  } catch (error) {
+    console.error('Error declining booking:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

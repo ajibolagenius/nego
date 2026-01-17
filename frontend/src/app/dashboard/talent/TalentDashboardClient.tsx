@@ -1570,6 +1570,12 @@ export function TalentDashboardClient({
                                     <li className="flex items-start gap-3">
                                         <CheckCircle size={18} weight="duotone" className="text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
                                         <div>
+                                            <span className="font-semibold">Funds availability:</span> Earnings are available immediately after booking completion
+                                        </div>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <CheckCircle size={18} weight="duotone" className="text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
+                                        <div>
                                             <span className="font-semibold">Processing time:</span> 24-48 hours after approval
                                         </div>
                                     </li>
