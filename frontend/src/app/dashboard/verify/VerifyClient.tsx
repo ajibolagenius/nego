@@ -346,47 +346,86 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
         setSelfieBlob(null)
     }
 
-    // Get GPS location with better error handling
+    // Get GPS location with improved error handling and accuracy
     const handleGetLocation = useCallback(() => {
         if (!navigator.geolocation) {
-            setGpsError('Geolocation is not supported by your browser')
+            setGpsError('Geolocation is not supported by your browser. Please use a modern browser with location services.')
             return
         }
 
         setGpsLoading(true)
         setGpsError(null)
 
-        const options: PositionOptions = {
+        // First attempt with high accuracy (GPS preferred)
+        const highAccuracyOptions: PositionOptions = {
             enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
+            timeout: 15000, // Increased timeout for better accuracy
+            maximumAge: 0 // Always get fresh location
         }
 
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const coords = `${position.coords.latitude},${position.coords.longitude}`
-                setGpsCoords(coords)
-                setGpsError(null)
-                setGpsLoading(false)
-            },
-            (error) => {
-                setGpsLoading(false)
-                switch (error.code) {
-                    case error.PERMISSION_DENIED:
-                        setGpsError('Location permission denied. Please enable location access in your browser settings.')
-                        break
-                    case error.POSITION_UNAVAILABLE:
-                        setGpsError('Location information is unavailable. Please try again.')
-                        break
-                    case error.TIMEOUT:
-                        setGpsError('Location request timed out. Please try again.')
-                        break
-                    default:
-                        setGpsError('Unable to retrieve your location. Please try again.')
-                }
-            },
-            options
-        )
+        // Fallback options with lower accuracy requirements
+        const fallbackOptions: PositionOptions = {
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 60000 // Accept location up to 1 minute old
+        }
+
+        const attemptGetLocation = (options: PositionOptions, isRetry: boolean = false) => {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude, accuracy } = position.coords
+
+                    // Format coordinates with better precision
+                    // Store as "latitude,longitude" format
+                    const coords = `${latitude.toFixed(6)},${longitude.toFixed(6)}`
+
+                    // Log accuracy for debugging (accuracy is in meters)
+                    if (process.env.NODE_ENV === 'development') {
+                        console.log('[Verify] Location captured:', {
+                            coords,
+                            accuracy: `${accuracy?.toFixed(0) || 'unknown'} meters`,
+                            isRetry
+                        })
+                    }
+
+                    setGpsCoords(coords)
+                    setGpsError(null)
+                    setGpsLoading(false)
+                },
+                (error) => {
+                    // If high accuracy failed and we haven't retried, try with fallback
+                    if (!isRetry && options.enableHighAccuracy) {
+                        console.log('[Verify] High accuracy location failed, trying fallback...')
+                        attemptGetLocation(fallbackOptions, true)
+                        return
+                    }
+
+                    setGpsLoading(false)
+                    let errorMessage = 'Unable to retrieve your location. '
+
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = 'Location permission denied. Please enable location access in your browser settings and try again.'
+                            break
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = 'Location information is unavailable. Please check your device location settings and try again.'
+                            break
+                        case error.TIMEOUT:
+                            errorMessage = 'Location request timed out. Please ensure location services are enabled and try again.'
+                            break
+                        default:
+                            errorMessage = 'Unable to retrieve your location. Please check your device settings and try again.'
+                    }
+
+                    setGpsError(errorMessage)
+                    console.error('[Verify] Location error:', error)
+                },
+                options
+            )
+        }
+
+        // Start with high accuracy attempt
+        attemptGetLocation(highAccuracyOptions)
     }, [])
 
     // Remove location
@@ -590,8 +629,8 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                                     <div
                                         key={s}
                                         className={`w-8 h-1 rounded-full transition-colors ${currentStepIndex >= i
-                                                ? 'bg-[#df2531]'
-                                                : 'bg-white/10'
+                                            ? 'bg-[#df2531]'
+                                            : 'bg-white/10'
                                             }`}
                                         aria-hidden="true"
                                     />
@@ -944,10 +983,10 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                                             aria-invalid={fullNameError ? 'true' : 'false'}
                                             aria-describedby={fullNameError ? 'full-name-error' : 'full-name-help'}
                                             className={`w-full px-4 py-3 rounded-xl bg-white/5 border transition-colors text-white placeholder:text-white/30 focus:outline-none ${fullNameError
-                                                    ? 'border-red-500/50 focus:border-red-500'
-                                                    : fullNameValid
-                                                        ? 'border-green-500/50 focus:border-green-500'
-                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                ? 'border-red-500/50 focus:border-red-500'
+                                                : fullNameValid
+                                                    ? 'border-green-500/50 focus:border-green-500'
+                                                    : 'border-white/10 focus:border-[#df2531]/50'
                                                 }`}
                                         />
                                         {fullNameValid && (
@@ -988,10 +1027,10 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                                             aria-invalid={phoneError ? 'true' : 'false'}
                                             aria-describedby={phoneError ? 'phone-error' : phoneValid ? 'phone-help' : undefined}
                                             className={`w-full px-4 py-3 rounded-xl bg-white/5 border transition-colors text-white placeholder:text-white/30 focus:outline-none ${phoneError
-                                                    ? 'border-red-500/50 focus:border-red-500'
-                                                    : phoneValid
-                                                        ? 'border-green-500/50 focus:border-green-500'
-                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                ? 'border-red-500/50 focus:border-red-500'
+                                                : phoneValid
+                                                    ? 'border-green-500/50 focus:border-green-500'
+                                                    : 'border-white/10 focus:border-[#df2531]/50'
                                                 }`}
                                         />
                                         {phoneValid && (
@@ -1027,11 +1066,16 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                                     {gpsCoords ? (
                                         <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-green-500/10 border border-green-500/20">
                                             <CheckCircle size={20} className="text-green-400 shrink-0" aria-hidden="true" />
-                                            <span className="text-green-400 text-sm flex-1">Location captured successfully</span>
+                                            <div className="flex-1 min-w-0">
+                                                <span className="text-green-400 text-sm block">Location captured successfully</span>
+                                                <span className="text-green-400/60 text-xs block truncate" title={gpsCoords}>
+                                                    Coordinates: {gpsCoords}
+                                                </span>
+                                            </div>
                                             <button
                                                 type="button"
                                                 onClick={handleRemoveLocation}
-                                                className="text-green-400/60 hover:text-green-400 transition-colors"
+                                                className="text-green-400/60 hover:text-green-400 transition-colors shrink-0"
                                                 aria-label="Remove location"
                                             >
                                                 <X size={18} aria-hidden="true" />
