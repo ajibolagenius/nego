@@ -17,7 +17,10 @@ import {
     CaretRight,
     MagnifyingGlass,
     Funnel,
-    ArrowClockwise
+    ArrowClockwise,
+    Camera,
+    Download,
+    Info
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -29,7 +32,6 @@ import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { Pagination } from '@/components/admin/Pagination'
 import { usePagination } from '@/hooks/admin/usePagination'
 import { exportVerifications } from '@/lib/admin/export-utils'
-import { Download, Info } from '@phosphor-icons/react'
 import type { VerificationWithBooking } from '@/types/admin'
 import { Tooltip } from '@/components/admin/Tooltip'
 
@@ -459,7 +461,7 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
-                                                <User size={20} className="text-white/30 sm:w-6 sm:h-6" />
+                                                <Camera size={20} weight="duotone" className="text-white/30 sm:w-6 sm:h-6" />
                                             </div>
                                         )}
                                     </div>
@@ -558,16 +560,27 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                     {selectedVerification.selfie_url ? (
                                         <>
                                             {!imageZoomed ? (
-                                                <div className="relative w-full h-full group">
+                                                <div
+                                                    className="relative w-full h-full group cursor-pointer"
+                                                    onClick={() => setImageZoomed(true)}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    aria-label="Click to zoom selfie image"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.preventDefault()
+                                                            setImageZoomed(true)
+                                                        }
+                                                    }}
+                                                >
                                                     <Image
                                                         src={selectedVerification.selfie_url}
                                                         alt="Verification Selfie"
                                                         fill
-                                                        className="object-cover cursor-zoom-in transition-transform group-hover:scale-105"
-                                                        onClick={() => setImageZoomed(true)}
+                                                        className="object-cover transition-transform group-hover:scale-105 pointer-events-none"
                                                         unoptimized={selectedVerification.selfie_url?.includes('via.placeholder.com') || selectedVerification.selfie_url?.includes('supabase.co/storage')}
                                                     />
-                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
                                                         <span className="text-white/0 group-hover:text-white/80 text-xs font-medium transition-colors">
                                                             Click to zoom
                                                         </span>
@@ -609,7 +622,7 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                         </>
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center">
-                                            <User size={48} className="text-white/30" />
+                                            <Camera size={48} weight="duotone" className="text-white/30" />
                                         </div>
                                     )}
                                 </div>

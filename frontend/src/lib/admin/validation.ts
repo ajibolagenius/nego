@@ -38,15 +38,22 @@ export async function validateVerification(bookingId: string): Promise<{
     verification?: any
     error?: string
 }> {
-    const supabase = await createClient()
+    // Use API client to bypass RLS for admin operations
+    const apiClient = createApiClient()
 
-    const { data: verification, error } = await supabase
+    const { data: verification, error } = await apiClient
         .from('verifications')
         .select('*, booking:bookings(*)')
         .eq('booking_id', bookingId)
         .single()
 
     if (error || !verification) {
+        console.error('[validateVerification] Error fetching verification:', {
+            bookingId,
+            error,
+            errorCode: error?.code,
+            errorMessage: error?.message
+        })
         return { isValid: false, error: 'Verification not found' }
     }
 
