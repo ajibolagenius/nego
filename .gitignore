@@ -1,12 +1,22 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# IDE and editors
+# ============================================
+# IDE and Editors
+# ============================================
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
 
+# ============================================
 # Dependencies
+# ============================================
 node_modules/
-/node_modules
+**/node_modules/
 /.pnp
 .pnp.js
 .yarn/install-state.gz
@@ -16,53 +26,130 @@ node_modules/
 !.yarn/releases
 !.yarn/versions
 
+# ============================================
 # Testing
+# ============================================
 /coverage
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+test_reports/
+*.pyc
+__pycache__/
+.pytest_cache/
+*.pytest_cache
 
-# Next.js
+# ============================================
+# Next.js (Root level)
+# ============================================
 /.next/
 /out/
 next-env.d.ts
 *.tsbuildinfo
 
-# Production builds
+# ============================================
+# Production Builds
+# ============================================
 /build
 dist/
+*.min.js
+*.min.css
 
-# Sensitive credential files (but NOT .env - those are needed for deployment)
+# ============================================
+# Environment Variables
+# ============================================
+# NOTE: .env files are NOT ignored - they are required for Emergent deployment
+# The platform handles secrets securely during the deployment process
+# Only local/development-specific env files are ignored below
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# ============================================
+# Sensitive Credentials
+# ============================================
 *token.json*
 *credentials.json*
+*.pem
+*.key
+*.cert
+secrets/
+.secrets/
 
-# Logs and debug files
+# ============================================
+# Logs and Debug Files
+# ============================================
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-dump.rdb
+lerna-debug.log*
+*.log
+logs/
+*.log.*
 
-# System files
+# ============================================
+# System Files
+# ============================================
 .DS_Store
-*.pem
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
 
+# ============================================
 # Python
+# ============================================
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
 venv/
 .venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+.eggs/
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Development tools
+# ============================================
+# Development Tools
+# ============================================
 chainlit.md
 .chainlit
 .ipynb_checkpoints/
 .ac
+.emergent/
+.emergent/*
 
+# ============================================
 # Deployment
+# ============================================
 .vercel
+.vercel/*
+!.vercel/README.md
 
-# Data and databases
+# ============================================
+# Data and Databases
+# ============================================
 agenthub/agents/youtube/db
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
 
-# Archive files and large assets
+# ============================================
+# Archive Files and Large Assets
+# ============================================
 **/*.zip
 **/*.tar.gz
 **/*.tar
@@ -71,47 +158,44 @@ agenthub/agents/youtube/db
 *.deb
 *.dylib
 
-# Build caches
+# ============================================
+# Build Caches
+# ============================================
 .cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
 
-# Mobile development
+# ============================================
+# Mobile Development
+# ============================================
 android-sdk/
+ios/
+*.ipa
+*.apk
 
+# ============================================
 # Platform-specific node modules
+# ============================================
 frontend/node_modules/@next/swc-linux-arm64-gnu/next-swc.linux-arm64-gnu.node
 frontend/node_modules/@next/swc-linux-arm64-musl/next-swc.linux-arm64-musl.node
+**/node_modules/@next/swc-*/
 
-# NOTE: .env files are NOT ignored - they are required for Emergent deployment
-# The platform handles secrets securely during the deployment process
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.temp
+.tmp/
+.temp/
+*.bak
+*.backup
+*~
+
+# ============================================
+# Test Results
+# ============================================
+test_result.md
+test_reports/
+*.xml
+*.junit.xml
