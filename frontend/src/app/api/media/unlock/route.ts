@@ -1,22 +1,12 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { createApiClient } from '@/lib/supabase/api'
 
 export async function POST(request: NextRequest) {
     try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-        if (!supabaseUrl || !serviceRoleKey) {
-            console.error('[Media Unlock] Missing environment variables')
-            return NextResponse.json(
-                { success: false, error: 'Server configuration error' },
-                { status: 500 }
-            )
-        }
-
-        const supabase = createClient(supabaseUrl, serviceRoleKey, {
-            auth: { persistSession: false, autoRefreshToken: false }
-        })
+        const supabase = await createClient() // For user session/auth if needed
+        const apiClient = createApiClient() // For wallet operations to bypass RLS
 
         const body = await request.json()
         const { userId, mediaId, talentId, unlockPrice } = body
@@ -47,7 +37,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Try database function first (most reliable)
-        const { data: rpcData, error: rpcError } = await supabase.rpc('unlock_media', {
+        // Use API client for RPC to ensure it bypasses RLS if needed
+        const { data: rpcData, error: rpcError } = await apiClient.rpc('unlock_media', {
             p_user_id: userId,
             p_media_id: mediaId,
             p_talent_id: talentId,
@@ -126,8 +117,8 @@ export async function POST(request: NextRequest) {
         // Log RPC error for debugging
         console.warn('[Media Unlock] RPC unlock_media not available, using fallback:', rpcError?.message)
 
-        // Fallback: Direct operations using service role
-        const { data: userWallet, error: userError } = await supabase
+        // Fallback: Direct operations using API client to bypass RLS
+        const { data: userWallet, error: userError } = await apiClient
             .from('wallets')
             .select('balance')
             .eq('user_id', userId)
@@ -162,7 +153,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Get talent wallet
-        const { data: talentWallet, error: talentError } = await supabase
+        const { data: talentWallet, error: talentError } = await apiClient
             .from('wallets')
             .select('balance')
             .eq('user_id', talentId)
@@ -176,8 +167,8 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Deduct from user
-        const { error: deductError } = await supabase
+        // Deduct from user using API client
+        const { error: deductError } = await apiClient
             .from('wallets')
             .update({ balance: userWallet.balance - unlockPrice })
             .eq('user_id', userId)
@@ -190,15 +181,15 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Add to talent
-        const { error: addError } = await supabase
+        // Add to talent using API client
+        const { error: addError } = await apiClient
             .from('wallets')
             .update({ balance: talentWallet.balance + unlockPrice })
             .eq('user_id', talentId)
 
         if (addError) {
-            // Rollback
-            await supabase
+            // Rollback using API client
+            await apiClient
                 .from('wallets')
                 .update({ balance: userWallet.balance })
                 .eq('user_id', userId)
@@ -221,9 +212,9 @@ export async function POST(request: NextRequest) {
             // Ignore duplicate key errors - content may already be unlocked
         }
 
-        // Create transaction records
+        // Create transaction records using API client
         try {
-            await supabase.from('transactions').insert([
+            await apiClient.from('transactions').insert([
                 {
                     user_id: userId,
                     amount: -unlockPrice,

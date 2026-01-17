@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
+import { createApiClient } from '@/lib/supabase/api'
 import crypto from 'crypto'
 
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY!
@@ -40,17 +40,8 @@ export async function POST(request: NextRequest) {
         const { reference, amount, customer } = event.data
         const amountInNaira = amount / 100 // Convert from kobo to naira
 
-        // Create Supabase client with service role
-        const supabase = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            {
-                cookies: {
-                    getAll() { return [] },
-                    setAll() { },
-                },
-            }
-        )
+        // Use API client (service role) to bypass RLS for wallet operations
+        const supabase = createApiClient()
 
         // Find pending transaction by reference
         const { data: transaction, error: fetchError } = await supabase

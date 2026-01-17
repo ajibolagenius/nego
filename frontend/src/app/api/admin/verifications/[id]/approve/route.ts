@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createApiClient } from '@/lib/supabase/api'
 import { validateAdmin, validateVerification } from '@/lib/admin/validation'
 import { logAdminAction, getClientIP, getUserAgent } from '@/lib/admin/audit-log'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin access
@@ -17,7 +18,8 @@ export async function POST(
       )
     }
 
-    const bookingId = params.id
+    const { id } = await params
+    const bookingId = id
     const body = await request.json()
     const { adminNotes } = body
 
@@ -41,9 +43,10 @@ export async function POST(
     }
 
     const supabase = await createClient()
+    const apiClient = createApiClient()
 
-    // Update verification status
-    const { error: verifyError } = await supabase
+    // Update verification status using API client to bypass RLS
+    const { error: verifyError } = await apiClient
       .from('verifications')
       .update({
         status: 'approved',
@@ -58,15 +61,15 @@ export async function POST(
       )
     }
 
-    // Update booking status to confirmed
-    const { error: bookingError } = await supabase
+    // Update booking status to confirmed using API client to bypass RLS
+    const { error: bookingError } = await apiClient
       .from('bookings')
       .update({ status: 'confirmed' })
       .eq('id', bookingId)
 
     if (bookingError) {
       // Rollback verification update
-      await supabase
+      await apiClient
         .from('verifications')
         .update({ status: 'pending' })
         .eq('booking_id', bookingId)
