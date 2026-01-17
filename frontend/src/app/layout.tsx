@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import { AppHeader } from "@/components/AppHeader"
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration"
 
 export const metadata: Metadata = {
   title: "Nego - Premium Managed Talent Marketplace",
@@ -23,6 +24,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Negotiate" />
       </head>
       <body className="antialiased bg-black min-h-screen">
+        <ServiceWorkerRegistration />
         <AppHeader />
         {children}
       </body>

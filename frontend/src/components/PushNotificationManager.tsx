@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Bell, BellRinging, BellSlash, Check, X, SpinnerGap } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
+import { urlBase64ToUint8Array } from '@/lib/push/vapid'
 
 interface PushNotificationManagerProps {
     userId: string
@@ -84,17 +85,39 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
                 throw new Error('Notification permission was denied. Please enable notifications in your browser settings.')
             }
 
-            // Try to register service worker (optional - browser notifications work without it)
-            try {
-                const registration = await registerServiceWorker()
-                await navigator.serviceWorker.ready
-            } catch (swError) {
-                console.warn('[PushNotificationManager] Service Worker registration failed, continuing with browser notifications:', swError)
-                // Continue - browser notifications will still work
+            // Register service worker (required for push notifications)
+            const registration = await registerServiceWorker()
+            await registration.ready
+
+            // Get VAPID public key from server
+            const vapidKeyResponse = await fetch('/api/push/vapid-key')
+            if (!vapidKeyResponse.ok) {
+                throw new Error('Failed to get VAPID key. Push notifications may not be configured.')
             }
 
-            // Subscribe to push (using VAPID - would need server setup)
-            // For now, we'll use browser notifications
+            const { publicKey: vapidPublicKey } = await vapidKeyResponse.json()
+
+            if (!vapidPublicKey) {
+                throw new Error('VAPID public key not available')
+            }
+
+            // Subscribe to push notifications
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+            })
+
+            // Save subscription to server
+            const saveResponse = await fetch('/api/push/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subscription }),
+            })
+
+            if (!saveResponse.ok) {
+                throw new Error('Failed to save push subscription')
+            }
+
             setIsSubscribed(true)
             setShowPrompt(false)
 
@@ -141,16 +164,31 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
     const unsubscribe = async () => {
         setLoading(true)
         try {
+            let endpoint: string | null = null
+
             try {
                 const registration = await navigator.serviceWorker.ready
                 const subscription = await registration.pushManager.getSubscription()
 
                 if (subscription) {
+                    endpoint = subscription.endpoint
                     await subscription.unsubscribe()
                 }
             } catch (swError) {
                 console.warn('[PushNotificationManager] Service Worker unsubscribe failed:', swError)
-                // Continue - we'll still update the database
+            }
+
+            // Remove subscription from server
+            if (endpoint) {
+                try {
+                    await fetch('/api/push/unsubscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ endpoint }),
+                    })
+                } catch (error) {
+                    console.warn('[PushNotificationManager] Failed to remove subscription from server:', error)
+                }
             }
 
             setIsSubscribed(false)
