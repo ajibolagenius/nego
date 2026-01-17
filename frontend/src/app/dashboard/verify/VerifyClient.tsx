@@ -437,17 +437,49 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                     setGpsError(errorMessage)
 
                     // Log error with proper error information
-                    if (error && typeof error === 'object') {
+                    // Handle GeolocationPositionError which may have non-enumerable properties
+                    try {
                         const errorInfo: Record<string, unknown> = {}
-                        if ('code' in error) errorInfo.code = (error as GeolocationPositionError).code
-                        if ('message' in error) errorInfo.message = (error as Error).message
-                        if (Object.keys(errorInfo).length > 0) {
-                            console.error('[Verify] Location error:', errorInfo)
+
+                        // Check if it's a GeolocationPositionError
+                        if (error && typeof error === 'object') {
+                            const geolocationError = error as GeolocationPositionError
+
+                            // Access code directly (may be non-enumerable)
+                            if (typeof geolocationError.code === 'number') {
+                                errorInfo.code = geolocationError.code
+                                // Map code to readable name
+                                const codeNames: Record<number, string> = {
+                                    1: 'PERMISSION_DENIED',
+                                    2: 'POSITION_UNAVAILABLE',
+                                    3: 'TIMEOUT'
+                                }
+                                errorInfo.codeName = codeNames[geolocationError.code] || 'UNKNOWN'
+                            }
+
+                            // Access message directly
+                            if (typeof geolocationError.message === 'string' && geolocationError.message) {
+                                errorInfo.message = geolocationError.message
+                            }
+
+                            // Log structured error info
+                            if (Object.keys(errorInfo).length > 0) {
+                                console.error('[Verify] Location error:', errorInfo)
+                            } else {
+                                // Fallback: log error type and basic info
+                                console.warn('[Verify] Location error:', {
+                                    type: geolocationError.constructor?.name || 'GeolocationPositionError',
+                                    hasCode: typeof geolocationError.code === 'number',
+                                    hasMessage: typeof geolocationError.message === 'string',
+                                    errorMessage // Include the user-facing error message we generated
+                                })
+                            }
                         } else {
-                            console.warn('[Verify] Location error: Empty or unexpected error object', error)
+                            console.warn('[Verify] Location error: Unexpected error type', typeof error, error)
                         }
-                    } else {
-                        console.warn('[Verify] Location error: Unexpected error type', typeof error, error)
+                    } catch (logError) {
+                        // If error logging itself fails, just log the user-facing message
+                        console.warn('[Verify] Location error occurred:', errorMessage)
                     }
                 },
                 options
