@@ -11,7 +11,9 @@ export default async function VerificationsPage() {
   // Use API client (service role) to bypass RLS for admin operations
   const supabase = createApiClient()
 
-  // Fetch all verifications with booking and client details
+  // Fetch verifications with booking and client details
+  // Note: Client-side pagination handles the display, but we fetch a reasonable amount
+  // to avoid loading too much data at once
   const { data: verifications, error } = await supabase
     .from('verifications')
     .select(`
@@ -41,6 +43,7 @@ export default async function VerificationsPage() {
       )
     `)
     .order('created_at', { ascending: false })
+    .limit(1000) // Reasonable limit for client-side pagination
 
   // Log errors for debugging
   if (error) {

@@ -11,6 +11,7 @@ export default async function PayoutsPage() {
   const supabase = createApiClient()
 
   // Fetch talent profiles with their wallets
+  // Note: Client-side pagination handles the display
   const { data: talents, error: talentsError } = await supabase
     .from('profiles')
     .select(`
@@ -19,6 +20,7 @@ export default async function PayoutsPage() {
     `)
     .eq('role', 'talent')
     .order('created_at', { ascending: false })
+    .limit(1000) // Reasonable limit for client-side pagination
 
   if (talentsError) {
     console.error('[PayoutsPage] Error fetching talents:', talentsError)
@@ -40,6 +42,7 @@ export default async function PayoutsPage() {
   }
 
   // Fetch pending withdrawal requests
+  // Note: Client-side pagination handles the display
   const { data: withdrawalRequests, error: withdrawalError } = await supabase
     .from('withdrawal_requests')
     .select(`
@@ -47,6 +50,7 @@ export default async function PayoutsPage() {
       talent:profiles(id, display_name, avatar_url, username)
     `)
     .order('created_at', { ascending: false })
+    .limit(1000) // Reasonable limit for client-side pagination
 
   if (withdrawalError) {
     console.error('[PayoutsPage] Error fetching withdrawal requests:', withdrawalError)

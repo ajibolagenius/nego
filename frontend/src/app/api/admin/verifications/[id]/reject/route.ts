@@ -83,10 +83,13 @@ export async function POST(
             )
         }
 
-        // Update booking status to cancelled using API client to bypass RLS
+        // Update booking status to cancelled with admin cancellation note using API client to bypass RLS
         const { error: bookingError } = await apiClient
             .from('bookings')
-            .update({ status: 'cancelled' })
+            .update({
+                status: 'cancelled',
+                notes: `Cancelled by admin: ${adminNotes}`
+            })
             .eq('id', bookingId)
 
         if (bookingError) {

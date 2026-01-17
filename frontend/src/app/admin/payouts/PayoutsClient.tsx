@@ -580,7 +580,7 @@ export function PayoutsClient({
                             })}
 
                             {/* Pagination */}
-                            {requestsPagination.totalPages > 1 && (
+                            {requestsPagination.totalItems > 0 && (
                                 <Pagination
                                     currentPage={requestsPagination.currentPage}
                                     totalPages={requestsPagination.totalPages}
@@ -649,7 +649,7 @@ export function PayoutsClient({
                             ))}
 
                             {/* Pagination */}
-                            {talentsPagination.totalPages > 1 && (
+                            {talentsPagination.totalItems > 0 && (
                                 <Pagination
                                     currentPage={talentsPagination.currentPage}
                                     totalPages={talentsPagination.totalPages}
@@ -708,7 +708,7 @@ export function PayoutsClient({
                             })}
 
                             {/* Pagination */}
-                            {payoutsPagination.totalPages > 1 && (
+                            {payoutsPagination.totalItems > 0 && (
                                 <Pagination
                                     currentPage={payoutsPagination.currentPage}
                                     totalPages={payoutsPagination.totalPages}

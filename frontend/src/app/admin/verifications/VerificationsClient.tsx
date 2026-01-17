@@ -525,7 +525,7 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                     </div>
 
                     {/* Pagination */}
-                    {totalPages > 1 && (
+                    {totalItems > 0 && (
                         <Pagination
                             currentPage={currentPage}
                             totalPages={totalPages}

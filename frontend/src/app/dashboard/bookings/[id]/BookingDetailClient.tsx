@@ -831,16 +831,40 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                             <XCircle size={48} weight="fill" className="text-red-400 mx-auto mb-4" />
                             <h3 className="text-white font-bold text-lg mb-2">Booking Cancelled</h3>
                             <p className="text-white/60 text-sm mb-4">
-                                {booking.notes?.includes('Declined by talent')
-                                    ? 'This booking was declined by the talent.'
-                                    : booking.verification?.status === 'rejected'
-                                        ? 'This booking was cancelled due to verification rejection.'
-                                        : 'This booking has been cancelled.'}
+                                {booking.notes?.includes('Cancelled by admin')
+                                    ? isTalent
+                                        ? 'This booking was cancelled by admin. The client\'s verification was rejected.'
+                                        : 'This booking was cancelled by admin due to verification rejection.'
+                                    : booking.notes?.includes('Declined by talent')
+                                        ? 'This booking was declined by the talent.'
+                                        : booking.verification?.status === 'rejected'
+                                            ? 'This booking was cancelled due to verification rejection.'
+                                            : 'This booking has been cancelled.'}
                             </p>
                         </div>
 
-                        {/* Display admin notes if available (from verification rejection) */}
-                        {booking.verification?.admin_notes && (
+                        {/* Display admin cancellation reason (for talent view) */}
+                        {booking.notes?.includes('Cancelled by admin') && isTalent && (
+                            <div className="mt-4 pt-4 border-t border-red-500/20">
+                                <div className="flex items-start gap-2 mb-3">
+                                    <ShieldCheck size={20} className="text-red-400 shrink-0 mt-0.5" />
+                                    <p className="text-white/40 text-xs font-medium">Cancelled by Admin:</p>
+                                </div>
+                                <div className="bg-black/20 rounded-lg p-4">
+                                    <p className="text-white/80 text-sm leading-relaxed">
+                                        {booking.notes.replace('Cancelled by admin: ', '')}
+                                    </p>
+                                </div>
+                                {booking.verification?.admin_notes && (
+                                    <p className="text-white/50 text-xs mt-2 italic">
+                                        This cancellation was due to the client's verification being rejected by admin.
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Display admin notes if available (from verification rejection) - for client view */}
+                        {booking.verification?.admin_notes && !booking.notes?.includes('Cancelled by admin') && (
                             <div className="mt-4 pt-4 border-t border-red-500/20">
                                 <p className="text-white/40 text-xs mb-2 font-medium">Cancellation Reason:</p>
                                 <div className="bg-black/20 rounded-lg p-4">
