@@ -455,6 +455,7 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                                 alt="Selfie"
                                                 fill
                                                 className="object-cover"
+                                                unoptimized={verification.selfie_url?.includes('via.placeholder.com')}
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
@@ -564,6 +565,7 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                                         fill
                                                         className="object-cover cursor-zoom-in transition-transform group-hover:scale-105"
                                                         onClick={() => setImageZoomed(true)}
+                                                        unoptimized={selectedVerification.selfie_url?.includes('via.placeholder.com')}
                                                     />
                                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                                                         <span className="text-white/0 group-hover:text-white/80 text-xs font-medium transition-colors">
@@ -592,6 +594,7 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                                             height={1200}
                                                             className="max-w-full max-h-[90vh] object-contain rounded-lg"
                                                             onClick={(e) => e.stopPropagation()}
+                                                            unoptimized={selectedVerification.selfie_url?.includes('via.placeholder.com')}
                                                         />
                                                         <button
                                                             onClick={() => setImageZoomed(false)}
