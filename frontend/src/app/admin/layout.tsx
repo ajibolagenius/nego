@@ -1,31 +1,36 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AdminLayoutClient } from './AdminLayoutClient'
+import { ErrorBoundary } from '@/components/admin/ErrorBoundary'
 
 export default async function AdminLayout({
-  children,
+    children,
 }: {
-  children: React.ReactNode
+    children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
-    redirect('/login')
-  }
+    const supabase = await createClient()
 
-  // Check if user is admin
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (profile?.role !== 'admin') {
-    // Not an admin - redirect to dashboard
-    redirect('/dashboard')
-  }
+    if (!user) {
+        redirect('/login')
+    }
 
-  return <AdminLayoutClient user={user}>{children}</AdminLayoutClient>
+    // Check if user is admin
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+    if (profile?.role !== 'admin') {
+        // Not an admin - redirect to dashboard
+        redirect('/dashboard')
+    }
+
+    return (
+        <ErrorBoundary>
+            <AdminLayoutClient user={user}>{children}</AdminLayoutClient>
+        </ErrorBoundary>
+    )
 }

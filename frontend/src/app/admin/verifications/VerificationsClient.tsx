@@ -28,48 +28,23 @@ import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { Pagination } from '@/components/admin/Pagination'
 import { usePagination } from '@/hooks/admin/usePagination'
 import { exportVerifications } from '@/lib/admin/export-utils'
-import { Download } from '@phosphor-icons/react'
-
-interface Verification {
-    id: string // This maps to booking_id from the database
-    booking_id: string
-    selfie_url: string | null
-    full_name: string | null
-    phone: string | null
-    gps_coords: string | null
-    status: 'pending' | 'approved' | 'rejected'
-    admin_notes: string | null
-    created_at: string
-    booking: {
-        id: string
-        total_price: number
-        status: string
-        created_at: string
-        client: {
-            id: string
-            display_name: string | null
-            email: string | null
-            avatar_url: string | null
-        } | null
-        talent: {
-            id: string
-            display_name: string | null
-        } | null
-    } | null
-}
+import { Download, Info } from '@phosphor-icons/react'
+import type { VerificationWithBooking } from '@/types/admin'
+import { Tooltip } from '@/components/admin/Tooltip'
 
 interface VerificationsClientProps {
-    verifications: Verification[]
+    verifications: VerificationWithBooking[]
 }
 
 
 export function VerificationsClient({ verifications: initialVerifications }: VerificationsClientProps) {
     const router = useRouter()
     const supabase = createClient()
-    const [verifications, setVerifications] = useState<Verification[]>(initialVerifications)
+    const [verifications, setVerifications] = useState<VerificationWithBooking[]>(initialVerifications)
     const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
     const [searchQuery, setSearchQuery] = useState('')
-    const [selectedVerification, setSelectedVerification] = useState<Verification | null>(null)
+    const [selectedVerification, setSelectedVerification] = useState<VerificationWithBooking | null>(null)
+    const [imageZoomed, setImageZoomed] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [adminNotes, setAdminNotes] = useState('')
     const [showConfirmApprove, setShowConfirmApprove] = useState(false)
@@ -170,58 +145,54 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
         return true
     })
 
-  const pendingCount = verifications.filter((v) => v.status === 'pending').length
+    const pendingCount = verifications.filter((v) => v.status === 'pending').length
 
-  // Pagination
-  const {
-    currentData: paginatedVerifications,
-    currentPage,
-    totalPages,
-    totalItems,
-    goToPage,
-    nextPage,
-    previousPage,
-    canGoNext,
-    canGoPrevious,
-    setItemsPerPage,
-  } = usePagination({
-    data: filteredVerifications,
-    itemsPerPage: 10,
-  })
-
-  const handleExport = () => {
-    exportVerifications(verifications)
-    toast.success('Export Started', {
-      description: 'Verifications data is being downloaded as CSV.'
+    // Pagination
+    const {
+        currentData: paginatedVerifications,
+        currentPage,
+        totalPages,
+        totalItems,
+        goToPage,
+        nextPage,
+        previousPage,
+        canGoNext,
+        canGoPrevious,
+        setItemsPerPage,
+    } = usePagination({
+        data: filteredVerifications,
+        itemsPerPage: 10,
     })
-  }
 
-  const handleApprove = async (verification: Verification) => {
+    const handleExport = () => {
+        exportVerifications(verifications)
+        toast.success('Export Started', {
+            description: 'Verifications data is being downloaded as CSV.'
+        })
+    }
+
+    const handleApprove = async (verification: VerificationWithBooking) => {
         setIsProcessing(true)
-        const supabase = createClient()
+
+        // Optimistic update: Update UI immediately
+        const previousVerifications = [...verifications]
+        setVerifications(prev => prev.map(v =>
+            v.id === verification.id
+                ? { ...v, status: 'approved' as const, admin_notes: adminNotes || null }
+                : v
+        ))
 
         try {
-            // Update verification status
-            const { error: verifyError } = await supabase
-                .from('verifications')
-                .update({
-                    status: 'approved',
-                    admin_notes: adminNotes || null,
-                })
-                .eq('booking_id', verification.booking_id)
+            const response = await fetch(`/api/admin/verifications/${verification.booking_id}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminNotes: adminNotes || null }),
+            })
 
-            if (verifyError) {
-                throw new Error(`Unable to update verification status: ${verifyError.message}`)
-            }
+            const data = await response.json()
 
-            // Update booking status to confirmed
-            const { error: bookingError } = await supabase
-                .from('bookings')
-                .update({ status: 'confirmed' })
-                .eq('id', verification.booking_id)
-
-            if (bookingError) {
-                throw new Error(`Unable to update booking status: ${bookingError.message}`)
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to approve verification')
             }
 
             setSelectedVerification(null)
@@ -234,6 +205,9 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
 
             router.refresh()
         } catch (error) {
+            // Revert optimistic update on error
+            setVerifications(previousVerifications)
+
             console.error('Error approving verification:', error)
             const errorMessage = error instanceof Error ? error.message : 'Failed to approve verification. Please try again.'
             toast.error('Approval Failed', {
@@ -244,7 +218,7 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
         }
     }
 
-    const handleReject = async (verification: Verification) => {
+    const handleReject = async (verification: VerificationWithBooking) => {
         if (!adminNotes.trim()) {
             toast.error('Reason Required', {
                 description: 'Please provide a reason for rejection before proceeding.'
@@ -253,91 +227,26 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
         }
 
         setIsProcessing(true)
-        const supabase = createClient()
+
+        // Optimistic update: Update UI immediately
+        const previousVerifications = [...verifications]
+        setVerifications(prev => prev.map(v =>
+            v.id === verification.id
+                ? { ...v, status: 'rejected' as const, admin_notes: adminNotes }
+                : v
+        ))
 
         try {
-            // Get booking details to refund
-            const { data: bookingData, error: bookingFetchError } = await supabase
-                .from('bookings')
-                .select('id, client_id, total_price, status')
-                .eq('id', verification.booking_id)
-                .single()
+            const response = await fetch(`/api/admin/verifications/${verification.booking_id}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminNotes }),
+            })
 
-            if (bookingFetchError) {
-                throw new Error(`Unable to fetch booking details: ${bookingFetchError.message}`)
-            }
+            const data = await response.json()
 
-            if (!bookingData) {
-                throw new Error('Booking not found')
-            }
-
-            // Update verification status
-            const { error: verifyError } = await supabase
-                .from('verifications')
-                .update({
-                    status: 'rejected',
-                    admin_notes: adminNotes,
-                })
-                .eq('booking_id', verification.booking_id)
-
-            if (verifyError) {
-                throw new Error(`Unable to update verification status: ${verifyError.message}`)
-            }
-
-            // Update booking status to cancelled
-            const { error: bookingError } = await supabase
-                .from('bookings')
-                .update({ status: 'cancelled' })
-                .eq('id', verification.booking_id)
-
-            if (bookingError) {
-                throw new Error(`Unable to update booking status: ${bookingError.message}`)
-            }
-
-            // Refund coins to client wallet
-            if (bookingData.total_price > 0 && bookingData.client_id) {
-                // Get current wallet balance
-                const { data: walletData, error: walletFetchError } = await supabase
-                    .from('wallets')
-                    .select('balance')
-                    .eq('user_id', bookingData.client_id)
-                    .single()
-
-                if (!walletFetchError && walletData) {
-                    const currentBalance = walletData.balance || 0
-                    const refundAmount = bookingData.total_price
-
-                    // Update wallet with refund
-                    const { error: walletUpdateError } = await supabase
-                        .from('wallets')
-                        .update({ balance: currentBalance + refundAmount })
-                        .eq('user_id', bookingData.client_id)
-
-                    if (walletUpdateError) {
-                        console.error('Failed to refund wallet:', walletUpdateError)
-                        // Don't throw - log error but continue
-                    } else {
-                        // Create refund transaction record
-                        await supabase.from('transactions').insert({
-                            user_id: bookingData.client_id,
-                            amount: 0,
-                            coins: refundAmount,
-                            type: 'refund',
-                            status: 'completed',
-                            description: `Refund for rejected verification - Booking #${bookingData.id.slice(0, 8)}`,
-                            reference_id: bookingData.id
-                        })
-
-                        // Create notification for client
-                        await supabase.from('notifications').insert({
-                            user_id: bookingData.client_id,
-                            type: 'booking_cancelled',
-                            title: 'Booking Cancelled & Refunded',
-                            message: `Your booking has been cancelled due to verification rejection. ${refundAmount.toLocaleString()} coins have been refunded to your wallet.`,
-                            data: { booking_id: bookingData.id, refund_amount: refundAmount }
-                        })
-                    }
-                }
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to reject verification')
             }
 
             setSelectedVerification(null)
@@ -345,11 +254,14 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
             setShowConfirmReject(false)
 
             toast.success('Verification Rejected', {
-                description: `Client verification has been rejected. ${bookingData.total_price > 0 ? `${bookingData.total_price.toLocaleString()} coins have been refunded to the client.` : ''}`
+                description: `Client verification has been rejected. ${data.refundAmount ? `${data.refundAmount.toLocaleString()} coins have been refunded to the client.` : ''}`
             })
 
             router.refresh()
         } catch (error) {
+            // Revert optimistic update on error
+            setVerifications(previousVerifications)
+
             console.error('Error rejecting verification:', error)
             const errorMessage = error instanceof Error ? error.message : 'Failed to reject verification. Please try again.'
             toast.error('Rejection Failed', {
@@ -372,28 +284,33 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
 
     return (
         <div className="p-4 sm:p-6 lg:p-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Verifications</h1>
-          <p className="text-white/60 text-sm sm:text-base">
-            Review client identity verifications
-            {pendingCount > 0 && (
-              <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-sm">
-                {pendingCount} pending
-              </span>
-            )}
-          </p>
-        </div>
-        <button
-          onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"
-          aria-label="Export verifications to CSV"
-        >
-          <Download size={18} />
-          <span className="text-sm font-medium">Export CSV</span>
-        </button>
-      </div>
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+                <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Verifications</h1>
+                    <div className="flex items-center gap-2">
+                        <p className="text-white/60 text-sm sm:text-base">
+                            Review and approve client identity verifications
+                            {pendingCount > 0 && (
+                                <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-sm">
+                                    {pendingCount} pending
+                                </span>
+                            )}
+                        </p>
+                        <Tooltip content="Verifications require admin review before bookings can be confirmed. Rejected verifications will automatically refund the client.">
+                            <Info size={16} className="text-white/40 hover:text-white/60 cursor-help" />
+                        </Tooltip>
+                    </div>
+                </div>
+                <button
+                    onClick={handleExport}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+                    aria-label="Export verifications to CSV"
+                >
+                    <Download size={18} aria-hidden="true" />
+                    <span className="text-sm font-medium">Export CSV</span>
+                </button>
+            </div>
 
             {/* Search and Filters */}
             <div className="space-y-4 mb-6">
@@ -409,16 +326,16 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search by name, phone, or booking ID..."
-                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:border-[#df2531]/50 transition-colors"
                         aria-label="Search verifications"
                     />
                     {searchQuery && (
                         <button
                             onClick={() => setSearchQuery('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] rounded p-1"
                             aria-label="Clear search"
                         >
-                            <X size={18} />
+                            <X size={18} aria-hidden="true" />
                         </button>
                     )}
                 </div>
@@ -429,10 +346,12 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                         <button
                             key={status}
                             onClick={() => setFilter(status)}
-                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors ${filter === status
-                                    ? 'bg-[#df2531] text-white'
-                                    : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${filter === status
+                                ? 'bg-[#df2531] text-white'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                                 }`}
+                            aria-label={`Filter by ${status} status`}
+                            aria-pressed={filter === status}
                         >
                             {status.charAt(0).toUpperCase() + status.slice(1)}
                             {status === 'pending' && pendingCount > 0 && (
@@ -459,95 +378,111 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                     }
                     size="md"
                 />
-      ) : (
-        <>
-          <div className="space-y-3 sm:space-y-4">
-            {paginatedVerifications.map((verification) => {
-                        return (
-                            <div
-                                key={verification.id}
-                                className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-                            >
-                                {/* Selfie Thumbnail */}
-                                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-white/10 shrink-0">
-                                    {verification.selfie_url ? (
-                                        <Image
-                                            src={verification.selfie_url}
-                                            alt="Selfie"
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center">
-                                            <User size={20} className="text-white/30 sm:w-6 sm:h-6" />
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Info */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                                        <p className="text-white font-medium truncate">
-                                            {verification.full_name || verification.booking?.client?.display_name || 'Unknown'}
-                                        </p>
-                                        <StatusBadge status={verification.status} size="sm" />
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-white/40 text-xs sm:text-sm">
-                                        {verification.phone && (
-                                            <span className="flex items-center gap-1">
-                                                <Phone size={12} />
-                                                {verification.phone}
-                                            </span>
+            ) : (
+                <>
+                    <div className="space-y-3 sm:space-y-4">
+                        {paginatedVerifications.map((verification) => {
+                            return (
+                                <div
+                                    key={verification.id}
+                                    className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                                >
+                                    {/* Selfie Thumbnail */}
+                                    <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-white/10 shrink-0">
+                                        {verification.selfie_url ? (
+                                            <Image
+                                                src={verification.selfie_url}
+                                                alt="Selfie"
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <User size={20} className="text-white/30 sm:w-6 sm:h-6" />
+                                            </div>
                                         )}
-                                        <span className="hidden sm:inline">Booking #{verification.booking_id.slice(0, 8)}</span>
-                                        <span>{formatDate(verification.created_at)}</span>
+                                    </div>
+
+                                    {/* Info */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                                            <p className="text-white font-medium truncate">
+                                                {verification.full_name || verification.booking?.client?.display_name || 'Unknown'}
+                                            </p>
+                                            <StatusBadge status={verification.status} size="sm" />
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-white/40 text-xs sm:text-sm">
+                                            {verification.phone && (
+                                                <span className="flex items-center gap-1">
+                                                    <Phone size={12} />
+                                                    {verification.phone}
+                                                </span>
+                                            )}
+                                            <span className="hidden sm:inline">Booking #{verification.booking_id.slice(0, 8)}</span>
+                                            <span>{formatDate(verification.created_at)}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                setSelectedVerification(verification)
+                                                setAdminNotes('')
+                                            }}
+                                            className="border-white/20 text-white hover:bg-white/10 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+                                            aria-label={`Review verification for ${verification.full_name || verification.booking?.client?.display_name || 'client'}`}
+                                        >
+                                            <Eye size={16} className="mr-1" aria-hidden="true" />
+                                            Review
+                                        </Button>
                                     </div>
                                 </div>
+                            )
+                        })}
+                    </div>
 
-                                {/* Actions */}
-                                <div className="flex items-center gap-2 mt-2 sm:mt-0">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                            setSelectedVerification(verification)
-                                            setAdminNotes('')
-                                        }}
-                                        className="border-white/20 text-white hover:bg-white/10 w-full sm:w-auto"
-                                    >
-                                        <Eye size={16} className="mr-1" />
-                                        Review
-                                    </Button>
-                                </div>
-              </div>
-            )
-            })}
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              itemsPerPage={10}
-              onPageChange={goToPage}
-              onItemsPerPageChange={setItemsPerPage}
-            />
-          )}
-        </>
-      )}
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalItems}
+                            itemsPerPage={10}
+                            onPageChange={goToPage}
+                            onItemsPerPageChange={setItemsPerPage}
+                        />
+                    )}
+                </>
+            )}
 
             {/* Review Modal */}
             {selectedVerification && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm">
+                <div
+                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="verification-modal-title"
+                    onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                            setSelectedVerification(null)
+                            setImageZoomed(false)
+                        }
+                    }}
+                >
                     <div className="bg-[#111] border border-white/10 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-2xl max-h-[90vh] overflow-auto">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-white/10 sticky top-0 bg-[#111] z-10">
-                            <h3 className="text-lg sm:text-xl font-bold text-white">Review Verification</h3>
+                            <h3 id="verification-modal-title" className="text-lg sm:text-xl font-bold text-white">Review Verification</h3>
                             <button
-                                onClick={() => setSelectedVerification(null)}
-                                className="text-white/60 hover:text-white transition-colors p-1"
+                                onClick={() => {
+                                    setSelectedVerification(null)
+                                    setImageZoomed(false)
+                                }}
+                                className="text-white/60 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-[#111]"
+                                aria-label="Close modal"
                             >
                                 <X size={24} />
                             </button>
@@ -560,12 +495,55 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                 <p className="text-white/60 text-sm mb-2">Selfie</p>
                                 <div className="relative aspect-square max-w-[200px] sm:max-w-xs rounded-2xl overflow-hidden bg-white/5 mx-auto sm:mx-0">
                                     {selectedVerification.selfie_url ? (
-                                        <Image
-                                            src={selectedVerification.selfie_url}
-                                            alt="Verification Selfie"
-                                            fill
-                                            className="object-cover"
-                                        />
+                                        <>
+                                            {!imageZoomed ? (
+                                                <div className="relative w-full h-full group">
+                                                    <Image
+                                                        src={selectedVerification.selfie_url}
+                                                        alt="Verification Selfie"
+                                                        fill
+                                                        className="object-cover cursor-zoom-in transition-transform group-hover:scale-105"
+                                                        onClick={() => setImageZoomed(true)}
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                                        <span className="text-white/0 group-hover:text-white/80 text-xs font-medium transition-colors">
+                                                            Click to zoom
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div
+                                                    className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center p-4"
+                                                    onClick={() => setImageZoomed(false)}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    aria-label="Close zoomed image"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Escape' || e.key === 'Enter') {
+                                                            setImageZoomed(false)
+                                                        }
+                                                    }}
+                                                >
+                                                    <div className="relative max-w-full max-h-full">
+                                                        <Image
+                                                            src={selectedVerification.selfie_url}
+                                                            alt="Verification Selfie - Zoomed"
+                                                            width={1200}
+                                                            height={1200}
+                                                            className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                        <button
+                                                            onClick={() => setImageZoomed(false)}
+                                                            className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-lg text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black/50"
+                                                            aria-label="Close zoom"
+                                                        >
+                                                            <X size={24} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center">
                                             <User size={48} className="text-white/30" />

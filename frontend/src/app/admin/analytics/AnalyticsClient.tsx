@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import {
     Users,
     UserCircle,
@@ -16,10 +16,13 @@ import {
     ArrowDown,
     Coin,
     Clock,
-    Download
+    Download,
+    Info
 } from '@phosphor-icons/react'
 import { exportAnalyticsData } from '@/lib/admin/export-utils'
+import { exportChartAsPNG, exportChartAsSVG } from '@/lib/admin/chart-export'
 import { toast } from 'sonner'
+import { Tooltip } from '@/components/admin/Tooltip'
 
 interface StatsData {
     totalUsers: number
@@ -34,6 +37,8 @@ interface StatsData {
     weeklyRevenue: number
     averageBookingValue?: number
     peakHour?: number
+    retentionRate?: number
+    cancellationRate?: number
 }
 
 interface ChartDataPoint {
@@ -64,7 +69,8 @@ function SimpleLineChart({
     color,
     height = 200,
     hoveredPoint,
-    onHover
+    onHover,
+    chartRef
 }: {
     data: ChartDataPoint[]
     dataKey: 'count' | 'amount'
@@ -72,6 +78,7 @@ function SimpleLineChart({
     height?: number
     hoveredPoint?: { x: number; y: number; value: number; label: string } | null
     onHover?: (point: { x: number; y: number; value: number; label: string } | null) => void
+    chartRef?: React.RefObject<SVGSVGElement>
 }) {
     const values = data.map(d => d[dataKey] || 0)
     const maxValue = Math.max(...values, 1)
@@ -120,6 +127,7 @@ function SimpleLineChart({
     return (
         <div className="relative" style={{ height }}>
             <svg
+                ref={chartRef}
                 viewBox="0 0 100 100"
                 preserveAspectRatio="none"
                 className="w-full h-full"
@@ -320,14 +328,48 @@ export function AnalyticsClient({
     bookingStatusData,
     userRoleData,
 }: AnalyticsClientProps) {
-    const [timeRange, setTimeRange] = useState<'week' | 'month'>('month')
+    const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom'>('month')
     const [hoveredDataPoint, setHoveredDataPoint] = useState<{ x: number; y: number; value: number; label: string } | null>(null)
+    const [showCustomRange, setShowCustomRange] = useState(false)
+    const [customStartDate, setCustomStartDate] = useState('')
+    const [customEndDate, setCustomEndDate] = useState('')
+
+    // Refs for chart export
+    const userGrowthChartRef = useRef<SVGSVGElement>(null)
+    const revenueChartRef = useRef<SVGSVGElement>(null)
 
     const handleExport = () => {
         exportAnalyticsData(stats, userGrowthData, bookingTrendsData, revenueData)
         toast.success('Export Started', {
             description: 'Analytics data is being downloaded as CSV.'
         })
+    }
+
+    const handleExportChart = async (chartRef: React.RefObject<SVGSVGElement>, chartName: string, format: 'png' | 'svg') => {
+        if (!chartRef.current) {
+            toast.error('Chart not available', {
+                description: 'Unable to export chart. Please try again.'
+            })
+            return
+        }
+
+        try {
+            if (format === 'png') {
+                await exportChartAsPNG(chartRef.current, chartName)
+                toast.success('Chart Exported', {
+                    description: `${chartName} has been exported as PNG.`
+                })
+            } else {
+                exportChartAsSVG(chartRef.current, chartName)
+                toast.success('Chart Exported', {
+                    description: `${chartName} has been exported as SVG.`
+                })
+            }
+        } catch (error) {
+            toast.error('Export Failed', {
+                description: 'Failed to export chart. Please try again.'
+            })
+        }
     }
 
     // Format currency
@@ -352,41 +394,136 @@ export function AnalyticsClient({
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
                 <div>
                     <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Analytics</h1>
-                    <p className="text-white/60 text-sm sm:text-base">Track platform performance and trends</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-white/60 text-sm sm:text-base">Track platform performance, user growth, and revenue trends</p>
+                        <Tooltip content="Analytics data is cached for 5 minutes. Use custom date range to analyze specific periods.">
+                            <Info size={16} className="text-white/40 hover:text-white/60 cursor-help" />
+                        </Tooltip>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                     {/* Export Button */}
                     <button
                         onClick={handleExport}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
                         aria-label="Export analytics data to CSV"
                     >
-                        <Download size={18} />
+                        <Download size={18} aria-hidden="true" />
                         <span className="text-sm font-medium">Export CSV</span>
                     </button>
 
                     {/* Time Range Selector */}
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <button
-                            onClick={() => setTimeRange('week')}
-                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors ${timeRange === 'week'
-                                    ? 'bg-[#df2531] text-white'
-                                    : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                            onClick={() => {
+                                setTimeRange('today')
+                                setShowCustomRange(false)
+                            }}
+                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${timeRange === 'today'
+                                ? 'bg-[#df2531] text-white'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                                 }`}
+                            aria-label="View today's analytics"
+                            aria-pressed={timeRange === 'today'}
+                        >
+                            Today
+                        </button>
+                        <button
+                            onClick={() => {
+                                setTimeRange('week')
+                                setShowCustomRange(false)
+                            }}
+                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${timeRange === 'week'
+                                ? 'bg-[#df2531] text-white'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                                }`}
+                            aria-label="View this week's analytics"
+                            aria-pressed={timeRange === 'week'}
                         >
                             This Week
                         </button>
                         <button
-                            onClick={() => setTimeRange('month')}
-                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors ${timeRange === 'month'
-                                    ? 'bg-[#df2531] text-white'
-                                    : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                            onClick={() => {
+                                setTimeRange('month')
+                                setShowCustomRange(false)
+                            }}
+                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${timeRange === 'month'
+                                ? 'bg-[#df2531] text-white'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                                 }`}
+                            aria-label="View this month's analytics"
+                            aria-pressed={timeRange === 'month'}
                         >
                             This Month
                         </button>
+                        <button
+                            onClick={() => {
+                                setTimeRange('quarter')
+                                setShowCustomRange(false)
+                            }}
+                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${timeRange === 'quarter'
+                                ? 'bg-[#df2531] text-white'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                                }`}
+                            aria-label="View this quarter's analytics"
+                            aria-pressed={timeRange === 'quarter'}
+                        >
+                            This Quarter
+                        </button>
+                        <button
+                            onClick={() => {
+                                setTimeRange('year')
+                                setShowCustomRange(false)
+                            }}
+                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${timeRange === 'year'
+                                ? 'bg-[#df2531] text-white'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                                }`}
+                            aria-label="View this year's analytics"
+                            aria-pressed={timeRange === 'year'}
+                        >
+                            This Year
+                        </button>
+                        <button
+                            onClick={() => {
+                                setTimeRange('custom')
+                                setShowCustomRange(true)
+                            }}
+                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${timeRange === 'custom'
+                                ? 'bg-[#df2531] text-white'
+                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                                }`}
+                            aria-label="View custom date range analytics"
+                            aria-pressed={timeRange === 'custom'}
+                        >
+                            Custom
+                        </button>
                     </div>
+
+                    {/* Custom Date Range Picker */}
+                    {showCustomRange && (
+                        <div className="mt-2 p-3 rounded-xl bg-white/5 border border-white/10 flex flex-col sm:flex-row gap-2">
+                            <div className="flex-1">
+                                <label className="block text-white/60 text-xs mb-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    value={customStartDate}
+                                    onChange={(e) => setCustomStartDate(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#df2531]"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-white/60 text-xs mb-1">End Date</label>
+                                <input
+                                    type="date"
+                                    value={customEndDate}
+                                    onChange={(e) => setCustomEndDate(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#df2531]"
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -457,7 +594,7 @@ export function AnalyticsClient({
             </div>
 
             {/* Additional Metrics Row */}
-            {(stats.averageBookingValue !== undefined || stats.peakHour !== undefined) && (
+            {(stats.averageBookingValue !== undefined || stats.peakHour !== undefined || stats.retentionRate !== undefined || stats.cancellationRate !== undefined) && (
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
                     {stats.averageBookingValue !== undefined && (
                         <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
@@ -486,6 +623,36 @@ export function AnalyticsClient({
                                 {stats.peakHour}:00
                             </p>
                             <p className="text-white/40 text-xs mt-1 sm:mt-2">Most active time</p>
+                        </div>
+                    )}
+
+                    {stats.retentionRate !== undefined && (
+                        <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
+                            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+                                    <UserCircle size={18} className="text-green-400 sm:w-5 sm:h-5" />
+                                </div>
+                                <p className="text-white/60 text-xs sm:text-sm">Client Retention</p>
+                            </div>
+                            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
+                                {stats.retentionRate.toFixed(1)}%
+                            </p>
+                            <p className="text-white/40 text-xs mt-1 sm:mt-2">Repeat customers</p>
+                        </div>
+                    )}
+
+                    {stats.cancellationRate !== undefined && (
+                        <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
+                            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+                                    <XCircle size={18} className="text-red-400 sm:w-5 sm:h-5" />
+                                </div>
+                                <p className="text-white/60 text-xs sm:text-sm">Cancellation Rate</p>
+                            </div>
+                            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
+                                {stats.cancellationRate.toFixed(1)}%
+                            </p>
+                            <p className="text-white/40 text-xs mt-1 sm:mt-2">Of total bookings</p>
                         </div>
                     )}
                 </div>
@@ -536,14 +703,35 @@ export function AnalyticsClient({
                         </div>
                         <Coin size={20} className="text-green-400 sm:w-6 sm:h-6" />
                     </div>
-                    <SimpleLineChart
-                        data={revenueData}
-                        dataKey="amount"
-                        color="#22c55e"
-                        height={200}
-                        hoveredPoint={hoveredDataPoint}
-                        onHover={setHoveredDataPoint}
-                    />
+                    <div className="relative">
+                        <SimpleLineChart
+                            data={revenueData}
+                            dataKey="amount"
+                            color="#22c55e"
+                            height={200}
+                            hoveredPoint={hoveredDataPoint}
+                            onHover={setHoveredDataPoint}
+                            chartRef={revenueChartRef}
+                        />
+                        <div className="absolute top-0 right-0 flex gap-1">
+                            <button
+                                onClick={() => handleExportChart(revenueChartRef, 'revenue', 'png')}
+                                className="p-1.5 rounded-lg bg-black/50 hover:bg-black/70 text-white/60 hover:text-white transition-colors text-xs"
+                                aria-label="Export revenue chart as PNG"
+                                title="Export as PNG"
+                            >
+                                PNG
+                            </button>
+                            <button
+                                onClick={() => handleExportChart(revenueChartRef, 'revenue', 'svg')}
+                                className="p-1.5 rounded-lg bg-black/50 hover:bg-black/70 text-white/60 hover:text-white transition-colors text-xs"
+                                aria-label="Export revenue chart as SVG"
+                                title="Export as SVG"
+                            >
+                                SVG
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Distribution Charts */}

@@ -19,7 +19,8 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, Wallet as WalletType, Transaction, WithdrawalRequest } from '@/types/database'
+import type { Profile, Wallet as WalletType } from '@/types/database'
+import type { WithdrawalRequestWithTalent, PayoutTransaction } from '@/types/admin'
 import { toast } from 'sonner'
 import { StatusBadge } from '@/components/admin/StatusBadge'
 import { EmptyState } from '@/components/admin/EmptyState'
@@ -27,32 +28,17 @@ import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { Pagination } from '@/components/admin/Pagination'
 import { usePagination } from '@/hooks/admin/usePagination'
 import { exportWithdrawalRequests, exportPayoutHistory } from '@/lib/admin/export-utils'
-import { Download } from '@phosphor-icons/react'
+import { Download, Info } from '@phosphor-icons/react'
+import { Tooltip } from '@/components/admin/Tooltip'
 
 interface TalentWithWallet extends Profile {
     wallet: WalletType | null
 }
 
-interface PayoutTransaction extends Transaction {
-    user: {
-        display_name: string | null
-        avatar_url: string | null
-    } | null
-}
-
-interface WithdrawalWithTalent extends WithdrawalRequest {
-    talent: {
-        id: string
-        display_name: string | null
-        avatar_url: string | null
-        username: string | null
-    } | null
-}
-
 interface PayoutsClientProps {
     talents: TalentWithWallet[]
     payouts: PayoutTransaction[]
-    withdrawalRequests: WithdrawalWithTalent[]
+    withdrawalRequests: WithdrawalRequestWithTalent[]
 }
 
 export function PayoutsClient({
@@ -227,74 +213,28 @@ export function PayoutsClient({
     }
 
     // Handle approve withdrawal
-    const handleApprove = async (request: WithdrawalWithTalent) => {
+    const handleApprove = async (request: WithdrawalRequestWithTalent) => {
         setProcessing(request.id)
+
+        // Optimistic update: Update UI immediately
+        const previousRequests = [...withdrawalRequests]
+        setWithdrawalRequests(prev => prev.map(r =>
+            r.id === request.id
+                ? { ...r, status: 'approved', processed_at: new Date().toISOString() }
+                : r
+        ))
+
         try {
-            // First, get current wallet balance atomically
-            const { data: walletData, error: walletFetchError } = await supabase
-                .from('wallets')
-                .select('balance')
-                .eq('user_id', request.talent_id)
-                .single()
+            const response = await fetch(`/api/admin/payouts/${request.id}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            })
 
-            if (walletFetchError) {
-                throw new Error(`Unable to fetch wallet balance: ${walletFetchError.message}`)
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to approve withdrawal')
             }
-
-            if (!walletData) {
-                throw new Error('Wallet not found for this talent')
-            }
-
-            const currentBalance = walletData.balance || 0
-
-            if (currentBalance < request.amount) {
-                throw new Error(`Insufficient balance. Current balance: ${currentBalance.toLocaleString()} coins, requested: ${request.amount.toLocaleString()} coins`)
-            }
-
-            const newBalance = currentBalance - request.amount
-
-            // Deduct from wallet first using atomic update (optimistic locking)
-            const { error: walletError } = await supabase
-                .from('wallets')
-                .update({
-                    balance: newBalance
-                })
-                .eq('user_id', request.talent_id)
-                .eq('balance', currentBalance) // Ensure balance hasn't changed (optimistic locking)
-
-            if (walletError) {
-                throw new Error(`Failed to update wallet balance. The wallet may have been modified. Please refresh and try again.`)
-            }
-
-            // Only update withdrawal status after successful wallet deduction
-            const { error: updateError } = await supabase
-                .from('withdrawal_requests')
-                .update({
-                    status: 'approved',
-                    processed_at: new Date().toISOString()
-                })
-                .eq('id', request.id)
-
-            if (updateError) {
-                // Rollback wallet update if withdrawal status update fails
-                await supabase
-                    .from('wallets')
-                    .update({ balance: currentBalance })
-                    .eq('user_id', request.talent_id)
-
-                throw new Error(`Failed to update withdrawal status: ${updateError.message}`)
-            }
-
-            // Create notification for talent
-            await supabase
-                .from('notifications')
-                .insert({
-                    user_id: request.talent_id,
-                    type: 'withdrawal_approved',
-                    title: 'Withdrawal Approved!',
-                    message: `Your withdrawal request for ${request.amount.toLocaleString()} coins has been approved and is being processed.`,
-                    data: { withdrawal_id: request.id, amount: request.amount }
-                })
 
             toast.success('Withdrawal Approved', {
                 description: `Successfully approved withdrawal of ${request.amount.toLocaleString()} coins for ${request.talent?.display_name || 'talent'}.`
@@ -302,6 +242,9 @@ export function PayoutsClient({
 
             router.refresh()
         } catch (error) {
+            // Revert optimistic update on error
+            setWithdrawalRequests(previousRequests)
+
             console.error('Error approving withdrawal:', error)
             const errorMessage = error instanceof Error ? error.message : 'Failed to approve withdrawal. Please try again.'
             toast.error('Approval Failed', {
@@ -315,42 +258,40 @@ export function PayoutsClient({
     // Handle reject withdrawal
     const handleReject = async (requestId: string) => {
         setProcessing(requestId)
+
+        // Optimistic update: Update UI immediately
+        const previousRequests = [...withdrawalRequests]
+        setWithdrawalRequests(prev => prev.map(r =>
+            r.id === requestId
+                ? { ...r, status: 'rejected', admin_notes: rejectReason || 'Rejected by admin', processed_at: new Date().toISOString() }
+                : r
+        ))
+
         try {
-            const request = withdrawalRequests.find(r => r.id === requestId)
+            const response = await fetch(`/api/admin/payouts/${requestId}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: rejectReason || 'Rejected by admin' }),
+            })
 
-            const { error } = await supabase
-                .from('withdrawal_requests')
-                .update({
-                    status: 'rejected',
-                    admin_notes: rejectReason || 'Rejected by admin',
-                    processed_at: new Date().toISOString()
-                })
-                .eq('id', requestId)
+            const data = await response.json()
 
-            if (error) throw error
-
-            // Create notification for talent
-            if (request) {
-                await supabase
-                    .from('notifications')
-                    .insert({
-                        user_id: request.talent_id,
-                        type: 'withdrawal_rejected',
-                        title: 'Withdrawal Declined',
-                        message: rejectReason || 'Your withdrawal request has been declined. Please contact support for more information.',
-                        data: { withdrawal_id: requestId }
-                    })
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to reject withdrawal')
             }
 
             setShowRejectModal(null)
             setRejectReason('')
 
             toast.success('Withdrawal Rejected', {
-                description: `Withdrawal request has been rejected. ${request ? `Reason: ${rejectReason || 'No reason provided'}` : ''}`
+                description: `Withdrawal request has been rejected.`
             })
 
             router.refresh()
         } catch (error) {
+            // Revert optimistic update on error
+            setWithdrawalRequests(previousRequests)
+
             console.error('Error rejecting withdrawal:', error)
             const errorMessage = error instanceof Error ? error.message : 'Failed to reject withdrawal. Please try again.'
             toast.error('Rejection Failed', {
@@ -365,31 +306,36 @@ export function PayoutsClient({
         <div className="p-4 sm:p-8">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Payouts</h1>
-                    <p className="text-white/60">Manage talent earnings and process withdrawals</p>
-                </div>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Payouts</h1>
+          <div className="flex items-center gap-2">
+            <p className="text-white/60">Manage talent earnings and process withdrawal requests</p>
+            <Tooltip content="Approve withdrawals to deduct coins from talent wallets. Rejected withdrawals keep the coins in the talent's wallet.">
+              <Info size={16} className="text-white/40 hover:text-white/60 cursor-help" />
+            </Tooltip>
+          </div>
+        </div>
                 <div className="flex gap-2">
-                    {activeTab === 'requests' && (
-                        <button
-                            onClick={handleExportRequests}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"
-                            aria-label="Export withdrawal requests to CSV"
-                        >
-                            <Download size={18} />
-                            <span className="text-sm font-medium">Export CSV</span>
-                        </button>
-                    )}
-                    {activeTab === 'history' && (
-                        <button
-                            onClick={handleExportHistory}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"
-                            aria-label="Export payout history to CSV"
-                        >
-                            <Download size={18} />
-                            <span className="text-sm font-medium">Export CSV</span>
-                        </button>
-                    )}
+          {activeTab === 'requests' && (
+            <button
+              onClick={handleExportRequests}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+              aria-label="Export withdrawal requests to CSV"
+            >
+              <Download size={18} aria-hidden="true" />
+              <span className="text-sm font-medium">Export CSV</span>
+            </button>
+          )}
+          {activeTab === 'history' && (
+            <button
+              onClick={handleExportHistory}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+              aria-label="Export payout history to CSV"
+            >
+              <Download size={18} aria-hidden="true" />
+              <span className="text-sm font-medium">Export CSV</span>
+            </button>
+          )}
                 </div>
             </div>
 
@@ -444,16 +390,16 @@ export function PayoutsClient({
                                 ? 'Search by talent name or location...'
                                 : 'Search by name...'
                     }
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:border-[#df2531]/50 transition-colors"
                     aria-label="Search"
                 />
                 {searchQuery && (
                     <button
                         onClick={() => setSearchQuery('')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] rounded p-1"
                         aria-label="Clear search"
                     >
-                        <X size={18} />
+                        <X size={18} aria-hidden="true" />
                     </button>
                 )}
             </div>
@@ -462,10 +408,12 @@ export function PayoutsClient({
             <div className="flex flex-wrap gap-2 mb-6">
                 <button
                     onClick={() => setActiveTab('requests')}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors relative ${activeTab === 'requests'
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors relative focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${activeTab === 'requests'
                         ? 'bg-[#df2531] text-white'
                         : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                         }`}
+                    aria-label="View withdrawal requests"
+                    aria-pressed={activeTab === 'requests'}
                 >
                     Withdrawal Requests
                     {pendingRequests.length > 0 && (
@@ -476,7 +424,7 @@ export function PayoutsClient({
                 </button>
                 <button
                     onClick={() => setActiveTab('balances')}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${activeTab === 'balances'
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${activeTab === 'balances'
                         ? 'bg-[#df2531] text-white'
                         : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                         }`}
@@ -485,7 +433,7 @@ export function PayoutsClient({
                 </button>
                 <button
                     onClick={() => setActiveTab('history')}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${activeTab === 'history'
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${activeTab === 'history'
                         ? 'bg-[#df2531] text-white'
                         : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                         }`}

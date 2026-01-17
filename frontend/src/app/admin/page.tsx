@@ -62,7 +62,7 @@ export default async function AdminDashboardPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Admin Dashboard</h1>
-        <p className="text-white/60 text-sm sm:text-base">Manage verifications, payouts, and platform settings</p>
+        <p className="text-white/60 text-sm sm:text-base">Monitor platform activity, review verifications, and process talent payouts</p>
       </div>
 
       {/* Stats Grid */}
@@ -96,21 +96,24 @@ export default async function AdminDashboardPage() {
         <div className="flex flex-wrap gap-2 sm:gap-3">
           <Link
             href="/admin/verifications"
-            className="px-3 sm:px-4 py-2 rounded-xl bg-[#df2531] text-white text-sm font-medium hover:bg-[#c41f2a] transition-colors"
+            className="px-3 sm:px-4 py-2 rounded-xl bg-[#df2531] text-white text-sm font-medium hover:bg-[#c41f2a] transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+            aria-label="Review pending verifications"
           >
-            Review Verifications
+            Review Pending
           </Link>
           <Link
             href="/admin/payouts"
-            className="px-3 sm:px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors"
+            className="px-3 sm:px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+            aria-label="Process withdrawal requests"
           >
-            Process Payouts
+            Process Withdrawals
           </Link>
           <Link
             href="/admin/analytics"
-            className="px-3 sm:px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors"
+            className="px-3 sm:px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+            aria-label="View platform analytics and reports"
           >
-            View Analytics
+            View Reports
           </Link>
         </div>
       </div>

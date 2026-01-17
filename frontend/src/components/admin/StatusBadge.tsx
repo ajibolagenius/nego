@@ -1,6 +1,7 @@
 'use client'
 
 import { CheckCircle, XCircle, Clock, Warning } from '@phosphor-icons/react'
+import { Tooltip } from './Tooltip'
 
 interface StatusBadgeProps {
     status: 'pending' | 'approved' | 'rejected' | 'completed' | 'failed'
@@ -10,27 +11,32 @@ interface StatusBadgeProps {
 
 const statusConfig = {
     pending: {
-        label: 'Pending',
+        label: 'Pending Review',
+        tooltip: 'Awaiting admin review and approval',
         color: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
         icon: Clock
     },
     approved: {
-        label: 'Approved',
+        label: 'Approved & Confirmed',
+        tooltip: 'Verified and booking is confirmed',
         color: 'bg-green-500/10 text-green-400 border-green-500/20',
         icon: CheckCircle
     },
     rejected: {
-        label: 'Rejected',
+        label: 'Rejected - See Notes',
+        tooltip: 'Rejected with refund processed. Check admin notes for details.',
         color: 'bg-red-500/10 text-red-400 border-red-500/20',
         icon: XCircle
     },
     completed: {
         label: 'Completed',
+        tooltip: 'Successfully completed',
         color: 'bg-green-500/10 text-green-400 border-green-500/20',
         icon: CheckCircle
     },
     failed: {
         label: 'Failed',
+        tooltip: 'Operation failed. Please check details.',
         color: 'bg-red-500/10 text-red-400 border-red-500/20',
         icon: Warning
     },
@@ -46,7 +52,7 @@ export function StatusBadge({ status, size = 'md', showIcon = true }: StatusBadg
     const config = statusConfig[status]
     const Icon = config.icon
 
-    return (
+    const badge = (
         <span
             className={`inline-flex items-center gap-1 rounded-full border font-medium ${config.color} ${sizeConfig[size]}`}
             role="status"
@@ -55,5 +61,11 @@ export function StatusBadge({ status, size = 'md', showIcon = true }: StatusBadg
             {showIcon && <Icon size={size === 'sm' ? 12 : size === 'md' ? 14 : 16} weight="fill" />}
             {config.label}
         </span>
+    )
+
+    return (
+        <Tooltip content={config.tooltip} position="top">
+            {badge}
+        </Tooltip>
     )
 }

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { AnalyticsClient } from './AnalyticsClient'
+import { cache, CACHE_KEYS } from '@/lib/admin/cache'
 
 export const metadata = {
     title: 'Analytics - Nego Admin',
@@ -8,6 +9,13 @@ export const metadata = {
 
 export default async function AnalyticsPage() {
     const supabase = await createClient()
+
+    // Check cache first (5 minute TTL)
+    const cacheKey = CACHE_KEYS.ANALYTICS_STATS
+    const cachedStats = cache.get(cacheKey)
+
+    // For now, we'll still fetch fresh data but cache the results
+    // In a real implementation, you might want to return cached data if available
 
     // Get current date info
     const now = new Date()
@@ -41,8 +49,8 @@ export default async function AnalyticsPage() {
         supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
         // Recent user signups (last 30 days)
         supabase.from('profiles').select('id, role, created_at').gte('created_at', thirtyDaysAgo.toISOString()).order('created_at', { ascending: true }),
-        // Recent bookings (last 30 days)
-        supabase.from('bookings').select('id, status, total_price, created_at').gte('created_at', thirtyDaysAgo.toISOString()).order('created_at', { ascending: true }),
+        // Recent bookings (last 30 days) with client_id for retention calculation
+        supabase.from('bookings').select('id, client_id, status, total_price, created_at').gte('created_at', thirtyDaysAgo.toISOString()).order('created_at', { ascending: true }),
         // Transactions (last 30 days)
         supabase.from('transactions').select('id, type, amount, coins, status, created_at').gte('created_at', thirtyDaysAgo.toISOString()).order('created_at', { ascending: true }),
         // Withdrawals (last 30 days)
@@ -89,11 +97,21 @@ export default async function AnalyticsPage() {
     // Calculate client retention (users who made multiple bookings)
     const clientBookingCounts: { [key: string]: number } = {}
     recentBookings?.forEach(b => {
-        // We'd need client_id from bookings, but for now use a placeholder
-        // This would require fetching bookings with client_id
+        if (b.client_id) {
+            clientBookingCounts[b.client_id] = (clientBookingCounts[b.client_id] || 0) + 1
+        }
     })
+    const clientsWithMultipleBookings = Object.values(clientBookingCounts).filter(count => count > 1).length
+    const totalClientsWithBookings = Object.keys(clientBookingCounts).length
+    const retentionRate = totalClientsWithBookings > 0
+        ? (clientsWithMultipleBookings / totalClientsWithBookings) * 100
+        : 0
 
-    // Calculate popular service types (would need service_type data from bookings)
+    // Calculate booking cancellation rate
+    const cancelledBookings = recentBookings?.filter(b => b.status === 'cancelled').length || 0
+    const cancellationRate = recentBookings && recentBookings.length > 0
+        ? (cancelledBookings / recentBookings.length) * 100
+        : 0
 
     // Process data for charts
     const userGrowthData = processTimeSeriesData(recentUsers || [], 'created_at', 30)
@@ -113,22 +131,29 @@ export default async function AnalyticsPage() {
         { name: 'Talents', value: totalTalents || 0, color: '#df2531' },
     ].filter(d => d.value > 0)
 
+    // Cache the results (5 minutes TTL)
+    const statsData = {
+        totalUsers: totalUsers || 0,
+        totalClients: totalClients || 0,
+        totalTalents: totalTalents || 0,
+        totalBookings: totalBookings || 0,
+        pendingBookings: pendingBookings || 0,
+        completedBookings: completedBookings || 0,
+        totalRevenue,
+        weeklyUsers,
+        weeklyBookings,
+        weeklyRevenue,
+        averageBookingValue,
+        peakHour: Number(peakHour),
+        retentionRate,
+        cancellationRate,
+    }
+
+    cache.set(cacheKey, statsData, 5 * 60 * 1000) // 5 minutes
+
     return (
         <AnalyticsClient
-            stats={{
-                totalUsers: totalUsers || 0,
-                totalClients: totalClients || 0,
-                totalTalents: totalTalents || 0,
-                totalBookings: totalBookings || 0,
-                pendingBookings: pendingBookings || 0,
-                completedBookings: completedBookings || 0,
-                totalRevenue,
-                weeklyUsers,
-                weeklyBookings,
-                weeklyRevenue,
-                averageBookingValue,
-                peakHour: Number(peakHour),
-            }}
+            stats={statsData}
             userGrowthData={userGrowthData}
             bookingTrendsData={bookingTrendsData}
             revenueData={revenueData}
@@ -139,7 +164,7 @@ export default async function AnalyticsPage() {
 }
 
 // Helper function to process time series data
-function processTimeSeriesData(data: any[], dateField: string, days: number) {
+function processTimeSeriesData(data: Array<{ created_at: string;[key: string]: unknown }>, dateField: string, days: number) {
     const result: { date: string; count: number }[] = []
     const now = new Date()
 
@@ -161,7 +186,7 @@ function processTimeSeriesData(data: any[], dateField: string, days: number) {
 }
 
 // Helper function to process revenue data
-function processRevenueData(transactions: any[], days: number) {
+function processRevenueData(transactions: Array<{ created_at: string; type: string; status: string; amount: number | null }>, days: number) {
     const result: { date: string; amount: number }[] = []
     const now = new Date()
 

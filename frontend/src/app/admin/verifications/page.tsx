@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { VerificationsClient } from './VerificationsClient'
+import type { VerificationWithBooking } from '@/types/admin'
 
 export const metadata = {
   title: 'Verifications - Nego Admin',
@@ -41,10 +42,10 @@ export default async function VerificationsPage() {
     .order('created_at', { ascending: false })
 
   // Transform data to include id field (use booking_id as id)
-  const transformedVerifications = (verifications || []).map(v => ({
+  const transformedVerifications: VerificationWithBooking[] = (verifications || []).map(v => ({
     ...v,
     id: v.booking_id, // Use booking_id as unique identifier
-  })) as any[]
+  }))
 
   return <VerificationsClient verifications={transformedVerifications} />
 }
