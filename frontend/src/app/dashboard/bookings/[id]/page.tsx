@@ -60,5 +60,17 @@ export default async function BookingDetailPage({ params }: PageProps) {
         review = reviewData
     }
 
-    return <BookingDetailClient booking={{ ...booking, review }} wallet={wallet} userId={user.id} />
+    // Fetch verification data (including admin notes) if booking is cancelled
+    let verification = null
+    if (booking.status === 'cancelled') {
+        const { data: verificationData } = await supabase
+            .from('verifications')
+            .select('admin_notes, status')
+            .eq('booking_id', id)
+            .maybeSingle()
+
+        verification = verificationData
+    }
+
+    return <BookingDetailClient booking={{ ...booking, review, verification }} wallet={wallet} userId={user.id} />
 }

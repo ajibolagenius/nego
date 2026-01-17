@@ -256,6 +256,8 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
             })
 
             router.refresh()
+            // Refresh verification data to ensure UI is in sync
+            await refreshVerifications()
         } catch (error) {
             // Revert optimistic update on error
             setVerifications(previousVerifications)
@@ -265,6 +267,9 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
             toast.error('Approval Failed', {
                 description: errorMessage
             })
+
+            // Refresh verification data to sync with database state
+            await refreshVerifications()
         } finally {
             setIsProcessing(false)
         }
@@ -310,6 +315,8 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
             })
 
             router.refresh()
+            // Refresh verification data to ensure UI is in sync
+            await refreshVerifications()
         } catch (error) {
             // Revert optimistic update on error
             setVerifications(previousVerifications)
@@ -319,6 +326,9 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
             toast.error('Rejection Failed', {
                 description: errorMessage
             })
+
+            // Refresh verification data to sync with database state
+            await refreshVerifications()
         } finally {
             setIsProcessing(false)
         }
@@ -451,13 +461,20 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                 >
                                     {/* Selfie Thumbnail */}
                                     <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-white/10 shrink-0">
-                                        {verification.selfie_url ? (
+                                        {verification.selfie_url && !verification.selfie_url.includes('via.placeholder.com') ? (
                                             <Image
                                                 src={verification.selfie_url}
-                                                alt="Selfie"
+                                                alt="Client Verification Selfie"
                                                 fill
                                                 className="object-cover"
-                                                unoptimized={verification.selfie_url?.includes('via.placeholder.com') || verification.selfie_url?.includes('supabase.co/storage')}
+                                                unoptimized={verification.selfie_url?.includes('supabase.co/storage')}
+                                                onError={(e) => {
+                                                    // If image fails to load, show camera icon
+                                                    const target = e.target as HTMLImageElement
+                                                    if (target.parentElement) {
+                                                        target.style.display = 'none'
+                                                    }
+                                                }}
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
@@ -555,9 +572,9 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                             {/* Selfie */}
                             <div>
-                                <p className="text-white/60 text-sm mb-2">Selfie</p>
+                                <p className="text-white/60 text-sm mb-2">Client Verification Selfie</p>
                                 <div className="relative aspect-square max-w-[200px] sm:max-w-xs rounded-2xl overflow-hidden bg-white/5 mx-auto sm:mx-0">
-                                    {selectedVerification.selfie_url ? (
+                                    {selectedVerification.selfie_url && !selectedVerification.selfie_url.includes('via.placeholder.com') ? (
                                         <>
                                             {!imageZoomed ? (
                                                 <div
@@ -575,10 +592,17 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                                 >
                                                     <Image
                                                         src={selectedVerification.selfie_url}
-                                                        alt="Verification Selfie"
+                                                        alt="Client Verification Selfie - Captured during booking verification"
                                                         fill
                                                         className="object-cover transition-transform group-hover:scale-105 pointer-events-none"
-                                                        unoptimized={selectedVerification.selfie_url?.includes('via.placeholder.com') || selectedVerification.selfie_url?.includes('supabase.co/storage')}
+                                                        unoptimized={selectedVerification.selfie_url?.includes('supabase.co/storage')}
+                                                        onError={(e) => {
+                                                            // If image fails to load, show camera icon
+                                                            const target = e.target as HTMLImageElement
+                                                            if (target.parentElement) {
+                                                                target.style.display = 'none'
+                                                            }
+                                                        }}
                                                     />
                                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
                                                         <span className="text-white/0 group-hover:text-white/80 text-xs font-medium transition-colors">
@@ -602,12 +626,12 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                                     <div className="relative max-w-full max-h-full">
                                                         <Image
                                                             src={selectedVerification.selfie_url}
-                                                            alt="Verification Selfie - Zoomed"
+                                                            alt="Client Verification Selfie - Zoomed"
                                                             width={1200}
                                                             height={1200}
                                                             className="max-w-full max-h-[90vh] object-contain rounded-lg"
                                                             onClick={(e) => e.stopPropagation()}
-                                                            unoptimized={selectedVerification.selfie_url?.includes('via.placeholder.com') || selectedVerification.selfie_url?.includes('supabase.co/storage')}
+                                                            unoptimized={selectedVerification.selfie_url?.includes('supabase.co/storage')}
                                                         />
                                                         <button
                                                             onClick={() => setImageZoomed(false)}

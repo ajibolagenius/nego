@@ -30,6 +30,7 @@ interface BookingWithTalent {
     talent: Pick<Profile, 'id' | 'display_name' | 'avatar_url' | 'location'>
     client?: Pick<Profile, 'id' | 'display_name' | 'avatar_url' | 'location'> | null
     review?: Review | null
+    verification?: { admin_notes: string | null; status: string } | null
 }
 
 interface BookingDetailClientProps {
@@ -771,14 +772,42 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
 
                 {/* Cancelled Status */}
                 {booking.status === 'cancelled' && (
-                    <div className="bg-red-500/10 rounded-xl p-6 border border-red-500/20 text-center">
-                        <XCircle size={48} weight="fill" className="text-red-400 mx-auto mb-4" />
-                        <h3 className="text-white font-bold text-lg mb-2">Booking Cancelled</h3>
-                        <p className="text-white/60 text-sm">
-                            {booking.notes?.includes('Declined by talent')
-                                ? 'This booking was declined by the talent.'
-                                : 'This booking has been cancelled.'}
-                        </p>
+                    <div className="bg-red-500/10 rounded-xl p-6 border border-red-500/20">
+                        <div className="text-center mb-4">
+                            <XCircle size={48} weight="fill" className="text-red-400 mx-auto mb-4" />
+                            <h3 className="text-white font-bold text-lg mb-2">Booking Cancelled</h3>
+                            <p className="text-white/60 text-sm mb-4">
+                                {booking.notes?.includes('Declined by talent')
+                                    ? 'This booking was declined by the talent.'
+                                    : booking.verification?.status === 'rejected'
+                                        ? 'This booking was cancelled due to verification rejection.'
+                                        : 'This booking has been cancelled.'}
+                            </p>
+                        </div>
+
+                        {/* Display admin notes if available (from verification rejection) */}
+                        {booking.verification?.admin_notes && (
+                            <div className="mt-4 pt-4 border-t border-red-500/20">
+                                <p className="text-white/40 text-xs mb-2 font-medium">Cancellation Reason:</p>
+                                <div className="bg-black/20 rounded-lg p-4">
+                                    <p className="text-white/80 text-sm leading-relaxed">
+                                        {booking.verification.admin_notes}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Display talent decline reason if available */}
+                        {booking.notes && booking.notes.includes('Declined by talent') && booking.notes.length > 'Declined by talent'.length && (
+                            <div className="mt-4 pt-4 border-t border-red-500/20">
+                                <p className="text-white/40 text-xs mb-2 font-medium">Talent's Reason:</p>
+                                <div className="bg-black/20 rounded-lg p-4">
+                                    <p className="text-white/80 text-sm leading-relaxed">
+                                        {booking.notes.replace('Declined by talent: ', '').replace('Declined by talent', '')}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
