@@ -1,6 +1,6 @@
 # Nego - Talent Marketplace
 
-A premium, dark-themed talent marketplace built with Next.js 14, Supabase, and Tailwind CSS.
+A premium, dark-themed talent marketplace built with Next.js 16, Supabase, and Tailwind CSS.
 
 ## 🚀 Quick Start
 
@@ -35,6 +35,11 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ---
 
 ## 🔧 Environment Setup
+
+### Important Notes
+
+- **Root-level `.env` files**: These are tracked in Git and required for Emergent deployment. Do not commit sensitive production keys here.
+- **Frontend `.env` files**: These are ignored by Git for security. Use `.env.example` as a template.
 
 ### 1. Create Environment File
 
@@ -157,6 +162,8 @@ cd frontend
 yarn test
 ```
 
+**Note**: Test scripts may need to be added to `package.json` if not already present.
+
 ---
 
 ## 📁 Project Structure
@@ -169,32 +176,46 @@ frontend/
 │   │   │   ├── gifts/          # Gift coins API
 │   │   │   ├── cloudinary/     # Media upload signatures
 │   │   │   ├── email/          # Email sending
-│   │   │   └── webhooks/       # Payment webhooks
+│   │   │   ├── webhooks/       # Payment webhooks
+│   │   │   ├── admin/          # Admin APIs
+│   │   │   └── push/           # Push notifications
 │   │   ├── dashboard/          # Protected dashboard pages
 │   │   │   ├── browse/         # Browse talents
-│   │   │   ├── bookings/       # Booking management
+│   │   │   ├── bookings/       # Booking management & details
 │   │   │   ├── messages/       # Real-time chat
 │   │   │   ├── wallet/         # Coin wallet
-│   │   │   └── talent/         # Talent dashboard
+│   │   │   ├── talent/         # Talent dashboard
+│   │   │   └── verify/         # Client verification
 │   │   ├── admin/              # Admin panel
-│   │   ├── t/[slug]/           # Talent profile pages
+│   │   │   ├── verifications/  # Client verification management
+│   │   │   └── withdrawals/    # Withdrawal processing
+│   │   ├── t/[slug]/           # Public talent profile pages
+│   │   ├── talent/[id]/        # Alternative talent profile route
 │   │   ├── login/              # Authentication
-│   │   └── register/
+│   │   └── register/           # User registration
 │   ├── components/             # React components
 │   │   ├── ui/                 # Shadcn UI components
 │   │   ├── GiftCoins.tsx       # Gifting modal
 │   │   ├── MediaManager.tsx    # Media upload manager
+│   │   ├── Reviews.tsx         # Review components
+│   │   ├── landing/            # Landing page components
 │   │   └── ...
 │   ├── lib/                    # Utilities and helpers
 │   │   ├── supabase/           # Supabase client configs
+│   │   │   ├── client.ts       # Client-side Supabase
+│   │   │   ├── server.ts       # Server-side Supabase
+│   │   │   └── api.ts          # API client (service role)
 │   │   ├── cloudinary.ts       # Cloudinary helpers
-│   │   └── gift-validation.ts  # Gift validation
+│   │   ├── gift-validation.ts  # Gift validation
+│   │   └── push/               # Push notification utilities
 │   └── types/                  # TypeScript types
 ├── public/                     # Static assets
-├── .env                        # Environment variables (create this)
+├── .env                        # Environment variables (create this, not tracked)
+├── .env.example                # Environment template (tracked)
 ├── package.json
 ├── tailwind.config.ts
-└── next.config.mjs
+├── next.config.ts              # Next.js configuration
+└── [SQL Scripts]               # Supabase migration scripts
 ```
 
 ---
@@ -219,24 +240,28 @@ After setting up the database, create accounts via `/register`:
 ## 🔑 Key Features
 
 ### For Clients
-- Browse talent profiles
+- Browse talent profiles with reviews and ratings
 - Book services with coin payments
 - Send gift coins to talents
 - Real-time messaging
 - Unlock premium content
+- Client identity verification (selfie + geolocation)
 
 ### For Talents
 - Manage service menu & pricing
 - Accept/reject bookings
 - Upload media (free & premium)
-- Track earnings
+- Track earnings and transaction history
 - Request withdrawals
+- Receive and respond to reviews
+- View booking details with client information
 
 ### For Admins
-- Verify client identities
-- Process withdrawals
-- View analytics
-- Manage platform
+- Verify client identities (view selfie captures and geolocation)
+- Process withdrawal requests
+- View platform analytics and digest
+- Manage platform users and content
+- Monitor all transactions
 
 ---
 
@@ -253,12 +278,14 @@ After setting up the database, create accounts via `/register`:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/gifts` | POST | Send gift coins |
+| `/api/gifts` | POST | Send gift coins to talents |
 | `/api/media/unlock` | POST | Unlock premium content |
-| `/api/cloudinary/signature` | GET | Get upload signature |
+| `/api/cloudinary/signature` | GET | Get upload signature for media |
 | `/api/transactions/create` | POST | Create payment transaction |
-| `/api/webhooks/paystack` | POST | Handle payment webhooks |
+| `/api/webhooks/paystack` | POST | Handle Paystack payment webhooks |
 | `/api/email/send` | POST | Send transactional emails |
+| `/api/admin/digest` | GET | Get admin dashboard digest (admin only) |
+| `/api/push/send` | POST | Send push notifications |
 
 ---
 
@@ -284,16 +311,38 @@ yarn install
 
 ### Real-time chat not working
 - Enable realtime replication for `messages` and `conversations` tables in Supabase
+- Check that Supabase realtime is enabled in your project settings
+
+### Verification images not showing
+- Ensure Supabase Storage bucket `verifications` has proper RLS policies
+- Check that signed URLs are being generated correctly
+- Verify the `selfie_url` field contains valid file paths
+
+### Geolocation errors
+- Ensure HTTPS is enabled (geolocation requires secure context)
+- Check browser permissions for location access
+- Review browser console for specific error codes (PERMISSION_DENIED, POSITION_UNAVAILABLE, TIMEOUT)
 
 ---
 
 ## 🚀 Deployment
 
-### Vercel (Recommended)
+### Emergent (Production)
+The project is configured for Emergent deployment:
+- Root-level `.env` files are tracked in Git (required for Emergent)
+- Frontend `.env` files should be configured in Emergent dashboard
+- See `.emergent/emergent.yml` for deployment configuration
+
+### Vercel (Recommended for Development)
 1. Push to GitHub
 2. Import project in Vercel
-3. Add environment variables
+3. Add environment variables in Vercel dashboard
 4. Deploy
+
+**Environment Variables to Set:**
+- All variables from the `.env` example above
+- Ensure `NEXT_PUBLIC_*` variables are set for client-side access
+- Keep `SUPABASE_SERVICE_ROLE_KEY` server-side only
 
 ### Other Platforms
 The app is a standard Next.js application and can be deployed to:
@@ -301,6 +350,8 @@ The app is a standard Next.js application and can be deployed to:
 - Railway
 - DigitalOcean App Platform
 - AWS Amplify
+
+**Important**: When deploying, ensure all environment variables are properly configured in your platform's settings.
 
 ---
 
