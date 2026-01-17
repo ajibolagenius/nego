@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Bell, Lock, Envelope, Globe, SignOut, Trash, Warning,
-    CaretRight, ShieldCheck, Eye, EyeSlash, User, SpinnerGap, CheckCircle, X, Check
+    CaretRight, ShieldCheck, Eye, EyeSlash, User, SpinnerGap, CheckCircle, X, Check, Circle
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
@@ -60,8 +60,17 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
     // Loading states for individual settings
     const [savingNotifications, setSavingNotifications] = useState<string | null>(null)
     const [savingPrivacy, setSavingPrivacy] = useState<string | null>(null)
+    const [togglingStatus, setTogglingStatus] = useState(false)
+    const [isOnline, setIsOnline] = useState(profile?.status === 'online')
 
     const userRole = profile?.role === 'talent' ? 'talent' : 'client'
+
+    // Sync status from profile
+    useEffect(() => {
+        if (profile?.status) {
+            setIsOnline(profile.status === 'online')
+        }
+    }, [profile?.status])
 
     // Calculate password strength
     const getPasswordStrength = useCallback((password: string): PasswordStrength => {
@@ -139,6 +148,40 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
             setSavingPrivacy(null)
         }
     }, [privacy, user.id, showSuccess, showError])
+
+    // Toggle online/offline status (for talents)
+    const handleToggleStatus = useCallback(async () => {
+        if (userRole !== 'talent') return
+
+        setTogglingStatus(true)
+        const previousStatus = isOnline
+
+        // Optimistic update
+        setIsOnline(!isOnline)
+
+        try {
+            const supabase = createClient()
+            const newStatus = !isOnline ? 'online' : 'offline'
+            const { error } = await supabase
+                .from('profiles')
+                .update({
+                    status: newStatus,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', user.id)
+
+            if (error) throw error
+
+            showSuccess(`Status changed to ${newStatus}`)
+            router.refresh()
+        } catch (error) {
+            // Revert on error
+            setIsOnline(previousStatus)
+            showError('Failed to update status. Please try again.')
+        } finally {
+            setTogglingStatus(false)
+        }
+    }, [isOnline, userRole, user.id, showSuccess, showError, router])
 
     const handleLogout = async () => {
         const supabase = createClient()
@@ -413,6 +456,55 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
                         </div>
                     </div>
 
+                    {/* Account Status (for talents) */}
+                    {userRole === 'talent' && (
+                        <div className="animate-fade-in-up" style={{ animationDelay: '0.35s' }}>
+                            <h2 className="text-sm font-bold text-white/50 uppercase tracking-wider mb-4">Account Status</h2>
+                            <p className="text-white/40 text-sm mb-4">Control your availability status</p>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                                            isOnline ? 'bg-green-500/20' : 'bg-white/10'
+                                        }`}>
+                                            <Circle size={20} weight="fill" className={isOnline ? 'text-green-400 animate-pulse' : 'text-white/60'} aria-hidden="true" />
+                                        </div>
+                                        <div>
+                                            <p className="text-white font-medium">Online/Offline Status</p>
+                                            <p className="text-white/40 text-sm">
+                                                {isOnline ? 'You are currently online' : 'You are currently offline'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        {togglingStatus && (
+                                            <SpinnerGap size={16} className="animate-spin text-white/40" aria-hidden="true" />
+                                        )}
+                                        <button
+                                            onClick={handleToggleStatus}
+                                            disabled={togglingStatus}
+                                            className={`relative w-14 h-7 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 ${
+                                                isOnline ? 'bg-green-500' : 'bg-white/20'
+                                            }`}
+                                            aria-label={isOnline ? 'Switch to offline' : 'Switch to online'}
+                                            aria-pressed={isOnline}
+                                        >
+                                            <span
+                                                className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform shadow-lg ${
+                                                    isOnline ? 'translate-x-7' : 'translate-x-0'
+                                                }`}
+                                                aria-hidden="true"
+                                            />
+                                        </button>
+                                        <span className={`text-sm font-medium min-w-[60px] ${isOnline ? 'text-green-400' : 'text-white/60'}`}>
+                                            {togglingStatus ? 'Updating...' : isOnline ? 'Online' : 'Offline'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Privacy Section */}
                     <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
                         <h2 className="text-sm font-bold text-white/50 uppercase tracking-wider mb-4">Privacy</h2>
@@ -428,7 +520,7 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
                                         )}
                                     </div>
                                     <div>
-                                        <p className="text-white font-medium">Online Status</p>
+                                        <p className="text-white font-medium">Show Online Status</p>
                                         <p className="text-white/40 text-sm">Let others see when you&apos;re active on the platform</p>
                                     </div>
                                 </div>

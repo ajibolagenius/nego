@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
     ArrowLeft, User, PencilSimple, MapPin, Envelope,
     Calendar, Coin, CalendarCheck, CheckCircle,
-    CaretRight, Star, SpinnerGap, X, Warning
+    CaretRight, Star, SpinnerGap, X, Warning, Check
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
@@ -34,21 +34,98 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
     const [isEditing, setIsEditing] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [displayName, setDisplayName] = useState(profile?.display_name || '')
+    const [username, setUsername] = useState(profile?.username || '')
     const [location, setLocation] = useState(profile?.location || '')
     const [bio, setBio] = useState(profile?.bio || '')
     const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || null)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState(false)
+    const [usernameError, setUsernameError] = useState('')
+    const [usernameValid, setUsernameValid] = useState(false)
+    const [checkingUsername, setCheckingUsername] = useState(false)
 
     // Store original values for cancel
     const originalDisplayName = profile?.display_name || ''
+    const originalUsername = profile?.username || ''
     const originalLocation = profile?.location || ''
     const originalBio = profile?.bio || ''
 
     // Character limits
     const DISPLAY_NAME_MAX = 50
+    const USERNAME_MIN = 3
+    const USERNAME_MAX = 30
     const LOCATION_MAX = 100
     const BIO_MAX = 500
+
+    // Validate username
+    const validateUsername = async (value: string): Promise<boolean> => {
+        const trimmed = value.trim().toLowerCase()
+
+        // Only validate for talents
+        if (userRole !== 'talent') {
+            setUsernameError('')
+            return true
+        }
+
+        if (!trimmed) {
+            setUsernameError('Username is required for talents')
+            setUsernameValid(false)
+            return false
+        }
+
+        if (trimmed.length < USERNAME_MIN) {
+            setUsernameError(`Username must be at least ${USERNAME_MIN} characters`)
+            setUsernameValid(false)
+            return false
+        }
+        if (trimmed.length > USERNAME_MAX) {
+            setUsernameError(`Username must be ${USERNAME_MAX} characters or less`)
+            setUsernameValid(false)
+            return false
+        }
+        if (!/^[a-z0-9_-]+$/.test(trimmed)) {
+            setUsernameError('Username can only contain lowercase letters, numbers, hyphens, and underscores')
+            setUsernameValid(false)
+            return false
+        }
+
+        // Check if username is available (only if changed)
+        if (trimmed === originalUsername.toLowerCase()) {
+            setUsernameError('')
+            setUsernameValid(true)
+            return true
+        }
+
+        setCheckingUsername(true)
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('username', trimmed)
+                .single()
+
+            if (error && error.code !== 'PGRST116') {
+                throw error
+            }
+
+            if (data) {
+                setUsernameError('This username is already taken')
+                setUsernameValid(false)
+                return false
+            }
+
+            setUsernameError('')
+            setUsernameValid(true)
+            return true
+        } catch (err) {
+            console.error('[ProfileClient] Error checking username:', err)
+            setUsernameError('Failed to check username availability')
+            setUsernameValid(false)
+            return false
+        } finally {
+            setCheckingUsername(false)
+        }
+    }
 
     // Sync avatar URL when profile changes
     useEffect(() => {
@@ -65,12 +142,18 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
     }
 
     // Validation
-    const validateForm = (): string | null => {
+    const validateForm = async (): Promise<string | null> => {
         if (displayName.trim().length === 0) {
             return 'Display name is required'
         }
         if (displayName.length > DISPLAY_NAME_MAX) {
             return `Display name must be ${DISPLAY_NAME_MAX} characters or less`
+        }
+        if (userRole === 'talent') {
+            const usernameValid = await validateUsername(username)
+            if (!usernameValid) {
+                return usernameError || 'Please fix the username error'
+            }
         }
         if (location.length > LOCATION_MAX) {
             return `Location must be ${LOCATION_MAX} characters or less`
@@ -86,7 +169,7 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
         setSuccess(false)
 
         // Validate
-        const validationError = validateForm()
+        const validationError = await validateForm()
         if (validationError) {
             setError(validationError)
             return
@@ -94,14 +177,21 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
 
         setIsSaving(true)
         try {
+            const updateData: any = {
+                display_name: displayName.trim(),
+                location: location.trim(),
+                bio: bio.trim(),
+                updated_at: new Date().toISOString()
+            }
+
+            // Only update username for talents
+            if (userRole === 'talent') {
+                updateData.username = username.trim().toLowerCase() || null
+            }
+
             const { error: updateError } = await supabase
                 .from('profiles')
-                .update({
-                    display_name: displayName.trim(),
-                    location: location.trim(),
-                    bio: bio.trim(),
-                    updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq('id', user.id)
 
             if (updateError) throw updateError
@@ -122,11 +212,30 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
 
     const handleCancel = () => {
         setDisplayName(originalDisplayName)
+        setUsername(originalUsername)
         setLocation(originalLocation)
         setBio(originalBio)
         setError(null)
+        setUsernameError('')
         setSuccess(false)
         setIsEditing(false)
+    }
+
+    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        // Only allow lowercase, numbers, hyphens, and underscores
+        const sanitized = value.toLowerCase().replace(/[^a-z0-9_-]/g, '')
+        setUsername(sanitized)
+        setUsernameValid(false) // Reset validation state
+        if (userRole === 'talent' && sanitized.length >= USERNAME_MIN) {
+            validateUsername(sanitized)
+        } else if (userRole === 'talent' && sanitized.length > 0) {
+            setUsernameError('')
+            setUsernameValid(false)
+        } else if (sanitized.length === 0) {
+            setUsernameError('')
+            setUsernameValid(false)
+        }
     }
 
     const formatDate = (dateString: string) => {
@@ -283,6 +392,57 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
                                 </span>
                             )}
                         </div>
+
+                        {/* Username (for talents only) */}
+                        {userRole === 'talent' && (
+                            isEditing ? (
+                                <div className="w-full max-w-[300px] mt-2">
+                                    <div className="flex items-center gap-2 justify-center">
+                                        <span className="text-white/40 text-sm" aria-hidden="true">@</span>
+                                        <input
+                                            type="text"
+                                            value={username}
+                                            onChange={handleUsernameChange}
+                                            maxLength={USERNAME_MAX}
+                                            className="text-white/60 bg-transparent border-b border-white/20 text-center outline-none text-sm flex-1 focus:border-[#df2531] transition-colors lowercase"
+                                            placeholder="your-username"
+                                            aria-label="Username"
+                                            aria-invalid={usernameError ? 'true' : 'false'}
+                                            aria-describedby={usernameError ? 'username-error' : 'username-counter'}
+                                        />
+                                        {checkingUsername && (
+                                            <SpinnerGap size={14} className="animate-spin text-white/40" aria-hidden="true" />
+                                        )}
+                                        {!checkingUsername && usernameValid && username && (
+                                            <CheckCircle size={14} className="text-green-400" aria-hidden="true" />
+                                        )}
+                                    </div>
+                                    {usernameError && (
+                                        <p id="username-error" className="text-red-400 text-xs mt-1 text-center" role="alert">
+                                            {usernameError}
+                                        </p>
+                                    )}
+                                    <div className="flex justify-end items-center text-xs text-white/40 mt-1">
+                                        <span id="username-counter" className="sr-only">Character count</span>
+                                        <span aria-live="polite">
+                                            {username.length}/{USERNAME_MAX}
+                                        </span>
+                                    </div>
+                                    {!usernameError && (
+                                        <p className="text-white/40 text-xs mt-1 text-center">
+                                            Your profile URL: /t/{username || 'username'}
+                                        </p>
+                                    )}
+                                </div>
+                            ) : username ? (
+                                <div className="flex items-center gap-1 text-white/60 text-sm">
+                                    <span className="text-white/40" aria-hidden="true">@</span>
+                                    {username}
+                                </div>
+                            ) : (
+                                <div className="text-white/40 text-sm">Username not set</div>
+                            )
+                        )}
 
                         {/* Location (editable) */}
                         {isEditing ? (

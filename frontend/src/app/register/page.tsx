@@ -39,6 +39,7 @@ export default function RegisterPage() {
     const [step, setStep] = useState(1)
     const [role, setRole] = useState<UserRole>('client')
     const [name, setName] = useState('')
+    const [username, setUsername] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
@@ -48,6 +49,9 @@ export default function RegisterPage() {
     // Validation states
     const [nameError, setNameError] = useState('')
     const [nameValid, setNameValid] = useState(false)
+    const [usernameError, setUsernameError] = useState('')
+    const [usernameValid, setUsernameValid] = useState(false)
+    const [checkingUsername, setCheckingUsername] = useState(false)
     const [emailError, setEmailError] = useState('')
     const [emailValid, setEmailValid] = useState(false)
     const [passwordRequirements, setPasswordRequirements] = useState<PasswordRequirements>({
@@ -80,6 +84,73 @@ export default function RegisterPage() {
         return true
     }, [])
 
+    // Validate username (for talents only)
+    const validateUsername = useCallback(async (value: string) => {
+        const trimmed = value.trim().toLowerCase()
+
+        if (role !== 'talent') {
+            setUsernameError('')
+            setUsernameValid(true)
+            return true
+        }
+
+        if (!trimmed) {
+            setUsernameError('Username is required for talents')
+            setUsernameValid(false)
+            return false
+        }
+
+        // Username format validation
+        if (trimmed.length < 3) {
+            setUsernameError('Username must be at least 3 characters')
+            setUsernameValid(false)
+            return false
+        }
+        if (trimmed.length > 30) {
+            setUsernameError('Username must be 30 characters or less')
+            setUsernameValid(false)
+            return false
+        }
+        if (!/^[a-z0-9_-]+$/.test(trimmed)) {
+            setUsernameError('Username can only contain lowercase letters, numbers, hyphens, and underscores')
+            setUsernameValid(false)
+            return false
+        }
+
+        // Check if username is available
+        setCheckingUsername(true)
+        try {
+            const supabase = createClient()
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('username', trimmed)
+                .single()
+
+            if (error && error.code !== 'PGRST116') {
+                // PGRST116 is "not found" which is what we want
+                throw error
+            }
+
+            if (data) {
+                setUsernameError('This username is already taken')
+                setUsernameValid(false)
+                return false
+            }
+
+            setUsernameError('')
+            setUsernameValid(true)
+            return true
+        } catch (err) {
+            console.error('[Register] Error checking username:', err)
+            setUsernameError('Failed to check username availability')
+            setUsernameValid(false)
+            return false
+        } finally {
+            setCheckingUsername(false)
+        }
+    }, [role])
+
     // Validate email
     const validateEmail = useCallback((value: string) => {
         const normalized = value.trim().toLowerCase()
@@ -104,6 +175,16 @@ export default function RegisterPage() {
         validateName(value)
     }
 
+    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        // Only allow lowercase, numbers, hyphens, and underscores
+        const sanitized = value.toLowerCase().replace(/[^a-z0-9_-]/g, '')
+        setUsername(sanitized)
+        if (role === 'talent') {
+            validateUsername(sanitized)
+        }
+    }
+
     const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value
         setEmail(value)
@@ -125,8 +206,9 @@ export default function RegisterPage() {
         const nameValidated = validateName(name)
         const emailValidated = validateEmail(email)
         const passwordStrong = isPasswordStrong(passwordRequirements)
+        const usernameValidated = role === 'talent' ? await validateUsername(username) : true
 
-        if (!nameValidated || !emailValidated || !passwordStrong) {
+        if (!nameValidated || !emailValidated || !passwordStrong || !usernameValidated) {
             setError('Please fix the errors in the form before submitting')
             setLoading(false)
             return
@@ -143,6 +225,7 @@ export default function RegisterPage() {
                     data: {
                         full_name: name.trim(),
                         role: role,
+                        username: role === 'talent' ? username.trim().toLowerCase() : null,
                     },
                 },
             })
@@ -153,6 +236,27 @@ export default function RegisterPage() {
                     throw new Error('An account with this email already exists. Please sign in instead.')
                 }
                 throw error
+            }
+
+            // Update profile with username if talent
+            if (data.user && role === 'talent' && username.trim()) {
+                try {
+                    const { error: profileError } = await supabase
+                        .from('profiles')
+                        .update({
+                            username: username.trim().toLowerCase(),
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', data.user.id)
+
+                    if (profileError) {
+                        console.error('[Register] Error updating profile with username:', profileError)
+                        // Continue anyway, user can set it later
+                    }
+                } catch (err) {
+                    console.error('[Register] Error updating profile:', err)
+                    // Continue anyway
+                }
             }
 
             // Redirect based on session status
@@ -231,8 +335,8 @@ export default function RegisterPage() {
                                 <button
                                     onClick={() => setRole('client')}
                                     className={`w-full p-5 rounded-xl border-2 transition-all duration-300 text-left ${role === 'client'
-                                            ? 'border-[#df2531] bg-[#df2531]/10'
-                                            : 'border-white/10 bg-white/5 hover:border-white/20'
+                                        ? 'border-[#df2531] bg-[#df2531]/10'
+                                        : 'border-white/10 bg-white/5 hover:border-white/20'
                                         }`}
                                     aria-label="Select client role"
                                     aria-pressed={role === 'client'}
@@ -253,8 +357,8 @@ export default function RegisterPage() {
                                 <button
                                     onClick={() => setRole('talent')}
                                     className={`w-full p-5 rounded-xl border-2 transition-all duration-300 text-left ${role === 'talent'
-                                            ? 'border-[#df2531] bg-[#df2531]/10'
-                                            : 'border-white/10 bg-white/5 hover:border-white/20'
+                                        ? 'border-[#df2531] bg-[#df2531]/10'
+                                        : 'border-white/10 bg-white/5 hover:border-white/20'
                                         }`}
                                     aria-label="Select talent role"
                                     aria-pressed={role === 'talent'}
@@ -326,10 +430,10 @@ export default function RegisterPage() {
                                             aria-invalid={nameError ? 'true' : 'false'}
                                             aria-describedby={nameError ? 'name-error' : undefined}
                                             className={`w-full bg-white/5 border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none transition-colors ${nameError
-                                                    ? 'border-red-500/50 focus:border-red-500'
-                                                    : nameValid
-                                                        ? 'border-green-500/50 focus:border-green-500'
-                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                ? 'border-red-500/50 focus:border-red-500'
+                                                : nameValid
+                                                    ? 'border-green-500/50 focus:border-green-500'
+                                                    : 'border-white/10 focus:border-[#df2531]/50'
                                                 }`}
                                         />
                                         {nameValid && (
@@ -356,6 +460,65 @@ export default function RegisterPage() {
                                     )}
                                 </div>
 
+                                {/* Username (for talents only) */}
+                                {role === 'talent' && (
+                                    <div>
+                                        <label htmlFor="register-username" className="block text-white/70 text-sm mb-2">
+                                            Username <span className="text-red-400" aria-label="required">*</span>
+                                        </label>
+                                        <div className="relative">
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 text-sm" aria-hidden="true">@</span>
+                                            <input
+                                                id="register-username"
+                                                type="text"
+                                                value={username}
+                                                onChange={handleUsernameChange}
+                                                placeholder="your-username"
+                                                autoComplete="username"
+                                                required
+                                                aria-label="Username"
+                                                aria-invalid={usernameError ? 'true' : 'false'}
+                                                aria-describedby={usernameError ? 'username-error' : 'username-help'}
+                                                className={`w-full bg-white/5 border rounded-xl pl-10 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none transition-colors ${usernameError
+                                                    ? 'border-red-500/50 focus:border-red-500'
+                                                    : usernameValid
+                                                        ? 'border-green-500/50 focus:border-green-500'
+                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                    }`}
+                                            />
+                                            {checkingUsername && (
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                    <SpinnerGap size={18} className="animate-spin text-white/40" aria-hidden="true" />
+                                                </div>
+                                            )}
+                                            {!checkingUsername && usernameValid && (
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                    <Check size={18} className="text-green-400" aria-hidden="true" />
+                                                </div>
+                                            )}
+                                            {!checkingUsername && usernameError && (
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                    <X size={18} className="text-red-400" aria-hidden="true" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        {usernameError && (
+                                            <p id="username-error" className="text-red-400 text-xs mt-1" role="alert">
+                                                {usernameError}
+                                            </p>
+                                        )}
+                                        {!usernameError && usernameValid && (
+                                            <p className="text-green-400 text-xs mt-1 flex items-center gap-1">
+                                                <Check size={14} aria-hidden="true" />
+                                                Username available
+                                            </p>
+                                        )}
+                                        <p id="username-help" className="text-white/40 text-xs mt-1">
+                                            3-30 characters, lowercase letters, numbers, hyphens, and underscores only. This will be your profile URL.
+                                        </p>
+                                    </div>
+                                )}
+
                                 {/* Email */}
                                 <div>
                                     <label htmlFor="register-email" className="block text-white/70 text-sm mb-2">
@@ -375,10 +538,10 @@ export default function RegisterPage() {
                                             aria-invalid={emailError ? 'true' : 'false'}
                                             aria-describedby={emailError ? 'email-error' : undefined}
                                             className={`w-full bg-white/5 border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none transition-colors ${emailError
-                                                    ? 'border-red-500/50 focus:border-red-500'
-                                                    : emailValid
-                                                        ? 'border-green-500/50 focus:border-green-500'
-                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                ? 'border-red-500/50 focus:border-red-500'
+                                                : emailValid
+                                                    ? 'border-green-500/50 focus:border-green-500'
+                                                    : 'border-white/10 focus:border-[#df2531]/50'
                                                 }`}
                                         />
                                         {emailValid && (
@@ -417,10 +580,10 @@ export default function RegisterPage() {
                                             aria-label="Password"
                                             aria-describedby="password-requirements"
                                             className={`w-full bg-white/5 border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none transition-colors ${password && !passwordStrong
-                                                    ? 'border-amber-500/50 focus:border-amber-500'
-                                                    : passwordStrong
-                                                        ? 'border-green-500/50 focus:border-green-500'
-                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                ? 'border-amber-500/50 focus:border-amber-500'
+                                                : passwordStrong
+                                                    ? 'border-green-500/50 focus:border-green-500'
+                                                    : 'border-white/10 focus:border-[#df2531]/50'
                                                 }`}
                                         />
                                         <button
@@ -492,7 +655,7 @@ export default function RegisterPage() {
                                 {/* Submit button */}
                                 <Button
                                     type="submit"
-                                    disabled={loading || !nameValid || !emailValid || !passwordStrong}
+                                    disabled={loading || !nameValid || !emailValid || !passwordStrong || (role === 'talent' && !usernameValid) || checkingUsername}
                                     className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-3 rounded-xl transition-all duration-300 disabled:opacity-50"
                                     aria-label="Create account"
                                 >

@@ -128,11 +128,16 @@ export function TalentDashboardClient({
     const [bioText, setBioText] = useState(profile?.bio || '')
     const [editingProfile, setEditingProfile] = useState(false)
     const [displayName, setDisplayName] = useState(profile?.display_name || '')
+    const [username, setUsername] = useState(profile?.username || '')
     const [location, setLocation] = useState(profile?.location || '')
+    const [isOnline, setIsOnline] = useState(profile?.status === 'online')
+    const [togglingStatus, setTogglingStatus] = useState(false)
     const [showAvatarUpload, setShowAvatarUpload] = useState(false)
     const [priceError, setPriceError] = useState('')
     const [profileError, setProfileError] = useState<string | null>(null)
     const [profileSuccess, setProfileSuccess] = useState(false)
+    const [usernameError, setUsernameError] = useState('')
+    const [checkingUsername, setCheckingUsername] = useState(false)
 
     // Withdrawal state
     const [showWithdrawalModal, setShowWithdrawalModal] = useState(false)
@@ -308,6 +313,62 @@ export function TalentDashboardClient({
         }
     }
 
+    // Validate username
+    const validateUsername = async (value: string): Promise<boolean> => {
+        const trimmed = value.trim().toLowerCase()
+
+        if (!trimmed) {
+            setUsernameError('Username is required')
+            return false
+        }
+
+        if (trimmed.length < 3) {
+            setUsernameError('Username must be at least 3 characters')
+            return false
+        }
+        if (trimmed.length > 30) {
+            setUsernameError('Username must be 30 characters or less')
+            return false
+        }
+        if (!/^[a-z0-9_-]+$/.test(trimmed)) {
+            setUsernameError('Username can only contain lowercase letters, numbers, hyphens, and underscores')
+            return false
+        }
+
+        // Check if username is available (only if changed)
+        if (trimmed === (profile?.username || '').toLowerCase()) {
+            setUsernameError('')
+            return true
+        }
+
+        setCheckingUsername(true)
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('username', trimmed)
+                .single()
+
+            if (error && error.code !== 'PGRST116') {
+                throw error
+            }
+
+            if (data) {
+                setUsernameError('This username is already taken')
+                return false
+            }
+
+            setUsernameError('')
+            return true
+        } catch (err) {
+            console.error('[TalentDashboard] Error checking username:', err)
+            setUsernameError('Failed to check username availability')
+            return false
+        } finally {
+            setCheckingUsername(false)
+        }
+    }
+
     const handleSaveProfile = async () => {
         setIsSaving(true)
         setProfileError(null)
@@ -330,11 +391,20 @@ export function TalentDashboardClient({
             return
         }
 
+        // Validate username
+        const usernameValid = await validateUsername(username)
+        if (!usernameValid) {
+            setProfileError(usernameError || 'Please fix the username error')
+            setIsSaving(false)
+            return
+        }
+
         try {
             const { error } = await supabase
                 .from('profiles')
                 .update({
                     display_name: displayName.trim(),
+                    username: username.trim().toLowerCase() || null,
                     location: location.trim(),
                     updated_at: new Date().toISOString()
                 })
@@ -353,12 +423,49 @@ export function TalentDashboardClient({
         }
     }
 
+    const handleToggleStatus = async () => {
+        setTogglingStatus(true)
+        try {
+            const newStatus = isOnline ? 'offline' : 'online'
+            const { error } = await supabase
+                .from('profiles')
+                .update({
+                    status: newStatus,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', user.id)
+
+            if (error) throw error
+            setIsOnline(!isOnline)
+            router.refresh()
+        } catch (error) {
+            console.error('Error updating status:', error)
+            setProfileError('Failed to update status. Please try again.')
+        } finally {
+            setTogglingStatus(false)
+        }
+    }
+
     const handleCancelProfile = () => {
         setDisplayName(profile?.display_name || '')
+        setUsername(profile?.username || '')
         setLocation(profile?.location || '')
         setProfileError(null)
         setProfileSuccess(false)
+        setUsernameError('')
         setEditingProfile(false)
+    }
+
+    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value
+        // Only allow lowercase, numbers, hyphens, and underscores
+        const sanitized = value.toLowerCase().replace(/[^a-z0-9_-]/g, '')
+        setUsername(sanitized)
+        if (sanitized.length >= 3) {
+            validateUsername(sanitized)
+        } else if (sanitized.length > 0) {
+            setUsernameError('')
+        }
     }
 
     const handleAvatarUploadComplete = (url: string) => {
@@ -600,6 +707,38 @@ export function TalentDashboardClient({
                                         <p className="text-white/40 text-xs mt-1">{displayName.length}/50 characters</p>
                                     </div>
                                     <div>
+                                        <label className="block text-white/70 text-sm mb-2">
+                                            Username * <span className="text-red-400" aria-label="required">*</span>
+                                        </label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 text-sm" aria-hidden="true">@</span>
+                                            <input
+                                                type="text"
+                                                value={username}
+                                                onChange={handleUsernameChange}
+                                                maxLength={30}
+                                                className="w-full pl-8 pr-10 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm lowercase focus:outline-none focus:border-[#df2531]"
+                                                placeholder="your-username"
+                                                aria-invalid={usernameError ? 'true' : 'false'}
+                                                aria-describedby={usernameError ? 'username-error' : 'username-help'}
+                                            />
+                                            {checkingUsername && (
+                                                <SpinnerGap size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-white/40" aria-hidden="true" />
+                                            )}
+                                            {!checkingUsername && !usernameError && username && username.length >= 3 && (
+                                                <CheckCircle size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400" aria-hidden="true" />
+                                            )}
+                                        </div>
+                                        {usernameError && (
+                                            <p id="username-error" className="text-red-400 text-xs mt-1" role="alert">
+                                                {usernameError}
+                                            </p>
+                                        )}
+                                        <p id="username-help" className="text-white/40 text-xs mt-1">
+                                            {username.length}/30 characters. Your profile URL: /t/{username || 'username'}
+                                        </p>
+                                    </div>
+                                    <div>
                                         <label className="block text-white/70 text-sm mb-2">Location</label>
                                         <input
                                             type="text"
@@ -647,12 +786,41 @@ export function TalentDashboardClient({
                                         </button>
                                     </div>
 
+                                    {profile?.username && (
+                                        <p className="flex items-center gap-1 text-white/60 text-sm mb-2">
+                                            <span className="text-white/40" aria-hidden="true">@</span>
+                                            {profile.username}
+                                        </p>
+                                    )}
+
                                     {profile?.location && (
                                         <p className="flex items-center gap-2 text-white/50 text-sm mb-3">
                                             <MapPin size={14} weight="duotone" aria-hidden="true" />
                                             {profile.location}
                                         </p>
                                     )}
+
+                                    {/* Online/Offline Status Toggle */}
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <span className="text-white/70 text-sm">Status:</span>
+                                        <button
+                                            onClick={handleToggleStatus}
+                                            disabled={togglingStatus}
+                                            className={`relative w-14 h-7 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 ${isOnline ? 'bg-green-500' : 'bg-white/20'
+                                                }`}
+                                            aria-label={isOnline ? 'Switch to offline' : 'Switch to online'}
+                                            aria-pressed={isOnline}
+                                        >
+                                            <span
+                                                className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform shadow-lg ${isOnline ? 'translate-x-7' : 'translate-x-0'
+                                                    }`}
+                                                aria-hidden="true"
+                                            />
+                                        </button>
+                                        <span className={`text-sm font-medium ${isOnline ? 'text-green-400' : 'text-white/60'}`}>
+                                            {togglingStatus ? 'Updating...' : isOnline ? 'Online' : 'Offline'}
+                                        </span>
+                                    </div>
                                 </>
                             )}
 

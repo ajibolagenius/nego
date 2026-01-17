@@ -58,6 +58,7 @@ export default function AuthCallbackPage() {
                             .update({
                                 role: pendingRole,
                                 display_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || existingProfile.role,
+                                username: session.user.user_metadata?.username || null,
                                 avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture
                             })
                             .eq('id', session.user.id)
@@ -74,6 +75,7 @@ export default function AuthCallbackPage() {
                                 id: session.user.id,
                                 role: pendingRole,
                                 display_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || 'User',
+                                username: session.user.user_metadata?.username || null,
                                 avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
                                 email: session.user.email || ''
                             })
