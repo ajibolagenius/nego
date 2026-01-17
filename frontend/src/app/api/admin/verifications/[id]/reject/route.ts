@@ -53,10 +53,10 @@ export async function POST(
         const supabase = await createClient()
         const apiClient = createApiClient()
 
-        // Get booking details for refund using API client to bypass RLS
+        // Get booking details for refund and talent notification using API client to bypass RLS
         const { data: bookingData, error: bookingFetchError } = await apiClient
             .from('bookings')
-            .select('id, client_id, total_price, status')
+            .select('id, client_id, talent_id, total_price, status')
             .eq('id', bookingId)
             .single()
 
@@ -161,6 +161,21 @@ export async function POST(
                     })
                 }
             }
+        }
+
+        // Notify talent about the verification rejection
+        if (bookingData.talent_id) {
+            await supabase.from('notifications').insert({
+                user_id: bookingData.talent_id,
+                type: 'booking_cancelled',
+                title: 'Booking Cancelled - Verification Rejected',
+                message: `A booking has been cancelled due to client verification rejection. ${adminNotes ? `Reason: ${adminNotes}` : 'The client verification was not approved by admin.'}`,
+                data: {
+                    booking_id: bookingData.id,
+                    admin_notes: adminNotes,
+                    cancellation_reason: adminNotes
+                }
+            })
         }
 
         // Log admin action

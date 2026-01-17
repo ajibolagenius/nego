@@ -60,9 +60,10 @@ export default async function BookingDetailPage({ params }: PageProps) {
         review = reviewData
     }
 
-    // Fetch verification data (including admin notes) if booking is cancelled
+    // Fetch verification data (including admin notes) for both cancelled bookings and verification_pending status
+    // This allows both client and talent to see admin notes if verification was rejected
     let verification = null
-    if (booking.status === 'cancelled') {
+    if (booking.status === 'cancelled' || booking.status === 'verification_pending') {
         const { data: verificationData } = await supabase
             .from('verifications')
             .select('admin_notes, status')

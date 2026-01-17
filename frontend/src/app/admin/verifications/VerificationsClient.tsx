@@ -570,10 +570,15 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
 
                         {/* Modal Content */}
                         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                            {/* Selfie */}
+                            {/* Selfie - Prominently displayed at the top */}
                             <div>
-                                <p className="text-white/60 text-sm mb-2">Client Verification Selfie</p>
-                                <div className="relative aspect-square max-w-[200px] sm:max-w-xs rounded-2xl overflow-hidden bg-white/5 mx-auto sm:mx-0">
+                                <div className="flex items-center justify-between mb-3">
+                                    <p className="text-white font-semibold text-base">Client Verification Selfie</p>
+                                    <Tooltip content="This is the image captured by the client during verification. Click to zoom for a closer view.">
+                                        <Info size={16} className="text-white/40 hover:text-white/60 cursor-help" />
+                                    </Tooltip>
+                                </div>
+                                <div className="relative aspect-square max-w-[300px] sm:max-w-md rounded-2xl overflow-hidden bg-white/5 mx-auto sm:mx-0 border-2 border-white/10">
                                     {selectedVerification.selfie_url && !selectedVerification.selfie_url.includes('via.placeholder.com') ? (
                                         <>
                                             {!imageZoomed ? (
