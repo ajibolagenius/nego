@@ -506,7 +506,7 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                 )}
 
                 {/* Header */}
-                <header className="sticky top-16 lg:top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
+                <header className="fixed lg:sticky top-[64px] lg:top-0 left-0 right-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10 border-t-0">
                     <div className="max-w-4xl mx-auto px-4 py-4">
                         <div className="flex items-center gap-4 mb-4">
                             <Link
@@ -545,9 +545,12 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                                 )}
                             </button>
                         </div>
+                    </div>
+                </header>
 
-                        {/* Search Bar - Only show in history tab */}
-                        {activeTab === 'history' && transactions.length > 0 && (
+                <div className="max-w-4xl mx-auto px-4 py-6 pt-[128px] lg:pt-6 space-y-6">
+                    {/* Search Bar - Only show in history tab */}
+                    {activeTab === 'history' && transactions.length > 0 && (
                             <div className="relative">
                                 <MagnifyingGlass
                                     className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
@@ -575,10 +578,6 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                                 )}
                             </div>
                         )}
-                    </div>
-                </header>
-
-                <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
                     {/* Balance Card */}
                     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#df2531] via-[#b91c26] to-[#7a1219] p-6 md:p-8">
                         {/* Decorative elements */}

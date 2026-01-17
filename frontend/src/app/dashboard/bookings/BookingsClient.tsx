@@ -74,7 +74,7 @@ export function BookingsClient({ user, profile, bookings, isClient }: BookingsCl
         <>
             <div className="min-h-screen bg-black pt-16 lg:pt-0 pb-20 lg:pb-0">
                 {/* Header */}
-                <header className="sticky top-16 lg:top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
+                <header className="fixed lg:sticky top-[64px] lg:top-0 left-0 right-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10 border-t-0">
                     <div className="max-w-4xl mx-auto px-4 py-4">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-4">
@@ -118,7 +118,7 @@ export function BookingsClient({ user, profile, bookings, isClient }: BookingsCl
                     </div>
                 </header>
 
-                <div className="max-w-4xl mx-auto px-4 py-6">
+                <div className="max-w-4xl mx-auto px-4 py-6 pt-[128px] lg:pt-6">
                     {filteredBookings.length === 0 ? (
                         <div className="text-center py-16">
                             <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">

@@ -79,7 +79,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
         <>
             <div className="min-h-screen bg-black pt-16 lg:pt-0 pb-20 lg:pb-0">
                 {/* Header */}
-                <header className="sticky top-16 lg:top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
+                <header className="fixed lg:sticky top-[64px] lg:top-0 left-0 right-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10 border-t-0">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                         <div className="flex items-center gap-4">
                             <Link href="/dashboard" className="text-white/60 hover:text-white transition-colors">
@@ -93,7 +93,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                     </div>
                 </header>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-[128px] lg:pt-6">
                     {/* Search & Filters */}
                     <div className="flex flex-col md:flex-row gap-4 mb-8">
                         {/* Search */}

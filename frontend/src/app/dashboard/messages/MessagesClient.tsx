@@ -561,7 +561,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
         <>
             <div className="min-h-screen bg-black pt-16 lg:pt-0 pb-16 lg:pb-0">
                 {/* Header */}
-                <div className={`sticky top-16 lg:top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10 ${selectedConversation ? 'hidden md:block' : ''}`}>
+                <div className={`fixed lg:sticky top-[64px] lg:top-0 left-0 right-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10 border-t-0 ${selectedConversation ? 'hidden md:block' : ''}`}>
                     <div className="max-w-7xl mx-auto px-4 py-4">
                         <div className="flex items-center gap-4">
                             <Link href="/dashboard" className="text-white/60 hover:text-white transition-colors" aria-label="Back to dashboard">
@@ -572,8 +572,8 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                     </div>
                 </div>
 
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex h-[calc(100vh-144px)] lg:h-[calc(100vh-80px)]">
+                <div className="max-w-7xl mx-auto pt-[128px] lg:pt-0">
+                    <div className="flex h-[calc(100vh-128px)] lg:h-[calc(100vh-80px)]">
                         {/* Conversations List */}
                         <div className={`w-full md:w-80 lg:w-96 border-r border-white/10 flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'
                             }`}>

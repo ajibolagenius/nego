@@ -118,10 +118,10 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
     return (
         <>
             <div className="min-h-screen bg-black flex pt-16 lg:pt-0 pb-20 lg:pb-0">
-                {/* Sidebar */}
-                <aside className="hidden lg:flex flex-col w-64 bg-white/5 border-r border-white/10">
+                {/* Sidebar - Fixed on desktop */}
+                <aside className="hidden lg:flex flex-col w-64 bg-white/5 border-r border-white/10 fixed left-0 top-0 h-screen z-30 overflow-y-auto">
                     {/* Logo */}
-                    <div className="p-6 border-b border-white/10">
+                    <div className="p-6 border-b border-white/10 shrink-0">
                         <Link href="/" className="flex items-center">
                             <span className="text-2xl logo-font">
                                 <span className="text-white">NEGO</span>
@@ -131,7 +131,7 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 p-4">
+                    <nav className="flex-1 p-4 overflow-y-auto">
                         <ul className="space-y-2">
                             {navItems.map((item) => (
                                 <li key={item.label}>
@@ -151,7 +151,7 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                     </nav>
 
                     {/* Logout */}
-                    <div className="p-4 border-t border-white/10">
+                    <div className="p-4 border-t border-white/10 shrink-0">
                         <button
                             onClick={handleLogout}
                             disabled={loading}
@@ -167,39 +167,42 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                     </div>
                 </aside>
 
-                {/* Main Content */}
-                <main className="flex-1 overflow-auto">
-                    {/* Header */}
-                    <header className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
-                        <div className="flex items-center justify-between px-6 py-4">
+                {/* Main Content - Offset for fixed sidebar on desktop */}
+                <main className="flex-1 overflow-auto lg:ml-64">
+                    {/* Header - Fixed on mobile, sticky on desktop */}
+                    <header className="fixed lg:sticky top-[64px] lg:top-0 left-0 right-0 lg:left-auto lg:right-auto z-40 bg-black/80 backdrop-blur-xl border-b border-white/10 border-t-0">
+                        <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4">
                             {/* Search */}
                             <div className="relative max-w-md flex-1">
-                                <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} />
+                                <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={18} aria-hidden="true" />
                                 <input
                                     type="text"
                                     placeholder="Search talents, locations..."
                                     className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors text-sm"
+                                    aria-label="Search talents and locations"
                                 />
                             </div>
 
                             {/* Right side */}
-                            <div className="flex items-center gap-4 ml-6">
+                            <div className="flex items-center gap-2 lg:gap-4 ml-2 lg:ml-6">
                                 {/* Notifications */}
                                 <NotificationBell userId={user.id} />
 
                                 {/* Wallet balance */}
                                 <Link
                                     href="/dashboard/wallet"
-                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#df2531]/10 border border-[#df2531]/20 hover:bg-[#df2531]/20 transition-all"
+                                    className="flex items-center gap-1.5 lg:gap-2 px-2.5 lg:px-4 py-2 rounded-xl bg-[#df2531]/10 border border-[#df2531]/20 hover:bg-[#df2531]/20 transition-all"
+                                    aria-label="View wallet"
                                 >
-                                    <Coin size={18} weight="duotone" className="text-[#df2531]" />
-                                    <span className="text-white font-medium text-sm">{wallet?.balance || 0} coins</span>
-                                    <Plus size={14} weight="bold" className="text-[#df2531]" />
+                                    <Coin size={16} weight="duotone" className="text-[#df2531] lg:w-[18px] lg:h-[18px]" aria-hidden="true" />
+                                    <span className="text-white font-medium text-xs lg:text-sm hidden sm:inline">{wallet?.balance || 0} coins</span>
+                                    <span className="text-white font-medium text-xs lg:text-sm sm:hidden">{wallet?.balance || 0}</span>
+                                    <Plus size={12} weight="bold" className="text-[#df2531] lg:w-[14px] lg:h-[14px] hidden sm:inline" aria-hidden="true" />
                                 </Link>
 
                                 {/* Profile */}
-                                <Link href="/dashboard/profile" className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-[#df2531] flex items-center justify-center text-white font-bold">
+                                <Link href="/dashboard/profile" className="flex items-center gap-2 lg:gap-3" aria-label="View profile">
+                                    <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-[#df2531] flex items-center justify-center text-white font-bold text-sm lg:text-base">
                                         {profile?.full_name?.charAt(0) || user.email?.charAt(0).toUpperCase()}
                                     </div>
                                 </Link>
@@ -207,8 +210,8 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                         </div>
                     </header>
 
-                    {/* Content */}
-                    <div className="p-6">
+                    {/* Content - Offset for fixed header on mobile */}
+                    <div className="p-4 lg:p-6 pt-24 lg:pt-6">
                         {/* Welcome */}
                         <div className="mb-8">
                             <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">

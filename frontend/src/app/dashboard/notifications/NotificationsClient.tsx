@@ -290,7 +290,7 @@ export function NotificationsClient({ user, profile, notifications: initialNotif
         <>
             <div className="min-h-screen bg-black pt-16 lg:pt-0 pb-20 lg:pb-0">
                 {/* Header */}
-                <header className="sticky top-16 lg:top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
+                <header className="fixed lg:sticky top-[64px] lg:top-0 left-0 right-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10 border-t-0">
                     <div className="max-w-3xl mx-auto px-4 py-4">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-4">
@@ -405,9 +405,10 @@ export function NotificationsClient({ user, profile, notifications: initialNotif
                     </div>
                 </header>
 
-                {/* Error Message */}
-                {error && (
-                    <div className="max-w-3xl mx-auto px-4 pt-4" role="alert">
+                <div className="max-w-3xl mx-auto px-4 py-6 pt-[128px] lg:pt-6 space-y-6">
+                    {/* Error Message */}
+                    {error && (
+                        <div role="alert">
                         <div className="flex items-center justify-between p-4 rounded-xl bg-red-500/10 border border-red-500/20">
                             <div className="flex items-center gap-3">
                                 <Warning size={20} className="text-red-400" aria-hidden="true" />
@@ -423,8 +424,6 @@ export function NotificationsClient({ user, profile, notifications: initialNotif
                         </div>
                     </div>
                 )}
-
-                <div className="max-w-3xl mx-auto px-4 py-6">
                     {notificationsList.length === 0 ? (
                         <div className="text-center py-16 rounded-2xl bg-white/5 border border-white/10" role="status">
                             <Bell size={64} weight="duotone" className="text-white/20 mx-auto mb-4" aria-hidden="true" />

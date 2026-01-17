@@ -251,7 +251,7 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
                 {/* Header */}
                 <div className="relative">
 
-                    <header className="sticky top-16 lg:top-0 z-40 bg-black/60 backdrop-blur-xl border-b border-white/10">
+                    <header className="fixed lg:sticky top-[64px] lg:top-0 left-0 right-0 z-40 bg-black/60 backdrop-blur-xl border-b border-white/10 border-t-0">
                         <div className="max-w-2xl mx-auto px-4 py-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
@@ -307,7 +307,7 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
                     </header>
                 </div>
 
-                <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+                <div className="max-w-2xl mx-auto px-4 py-6 pt-[128px] lg:pt-6 space-y-6">
                     {/* Success/Error Messages */}
                     {success && (
                         <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-between" role="alert">
