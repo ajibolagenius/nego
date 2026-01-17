@@ -53,6 +53,92 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
     const [showConfirmApprove, setShowConfirmApprove] = useState(false)
     const [showConfirmReject, setShowConfirmReject] = useState(false)
     const verificationChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+    const [signedUrls, setSignedUrls] = useState<Record<string, string>>({})
+    const fetchedUrlsRef = useRef<Set<string>>(new Set())
+
+    // Helper function to extract file path from Supabase public URL
+    const extractFilePath = (publicUrl: string): string | null => {
+        if (!publicUrl) return null
+
+        // Extract path from URL like: https://[project].supabase.co/storage/v1/object/public/verifications/[path]
+        const match = publicUrl.match(/\/storage\/v1\/object\/public\/verifications\/(.+)$/)
+        if (match && match[1]) {
+            return decodeURIComponent(match[1])
+        }
+        return null
+    }
+
+    // Helper function to get signed URL for verification image
+    const getSignedImageUrl = useCallback(async (publicUrl: string | null | undefined): Promise<string | null> => {
+        if (!publicUrl || publicUrl.includes('via.placeholder.com')) return null
+
+        try {
+            const filePath = extractFilePath(publicUrl)
+            if (!filePath) {
+                console.warn('[VerificationsClient] Could not extract file path from URL:', publicUrl)
+                return publicUrl // Fallback to public URL
+            }
+
+            // Generate signed URL (valid for 1 hour)
+            const { data, error } = await supabase.storage
+                .from('verifications')
+                .createSignedUrl(filePath, 3600)
+
+            if (error) {
+                console.error('[VerificationsClient] Error creating signed URL:', error)
+                return publicUrl // Fallback to public URL
+            }
+
+            if (data?.signedUrl) {
+                return data.signedUrl
+            }
+
+            return publicUrl // Fallback to public URL
+        } catch (error) {
+            console.error('[VerificationsClient] Error generating signed URL:', error)
+            return publicUrl // Fallback to public URL
+        }
+    }, [supabase])
+
+    // Pre-fetch signed URLs for all verification images
+    useEffect(() => {
+        const fetchSignedUrls = async () => {
+            const urlsToFetch = verifications
+                .filter(v => v.selfie_url && !v.selfie_url.includes('via.placeholder.com'))
+                .map(v => v.selfie_url)
+                .filter((url, index, self) => self.indexOf(url) === index) // Remove duplicates
+                .filter(url => !fetchedUrlsRef.current.has(url)) // Only fetch URLs not already fetched
+
+            if (urlsToFetch.length === 0) return
+
+            // Mark URLs as being fetched
+            urlsToFetch.forEach(url => fetchedUrlsRef.current.add(url))
+
+            const urlPromises = urlsToFetch.map(async (url) => {
+                const signedUrl = await getSignedImageUrl(url)
+                if (signedUrl && signedUrl !== url) {
+                    return { originalUrl: url, signedUrl }
+                }
+                return null
+            })
+
+            const results = await Promise.all(urlPromises)
+            const newSignedUrls: Record<string, string> = {}
+            results.forEach(result => {
+                if (result) {
+                    newSignedUrls[result.originalUrl] = result.signedUrl
+                }
+            })
+
+            if (Object.keys(newSignedUrls).length > 0) {
+                setSignedUrls(prev => ({ ...prev, ...newSignedUrls }))
+            }
+        }
+
+        if (verifications.length > 0) {
+            fetchSignedUrls()
+        }
+    }, [verifications, getSignedImageUrl])
 
     // Debug logging on mount
     useEffect(() => {
@@ -463,11 +549,11 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                     <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-white/10 shrink-0">
                                         {verification.selfie_url && !verification.selfie_url.includes('via.placeholder.com') ? (
                                             <Image
-                                                src={verification.selfie_url}
+                                                src={signedUrls[verification.selfie_url] || verification.selfie_url}
                                                 alt="Client Verification Selfie"
                                                 fill
                                                 className="object-cover"
-                                                unoptimized={verification.selfie_url?.includes('supabase.co/storage')}
+                                                unoptimized={true}
                                                 onError={(e) => {
                                                     // If image fails to load, show camera icon
                                                     const target = e.target as HTMLImageElement
@@ -596,11 +682,11 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                                     }}
                                                 >
                                                     <Image
-                                                        src={selectedVerification.selfie_url}
+                                                        src={signedUrls[selectedVerification.selfie_url] || selectedVerification.selfie_url}
                                                         alt="Client Verification Selfie - Captured during booking verification"
                                                         fill
                                                         className="object-cover transition-transform group-hover:scale-105 pointer-events-none"
-                                                        unoptimized={selectedVerification.selfie_url?.includes('supabase.co/storage')}
+                                                        unoptimized={true}
                                                         onError={(e) => {
                                                             // If image fails to load, show camera icon
                                                             const target = e.target as HTMLImageElement
@@ -630,13 +716,13 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                                 >
                                                     <div className="relative max-w-full max-h-full">
                                                         <Image
-                                                            src={selectedVerification.selfie_url}
+                                                            src={signedUrls[selectedVerification.selfie_url] || selectedVerification.selfie_url}
                                                             alt="Client Verification Selfie - Zoomed"
                                                             width={1200}
                                                             height={1200}
                                                             className="max-w-full max-h-[90vh] object-contain rounded-lg"
                                                             onClick={(e) => e.stopPropagation()}
-                                                            unoptimized={selectedVerification.selfie_url?.includes('supabase.co/storage')}
+                                                            unoptimized={true}
                                                         />
                                                         <button
                                                             onClick={() => setImageZoomed(false)}
