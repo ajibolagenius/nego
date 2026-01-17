@@ -439,47 +439,73 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                     // Log error with proper error information
                     // Handle GeolocationPositionError which may have non-enumerable properties
                     try {
-                        const errorInfo: Record<string, unknown> = {}
+                        // Initialize errorInfo with userMessage first to ensure it's never empty
+                        const errorInfo: Record<string, unknown> = {
+                            userMessage: errorMessage || 'Unable to retrieve location'
+                        }
 
-                        // Check if it's a GeolocationPositionError
                         if (error && typeof error === 'object') {
                             const geolocationError = error as GeolocationPositionError
 
-                            // Access code directly (may be non-enumerable)
-                            if (typeof geolocationError.code === 'number') {
-                                errorInfo.code = geolocationError.code
+                            // Try multiple methods to access code property
+                            let errorCode: number | undefined
+                            try {
+                                errorCode = geolocationError.code
+                            } catch {
+                                // Try accessing via property descriptor
+                                try {
+                                    const descriptor = Object.getOwnPropertyDescriptor(geolocationError, 'code')
+                                    if (descriptor && typeof descriptor.value === 'number') {
+                                        errorCode = descriptor.value
+                                    }
+                                } catch {
+                                    // Property not accessible
+                                }
+                            }
+
+                            if (typeof errorCode === 'number') {
+                                errorInfo.code = errorCode
                                 // Map code to readable name
                                 const codeNames: Record<number, string> = {
                                     1: 'PERMISSION_DENIED',
                                     2: 'POSITION_UNAVAILABLE',
                                     3: 'TIMEOUT'
                                 }
-                                errorInfo.codeName = codeNames[geolocationError.code] || 'UNKNOWN'
+                                errorInfo.codeName = codeNames[errorCode] || 'UNKNOWN'
                             }
 
-                            // Access message directly
-                            if (typeof geolocationError.message === 'string' && geolocationError.message) {
-                                errorInfo.message = geolocationError.message
+                            // Try to access message property
+                            let errorMsg: string | undefined
+                            try {
+                                errorMsg = geolocationError.message
+                            } catch {
+                                try {
+                                    const descriptor = Object.getOwnPropertyDescriptor(geolocationError, 'message')
+                                    if (descriptor && typeof descriptor.value === 'string') {
+                                        errorMsg = descriptor.value
+                                    }
+                                } catch {
+                                    // Property not accessible
+                                }
                             }
 
-                            // Log structured error info
-                            if (Object.keys(errorInfo).length > 0) {
-                                console.error('[Verify] Location error:', errorInfo)
-                            } else {
-                                // Fallback: log error type and basic info
-                                console.warn('[Verify] Location error:', {
-                                    type: geolocationError.constructor?.name || 'GeolocationPositionError',
-                                    hasCode: typeof geolocationError.code === 'number',
-                                    hasMessage: typeof geolocationError.message === 'string',
-                                    errorMessage // Include the user-facing error message we generated
-                                })
+                            if (errorMsg) {
+                                errorInfo.message = errorMsg
                             }
+
+                            // Add error type for debugging
+                            errorInfo.errorType = geolocationError.constructor?.name || 'GeolocationPositionError'
                         } else {
-                            console.warn('[Verify] Location error: Unexpected error type', typeof error, error)
+                            errorInfo.errorType = typeof error
                         }
+
+                        // Always log structured error info - never log raw error object
+                        // errorInfo always has at least userMessage property
+                        console.error('[Verify] Location error:', errorInfo)
                     } catch (logError) {
                         // If error logging itself fails, just log the user-facing message
-                        console.warn('[Verify] Location error occurred:', errorMessage)
+                        // Never log the raw error object
+                        console.warn('[Verify] Location error occurred. User message:', errorMessage || 'Unknown error')
                     }
                 },
                 options

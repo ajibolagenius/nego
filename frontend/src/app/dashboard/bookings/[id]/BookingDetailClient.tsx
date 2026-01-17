@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Calendar, Clock, MapPin, CheckCircle,
     SpinnerGap, WarningCircle, CreditCard, ShieldCheck,
-    Receipt, Coin, CaretRight, XCircle, User, Star, Hourglass, Wallet
+    Receipt, Coin, CaretRight, XCircle, User, Star, Hourglass, Wallet, Hash
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -425,6 +425,15 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                         {error}
                     </div>
                 )}
+
+                {/* Booking ID */}
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <h3 className="text-white/50 text-sm mb-3">Booking Information</h3>
+                    <div className="flex items-center gap-2 text-white">
+                        <Hash size={18} className="text-[#df2531]" />
+                        <span className="font-mono text-sm">Booking ID: {booking.id}</span>
+                    </div>
+                </div>
 
                 {/* Talent Card */}
                 <Link
