@@ -91,7 +91,7 @@ export async function validateWalletBalance(userId: string, amount: number): Pro
 }> {
     // Use API client to bypass RLS and check if wallet exists
     const apiClient = createApiClient()
-    
+
     let { data: wallet, error } = await apiClient
         .from('wallets')
         .select('balance')

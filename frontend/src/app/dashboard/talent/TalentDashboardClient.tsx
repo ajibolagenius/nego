@@ -533,14 +533,14 @@ export function TalentDashboardClient({
                     filter: `user_id=eq.${user.id}`,
                 },
                 async (payload) => {
-                    // Refetch all earning transactions when any transaction changes
-                    // Use OR filter to include transactions where either amount > 0 OR coins > 0
+                    // Refetch all transactions (earnings and payouts) when any transaction changes
+                    // Use OR filter to include transactions where either amount > 0 OR coins > 0 (or negative for payouts)
                     const { data: updatedTransactions } = await supabase
                         .from('transactions')
                         .select('*')
                         .eq('user_id', user.id)
-                        .in('type', ['gift', 'premium_unlock', 'booking'])
-                        .or('amount.gt.0,coins.gt.0')
+                        .in('type', ['gift', 'premium_unlock', 'booking', 'payout'])
+                        .or('amount.gt.0,coins.gt.0,amount.lt.0,coins.lt.0')
                         .order('created_at', { ascending: false })
 
                     if (updatedTransactions) {
@@ -1604,17 +1604,72 @@ export function TalentDashboardClient({
                                 </ul>
                             </div>
 
-                            {/* Recent Withdrawals Placeholder - Enhanced */}
+                            {/* Withdrawal History */}
                             <div>
                                 <h4 className="text-xl font-bold text-white mb-4">Withdrawal History</h4>
-                                <div className="text-center py-16 rounded-2xl bg-white/5 border border-white/10">
-                                    <Money size={64} weight="duotone" className="text-white/20 mx-auto mb-5" aria-hidden="true" />
-                                    <p className="text-white/60 font-medium mb-2 text-lg">No withdrawals yet</p>
-                                    <p className="text-white/40 text-sm max-w-md mx-auto leading-relaxed">
-                                        Your withdrawal history will appear here once you make your first withdrawal request.
-                                        All withdrawals are processed securely within 24-48 hours.
-                                    </p>
-                                </div>
+                                {(() => {
+                                    const payoutTransactions = transactionsState
+                                        .filter(t => t.type === 'payout' && t.status === 'completed')
+                                        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+                                    if (payoutTransactions.length === 0) {
+                                        return (
+                                            <div className="text-center py-16 rounded-2xl bg-white/5 border border-white/10">
+                                                <Money size={64} weight="duotone" className="text-white/20 mx-auto mb-5" aria-hidden="true" />
+                                                <p className="text-white/60 font-medium mb-2 text-lg">No withdrawals yet</p>
+                                                <p className="text-white/40 text-sm max-w-md mx-auto leading-relaxed">
+                                                    Your withdrawal history will appear here once you make your first withdrawal request.
+                                                    All withdrawals are processed securely within 24-48 hours.
+                                                </p>
+                                            </div>
+                                        )
+                                    }
+
+                                    return (
+                                        <div className="space-y-3">
+                                            {payoutTransactions.map((transaction) => (
+                                                <div
+                                                    key={transaction.id}
+                                                    className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-colors"
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center border border-red-500/30">
+                                                                <Bank size={20} weight="duotone" className="text-red-400" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-white font-medium">
+                                                                    {transaction.description || 'Withdrawal Payout'}
+                                                                </p>
+                                                                <p className="text-white/50 text-sm">
+                                                                    {new Date(transaction.created_at).toLocaleDateString('en-NG', {
+                                                                        year: 'numeric',
+                                                                        month: 'short',
+                                                                        day: 'numeric',
+                                                                        hour: '2-digit',
+                                                                        minute: '2-digit'
+                                                                    })}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-red-400 font-bold text-lg">
+                                                                -{Math.abs(transaction.coins || transaction.amount || 0).toLocaleString()}
+                                                            </p>
+                                                            <p className="text-white/50 text-xs">coins</p>
+                                                        </div>
+                                                    </div>
+                                                    {transaction.status === 'completed' && (
+                                                        <div className="mt-3 pt-3 border-t border-white/10 flex items-center gap-2">
+                                                            <CheckCircle size={16} weight="fill" className="text-green-400" />
+                                                            <p className="text-green-400 text-sm font-medium">Completed</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )
+                                })()}
                             </div>
                         </div>
                     )}

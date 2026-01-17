@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createApiClient } from '@/lib/supabase/api'
 import { validateAdmin, validateWithdrawalRequest, validateWalletBalance } from '@/lib/admin/validation'
 import { logAdminAction, getClientIP, getUserAgent } from '@/lib/admin/audit-log'
 
@@ -48,9 +49,10 @@ export async function POST(
     const newBalance = currentBalance - withdrawalRequest.amount
 
     const supabase = await createClient()
+    const apiClient = createApiClient()
 
-    // Deduct from wallet first using atomic update (optimistic locking)
-    const { error: walletError } = await supabase
+    // Deduct from wallet using API client to bypass RLS
+    const { error: walletError } = await apiClient
       .from('wallets')
       .update({ balance: newBalance })
       .eq('user_id', withdrawalRequest.talent_id)
@@ -64,7 +66,7 @@ export async function POST(
     }
 
     // Update withdrawal request status
-    const { error: updateError } = await supabase
+    const { error: updateError } = await apiClient
       .from('withdrawal_requests')
       .update({
         status: 'approved',
@@ -74,7 +76,7 @@ export async function POST(
 
     if (updateError) {
       // Rollback wallet update
-      await supabase
+      await apiClient
         .from('wallets')
         .update({ balance: currentBalance })
         .eq('user_id', withdrawalRequest.talent_id)
@@ -83,6 +85,24 @@ export async function POST(
         { error: `Failed to update withdrawal status: ${updateError.message}` },
         { status: 500 }
       )
+    }
+
+    // Create transaction record for the payout
+    const { error: transactionError } = await apiClient
+      .from('transactions')
+      .insert({
+        user_id: withdrawalRequest.talent_id,
+        amount: 0,
+        coins: -withdrawalRequest.amount, // Negative because it's a withdrawal
+        type: 'payout',
+        status: 'completed',
+        description: `Withdrawal payout - ${withdrawalRequest.amount.toLocaleString()} coins`,
+        reference_id: requestId
+      })
+
+    if (transactionError) {
+      console.error('[Approve Payout] Error creating transaction record:', transactionError)
+      // Don't fail the whole operation if transaction record fails, but log it
     }
 
     // Create notification for talent

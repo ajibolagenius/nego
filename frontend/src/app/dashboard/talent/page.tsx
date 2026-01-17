@@ -70,15 +70,16 @@ export default async function TalentDashboardPage() {
         .eq('user_id', user.id)
         .single()
 
-    // Fetch earnings breakdown (gifts received, content unlocks)
+    // Fetch earnings breakdown (gifts received, content unlocks, bookings)
+    // Also fetch payout transactions for withdrawals tab
     // Use OR filter to include transactions where either amount > 0 OR coins > 0
     // This ensures booking transactions with amount: 0 but coins > 0 are included
     const { data: transactions } = await supabase
         .from('transactions')
         .select('*')
         .eq('user_id', user.id)
-        .in('type', ['gift', 'premium_unlock', 'booking'])
-        .or('amount.gt.0,coins.gt.0')
+        .in('type', ['gift', 'premium_unlock', 'booking', 'payout'])
+        .or('amount.gt.0,coins.gt.0,amount.lt.0,coins.lt.0')
         .order('created_at', { ascending: false })
 
     // Fetch gifts received
