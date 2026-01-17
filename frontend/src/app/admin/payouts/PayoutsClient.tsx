@@ -50,7 +50,7 @@ export function PayoutsClient({
     const supabase = createClient()
     const [talents, setTalents] = useState<TalentWithWallet[]>(initialTalents)
     const [payouts, setPayouts] = useState<PayoutTransaction[]>(initialPayouts)
-    const [withdrawalRequests, setWithdrawalRequests] = useState<WithdrawalWithTalent[]>(initialWithdrawalRequests)
+    const [withdrawalRequests, setWithdrawalRequests] = useState<WithdrawalRequestWithTalent[]>(initialWithdrawalRequests)
     const [activeTab, setActiveTab] = useState<'requests' | 'balances' | 'history'>('requests')
     const [processing, setProcessing] = useState<string | null>(null)
     const [showRejectModal, setShowRejectModal] = useState<string | null>(null)
@@ -58,7 +58,7 @@ export function PayoutsClient({
     const [searchQuery, setSearchQuery] = useState('')
     const payoutChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
-    // Real-time subscription for withdrawal requests and payouts
+    // Real-time subscription for withdrawal requests, payouts, and wallets
     useEffect(() => {
         // Cleanup existing channel
         if (payoutChannelRef.current) {
@@ -89,7 +89,7 @@ export function PayoutsClient({
                         .order('created_at', { ascending: false })
 
                     if (updatedRequests) {
-                        setWithdrawalRequests(updatedRequests as WithdrawalWithTalent[])
+                        setWithdrawalRequests(updatedRequests as WithdrawalRequestWithTalent[])
                     }
                 }
             )
@@ -115,6 +115,29 @@ export function PayoutsClient({
 
                     if (updatedPayouts) {
                         setPayouts(updatedPayouts as PayoutTransaction[])
+                    }
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'wallets',
+                },
+                async () => {
+                    // Refetch talents with updated wallet balances
+                    const { data: updatedTalents } = await supabase
+                        .from('profiles')
+                        .select(`
+              *,
+              wallet:wallets(*)
+            `)
+                        .eq('role', 'talent')
+                        .order('created_at', { ascending: false })
+
+                    if (updatedTalents) {
+                        setTalents(updatedTalents as TalentWithWallet[])
                     }
                 }
             )

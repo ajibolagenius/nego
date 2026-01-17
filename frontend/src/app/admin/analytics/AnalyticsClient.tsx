@@ -17,7 +17,8 @@ import {
     Coin,
     Clock,
     Download,
-    Info
+    Info,
+    XCircle
 } from '@phosphor-icons/react'
 import { exportAnalyticsData } from '@/lib/admin/export-utils'
 import { exportChartAsPNG, exportChartAsSVG } from '@/lib/admin/chart-export'
