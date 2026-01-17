@@ -5,7 +5,7 @@ import { logAdminAction, getClientIP, getUserAgent } from '@/lib/admin/audit-log
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin access
@@ -17,7 +17,8 @@ export async function POST(
       )
     }
 
-    const requestId = params.id
+    const { id } = await params
+    const requestId = id
     const body = await request.json()
     const { reason } = body
 

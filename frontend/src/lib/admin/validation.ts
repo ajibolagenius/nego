@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createApiClient } from '@/lib/supabase/api'
 
 /**
  * Validates that the current user is an admin
@@ -81,21 +82,81 @@ export async function validateWithdrawalRequest(requestId: string): Promise<{
 
 /**
  * Validates wallet balance is sufficient for withdrawal
+ * Creates wallet if it doesn't exist
  */
 export async function validateWalletBalance(userId: string, amount: number): Promise<{
     isValid: boolean
     currentBalance?: number
     error?: string
 }> {
-    const supabase = await createClient()
-
-    const { data: wallet, error } = await supabase
+    // Use API client to bypass RLS and check if wallet exists
+    const apiClient = createApiClient()
+    
+    let { data: wallet, error } = await apiClient
         .from('wallets')
         .select('balance')
         .eq('user_id', userId)
         .single()
 
-    if (error || !wallet) {
+    // If wallet doesn't exist, create it
+    if (error && (error.code === 'PGRST116' || error.message?.includes('No rows'))) {
+        console.log('[validateWalletBalance] Wallet not found, creating new wallet for user:', userId)
+        const { data: newWallet, error: createError } = await apiClient
+            .from('wallets')
+            .insert({
+                user_id: userId,
+                balance: 0,
+                escrow_balance: 0
+            })
+            .select('balance')
+            .single()
+
+        if (createError) {
+            // If we get a duplicate key error, the wallet exists - fetch it instead
+            if (createError.code === '23505' || createError.message?.includes('duplicate key')) {
+                console.log('[validateWalletBalance] Wallet already exists (duplicate key), fetching it')
+                const { data: existingWallet, error: fetchError } = await apiClient
+                    .from('wallets')
+                    .select('balance')
+                    .eq('user_id', userId)
+                    .single()
+
+                if (fetchError || !existingWallet) {
+                    console.error('[validateWalletBalance] Failed to fetch existing wallet:', fetchError)
+                    return { isValid: false, error: 'Wallet exists but could not be retrieved' }
+                }
+
+                wallet = existingWallet
+                error = null
+            } else {
+                console.error('[validateWalletBalance] Failed to create wallet:', {
+                    error: createError,
+                    code: createError.code,
+                    message: createError.message,
+                    details: createError.details,
+                    hint: createError.hint
+                })
+                return { isValid: false, error: `Failed to create wallet: ${createError.message || 'Unknown error'}` }
+            }
+        } else if (!newWallet) {
+            console.error('[validateWalletBalance] Wallet creation returned no data')
+            return { isValid: false, error: 'Failed to create wallet: No data returned' }
+        } else {
+            console.log('[validateWalletBalance] Wallet created successfully:', newWallet)
+            wallet = newWallet
+            error = null
+        }
+    } else if (error) {
+        // Some other error occurred
+        console.error('[validateWalletBalance] Error fetching wallet:', {
+            error,
+            code: error.code,
+            message: error.message
+        })
+        return { isValid: false, error: `Wallet lookup failed: ${error.message || 'Unknown error'}` }
+    }
+
+    if (!wallet) {
         return { isValid: false, error: 'Wallet not found' }
     }
 

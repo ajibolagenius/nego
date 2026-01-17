@@ -534,12 +534,13 @@ export function TalentDashboardClient({
                 },
                 async (payload) => {
                     // Refetch all earning transactions when any transaction changes
+                    // Use OR filter to include transactions where either amount > 0 OR coins > 0
                     const { data: updatedTransactions } = await supabase
                         .from('transactions')
                         .select('*')
                         .eq('user_id', user.id)
-                        .gt('amount', 0)
                         .in('type', ['gift', 'premium_unlock', 'booking'])
+                        .or('amount.gt.0,coins.gt.0')
                         .order('created_at', { ascending: false })
 
                     if (updatedTransactions) {
@@ -601,18 +602,27 @@ export function TalentDashboardClient({
     }, [user.id, supabase])
 
     // Stats - using real-time state
-    const totalEarnings = bookingsState
-        .filter(b => b.status === 'completed')
-        .reduce((sum, b) => sum + b.total_price, 0)
-
     const pendingBookings = bookingsState.filter(b => b.status === 'payment_pending' || b.status === 'verification_pending').length
     const completedBookings = bookingsState.filter(b => b.status === 'completed').length
 
-    // Calculate earnings breakdown - using real-time state
-    const giftEarnings = transactionsState.filter(t => t.type === 'gift').reduce((sum, t) => sum + t.amount, 0)
-    const unlockEarnings = transactionsState.filter(t => t.type === 'premium_unlock').reduce((sum, t) => sum + t.amount, 0)
-    const bookingEarnings = transactionsState.filter(t => t.type === 'booking').reduce((sum, t) => sum + t.amount, 0)
-    const totalAllEarnings = giftEarnings + unlockEarnings + bookingEarnings
+    // Calculate earnings breakdown - using real-time state from transactions
+    // Note: For bookings, we use 'coins' field because 'amount' is 0
+    // For gifts and unlocks, both 'amount' and 'coins' have the same value
+    // Only count positive amounts (earnings, not expenses)
+    const giftEarnings = transactionsState
+        .filter(t => t.type === 'gift' && t.status === 'completed' && (t.coins || t.amount || 0) > 0)
+        .reduce((sum, t) => sum + (t.coins || t.amount || 0), 0)
+
+    const unlockEarnings = transactionsState
+        .filter(t => t.type === 'premium_unlock' && t.status === 'completed' && (t.coins || t.amount || 0) > 0)
+        .reduce((sum, t) => sum + (t.coins || t.amount || 0), 0)
+
+    const bookingEarnings = transactionsState
+        .filter(t => t.type === 'booking' && t.status === 'completed' && (t.coins || t.amount || 0) > 0)
+        .reduce((sum, t) => sum + (t.coins || t.amount || 0), 0)
+
+    // Total earnings is the sum of all earnings from transactions
+    const totalEarnings = giftEarnings + unlockEarnings + bookingEarnings
 
     const tabs = [
         { id: 'overview', label: 'Overview', icon: ChartLine },
@@ -1388,7 +1398,7 @@ export function TalentDashboardClient({
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div className="p-5 rounded-2xl bg-gradient-to-br from-green-500/20 to-transparent border border-green-500/30 hover:border-green-500/50 transition-colors">
                                     <p className="text-white/60 text-xs mb-2 uppercase tracking-wide">Total Earnings</p>
-                                    <p className="text-3xl font-bold text-white mb-1">{totalAllEarnings.toLocaleString()}</p>
+                                    <p className="text-3xl font-bold text-white mb-1">{totalEarnings.toLocaleString()}</p>
                                     <p className="text-green-400 text-xs font-medium">coins earned</p>
                                 </div>
                                 <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-pink-500/30 transition-colors">

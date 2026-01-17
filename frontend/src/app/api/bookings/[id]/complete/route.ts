@@ -187,7 +187,7 @@ export async function POST(
             // Create transaction record for talent
             await apiClient.from('transactions').insert({
               user_id: booking.talent_id,
-              amount: 0,
+              amount: booking.total_price,
               coins: booking.total_price,
               type: 'booking',
               status: 'completed',
@@ -219,7 +219,7 @@ export async function POST(
             // Create transaction record for talent
             const { error: transactionError } = await apiClient.from('transactions').insert({
               user_id: booking.talent_id,
-              amount: 0,
+              amount: booking.total_price,
               coins: booking.total_price,
               type: 'booking',
               status: 'completed',

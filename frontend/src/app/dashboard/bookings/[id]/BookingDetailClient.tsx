@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Calendar, Clock, MapPin, CheckCircle,
     SpinnerGap, WarningCircle, CreditCard, ShieldCheck,
-    Receipt, Coin, CaretRight, XCircle, User, Star, Hourglass
+    Receipt, Coin, CaretRight, XCircle, User, Star, Hourglass, Wallet
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -59,6 +59,9 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
     const [rejectReason, setRejectReason] = useState('')
     const [showReviewModal, setShowReviewModal] = useState(false)
     const [hasReviewed, setHasReviewed] = useState(!!booking.review)
+    const [escrowReleased, setEscrowReleased] = useState(false)
+    const [escrowReleaseLoading, setEscrowReleaseLoading] = useState(false)
+    const [checkingEscrow, setCheckingEscrow] = useState(true)
 
     const isClient = booking.client_id === userId
     const isTalent = booking.talent_id === userId
@@ -71,6 +74,35 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
         console.log('[BookingDetail] isTalent:', isTalent, 'talent_id:', booking.talent_id, 'userId:', userId)
         console.log('[BookingDetail] isClient:', isClient, 'client_id:', booking.client_id)
     }
+
+    // Check if escrow has been released for completed bookings
+    useEffect(() => {
+        const checkEscrowStatus = async () => {
+            if (booking.status !== 'completed' || !isTalent) {
+                setCheckingEscrow(false)
+                return
+            }
+
+            try {
+                const supabase = createClient()
+                const { data: transaction } = await supabase
+                    .from('transactions')
+                    .select('id')
+                    .eq('reference_id', booking.id)
+                    .eq('type', 'booking')
+                    .eq('user_id', booking.talent_id)
+                    .maybeSingle()
+
+                setEscrowReleased(!!transaction)
+            } catch (error) {
+                console.error('[BookingDetail] Error checking escrow status:', error)
+            } finally {
+                setCheckingEscrow(false)
+            }
+        }
+
+        checkEscrowStatus()
+    }, [booking.id, booking.status, booking.talent_id, isTalent])
 
     const formatPrice = (price: number) => {
         return `${new Intl.NumberFormat('en-NG', {
@@ -285,6 +317,54 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
             })
         } finally {
             setLoading(false)
+        }
+    }
+
+    // Talent: Release escrow for completed booking
+    const handleReleaseEscrow = async () => {
+        console.log('[BookingDetail] Release escrow clicked for booking:', booking.id)
+
+        setEscrowReleaseLoading(true)
+        setError('')
+
+        try {
+            const response = await fetch(`/api/bookings/${booking.id}/release-escrow`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            })
+
+            const result = await response.json()
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to release escrow')
+            }
+
+            if (result.alreadyReleased) {
+                toast.info('Escrow Already Released', {
+                    description: 'The escrow for this booking has already been released.'
+                })
+                setEscrowReleased(true)
+            } else {
+                console.log('[BookingDetail] Escrow released successfully:', result)
+                toast.success('Escrow Released', {
+                    description: `₦${(result.releasedAmount || booking.total_price).toLocaleString()} has been added to your available balance.`
+                })
+                setEscrowReleased(true)
+
+                // Refresh wallet and page
+                setTimeout(() => {
+                    router.refresh()
+                }, 500)
+            }
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to release escrow'
+            console.error('[BookingDetail] Release escrow error:', err)
+            setError(errorMessage)
+            toast.error('Failed to Release Escrow', {
+                description: errorMessage
+            })
+        } finally {
+            setEscrowReleaseLoading(false)
         }
     }
 
@@ -600,6 +680,53 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                                 This booking has been completed. Thank you for using Nego!
                             </p>
                         </div>
+
+                        {/* Escrow Release Button - Only for Talents */}
+                        {isTalent && !checkingEscrow && (
+                            <div className="bg-blue-500/10 rounded-xl p-6 border border-blue-500/20">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <Wallet size={24} className="text-blue-400" />
+                                    <div className="flex-1">
+                                        <h3 className="text-white font-bold">Earnings</h3>
+                                        <p className="text-white/60 text-sm">
+                                            {escrowReleased
+                                                ? 'Escrow has been released and added to your available balance.'
+                                                : 'Release escrow to add earnings to your available balance.'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {!escrowReleased ? (
+                                    <Button
+                                        onClick={handleReleaseEscrow}
+                                        disabled={escrowReleaseLoading}
+                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl disabled:opacity-50"
+                                    >
+                                        {escrowReleaseLoading ? (
+                                            <>
+                                                <SpinnerGap size={20} className="animate-spin mr-2" />
+                                                Releasing Escrow...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Wallet size={20} className="mr-2" />
+                                                Release Escrow ({formatPrice(booking.total_price)})
+                                            </>
+                                        )}
+                                    </Button>
+                                ) : (
+                                    <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/20 text-center">
+                                        <CheckCircle size={24} weight="fill" className="text-green-400 mx-auto mb-2" />
+                                        <p className="text-white/80 text-sm font-medium">
+                                            Escrow Released
+                                        </p>
+                                        <p className="text-white/50 text-xs mt-1">
+                                            {formatPrice(booking.total_price)} has been added to your available balance
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Review Section - Only for Clients */}
                         {isClient && (
