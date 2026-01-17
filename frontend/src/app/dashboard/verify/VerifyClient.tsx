@@ -392,7 +392,7 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                     setGpsError(null)
                     setGpsLoading(false)
                 },
-                (error) => {
+                (error: GeolocationPositionError | Error | unknown) => {
                     // If high accuracy failed and we haven't retried, try with fallback
                     if (!isRetry && options.enableHighAccuracy) {
                         console.log('[Verify] High accuracy location failed, trying fallback...')
@@ -403,22 +403,52 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                     setGpsLoading(false)
                     let errorMessage = 'Unable to retrieve your location. '
 
-                    switch (error.code) {
-                        case error.PERMISSION_DENIED:
-                            errorMessage = 'Location permission denied. Please enable location access in your browser settings and try again.'
-                            break
-                        case error.POSITION_UNAVAILABLE:
-                            errorMessage = 'Location information is unavailable. Please check your device location settings and try again.'
-                            break
-                        case error.TIMEOUT:
-                            errorMessage = 'Location request timed out. Please ensure location services are enabled and try again.'
-                            break
-                        default:
-                            errorMessage = 'Unable to retrieve your location. Please check your device settings and try again.'
+                    // Handle GeolocationPositionError with proper type checking
+                    if (error && typeof error === 'object' && 'code' in error) {
+                        const geolocationError = error as GeolocationPositionError
+                        const errorCode = geolocationError.code
+
+                        // GeolocationPositionError codes:
+                        // 1 = PERMISSION_DENIED
+                        // 2 = POSITION_UNAVAILABLE
+                        // 3 = TIMEOUT
+                        switch (errorCode) {
+                            case 1: // PERMISSION_DENIED
+                                errorMessage = 'Location permission denied. Please enable location access in your browser settings and try again.'
+                                break
+                            case 2: // POSITION_UNAVAILABLE
+                                errorMessage = 'Location information is unavailable. Please check your device location settings and try again.'
+                                break
+                            case 3: // TIMEOUT
+                                errorMessage = 'Location request timed out. Please ensure location services are enabled and try again.'
+                                break
+                            default:
+                                errorMessage = geolocationError.message || 'Unable to retrieve your location. Please check your device settings and try again.'
+                        }
+                    } else if (error && typeof error === 'object' && 'message' in error) {
+                        // Handle generic Error objects
+                        const genericError = error as Error
+                        errorMessage = genericError.message || 'Unable to retrieve your location. Please check your device settings and try again.'
+                    } else {
+                        // Fallback for unexpected error format
+                        errorMessage = 'Unable to retrieve your location. Please check your device settings and try again.'
                     }
 
                     setGpsError(errorMessage)
-                    console.error('[Verify] Location error:', error)
+
+                    // Log error with proper error information
+                    if (error && typeof error === 'object') {
+                        const errorInfo: Record<string, unknown> = {}
+                        if ('code' in error) errorInfo.code = (error as GeolocationPositionError).code
+                        if ('message' in error) errorInfo.message = (error as Error).message
+                        if (Object.keys(errorInfo).length > 0) {
+                            console.error('[Verify] Location error:', errorInfo)
+                        } else {
+                            console.warn('[Verify] Location error: Empty or unexpected error object', error)
+                        }
+                    } else {
+                        console.warn('[Verify] Location error: Unexpected error type', typeof error, error)
+                    }
                 },
                 options
             )
