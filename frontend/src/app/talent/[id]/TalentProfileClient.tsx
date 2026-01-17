@@ -1268,6 +1268,19 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                             <ReviewSummary
                                 averageRating={talent.average_rating || 0}
                                 totalReviews={talent.review_count || 0}
+                                ratingDistribution={(() => {
+                                    // Calculate rating distribution from reviews
+                                    const distribution: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+                                    if (talent.reviews && talent.reviews.length > 0) {
+                                        talent.reviews.forEach((review) => {
+                                            const rating = review.rating
+                                            if (rating >= 1 && rating <= 5) {
+                                                distribution[rating] = (distribution[rating] || 0) + 1
+                                            }
+                                        })
+                                    }
+                                    return distribution
+                                })()}
                             />
 
                             {/* Review List */}

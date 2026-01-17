@@ -171,8 +171,8 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
         })
     }
 
-    // Fetch reviews for this talent
-    const { data: reviews } = await supabase
+    // Fetch all reviews for this talent to calculate accurate statistics
+    const { data: allReviews } = await supabase
         .from('reviews')
         .select(`
       *,
@@ -180,14 +180,13 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
     `)
         .eq('talent_id', talent.id)
         .order('created_at', { ascending: false })
-        .limit(10)
 
-    // Calculate average rating
+    // Calculate average rating and count from all reviews
     let averageRating = 0
     let reviewCount = 0
-    if (reviews && reviews.length > 0) {
-        reviewCount = reviews.length
-        averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+    if (allReviews && allReviews.length > 0) {
+        reviewCount = allReviews.length
+        averageRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
     }
 
     // Fetch current user's profile and wallet
@@ -207,7 +206,7 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
         <TalentProfileClient
             talent={{
                 ...talentWithMedia,
-                reviews: reviews || [],
+                reviews: allReviews || [], // Pass all reviews for accurate distribution calculation
                 average_rating: averageRating,
                 review_count: reviewCount
             }}
