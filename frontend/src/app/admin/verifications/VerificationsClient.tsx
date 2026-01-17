@@ -55,6 +55,7 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
     const verificationChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
     const [signedUrls, setSignedUrls] = useState<Record<string, string>>({})
     const fetchedUrlsRef = useRef<Set<string>>(new Set())
+    const [isRefreshing, setIsRefreshing] = useState(false)
 
     // Helper function to extract file path from Supabase public URL
     const extractFilePath = (publicUrl: string): string | null => {
@@ -140,83 +141,57 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
         }
     }, [verifications, getSignedImageUrl])
 
-    // Debug logging on mount
+    // Sync with server data when initialVerifications changes (e.g., after router.refresh())
     useEffect(() => {
         console.log('[VerificationsClient] Initial verifications:', initialVerifications.length)
         console.log('[VerificationsClient] Initial verifications data:', initialVerifications)
         if (initialVerifications.length === 0) {
             console.warn('[VerificationsClient] No verifications received from server')
         }
+
+        // Update verifications state when initialVerifications changes (e.g., after refresh)
+        setVerifications(initialVerifications)
+
+        // Clear signed URLs cache when data refreshes to force regeneration
+        setSignedUrls({})
+        fetchedUrlsRef.current.clear()
     }, [initialVerifications])
 
     // Function to refresh verifications
     const refreshVerifications = useCallback(async () => {
+        setIsRefreshing(prev => {
+            if (prev) return prev // Prevent multiple simultaneous refreshes
+            return true
+        })
+
         try {
             console.log('[Verifications] Refreshing verifications...')
-            const { data: updatedVerifications, error } = await supabase
-                .from('verifications')
-                .select(`
-                    booking_id,
-                    selfie_url,
-                    full_name,
-                    phone,
-                    gps_coords,
-                    status,
-                    admin_notes,
-                    created_at,
-                    booking:bookings (
-                        id,
-                        total_price,
-                        status,
-                        created_at,
-                        client:profiles!bookings_client_id_fkey (
-                            id,
-                            display_name,
-                            email:full_name,
-                            avatar_url
-                        ),
-                        talent:profiles!bookings_talent_id_fkey (
-                            id,
-                            display_name
-                        )
-                    )
-                `)
-                .order('created_at', { ascending: false })
 
-            if (error) {
-                console.error('[Verifications] Error fetching verifications:', error)
-                console.error('[Verifications] Error details:', JSON.stringify(error, null, 2))
-                toast.error('Failed to refresh verifications', {
-                    description: error.message || 'Unknown error occurred'
-                })
-                return
-            }
+            // Clear signed URLs cache to force regeneration
+            setSignedUrls({})
+            fetchedUrlsRef.current.clear()
 
-            console.log('[Verifications] Raw verifications from DB:', updatedVerifications?.length || 0)
+            // Use router.refresh() to trigger server-side refresh with admin privileges
+            // This will cause the page component to re-fetch data and pass new initialVerifications
+            router.refresh()
 
-            if (updatedVerifications) {
-                const transformed = updatedVerifications.map(v => ({
-                    ...v,
-                    id: v.booking_id,
-                })) as VerificationWithBooking[]
-                setVerifications(transformed)
-                console.log('[Verifications] Refreshed:', transformed.length, 'verifications')
-                console.log('[Verifications] Pending count:', transformed.filter(v => v.status === 'pending').length)
+            // Show success message - the useEffect will handle updating state when initialVerifications changes
+            toast.success('Refreshing verifications...', {
+                description: 'Data will update shortly'
+            })
 
-                if (transformed.length === 0) {
-                    console.warn('[Verifications] No verifications found in database')
-                }
-            } else {
-                console.warn('[Verifications] No verifications data returned')
-                setVerifications([])
-            }
+            // Small delay to allow router.refresh() to complete and state to update
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
         } catch (error) {
             console.error('[Verifications] Error refreshing:', error)
             toast.error('Failed to refresh verifications', {
                 description: error instanceof Error ? error.message : 'Unknown error'
             })
+        } finally {
+            setIsRefreshing(false)
         }
-    }, [supabase])
+    }, [router])
 
     // Real-time subscription for verifications
     useEffect(() => {
@@ -453,11 +428,18 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                 <div className="flex items-center gap-2">
                     <button
                         onClick={refreshVerifications}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+                        disabled={isRefreshing}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="Refresh verifications"
                     >
-                        <ArrowClockwise size={18} aria-hidden="true" />
-                        <span className="text-sm font-medium hidden sm:inline">Refresh</span>
+                        <ArrowClockwise
+                            size={18}
+                            className={isRefreshing ? 'animate-spin' : ''}
+                            aria-hidden="true"
+                        />
+                        <span className="text-sm font-medium hidden sm:inline">
+                            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                        </span>
                     </button>
                     <button
                         onClick={handleExport}
