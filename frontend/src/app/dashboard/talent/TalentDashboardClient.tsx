@@ -10,7 +10,7 @@ import {
     CurrencyDollar, CalendarCheck, Clock, Eye, EyeSlash, Star,
     CaretRight, Coin, CheckCircle, XCircle, Hourglass, X,
     Camera, MapPin, Sparkle, Receipt, ChartLine, Icon, Bank, Money, Gift,
-    Warning, SpinnerGap
+    Warning, SpinnerGap, ForkKnife, Airplane, Lock, Calendar
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
@@ -20,6 +20,14 @@ import { useWallet } from '@/hooks/useWallet'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet, ServiceType, Booking } from '@/types/database'
+
+const serviceIcons: Record<string, Icon> = {
+    'utensils': ForkKnife,
+    'calendar': CalendarCheck,
+    'plane': Airplane,
+    'lock': Lock,
+    'camera': Camera,
+}
 
 interface TalentMenu {
     id: string
@@ -1208,59 +1216,63 @@ export function TalentDashboardClient({
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {menu.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className="flex items-center gap-4 p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all group"
-                                        >
-                                            <div className="w-12 h-12 rounded-xl bg-[#df2531]/10 flex items-center justify-center text-2xl border border-[#df2531]/20 group-hover:border-[#df2531]/40 transition-colors">
-                                                {item.service_type?.icon}
-                                            </div>
+                                    {menu.map((item) => {
+                                        const IconComponent = serviceIcons[item.service_type?.icon || ''] || Calendar
 
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <p className="text-white font-semibold">{item.service_type?.name}</p>
-                                                    {item.is_active ? (
-                                                        <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-medium border border-green-500/30">
-                                                            Active
-                                                        </span>
-                                                    ) : (
-                                                        <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-xs font-medium border border-red-500/30">
-                                                            Hidden
-                                                        </span>
+                                        return (
+                                            <div
+                                                key={item.id}
+                                                className="flex items-center gap-4 p-5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all group"
+                                            >
+                                                <div className="w-12 h-12 rounded-xl bg-[#df2531]/10 flex items-center justify-center border border-[#df2531]/20 group-hover:border-[#df2531]/40 transition-colors">
+                                                    <IconComponent size={24} weight="duotone" className="text-white" aria-hidden="true" />
+                                                </div>
+
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <p className="text-white font-semibold">{item.service_type?.name}</p>
+                                                        {item.is_active ? (
+                                                            <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-medium border border-green-500/30">
+                                                                Active
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-xs font-medium border border-red-500/30">
+                                                                Hidden
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-white/60 text-sm font-medium">{formatPrice(item.price)}</p>
+                                                    {item.service_type?.description && (
+                                                        <p className="text-white/40 text-xs mt-1 line-clamp-1">{item.service_type.description}</p>
                                                     )}
                                                 </div>
-                                                <p className="text-white/60 text-sm font-medium">{formatPrice(item.price)}</p>
-                                                {item.service_type?.description && (
-                                                    <p className="text-white/40 text-xs mt-1 line-clamp-1">{item.service_type.description}</p>
-                                                )}
+
+                                                <button
+                                                    onClick={() => handleToggleAvailability(item.id, item.is_active)}
+                                                    aria-label={item.is_active ? `Hide ${item.service_type?.name} service` : `Show ${item.service_type?.name} service`}
+                                                    aria-pressed={item.is_active}
+                                                    className={`p-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black ${item.is_active
+                                                        ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 focus:ring-green-500'
+                                                        : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 focus:ring-red-500'
+                                                        }`}
+                                                >
+                                                    {item.is_active ? (
+                                                        <Eye size={20} weight="duotone" aria-hidden="true" />
+                                                    ) : (
+                                                        <EyeSlash size={20} weight="duotone" aria-hidden="true" />
+                                                    )}
+                                                </button>
+
+                                                <button
+                                                    onClick={() => handleDeleteService(item.id)}
+                                                    aria-label={`Delete ${item.service_type?.name} service`}
+                                                    className="p-3 rounded-lg bg-white/5 text-white/40 hover:bg-red-500/10 hover:text-red-400 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
+                                                >
+                                                    <Trash size={20} weight="duotone" aria-hidden="true" />
+                                                </button>
                                             </div>
-
-                                            <button
-                                                onClick={() => handleToggleAvailability(item.id, item.is_active)}
-                                                aria-label={item.is_active ? `Hide ${item.service_type?.name} service` : `Show ${item.service_type?.name} service`}
-                                                aria-pressed={item.is_active}
-                                                className={`p-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black ${item.is_active
-                                                    ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 focus:ring-green-500'
-                                                    : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 focus:ring-red-500'
-                                                    }`}
-                                            >
-                                                {item.is_active ? (
-                                                    <Eye size={20} weight="duotone" aria-hidden="true" />
-                                                ) : (
-                                                    <EyeSlash size={20} weight="duotone" aria-hidden="true" />
-                                                )}
-                                            </button>
-
-                                            <button
-                                                onClick={() => handleDeleteService(item.id)}
-                                                aria-label={`Delete ${item.service_type?.name} service`}
-                                                className="p-3 rounded-lg bg-white/5 text-white/40 hover:bg-red-500/10 hover:text-red-400 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
-                                            >
-                                                <Trash size={20} weight="duotone" aria-hidden="true" />
-                                            </button>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                             )}
                         </div>
