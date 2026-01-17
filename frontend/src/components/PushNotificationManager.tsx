@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Bell, BellRinging, BellSlash, Check, X, SpinnerGap } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
 import { urlBase64ToUint8Array } from '@/lib/push/vapid'
