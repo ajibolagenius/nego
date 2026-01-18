@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     const token = requestUrl.searchParams.get('token')
     const code = requestUrl.searchParams.get('code')
     const type = requestUrl.searchParams.get('type') // 'signup', 'email_change', or 'recovery'
-    
+
     // Use NEXT_PUBLIC_APP_URL if available, otherwise use request origin
     const origin = process.env.NEXT_PUBLIC_APP_URL
         ? new URL(process.env.NEXT_PUBLIC_APP_URL).origin
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         // Handle verification via code (session exchange) - preferred method
         if (code) {
             const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code)
-            
+
             if (sessionError) {
                 console.error('[Verify Email] Session exchange error:', sessionError)
                 return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent('Verification link is invalid or has expired. Please request a new one.')}`)
@@ -86,7 +86,7 @@ export async function GET(request: Request) {
                 // Continue anyway - verification was successful, just DB update failed
             } else {
                 console.log('[Verify Email] Successfully updated is_verified for client:', data.user.id)
-                
+
                 // Send confirmation email
                 try {
                     await sendEmail(

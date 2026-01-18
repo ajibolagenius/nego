@@ -220,7 +220,7 @@ export default function RegisterPage() {
             // Sign up with role in metadata - DB trigger will handle profile creation
             // Set email redirect URL for verification (clients need email verification)
             const verificationUrl = `${window.location.origin}/auth/verify-email`
-            
+
             const { data, error } = await supabase.auth.signUp({
                 email: email.trim().toLowerCase(),
                 password,
