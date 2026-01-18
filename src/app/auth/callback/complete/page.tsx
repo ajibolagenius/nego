@@ -91,14 +91,9 @@ export default function AuthCallbackPage() {
 
                     setStatus('Redirecting...')
 
-                    // Redirect based on role
-                    if (pendingRole === 'talent') {
-                        router.push('/dashboard/talent')
-                        router.refresh()
-                    } else {
-                        router.push('/dashboard')
-                        router.refresh()
-                    }
+                    // Redirect to dashboard (role-based routing handled by dashboard/middleware)
+                    router.push('/dashboard')
+                    router.refresh()
                 } else {
                     // Existing user - fetch their role and redirect appropriately
                     setStatus('Loading your profile...')
@@ -134,16 +129,9 @@ export default function AuthCallbackPage() {
 
                     setStatus('Redirecting...')
 
-                    if (profile?.role === 'admin') {
-                        router.push('/admin')
-                        router.refresh()
-                    } else if (profile?.role === 'talent') {
-                        router.push('/dashboard/talent')
-                        router.refresh()
-                    } else {
-                        router.push('/dashboard')
-                        router.refresh()
-                    }
+                    // Redirect to dashboard (role-based routing handled by dashboard/middleware)
+                    router.push('/dashboard')
+                    router.refresh()
                 }
             } catch (err) {
                 console.error('[Auth Callback] Error:', err)
