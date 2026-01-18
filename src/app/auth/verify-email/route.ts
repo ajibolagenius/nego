@@ -79,13 +79,13 @@ export async function GET(request: Request) {
                     is_verified: true,
                     updated_at: new Date().toISOString()
                 })
-                .eq('id', data.user.id)
+                .eq('id', user.id)
 
             if (updateError) {
                 console.error('[Verify Email] Failed to update is_verified:', updateError)
                 // Continue anyway - verification was successful, just DB update failed
             } else {
-                console.log('[Verify Email] Successfully updated is_verified for client:', data.user.id)
+                console.log('[Verify Email] Successfully updated is_verified for client:', user.id)
 
                 // Send confirmation email
                 try {
