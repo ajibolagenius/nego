@@ -107,6 +107,7 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
             const urlsToFetch = verifications
                 .filter(v => v.selfie_url && !v.selfie_url.includes('via.placeholder.com'))
                 .map(v => v.selfie_url)
+                .filter((url): url is string => url !== null && url !== undefined) // Type guard: filter out null/undefined
                 .filter((url, index, self) => self.indexOf(url) === index) // Remove duplicates
                 .filter(url => !fetchedUrlsRef.current.has(url)) // Only fetch URLs not already fetched
 
