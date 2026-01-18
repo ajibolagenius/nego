@@ -173,7 +173,11 @@ function processTimeSeriesData(data: Array<{ created_at: string;[key: string]: u
         const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
         const dateStr = date.toISOString().split('T')[0]
         const count = data.filter(item => {
-            const itemDate = new Date(item[dateField]).toISOString().split('T')[0]
+            const dateValue = item[dateField]
+            if (typeof dateValue !== 'string' && !(dateValue instanceof Date)) {
+                return false
+            }
+            const itemDate = new Date(dateValue as string | Date).toISOString().split('T')[0]
             return itemDate === dateStr
         }).length
 
