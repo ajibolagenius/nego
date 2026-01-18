@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const body = await request.json()
-        const { userId, title, body, icon, badge, tag, data, url } = body
+        const payload = await request.json()
+        const { userId, title, body, icon, badge, tag, data, url } = payload
 
         if (!userId || !title || !body) {
             return NextResponse.json(
