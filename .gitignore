@@ -1,52 +1,45 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # ============================================
-# IDE and Editors
-# ============================================
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-.project
-.classpath
-.settings/
-
-# ============================================
 # Dependencies
 # ============================================
-node_modules/
-**/node_modules/
+/node_modules
 /.pnp
-.pnp.js
-.yarn/install-state.gz
+.pnp.*
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+.yarn/install-state.gz
 
 # ============================================
 # Testing
 # ============================================
 /coverage
-.coverage
-.pytest_cache/
-htmlcov/
-.tox/
-test_reports/
-*.pyc
-__pycache__/
-.pytest_cache/
-*.pytest_cache
+.nyc_output
+*.lcov
 
 # ============================================
-# Next.js (Root level)
+# Documentation (if auto-generated)
+# ============================================
+/docs
+/docs-build
+
+# ============================================
+# Database (if any local DB files)
+# ============================================
+/database
+*.db
+*.sqlite
+
+# ============================================
+# Next.js
 # ============================================
 /.next/
 /out/
-next-env.d.ts
-*.tsbuildinfo
+.next/
+out/
 
 # ============================================
 # Production Builds
@@ -59,36 +52,42 @@ dist/
 # ============================================
 # Environment Variables
 # ============================================
-# NOTE: .env files are NOT ignored - they are required for Emergent deployment
-# The platform handles secrets securely during the deployment process
-# Only local/development-specific env files are ignored below
-*.env.local
-*.env.development.local
-*.env.test.local
-*.env.production.local
+# NOTE: Local .env files are ignored for security
+# Root-level .env files are NOT ignored (required for Emergent deployment)
+# Only example/template files should be committed
+.env
+.env.*
+!.env.example
+!.env.template
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # ============================================
-# Sensitive Credentials
+# Vercel
 # ============================================
-*token.json*
-*credentials.json*
-*.pem
-*.key
-*.cert
-secrets/
-.secrets/
+.vercel
+.vercel/*
+!.vercel/README.md
 
 # ============================================
-# Logs and Debug Files
+# TypeScript
 # ============================================
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-lerna-debug.log*
-*.log
-logs/
-*.log.*
+*.tsbuildinfo
+next-env.d.ts
+
+# ============================================
+# IDE and Editors
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
 
 # ============================================
 # System Files
@@ -96,67 +95,18 @@ logs/
 .DS_Store
 .DS_Store?
 ._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 desktop.ini
 
 # ============================================
-# Python
+# Logs
 # ============================================
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-.venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-*.egg-info/
-.eggs/
-pip-log.txt
-pip-delete-this-directory.txt
-
-# ============================================
-# Development Tools
-# ============================================
-chainlit.md
-.chainlit
-.ipynb_checkpoints/
-.ac
-.emergent/
-.emergent/*
-
-# ============================================
-# Deployment
-# ============================================
-.vercel
-.vercel/*
-!.vercel/README.md
-
-# ============================================
-# Data and Databases
-# ============================================
-agenthub/agents/youtube/db
-*.db
-*.sqlite
-*.sqlite3
-*.db-journal
-
-# ============================================
-# Archive Files and Large Assets
-# ============================================
-**/*.zip
-**/*.tar.gz
-**/*.tar
-**/*.tgz
-*.pack
-*.deb
-*.dylib
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+*.log
 
 # ============================================
 # Build Caches
@@ -165,21 +115,7 @@ agenthub/agents/youtube/db
 .parcel-cache/
 .eslintcache
 .stylelintcache
-
-# ============================================
-# Mobile Development
-# ============================================
-android-sdk/
-ios/
-*.ipa
-*.apk
-
-# ============================================
-# Platform-specific node modules
-# ============================================
-frontend/node_modules/@next/swc-linux-arm64-gnu/next-swc.linux-arm64-gnu.node
-frontend/node_modules/@next/swc-linux-arm64-musl/next-swc.linux-arm64-musl.node
-**/node_modules/@next/swc-*/
+.turbo/
 
 # ============================================
 # Temporary Files
@@ -190,12 +126,12 @@ frontend/node_modules/@next/swc-linux-arm64-musl/next-swc.linux-arm64-musl.node
 .temp/
 *.bak
 *.backup
-*~
 
 # ============================================
-# Test Results
+# Sensitive Files
 # ============================================
-test_result.md
-test_reports/
-*.xml
-*.junit.xml
+*.pem
+*.key
+*.cert
+secrets/
+.secrets/
