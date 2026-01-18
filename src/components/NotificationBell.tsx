@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Bell, X, CheckCircle, Clock, XCircle, Money, CalendarCheck, Hourglass, Icon, SpinnerGap } from '@phosphor-icons/react'
+import { Bell, X, CheckCircle, Clock, XCircle, Money, CalendarCheck, Hourglass, Icon, SpinnerGap, Gift, LockOpen, Warning } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
 import type { Notification, NotificationType } from '@/types/database'
 
@@ -14,6 +14,12 @@ const notificationIcons: Record<NotificationType, Icon> = {
     booking_expired: Hourglass,
     withdrawal_approved: Money,
     withdrawal_rejected: XCircle,
+    purchase_success: CheckCircle,
+    purchase_failed: XCircle,
+    low_balance: Warning,
+    media_unlocked: LockOpen,
+    gift_received: Gift,
+    gift_sent: Gift,
     general: Bell,
 }
 
@@ -25,6 +31,12 @@ const notificationColors: Record<NotificationType, string> = {
     booking_expired: 'text-gray-400 bg-gray-500/10',
     withdrawal_approved: 'text-green-400 bg-green-500/10',
     withdrawal_rejected: 'text-red-400 bg-red-500/10',
+    purchase_success: 'text-green-400 bg-green-500/10',
+    purchase_failed: 'text-red-400 bg-red-500/10',
+    low_balance: 'text-amber-400 bg-amber-500/10',
+    media_unlocked: 'text-purple-400 bg-purple-500/10',
+    gift_received: 'text-pink-400 bg-pink-500/10',
+    gift_sent: 'text-pink-400 bg-pink-500/10',
     general: 'text-white/60 bg-white/10',
 }
 

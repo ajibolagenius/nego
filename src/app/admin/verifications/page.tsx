@@ -1,6 +1,6 @@
 import { createApiClient } from '@/lib/supabase/api'
 import { VerificationsClient } from './VerificationsClient'
-import type { VerificationWithBooking } from '@/types/admin'
+import type { VerificationWithBooking, BookingWithRelations } from '@/types/admin'
 
 export const metadata = {
   title: 'Verifications - Nego Admin',
@@ -51,10 +51,35 @@ export default async function VerificationsPage() {
   }
 
   // Transform data to include id field (use booking_id as id)
-  const transformedVerifications: VerificationWithBooking[] = (verifications || []).map(v => ({
-    ...v,
-    id: v.booking_id, // Use booking_id as unique identifier
-  }))
+  // Handle booking as array (from join) or single object
+  // Type assertion needed because Supabase returns arrays for joined relations
+  const transformedVerifications: VerificationWithBooking[] = (verifications || []).map((v: any) => {
+    // Supabase returns booking as array due to join, get first element
+    const bookingArray = Array.isArray(v.booking) ? v.booking : (v.booking ? [v.booking] : [])
+    const booking = bookingArray[0] || null
+    
+    if (!booking) {
+      return {
+        ...v,
+        id: v.booking_id,
+        booking: null,
+      } as VerificationWithBooking
+    }
+    
+    // Handle client and talent which may also be arrays
+    const clientArray = Array.isArray(booking.client) ? booking.client : (booking.client ? [booking.client] : [])
+    const talentArray = Array.isArray(booking.talent) ? booking.talent : (booking.talent ? [booking.talent] : [])
+    
+    return {
+      ...v,
+      id: v.booking_id, // Use booking_id as unique identifier
+      booking: {
+        ...booking,
+        client: clientArray[0] || null,
+        talent: talentArray[0] || null,
+      } as BookingWithRelations,
+    } as VerificationWithBooking
+  })
 
   console.log('[VerificationsPage] Loaded verifications:', transformedVerifications.length)
 

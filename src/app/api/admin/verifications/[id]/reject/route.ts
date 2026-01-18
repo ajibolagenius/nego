@@ -189,7 +189,7 @@ export async function POST(
             resource_id: bookingId,
             details: {
                 booking_id: bookingId,
-                admin_notes,
+                admin_notes: adminNotes,
                 refund_amount: bookingData.total_price,
             },
             ip_address: getClientIP(request.headers),

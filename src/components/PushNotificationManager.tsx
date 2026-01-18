@@ -88,7 +88,19 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
 
             // Register service worker (required for push notifications)
             const registration = await registerServiceWorker()
-            await registration.ready
+            // Wait for service worker to be ready
+            if (registration.installing) {
+                await new Promise<void>((resolve) => {
+                    registration.installing!.addEventListener('statechange', () => {
+                        if (registration.installing!.state === 'installed') {
+                            resolve()
+                        }
+                    })
+                })
+            } else if (registration.waiting) {
+                // Already installed, activate it
+                await registration.update()
+            }
 
             // Get VAPID public key from server
             const vapidKeyResponse = await fetch('/api/push/vapid-key')
@@ -103,9 +115,10 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
             }
 
             // Subscribe to push notifications
+            const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey)
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+                applicationServerKey: applicationServerKey as BufferSource,
             })
 
             // Save subscription to server

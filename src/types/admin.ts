@@ -8,9 +8,9 @@ export interface VerificationWithBooking extends Verification {
     booking: BookingWithRelations | null
 }
 
-export interface BookingWithRelations extends Booking {
-    client: Profile | null
-    talent: Profile | null
+export interface BookingWithRelations extends Omit<Booking, 'client' | 'talent'> {
+    client: Profile | null | undefined
+    talent: Profile | null | undefined
 }
 
 export interface WithdrawalRequestWithTalent extends WithdrawalRequest {

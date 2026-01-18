@@ -103,7 +103,7 @@ export function useWallet({ userId, initialWallet, autoRefresh = true }: UseWall
                     table: 'wallets',
                     filter: `user_id=eq.${userId}`,
                 },
-                (payload) => {
+                async (payload) => {
                     console.log('[useWallet] Real-time wallet UPDATE:', payload.new)
                     const updatedWallet = payload.new as Wallet
                     setWallet(updatedWallet)
@@ -112,7 +112,7 @@ export function useWallet({ userId, initialWallet, autoRefresh = true }: UseWall
                     // Only notify if balance is below 100 coins and wasn't already low
                     if (updatedWallet.balance < 100 && wallet && wallet.balance >= 100) {
                         // Balance just dropped below threshold
-                        getSupabaseForNotifications().from('notifications').insert({
+                        const { error: notifError } = await getSupabaseForNotifications().from('notifications').insert({
                             user_id: userId,
                             type: 'low_balance',
                             title: 'Low Balance Warning ⚠️',
@@ -121,9 +121,10 @@ export function useWallet({ userId, initialWallet, autoRefresh = true }: UseWall
                                 current_balance: updatedWallet.balance,
                                 threshold: 100,
                             },
-                        }).catch(err => {
-                            console.error('[useWallet] Failed to create low balance notification:', err)
                         })
+                        if (notifError) {
+                            console.error('[useWallet] Failed to create low balance notification:', notifError)
+                        }
                     }
                 }
             )

@@ -95,12 +95,12 @@ export async function POST(request: NextRequest) {
                 // Create low balance notification
                 try {
                     await supabase.from('notifications').insert({
-                        user_id: senderId,
+                        user_id: sanitized.senderId,
                         type: 'low_balance',
                         title: 'Insufficient Balance ⚠️',
                         message: `You don't have enough coins to send this gift. Please top up your wallet.`,
                         data: {
-                            required_amount: amount,
+                            required_amount: sanitized.amount,
                             error: errorMsg,
                         },
                     })
@@ -117,35 +117,39 @@ export async function POST(request: NextRequest) {
             return errorResponse(errorMsg, 400)
         }
 
+        // Get recipient name for notifications
+        const { data: recipientProfile } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('id', sanitized.recipientId)
+            .single()
+
+        const recipientName = recipientProfile?.display_name || 'the talent'
+
         // Create notifications for both sender and recipient
         try {
             // Notification for sender
             await supabase.from('notifications').insert({
-                user_id: senderId,
+                user_id: sanitized.senderId,
                 type: 'gift_sent',
                 title: 'Gift Sent! 🎁',
-                message: `You sent ${amount.toLocaleString()} coins to ${recipientName}. Your new balance is ${resultObj.new_balance?.toLocaleString() || 0} coins.`,
+                message: `You sent ${sanitized.amount.toLocaleString()} coins to ${recipientName}. Your new balance is ${resultObj.new_balance?.toLocaleString() || 0} coins.`,
                 data: {
                     gift_id: resultObj.gift_id,
-                    recipient_id: recipientId,
+                    recipient_id: sanitized.recipientId,
                     recipient_name: recipientName,
-                    amount: amount,
+                    amount: sanitized.amount,
                     new_balance: resultObj.new_balance,
                 },
             })
 
-            // Notification for recipient (if not already created by trigger)
-            // The trigger should handle this, but we'll ensure it exists
-            const { data: recipientProfile } = await supabase
-                .from('profiles')
-                .select('display_name')
-                .eq('id', recipientId)
-                .single()
+            // Notification for recipient (already handled by database trigger)
+            // No need to fetch recipientProfile again - already fetched above
 
             // Check for low balance warning for sender
             if (resultObj.new_balance && resultObj.new_balance < 100) {
                 await supabase.from('notifications').insert({
-                    user_id: senderId,
+                    user_id: sanitized.senderId,
                     type: 'low_balance',
                     title: 'Low Balance Warning ⚠️',
                     message: `Your balance is low (${resultObj.new_balance.toLocaleString()} coins). Consider topping up to continue enjoying our services.`,

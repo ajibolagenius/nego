@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Calendar, Clock, MapPin, CheckCircle,
     SpinnerGap, WarningCircle, CreditCard, ShieldCheck,
-    Receipt, Coin, CaretRight, XCircle, User, Star, Hourglass, Wallet, Hash
+    Receipt, Coin, CaretRight, XCircle, User, Star, Hourglass, Wallet as WalletIcon, Hash
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -27,8 +27,8 @@ interface BookingWithTalent {
     scheduled_at: string
     notes: string | null
     created_at: string
-    talent: Pick<Profile, 'id' | 'display_name' | 'avatar_url' | 'location'>
-    client?: Pick<Profile, 'id' | 'display_name' | 'avatar_url' | 'location'> | null
+    talent: Pick<Profile, 'id' | 'display_name' | 'avatar_url' | 'location' | 'bio'>
+    client?: Pick<Profile, 'id' | 'display_name' | 'avatar_url' | 'location' | 'bio'> | null
     review?: Review | null
     verification?: { admin_notes: string | null; status: string } | null
 }
@@ -749,7 +749,7 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                         {isTalent && !checkingEscrow && (
                             <div className="bg-blue-500/10 rounded-xl p-6 border border-blue-500/20">
                                 <div className="flex items-center gap-3 mb-4">
-                                    <Wallet size={24} className="text-blue-400" />
+                                    <WalletIcon size={24} className="text-blue-400" />
                                     <div className="flex-1">
                                         <h3 className="text-white font-bold">Earnings</h3>
                                         <p className="text-white/60 text-sm">
@@ -773,7 +773,7 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                                             </>
                                         ) : (
                                             <>
-                                                <Wallet size={20} className="mr-2" />
+                                                <WalletIcon size={20} className="mr-2" />
                                                 Release Escrow ({formatPrice(booking.total_price)})
                                             </>
                                         )}

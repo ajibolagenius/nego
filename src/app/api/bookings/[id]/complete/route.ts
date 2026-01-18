@@ -185,7 +185,7 @@ export async function POST(
           } else {
             console.log('[API] Talent wallet created with balance:', newWallet.balance)
             // Create transaction record for talent
-            await apiClient.from('transactions').insert({
+            const { error: transactionError } = await apiClient.from('transactions').insert({
               user_id: booking.talent_id,
               amount: booking.total_price,
               coins: booking.total_price,
@@ -193,9 +193,10 @@ export async function POST(
               status: 'completed',
               description: `Earnings from completed booking #${booking.id.slice(0, 8)}`,
               reference_id: booking.id
-            }).catch(err => {
-              console.error('[API] Error creating transaction record:', err)
             })
+            if (transactionError) {
+              console.error('[API] Error creating transaction record:', transactionError)
+            }
           }
         } else {
           console.log('[API] Talent wallet before balance update:', {

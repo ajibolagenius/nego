@@ -881,13 +881,16 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                                                     console.error('[Verify] Camera error:', err)
                                                     setIsCameraReady(false)
 
-                                                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                                                    // Handle both Error objects and string errors
+                                                    const error = err instanceof Error ? err : (typeof err === 'string' ? new Error(err) : new Error(String(err)))
+                                                    
+                                                    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
                                                         setCameraPermission('denied')
                                                         setCameraError('Camera permission denied. Click "Request Camera Access" below to enable it.')
-                                                    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                                                    } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
                                                         setCameraPermission('unsupported')
                                                         setCameraError('No camera found. Please connect a camera and try again.')
-                                                    } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                                                    } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
                                                         setCameraError('Camera is already in use by another application. Please close other apps using the camera.')
                                                     } else {
                                                         setCameraError('Unable to access camera. Please check your camera permissions and try again.')

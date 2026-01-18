@@ -451,7 +451,17 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                             return
                         }
 
-                        const newConversation = { ...payload.new, other_user: profile }
+                        // Ensure payload.new has all required Conversation properties
+                        const conversationData = payload.new as Conversation
+                        if (!conversationData.id || !conversationData.participant_1 || !conversationData.participant_2) {
+                            console.error('[Real-time] Invalid conversation data:', conversationData)
+                            return
+                        }
+
+                        const newConversation = { 
+                            ...conversationData,
+                            other_user: profile || null
+                        } as Conversation & { other_user?: Profile | null }
 
                         setConversations(prev => {
                             // Check for duplicates
@@ -460,10 +470,11 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                             }
                             // Add new conversation and sort by last_message_at
                             const updated = [newConversation, ...prev]
-                            return updated.sort((a, b) =>
-                                new Date(b.last_message_at || b.created_at).getTime() -
-                                new Date(a.last_message_at || a.created_at).getTime()
-                            )
+                            return updated.sort((a, b) => {
+                                const aTime = a.last_message_at || a.created_at
+                                const bTime = b.last_message_at || b.created_at
+                                return new Date(bTime).getTime() - new Date(aTime).getTime()
+                            })
                         })
                     } catch (err) {
                         console.error('[Real-time] Error processing new conversation:', err)

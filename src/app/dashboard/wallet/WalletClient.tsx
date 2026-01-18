@@ -132,7 +132,7 @@ function PaymentModal({
             // Create failure notification
             try {
                 await supabase.from('notifications').insert({
-                    user_id: user.id,
+                    user_id: userId,
                     type: 'purchase_failed',
                     title: 'Purchase Failed ❌',
                     message: `Your purchase attempt failed: ${errorMessage}. Please try again or contact support.`,
