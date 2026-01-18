@@ -103,6 +103,16 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Skip Supabase REST API calls - these should always go directly to network
+    // Supabase handles caching and we don't want service worker interference
+    if (url.hostname.includes('supabase.co') && 
+        (url.pathname.startsWith('/rest/v1/') || 
+         url.pathname.startsWith('/auth/v1/') ||
+         url.pathname.startsWith('/storage/v1/'))) {
+        // Let Supabase API requests pass through without service worker interception
+        return;
+    }
+
     // API routes - Network first, fallback to cache
     if (url.pathname.startsWith('/api/')) {
         event.respondWith(networkFirstStrategy(request, API_CACHE));
@@ -110,8 +120,10 @@ self.addEventListener('fetch', (event) => {
     }
 
     // Images - Cache first, fallback to network
-    if (request.destination === 'image' ||
-        CACHEABLE_IMAGE_DOMAINS.some(domain => url.hostname.includes(domain))) {
+    // Exclude Supabase storage API calls (they're handled above)
+    if ((request.destination === 'image' ||
+        CACHEABLE_IMAGE_DOMAINS.some(domain => url.hostname.includes(domain))) &&
+        !url.pathname.startsWith('/storage/v1/')) {
         event.respondWith(cacheFirstStrategy(request, IMAGE_CACHE));
         return;
     }

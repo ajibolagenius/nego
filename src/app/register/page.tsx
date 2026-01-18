@@ -239,6 +239,16 @@ export default function RegisterPage() {
                 if (error.message.includes('already registered') || error.message.includes('already exists')) {
                     throw new Error('An account with this email already exists. Please sign in instead.')
                 }
+                // Check for redirect URL errors
+                if (error.message.includes('redirect_to') || error.message.includes('redirect')) {
+                    console.error('[Register] Redirect URL error:', error)
+                    throw new Error('Registration failed due to configuration error. Please contact support.')
+                }
+                // Check for database trigger errors
+                if (error.message.includes('Database error') || error.status === 500) {
+                    console.error('[Register] Database error:', error)
+                    throw new Error('Registration failed. Please try again or contact support if the issue persists.')
+                }
                 throw error
             }
 
