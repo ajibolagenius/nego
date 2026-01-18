@@ -43,6 +43,11 @@ export async function GET(request: Request) {
             // Handle verification via token (OTP verification)
             // Use token_hash if available (from generateLink), otherwise use token
             const tokenToUse = tokenHash || token
+
+            if (!tokenToUse) {
+                return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent('Invalid verification link. Please request a new one.')}`)
+            }
+
             const otpType = type === 'email_change' ? 'email_change'
                 : type === 'recovery' ? 'recovery'
                     : type === 'magiclink' ? 'magiclink'
