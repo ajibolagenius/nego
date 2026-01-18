@@ -1,29 +1,236 @@
-// Push Notification Service Worker
-// Place this file at /public/sw.js
+// Comprehensive PWA Service Worker for Nego
+// Version: 2.0.0
 
-const CACHE_NAME = 'nego-v1';
+const CACHE_VERSION = 'nego-pwa-v2.0.0';
+const STATIC_CACHE = `${CACHE_VERSION}-static`;
+const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
+const IMAGE_CACHE = `${CACHE_VERSION}-images`;
+const API_CACHE = `${CACHE_VERSION}-api`;
 
-// Install event
+// Assets to cache on install
+const STATIC_ASSETS = [
+    '/',
+    '/dashboard',
+    '/login',
+    '/register',
+    '/offline',
+    '/manifest.json',
+    '/favicon.ico',
+];
+
+// API routes that should be cached
+const CACHEABLE_API_ROUTES = [
+    '/api/push/vapid-key',
+];
+
+// Image domains to cache
+const CACHEABLE_IMAGE_DOMAINS = [
+    'rmaqeotgpfvdtnvcfpox.supabase.co',
+    'res.cloudinary.com',
+    'customer-assets.emergentagent.com',
+];
+
+// Install event - cache static assets
 self.addEventListener('install', (event) => {
-    console.log('Service Worker installed');
+    console.log('[Service Worker] Installing...', CACHE_VERSION);
+
+    event.waitUntil(
+        caches.open(STATIC_CACHE).then((cache) => {
+            console.log('[Service Worker] Caching static assets');
+            return cache.addAll(STATIC_ASSETS.map(url => new Request(url, { credentials: 'same-origin' })));
+        }).catch((err) => {
+            console.error('[Service Worker] Error caching static assets:', err);
+        })
+    );
+
+    // Force activation of new service worker
     self.skipWaiting();
 });
 
-// Activate event
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-    console.log('Service Worker activated');
-    event.waitUntil(clients.claim());
+    console.log('[Service Worker] Activating...', CACHE_VERSION);
+
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    // Delete old caches that don't match current version
+                    if (cacheName.startsWith('nego-') && !cacheName.includes(CACHE_VERSION)) {
+                        console.log('[Service Worker] Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        }).then(() => {
+            // Take control of all pages immediately
+            return self.clients.claim();
+        })
+    );
 });
 
-// Push event - handle incoming push notifications
+// Fetch event - implement caching strategies
+self.addEventListener('fetch', (event) => {
+    const { request } = event;
+    const url = new URL(request.url);
+
+    // Skip non-GET requests
+    if (request.method !== 'GET') {
+        return;
+    }
+
+    // Skip chrome-extension and other non-http(s) requests
+    if (!url.protocol.startsWith('http')) {
+        return;
+    }
+
+    // API routes - Network first, fallback to cache
+    if (url.pathname.startsWith('/api/')) {
+        event.respondWith(networkFirstStrategy(request, API_CACHE));
+        return;
+    }
+
+    // Images - Cache first, fallback to network
+    if (request.destination === 'image' ||
+        CACHEABLE_IMAGE_DOMAINS.some(domain => url.hostname.includes(domain))) {
+        event.respondWith(cacheFirstStrategy(request, IMAGE_CACHE));
+        return;
+    }
+
+    // Static assets (JS, CSS) - Cache first
+    if (request.destination === 'script' ||
+        request.destination === 'style' ||
+        url.pathname.startsWith('/_next/static/')) {
+        event.respondWith(cacheFirstStrategy(request, STATIC_CACHE));
+        return;
+    }
+
+    // HTML pages - Network first, fallback to cache, then offline page
+    if (request.destination === 'document' ||
+        request.headers.get('accept')?.includes('text/html')) {
+        event.respondWith(networkFirstWithOfflineFallback(request));
+        return;
+    }
+
+    // Default: Network first
+    event.respondWith(networkFirstStrategy(request, DYNAMIC_CACHE));
+});
+
+// Cache First Strategy - for static assets and images
+async function cacheFirstStrategy(request, cacheName) {
+    try {
+        const cache = await caches.open(cacheName);
+        const cachedResponse = await cache.match(request);
+
+        if (cachedResponse) {
+            return cachedResponse;
+        }
+
+        const networkResponse = await fetch(request);
+
+        // Only cache successful responses
+        if (networkResponse.ok) {
+            cache.put(request, networkResponse.clone());
+        }
+
+        return networkResponse;
+    } catch (error) {
+        console.error('[Service Worker] Cache first error:', error);
+        // Return a placeholder for images if offline
+        if (request.destination === 'image') {
+            return new Response('', { status: 200, statusText: 'OK' });
+        }
+        throw error;
+    }
+}
+
+// Network First Strategy - for API calls and dynamic content
+async function networkFirstStrategy(request, cacheName) {
+    try {
+        const networkResponse = await fetch(request);
+
+        // Cache successful responses
+        if (networkResponse.ok) {
+            const cache = await caches.open(cacheName);
+            cache.put(request, networkResponse.clone());
+        }
+
+        return networkResponse;
+    } catch (error) {
+        console.log('[Service Worker] Network failed, trying cache:', error);
+        const cache = await caches.open(cacheName);
+        const cachedResponse = await cache.match(request);
+
+        if (cachedResponse) {
+            return cachedResponse;
+        }
+
+        // Return error response for API calls
+        if (request.url.includes('/api/')) {
+            return new Response(
+                JSON.stringify({ error: 'Offline - request cached' }),
+                {
+                    status: 503,
+                    statusText: 'Service Unavailable',
+                    headers: { 'Content-Type': 'application/json' }
+                }
+            );
+        }
+
+        throw error;
+    }
+}
+
+// Network First with Offline Fallback - for HTML pages
+async function networkFirstWithOfflineFallback(request) {
+    try {
+        const networkResponse = await fetch(request);
+
+        // Cache successful HTML responses
+        if (networkResponse.ok) {
+            const cache = await caches.open(DYNAMIC_CACHE);
+            cache.put(request, networkResponse.clone());
+        }
+
+        return networkResponse;
+    } catch (error) {
+        console.log('[Service Worker] Network failed, trying cache:', error);
+        const cache = await caches.open(DYNAMIC_CACHE);
+        const cachedResponse = await cache.match(request);
+
+        if (cachedResponse) {
+            return cachedResponse;
+        }
+
+        // Fallback to offline page for navigation requests
+        if (request.mode === 'navigate') {
+            const offlinePage = await caches.match('/offline');
+            if (offlinePage) {
+                return offlinePage;
+            }
+        }
+
+        // Return a basic offline response
+        return new Response(
+            '<!DOCTYPE html><html><head><title>Offline</title></head><body><h1>You are offline</h1><p>Please check your connection.</p></body></html>',
+            {
+                status: 200,
+                statusText: 'OK',
+                headers: { 'Content-Type': 'text/html' }
+            }
+        );
+    }
+}
+
+// Push Notification Handler
 self.addEventListener('push', (event) => {
     console.log('[Service Worker] Push received:', event);
 
     let notificationData = {
         title: 'Nego',
         body: 'You have a new notification',
-        icon: '/icon-192.png',
-        badge: '/badge-72.png',
+        icon: '/web-app-manifest-192x192.png',
+        badge: '/web-app-manifest-192x192.png',
         tag: 'nego-notification',
         data: {},
         url: '/dashboard/notifications'
@@ -34,7 +241,15 @@ self.addEventListener('push', (event) => {
             const payload = event.data.json();
             notificationData = {
                 ...notificationData,
-                ...payload
+                title: payload.title || notificationData.title,
+                body: payload.body || payload.message || notificationData.body,
+                icon: payload.icon || notificationData.icon,
+                badge: payload.badge || notificationData.badge,
+                tag: payload.tag || notificationData.tag,
+                data: payload.data || notificationData.data,
+                url: payload.url || payload.data?.url || notificationData.url,
+                image: payload.image,
+                actions: payload.actions
             };
         } catch (e) {
             // If not JSON, try text
@@ -44,8 +259,8 @@ self.addEventListener('push', (event) => {
 
     const options = {
         body: notificationData.body,
-        icon: notificationData.icon || '/icon-192.png',
-        badge: notificationData.badge || '/badge-72.png',
+        icon: notificationData.icon || '/web-app-manifest-192x192.png',
+        badge: notificationData.badge || '/web-app-manifest-192x192.png',
         tag: notificationData.tag || 'nego-notification',
         data: {
             ...notificationData.data,
@@ -53,12 +268,13 @@ self.addEventListener('push', (event) => {
         },
         vibrate: [100, 50, 100],
         actions: notificationData.actions || [
-            { action: 'open', title: 'Open', icon: '/icon-192.png' },
+            { action: 'open', title: 'Open', icon: '/web-app-manifest-192x192.png' },
             { action: 'close', title: 'Close' }
         ],
         requireInteraction: false,
         silent: false,
-        renotify: true
+        renotify: true,
+        image: notificationData.image
     };
 
     event.waitUntil(
@@ -66,7 +282,7 @@ self.addEventListener('push', (event) => {
     );
 });
 
-// Notification click event
+// Notification Click Handler
 self.addEventListener('notificationclick', (event) => {
     console.log('[Service Worker] Notification clicked:', event);
 
@@ -86,7 +302,7 @@ self.addEventListener('notificationclick', (event) => {
         }).then((windowClients) => {
             // Check if there's already a window/tab open
             for (const client of windowClients) {
-                if (client.url.includes(window.location.origin) && 'focus' in client) {
+                if (client.url.includes(self.location.origin) && 'focus' in client) {
                     // Navigate to the notification URL and focus
                     if ('navigate' in client && typeof client.navigate === 'function') {
                         return client.navigate(urlToOpen).then(() => client.focus());
@@ -104,7 +320,44 @@ self.addEventListener('notificationclick', (event) => {
     );
 });
 
-// Background sync for offline actions
+// Background Sync Handler
 self.addEventListener('sync', (event) => {
-    console.log('Background sync:', event.tag);
+    console.log('[Service Worker] Background sync:', event.tag);
+
+    if (event.tag === 'sync-messages') {
+        event.waitUntil(syncMessages());
+    } else if (event.tag === 'sync-bookings') {
+        event.waitUntil(syncBookings());
+    }
+});
+
+// Sync messages when back online
+async function syncMessages() {
+    // This would sync any pending messages that failed to send
+    console.log('[Service Worker] Syncing messages...');
+    // Implementation would depend on your message queue system
+}
+
+// Sync bookings when back online
+async function syncBookings() {
+    // This would sync any pending booking actions
+    console.log('[Service Worker] Syncing bookings...');
+    // Implementation would depend on your booking queue system
+}
+
+// Message handler for communication with the app
+self.addEventListener('message', (event) => {
+    console.log('[Service Worker] Message received:', event.data);
+
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+
+    if (event.data && event.data.type === 'CACHE_URLS') {
+        event.waitUntil(
+            caches.open(DYNAMIC_CACHE).then((cache) => {
+                return cache.addAll(event.data.urls);
+            })
+        );
+    }
 });

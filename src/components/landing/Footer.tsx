@@ -120,14 +120,14 @@ export function Footer() {
                         <h4 className="text-white font-semibold mb-4 text-sm">Get in Touch</h4>
                         <div className="space-y-3">
                             <a
-                                href="mailto:hello@nego.com"
+                                href="mailto:negoentertainment@gmail.com"
                                 className="flex items-center gap-3 text-white/50 hover:text-[#df2531] transition-colors duration-300 group focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black rounded-lg px-2 py-1"
-                                aria-label="Send us an email at hello@nego.com"
+                                aria-label="Send us an email at negoentertainment@gmail.com"
                             >
                                 <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-[#df2531]/10 transition-colors duration-300" aria-hidden="true">
                                     <Envelope size={14} weight="duotone" />
                                 </div>
-                                <span className="text-sm">hello@nego.com</span>
+                                <span className="text-sm">negoentertainment@gmail.com</span>
                             </a>
                             <a
                                 href="tel:+2341234567890"
@@ -137,13 +137,13 @@ export function Footer() {
                                 <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-[#df2531]/10 transition-colors duration-300" aria-hidden="true">
                                     <Phone size={14} weight="duotone" />
                                 </div>
-                                <span className="text-sm">+234 (123) 456-7890</span>
+                                <span className="text-sm">+234 (xxx) xxx-xxxx</span>
                             </a>
                             <div className="flex items-center gap-3 text-white/50">
                                 <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center" aria-hidden="true">
                                     <MapPin size={14} weight="duotone" />
                                 </div>
-                                <span className="text-sm">Lagos, Nigeria</span>
+                                <span className="text-sm">Nigeria 🇳🇬</span>
                             </div>
                         </div>
                     </div>

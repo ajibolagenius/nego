@@ -1,21 +1,69 @@
 {
-  "name": "Negotiate",
+  "name": "Nego - Premium Talent Marketplace",
   "short_name": "Nego",
+  "description": "The premier managed marketplace connecting discerning clients with verified, elite talent. Excellence with discretion.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "categories": ["lifestyle", "social", "business", "entertainment", "escort", "agency", "modeling", "event", "celebrity", "celebrity escort", "celebrity modeling", "celebrity event", "celebrity agency", "celebrity escort", "celebrity modeling", "celebrity event", "celebrity agency", "adult", "adult entertainment", "adult escort", "adult modeling", "adult event", "adult agency", "adult escort", "adult modeling", "adult event", "adult agency"],
+  "lang": "en",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
-  "theme_color": "#000000",
-  "background_color": "#000000",
-  "display": "standalone"
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Go to your dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/web-app-manifest-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Browse",
+      "short_name": "Browse",
+      "description": "Browse talents",
+      "url": "/dashboard/browse",
+      "icons": [{ "src": "/web-app-manifest-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Messages",
+      "short_name": "Messages",
+      "description": "View messages",
+      "url": "/dashboard/messages",
+      "icons": [{ "src": "/web-app-manifest-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Wallet",
+      "short_name": "Wallet",
+      "description": "Manage your wallet",
+      "url": "/dashboard/wallet",
+      "icons": [{ "src": "/web-app-manifest-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "/dashboard/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "prefer_related_applications": false
 }
