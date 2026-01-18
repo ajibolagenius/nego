@@ -346,7 +346,7 @@ export function AnalyticsClient({
         })
     }
 
-    const handleExportChart = async (chartRef: React.RefObject<SVGSVGElement>, chartName: string, format: 'png' | 'svg') => {
+    const handleExportChart = async (chartRef: React.RefObject<SVGSVGElement | null>, chartName: string, format: 'png' | 'svg') => {
         if (!chartRef.current) {
             toast.error('Chart not available', {
                 description: 'Unable to export chart. Please try again.'
