@@ -6,7 +6,17 @@ export async function GET(request: Request) {
     const code = requestUrl.searchParams.get('code')
     const errorParam = requestUrl.searchParams.get('error')
     const errorDescription = requestUrl.searchParams.get('error_description')
-    const origin = requestUrl.origin
+
+    // Use NEXT_PUBLIC_APP_URL if available, otherwise use request origin
+    // This ensures production URLs are used even if request comes from wrong origin
+    const origin = process.env.NEXT_PUBLIC_APP_URL
+        ? new URL(process.env.NEXT_PUBLIC_APP_URL).origin
+        : requestUrl.origin
+
+    console.log('[Auth Callback] Request origin:', requestUrl.origin)
+    console.log('[Auth Callback] Using redirect origin:', origin)
+    console.log('[Auth Callback] Code:', code ? 'present' : 'missing')
+    console.log('[Auth Callback] Error:', errorParam || 'none')
 
     // Handle OAuth errors
     if (errorParam) {

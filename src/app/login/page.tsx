@@ -113,10 +113,22 @@ export default function LoginPage() {
         setError('')
         try {
             const supabase = createClient()
+
+            // Get the correct redirect URL
+            // Always use current origin - window.location.origin will be correct in production
+            const redirectUrl = `${window.location.origin}/auth/callback`
+
+            console.log('[Google Login] Redirect URL:', redirectUrl)
+            console.log('[Google Login] Current origin:', window.location.origin)
+
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${window.location.origin}/auth/callback`,
+                    redirectTo: redirectUrl,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent',
+                    },
                 },
             })
             if (error) throw error
@@ -180,10 +192,10 @@ export default function LoginPage() {
                                     aria-invalid={emailError ? 'true' : 'false'}
                                     aria-describedby={emailError ? 'email-error' : undefined}
                                     className={`w-full bg-white/5 border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none transition-colors ${emailError
-                                            ? 'border-red-500/50 focus:border-red-500'
-                                            : emailValid
-                                                ? 'border-green-500/50 focus:border-green-500'
-                                                : 'border-white/10 focus:border-[#df2531]/50'
+                                        ? 'border-red-500/50 focus:border-red-500'
+                                        : emailValid
+                                            ? 'border-green-500/50 focus:border-green-500'
+                                            : 'border-white/10 focus:border-[#df2531]/50'
                                         }`}
                                 />
                                 {emailValid && (

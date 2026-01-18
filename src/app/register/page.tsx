@@ -289,10 +289,22 @@ export default function RegisterPage() {
         localStorage.setItem('pending_oauth_role', role)
 
         const supabase = createClient()
+
+        // Get the correct redirect URL
+        // Always use current origin - window.location.origin will be correct in production
+        const redirectUrl = `${window.location.origin}/auth/callback`
+
+        console.log('[Google Signup] Redirect URL:', redirectUrl)
+        console.log('[Google Signup] Current origin:', window.location.origin)
+
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
+                redirectTo: redirectUrl,
+                queryParams: {
+                    access_type: 'offline',
+                    prompt: 'consent',
+                },
             },
         })
 
