@@ -458,7 +458,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                             return
                         }
 
-                        const newConversation = { 
+                        const newConversation = {
                             ...conversationData,
                             other_user: profile || null
                         } as Conversation & { other_user?: Profile | null }

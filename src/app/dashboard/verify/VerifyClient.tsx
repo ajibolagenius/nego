@@ -883,7 +883,7 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
 
                                                     // Handle both Error objects and string errors
                                                     const error = err instanceof Error ? err : (typeof err === 'string' ? new Error(err) : new Error(String(err)))
-                                                    
+
                                                     if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
                                                         setCameraPermission('denied')
                                                         setCameraError('Camera permission denied. Click "Request Camera Access" below to enable it.')

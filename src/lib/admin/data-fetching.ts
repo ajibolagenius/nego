@@ -98,7 +98,7 @@ export async function fetchVerifications(options?: FetchOptions): Promise<{
                 // Handle booking as array (from join) or single object
                 const bookingArray = Array.isArray(v.booking) ? v.booking : (v.booking ? [v.booking] : [])
                 const booking = bookingArray[0] || null
-                
+
                 if (!booking) {
                     return {
                         ...v,
@@ -106,11 +106,11 @@ export async function fetchVerifications(options?: FetchOptions): Promise<{
                         booking: null,
                     } as VerificationWithBooking
                 }
-                
+
                 // Handle client and talent which may also be arrays
                 const clientArray = Array.isArray(booking.client) ? booking.client : (booking.client ? [booking.client] : [])
                 const talentArray = Array.isArray(booking.talent) ? booking.talent : (booking.talent ? [booking.talent] : [])
-                
+
                 return {
                     ...v,
                     id: v.booking_id,
