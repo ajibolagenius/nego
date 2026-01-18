@@ -6,6 +6,7 @@ import { sendEmail, emailTemplates } from '@/lib/email'
 export async function GET(request: Request) {
     const requestUrl = new URL(request.url)
     const token = requestUrl.searchParams.get('token')
+    const tokenHash = requestUrl.searchParams.get('token_hash')
     const code = requestUrl.searchParams.get('code')
     const type = requestUrl.searchParams.get('type') // 'signup', 'email_change', or 'recovery'
 
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
         ? new URL(process.env.NEXT_PUBLIC_APP_URL).origin
         : requestUrl.origin
 
-    if (!token && !code) {
+    if (!token && !tokenHash && !code) {
         return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent('Invalid verification link. Please request a new one.')}`)
     }
 
@@ -38,11 +39,18 @@ export async function GET(request: Request) {
             }
 
             user = sessionData.user
-        } else if (token) {
+        } else if (token || tokenHash) {
             // Handle verification via token (OTP verification)
+            // Use token_hash if available (from generateLink), otherwise use token
+            const tokenToUse = tokenHash || token
+            const otpType = type === 'email_change' ? 'email_change'
+                : type === 'recovery' ? 'recovery'
+                    : type === 'magiclink' ? 'magiclink'
+                        : 'signup'
+
             const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
-                token_hash: token,
-                type: type === 'email_change' ? 'email_change' : type === 'recovery' ? 'recovery' : 'signup',
+                token_hash: tokenToUse,
+                type: otpType,
             })
 
             if (verifyError) {
