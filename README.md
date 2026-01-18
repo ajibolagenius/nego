@@ -38,8 +38,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Important Notes
 
-- **Root-level `.env` files**: These are tracked in Git and required for Emergent deployment. Do not commit sensitive production keys here.
 - **Local `.env` files**: These are ignored by Git for security. Use `.env.example` as a template.
+- **Do not commit sensitive production keys** to version control.
 
 ### 1. Create Environment File
 
@@ -325,12 +325,7 @@ yarn install
 
 ## 🚀 Deployment
 
-### Emergent (Production)
-The project is configured for Emergent deployment:
-- Root-level `.env` files are tracked in Git (required for Emergent)
-- See `.emergent/emergent.yml` for deployment configuration
-
-### Vercel (Recommended for Development)
+### Vercel (Recommended)
 1. Push to GitHub
 2. Import project in Vercel
 3. Add environment variables in Vercel dashboard
