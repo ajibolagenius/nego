@@ -84,6 +84,15 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Skip Vercel-specific endpoints and system endpoints
+    if (url.pathname.startsWith('/.well-known/') ||
+        url.pathname.startsWith('/_vercel/') ||
+        url.pathname.includes('vercel') ||
+        url.pathname.includes('jwe')) {
+        // Let these requests pass through without service worker interception
+        return;
+    }
+
     // API routes - Network first, fallback to cache
     if (url.pathname.startsWith('/api/')) {
         event.respondWith(networkFirstStrategy(request, API_CACHE));
