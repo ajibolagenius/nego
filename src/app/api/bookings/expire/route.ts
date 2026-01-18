@@ -3,9 +3,17 @@ import { createApiClient } from '@/lib/supabase/api'
 
 // This endpoint should be called by a cron job (e.g., Vercel Cron, external service)
 // It expires stale bookings based on configurable timeframes
+//
+// NOTE: Currently configured to run daily (0 0 * * *) due to Vercel Hobby plan limitations.
+// For hourly expiration of payment_pending bookings, upgrade to Vercel Pro plan and change
+// the schedule to "0 * * * *" in vercel.json
+//
+// Alternative: Consider client-side expiration checks or webhook-based expiration for
+// payment_pending bookings that need to expire after exactly 1 hour.
 
 const EXPIRATION_RULES = {
     // Bookings in 'payment_pending' status expire after 1 hour
+    // NOTE: With daily cron, these will expire within 24 hours instead of exactly 1 hour
     payment_pending: 1 * 60 * 60 * 1000, // 1 hour in milliseconds
     // Bookings in 'pending' status expire after 24 hours
     pending: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
