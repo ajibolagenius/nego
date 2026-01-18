@@ -16,9 +16,9 @@ export async function POST(request: Request) {
 
         // Check if user is already verified
         if (user.email_confirmed_at) {
-            return NextResponse.json({ 
+            return NextResponse.json({
                 error: 'Email is already verified',
-                alreadyVerified: true 
+                alreadyVerified: true
             }, { status: 400 })
         }
 
@@ -31,15 +31,15 @@ export async function POST(request: Request) {
 
         // Only clients need verification
         if (profile && profile.role !== 'client') {
-            return NextResponse.json({ 
+            return NextResponse.json({
                 error: 'Verification is only required for clients',
-                notRequired: true 
+                notRequired: true
             }, { status: 400 })
         }
 
         // Generate verification link using Supabase Admin API
         const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.vercel.app'}/auth/verify-email`
-        
+
         // Use Admin API to generate verification link (this doesn't send email automatically)
         const { data: linkData, error: linkError } = await apiClient.auth.admin.generateLink({
             type: 'signup',
@@ -51,9 +51,9 @@ export async function POST(request: Request) {
 
         if (linkError || !linkData?.properties?.action_link) {
             console.error('[Send Verification Email] Failed to generate verification link:', linkError)
-            return NextResponse.json({ 
+            return NextResponse.json({
                 error: 'Failed to generate verification link. Please try again.',
-                details: linkError?.message 
+                details: linkError?.message
             }, { status: 500 })
         }
 
@@ -70,19 +70,19 @@ export async function POST(request: Request) {
 
         if (!emailResult.success) {
             console.error('[Send Verification Email] Failed to send custom email:', emailResult.error)
-            return NextResponse.json({ 
+            return NextResponse.json({
                 error: 'Failed to send verification email. Please try again.',
-                details: emailResult.error 
+                details: emailResult.error
             }, { status: 500 })
         }
 
-        return NextResponse.json({ 
+        return NextResponse.json({
             success: true,
             message: 'Verification email sent successfully'
         })
     } catch (error) {
         console.error('[Send Verification Email] Unexpected error:', error)
-        return NextResponse.json({ 
+        return NextResponse.json({
             error: 'An unexpected error occurred',
             details: error instanceof Error ? error.message : 'Unknown error'
         }, { status: 500 })

@@ -188,7 +188,7 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                                 <Warning size={20} weight="duotone" className="text-amber-400 shrink-0" />
                                 <div className="flex-1">
                                     <p className="text-amber-400 text-sm font-medium">
-                                        {verificationEmailSent 
+                                        {verificationEmailSent
                                             ? 'Verification email sent! Please check your inbox.'
                                             : 'Account verification pending. Verify your email to unlock all features.'}
                                     </p>
@@ -249,8 +249,8 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                                     <Link
                                         href={item.href}
                                         className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${item.active
-                                                ? 'bg-[#df2531] text-white'
-                                                : 'text-white/60 hover:bg-white/5 hover:text-white'
+                                            ? 'bg-[#df2531] text-white'
+                                            : 'text-white/60 hover:bg-white/5 hover:text-white'
                                             }`}
                                     >
                                         <item.icon size={20} weight={item.active ? 'fill' : 'regular'} />
@@ -395,10 +395,10 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                                             {/* Status */}
                                             <div className="absolute top-3 right-3">
                                                 <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${talent.status === 'online'
-                                                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                                        : talent.status === 'booked'
-                                                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                                            : 'bg-white/10 text-white/60 border border-white/10'
+                                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                    : talent.status === 'booked'
+                                                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                        : 'bg-white/10 text-white/60 border border-white/10'
                                                     }`}>
                                                     <span className={`w-1.5 h-1.5 rounded-full ${talent.status === 'online' ? 'bg-green-400' : talent.status === 'booked' ? 'bg-amber-400' : 'bg-white/40'
                                                         }`} />
