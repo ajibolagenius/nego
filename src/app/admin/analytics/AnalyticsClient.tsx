@@ -79,7 +79,7 @@ function SimpleLineChart({
     height?: number
     hoveredPoint?: { x: number; y: number; value: number; label: string } | null
     onHover?: (point: { x: number; y: number; value: number; label: string } | null) => void
-    chartRef?: React.RefObject<SVGSVGElement>
+    chartRef?: React.RefObject<SVGSVGElement | null>
 }) {
     const values = data.map(d => d[dataKey] || 0)
     const maxValue = Math.max(...values, 1)
