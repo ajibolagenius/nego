@@ -1,0 +1,16 @@
+{
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/.next",
+  "installCommand": "cd frontend && npm install",
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/bookings/expire",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/admin/digest",
+      "schedule": "0 9 * * 1"
+    }
+  ]
+}
