@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import {
     House, User, Wallet, CalendarCheck, Heart, Gear, SignOut,
     MagnifyingGlass, Coin, ArrowRight, SpinnerGap, MapPin,
-    Plus, CaretRight, Briefcase, ChatCircle, Gift, Bell, CheckCircle, X
+    Plus, CaretRight, Briefcase, ChatCircle, Gift, Bell, CheckCircle, X, Warning, Envelope
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -75,9 +75,48 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [showSuccessBanner, setShowSuccessBanner] = useState(showVerificationSuccess)
+    const [showVerificationBanner, setShowVerificationBanner] = useState(false)
+    const [sendingVerificationEmail, setSendingVerificationEmail] = useState(false)
+    const [verificationEmailSent, setVerificationEmailSent] = useState(false)
 
     // Real-time wallet synchronization
     const { wallet } = useWallet({ userId: user.id, initialWallet })
+
+    // Check if client needs verification
+    const needsVerification = profile?.role === 'client' && !user.email_confirmed_at
+
+    // Show verification banner if needed
+    useEffect(() => {
+        if (needsVerification && !showSuccessBanner) {
+            setShowVerificationBanner(true)
+        }
+    }, [needsVerification, showSuccessBanner])
+
+    const handleSendVerificationEmail = async () => {
+        setSendingVerificationEmail(true)
+        try {
+            const response = await fetch('/api/auth/send-verification-email', {
+                method: 'POST',
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                setVerificationEmailSent(true)
+                setTimeout(() => {
+                    setShowVerificationBanner(false)
+                }, 5000)
+            } else {
+                console.error('[Dashboard] Failed to send verification email:', data.error)
+                alert(data.error || 'Failed to send verification email. Please try again.')
+            }
+        } catch (error) {
+            console.error('[Dashboard] Error sending verification email:', error)
+            alert('Failed to send verification email. Please try again.')
+        } finally {
+            setSendingVerificationEmail(false)
+        }
+    }
 
     // Use featuredTalents from props, fallback to empty array
     const talents = featuredTalents.length > 0 ? featuredTalents : []
@@ -140,7 +179,56 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                 </div>
             )}
 
-            <div className={`min-h-screen bg-black flex pt-16 lg:pt-0 pb-20 lg:pb-0 ${showSuccessBanner && profile?.role === 'client' ? 'pt-16' : ''}`}>
+            {/* Verification Pending Banner */}
+            {showVerificationBanner && needsVerification && (
+                <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500/10 border-b border-amber-500/20 backdrop-blur-xl">
+                    <div className="max-w-7xl mx-auto px-4 py-3">
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 flex-1">
+                                <Warning size={20} weight="duotone" className="text-amber-400 shrink-0" />
+                                <div className="flex-1">
+                                    <p className="text-amber-400 text-sm font-medium">
+                                        {verificationEmailSent 
+                                            ? 'Verification email sent! Please check your inbox.'
+                                            : 'Account verification pending. Verify your email to unlock all features.'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {!verificationEmailSent && (
+                                    <Button
+                                        onClick={handleSendVerificationEmail}
+                                        disabled={sendingVerificationEmail}
+                                        size="sm"
+                                        className="bg-amber-500 hover:bg-amber-600 text-white text-xs px-3 py-1.5 h-auto"
+                                    >
+                                        {sendingVerificationEmail ? (
+                                            <>
+                                                <SpinnerGap size={14} className="animate-spin mr-1.5" />
+                                                Sending...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Envelope size={14} className="mr-1.5" />
+                                                Send Verification Email
+                                            </>
+                                        )}
+                                    </Button>
+                                )}
+                                <button
+                                    onClick={() => setShowVerificationBanner(false)}
+                                    className="text-amber-400/60 hover:text-amber-400 transition-colors"
+                                    aria-label="Dismiss notification"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className={`min-h-screen bg-black flex pt-16 lg:pt-0 pb-20 lg:pb-0 ${(showSuccessBanner || showVerificationBanner) && profile?.role === 'client' ? 'pt-16' : ''}`}>
                 {/* Sidebar - Fixed on desktop */}
                 <aside className="hidden lg:flex flex-col w-64 bg-white/5 border-r border-white/10 fixed left-0 top-0 h-screen z-30 overflow-y-auto">
                     {/* Logo */}

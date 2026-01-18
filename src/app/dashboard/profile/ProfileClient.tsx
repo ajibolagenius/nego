@@ -385,12 +385,17 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
                                 }`}>
                                 {userRole === 'talent' ? 'Talent' : 'Client'}
                             </span>
-                            {profile?.is_verified && (
+                            {profile?.is_verified ? (
                                 <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
                                     <CheckCircle size={12} weight="fill" />
                                     Verified
                                 </span>
-                            )}
+                            ) : userRole === 'client' && !user.email_confirmed_at ? (
+                                <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                    <Warning size={12} weight="fill" />
+                                    Verification Pending
+                                </span>
+                            ) : null}
                         </div>
 
                         {/* Username (for talents only) */}
