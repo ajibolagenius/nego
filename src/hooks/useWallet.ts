@@ -43,26 +43,33 @@ export function useWallet({ userId, initialWallet, autoRefresh = true }: UseWall
                 .from('wallets')
                 .select('*')
                 .eq('user_id', userId)
-                .single()
+                .maybeSingle()
 
-            if (fetchError) throw fetchError
+            if (fetchError) {
+                // Only throw if it's not a "no rows" error
+                if (fetchError.code !== 'PGRST116') {
+                    throw fetchError
+                }
+                // PGRST116 means no wallet exists, which is fine - we'll create one
+            }
 
             if (data) {
                 setWallet(data)
             } else {
-                // Wallet doesn't exist, create it
-                const { data: newWallet, error: createError } = await supabase
-                    .from('wallets')
-                    .insert({ user_id: userId, balance: 0, escrow_balance: 0 })
-                    .select()
-                    .single()
-
-                if (createError) throw createError
-                if (newWallet) setWallet(newWallet)
+                // Wallet doesn't exist - use default wallet
+                // Note: Wallets should be created by the handle_new_user() database trigger
+                // If it doesn't exist, we'll use a default until it's created server-side
+                setWallet({ user_id: userId, balance: 0, escrow_balance: 0 } as Wallet)
             }
         } catch (err) {
-            console.error('[useWallet] Error fetching wallet:', err)
-            setError('Failed to load wallet')
+            // Only log non-expected errors
+            const error = err as { code?: string }
+            if (error.code !== 'PGRST116') {
+                console.error('[useWallet] Error fetching wallet:', err)
+                setError('Failed to load wallet')
+            }
+            // Set default wallet on error (wallet should be created by database trigger)
+            setWallet({ user_id: userId, balance: 0, escrow_balance: 0 } as Wallet)
         } finally {
             setLoading(false)
         }

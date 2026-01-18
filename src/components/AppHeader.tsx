@@ -42,11 +42,14 @@ export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
                         .from('profiles')
                         .select('role')
                         .eq('id', user.id)
-                        .single()
+                        .maybeSingle()
 
                     if (error) {
-                        console.error('[AppHeader] Error fetching profile:', error)
-                        // Fallback to 'client' if query fails
+                        // Only log non-404 errors (PGRST116 is expected when profile doesn't exist)
+                        if (error.code !== 'PGRST116') {
+                            console.error('[AppHeader] Error fetching profile:', error)
+                        }
+                        // Fallback to 'client' if query fails or profile doesn't exist
                         setRole('client')
                     } else {
                         setRole(profile?.role || 'client')
