@@ -1,7 +1,7 @@
 // Comprehensive PWA Service Worker for Nego
-// Version: 2.0.0
+// Version: 2.1.0 - Fixed Supabase API request handling
 
-const CACHE_VERSION = 'nego-pwa-v2.0.0';
+const CACHE_VERSION = 'nego-pwa-v2.1.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
@@ -63,6 +63,33 @@ self.addEventListener('activate', (event) => {
                 })
             );
         }).then(() => {
+            // Clear any cached Supabase API responses that might cause 406 errors
+            return Promise.all([
+                caches.open(DYNAMIC_CACHE),
+                caches.open(API_CACHE),
+                caches.open(STATIC_CACHE)
+            ]).then((cacheArray) => {
+                return Promise.all(
+                    cacheArray.map((cache) => {
+                        return cache.keys().then((keys) => {
+                            return Promise.all(
+                                keys.map((request) => {
+                                    const url = new URL(request.url);
+                                    // Delete any Supabase API requests from cache
+                                    if (url.hostname.includes('supabase.co') &&
+                                        (url.pathname.startsWith('/rest/v1/') ||
+                                         url.pathname.startsWith('/auth/v1/') ||
+                                         url.pathname.startsWith('/storage/v1/'))) {
+                                        console.log('[Service Worker] Clearing cached Supabase request:', url.pathname);
+                                        return cache.delete(request);
+                                    }
+                                })
+                            );
+                        });
+                    })
+                );
+            });
+        }).then(() => {
             // Take control of all pages immediately
             return self.clients.claim();
         })
@@ -74,13 +101,40 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // Skip non-GET requests
-    if (request.method !== 'GET') {
+    // Skip chrome-extension and other non-http(s) requests
+    if (!url.protocol.startsWith('http')) {
         return;
     }
 
-    // Skip chrome-extension and other non-http(s) requests
-    if (!url.protocol.startsWith('http')) {
+    // Skip Supabase REST API calls FIRST - these should always go directly to network
+    // Supabase handles caching and we don't want service worker interference
+    // This must be checked before any other logic to ensure Supabase requests bypass the service worker
+    if (url.hostname.includes('supabase.co') &&
+        (url.pathname.startsWith('/rest/v1/') ||
+            url.pathname.startsWith('/auth/v1/') ||
+            url.pathname.startsWith('/storage/v1/'))) {
+        // Let Supabase API requests pass through without service worker interception
+        // Also clear any cached bad responses for Supabase requests
+        event.respondWith(
+            caches.match(request).then((cachedResponse) => {
+                if (cachedResponse) {
+                    // Delete cached response if it exists (might be a bad 406 response)
+                    caches.open(DYNAMIC_CACHE).then((cache) => {
+                        cache.delete(request);
+                    });
+                }
+                // Always fetch fresh from network for Supabase requests
+                return fetch(request);
+            }).catch(() => {
+                // If fetch fails, try network anyway
+                return fetch(request);
+            })
+        );
+        return;
+    }
+
+    // Skip non-GET requests (after Supabase check)
+    if (request.method !== 'GET') {
         return;
     }
 
@@ -100,16 +154,6 @@ self.addEventListener('fetch', (event) => {
         request.headers.get('RSC') === '1' ||
         request.headers.get('Next-Router-Prefetch') === '1') {
         // Let RSC requests pass through without service worker interception
-        return;
-    }
-
-    // Skip Supabase REST API calls - these should always go directly to network
-    // Supabase handles caching and we don't want service worker interference
-    if (url.hostname.includes('supabase.co') &&
-        (url.pathname.startsWith('/rest/v1/') ||
-            url.pathname.startsWith('/auth/v1/') ||
-            url.pathname.startsWith('/storage/v1/'))) {
-        // Let Supabase API requests pass through without service worker interception
         return;
     }
 
