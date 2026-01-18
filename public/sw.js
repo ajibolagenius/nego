@@ -105,10 +105,10 @@ self.addEventListener('fetch', (event) => {
 
     // Skip Supabase REST API calls - these should always go directly to network
     // Supabase handles caching and we don't want service worker interference
-    if (url.hostname.includes('supabase.co') && 
-        (url.pathname.startsWith('/rest/v1/') || 
-         url.pathname.startsWith('/auth/v1/') ||
-         url.pathname.startsWith('/storage/v1/'))) {
+    if (url.hostname.includes('supabase.co') &&
+        (url.pathname.startsWith('/rest/v1/') ||
+            url.pathname.startsWith('/auth/v1/') ||
+            url.pathname.startsWith('/storage/v1/'))) {
         // Let Supabase API requests pass through without service worker interception
         return;
     }
