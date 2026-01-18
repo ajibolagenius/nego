@@ -105,6 +105,12 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
             // Get VAPID public key from server
             const vapidKeyResponse = await fetch('/api/push/vapid-key')
             if (!vapidKeyResponse.ok) {
+                // VAPID keys are optional - push notifications won't work without them
+                if (vapidKeyResponse.status === 503) {
+                    // Service unavailable - VAPID not configured (non-critical)
+                    console.info('[PushNotificationManager] Push notifications are not configured. VAPID keys are optional.')
+                    throw new Error('Push notifications are not configured. This is an optional feature.')
+                }
                 throw new Error('Failed to get VAPID key. Push notifications may not be configured.')
             }
 
@@ -164,11 +170,20 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
             }
 
         } catch (error) {
-            console.error('[PushNotificationManager] Subscription error:', error)
             const errorMessage = error instanceof Error ? error.message : 'Failed to enable notifications'
-            // Permission denied is handled by the UI state
-            if (errorMessage.includes('denied')) {
+
+            // Handle different error types appropriately
+            if (errorMessage.includes('not configured') || errorMessage.includes('optional')) {
+                // VAPID keys not configured - this is expected if push notifications aren't set up
+                console.info('[PushNotificationManager] Push notifications are not configured. This is an optional feature.')
+                setPermission('unsupported')
+            } else if (errorMessage.includes('denied')) {
+                // Permission denied is handled by the UI state
+                console.warn('[PushNotificationManager] Notification permission denied')
                 setPermission('denied')
+            } else {
+                // Other errors - log for debugging
+                console.error('[PushNotificationManager] Subscription error:', error)
             }
         } finally {
             setLoading(false)
