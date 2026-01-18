@@ -93,6 +93,16 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Skip Next.js RSC (React Server Component) prefetch requests
+    // These are handled by Next.js and shouldn't be cached by service worker
+    if (url.searchParams.has('_rsc') ||
+        url.searchParams.has('_next') ||
+        request.headers.get('RSC') === '1' ||
+        request.headers.get('Next-Router-Prefetch') === '1') {
+        // Let RSC requests pass through without service worker interception
+        return;
+    }
+
     // API routes - Network first, fallback to cache
     if (url.pathname.startsWith('/api/')) {
         event.respondWith(networkFirstStrategy(request, API_CACHE));
