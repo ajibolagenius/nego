@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import {
     House, User, Wallet, CalendarCheck, Heart, Gear, SignOut,
     MagnifyingGlass, Coin, ArrowRight, SpinnerGap, MapPin,
-    Plus, CaretRight, Briefcase, ChatCircle, Gift, Bell
+    Plus, CaretRight, Briefcase, ChatCircle, Gift, Bell, CheckCircle, X
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -41,6 +41,7 @@ interface DashboardClientProps {
     featuredTalents?: TalentWithMenu[]
     activeBookings?: number
     favoritesCount?: number
+    showVerificationSuccess?: boolean
 }
 
 // Navigation items for clients
@@ -70,9 +71,10 @@ const talentNavItems = [
     { icon: Gear, label: 'Settings', href: '/dashboard/settings' },
 ]
 
-export function DashboardClient({ user, profile, wallet: initialWallet, featuredTalents = [], activeBookings = 0, favoritesCount = 0 }: DashboardClientProps) {
+export function DashboardClient({ user, profile, wallet: initialWallet, featuredTalents = [], activeBookings = 0, favoritesCount = 0, showVerificationSuccess = false }: DashboardClientProps) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
+    const [showSuccessBanner, setShowSuccessBanner] = useState(showVerificationSuccess)
 
     // Real-time wallet synchronization
     const { wallet } = useWallet({ userId: user.id, initialWallet })
@@ -117,7 +119,28 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
 
     return (
         <>
-            <div className="min-h-screen bg-black flex pt-16 lg:pt-0 pb-20 lg:pb-0">
+            {/* Verification Success Banner */}
+            {showSuccessBanner && profile?.role === 'client' && (
+                <div className="fixed top-0 left-0 right-0 z-50 bg-green-500/10 border-b border-green-500/20 backdrop-blur-xl">
+                    <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <CheckCircle size={20} weight="duotone" className="text-green-400 shrink-0" />
+                            <p className="text-green-400 text-sm font-medium">
+                                Email verified successfully! Your account is now fully activated.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setShowSuccessBanner(false)}
+                            className="text-green-400/60 hover:text-green-400 transition-colors"
+                            aria-label="Dismiss notification"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <div className={`min-h-screen bg-black flex pt-16 lg:pt-0 pb-20 lg:pb-0 ${showSuccessBanner && profile?.role === 'client' ? 'pt-16' : ''}`}>
                 {/* Sidebar - Fixed on desktop */}
                 <aside className="hidden lg:flex flex-col w-64 bg-white/5 border-r border-white/10 fixed left-0 top-0 h-screen z-30 overflow-y-auto">
                     {/* Logo */}

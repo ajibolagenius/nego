@@ -218,6 +218,9 @@ export default function RegisterPage() {
             const supabase = createClient()
 
             // Sign up with role in metadata - DB trigger will handle profile creation
+            // Set email redirect URL for verification (clients need email verification)
+            const verificationUrl = `${window.location.origin}/auth/verify-email`
+            
             const { data, error } = await supabase.auth.signUp({
                 email: email.trim().toLowerCase(),
                 password,
@@ -227,6 +230,7 @@ export default function RegisterPage() {
                         role: role,
                         username: role === 'talent' ? username.trim().toLowerCase() : null,
                     },
+                    emailRedirectTo: verificationUrl,
                 },
             })
 
@@ -270,8 +274,12 @@ export default function RegisterPage() {
                     router.refresh()
                 }
             } else if (data.user && !data.session) {
-                // Email confirmation might be required
-                setError('Account created! Please check your email to confirm, then sign in.')
+                // Email confirmation is required (especially for clients)
+                if (role === 'client') {
+                    setError('Account created! Please check your email to verify your account, then sign in.')
+                } else {
+                    setError('Account created! Please check your email to confirm, then sign in.')
+                }
                 setTimeout(() => {
                     router.push('/login')
                 }, 2000)

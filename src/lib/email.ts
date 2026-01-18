@@ -462,6 +462,87 @@ export const emailTemplates = {
       </div>
     `),
   }),
+
+  // Email verification for clients
+  verifyEmail: (clientName: string, verificationUrl: string) => ({
+    subject: 'Verify Your Email - Nego',
+    html: emailWrapper(`
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 48px;">✉️</span>
+      </div>
+      
+      <h1 style="${styles.heading}; text-align: center;">
+        Verify Your Email Address
+      </h1>
+      
+      <p style="${styles.text}; text-align: center;">
+        Hi ${clientName}, thank you for joining Nego! Please verify your email address to complete your registration and unlock all features.
+      </p>
+      
+      <div style="${styles.card}; text-align: center;">
+        <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0 0 12px 0;">
+          WHY VERIFY?
+        </p>
+        <p style="color: #ffffff; font-size: 15px; margin: 0; line-height: 1.6;">
+          • Secure your account<br>
+          • Access all platform features<br>
+          • Receive important updates<br>
+          • Complete bookings seamlessly
+        </p>
+      </div>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${verificationUrl}" style="${styles.button}">
+          Verify Email Address →
+        </a>
+      </div>
+      
+      <p style="${styles.text}; text-align: center; font-size: 13px; color: rgba(255,255,255,0.5);">
+        If the button doesn't work, copy and paste this link into your browser:<br>
+        <span style="color: #df2531; word-break: break-all;">${verificationUrl}</span>
+      </p>
+      
+      <p style="${styles.text}; text-align: center; font-size: 13px; color: rgba(255,255,255,0.4);">
+        This link will expire in 24 hours. If you didn't create an account, please ignore this email.
+      </p>
+    `),
+  }),
+
+  // Email verified confirmation
+  emailVerified: (clientName: string) => ({
+    subject: '✅ Email Verified - Welcome to Nego!',
+    html: emailWrapper(`
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 48px;">✅</span>
+      </div>
+      
+      <h1 style="${styles.heading}; text-align: center; color: #22c55e;">
+        Email Verified Successfully!
+      </h1>
+      
+      <p style="${styles.text}; text-align: center;">
+        Hi ${clientName}, your email has been verified. Your account is now fully activated!
+      </p>
+      
+      <div style="${styles.card}; text-align: center;">
+        <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0 0 12px 0;">
+          YOU CAN NOW
+        </p>
+        <p style="color: #ffffff; font-size: 15px; margin: 0; line-height: 1.6;">
+          • Browse our elite talent<br>
+          • Book services<br>
+          • Send gifts<br>
+          • Access all features
+        </p>
+      </div>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}/dashboard" style="${styles.button}">
+          Go to Dashboard →
+        </a>
+      </div>
+    `),
+  }),
 }
 
 // Send email function

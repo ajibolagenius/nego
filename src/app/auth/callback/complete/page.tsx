@@ -47,20 +47,35 @@ export default function AuthCallbackPage() {
                     // Check if profile exists
                     const { data: existingProfile } = await supabase
                         .from('profiles')
-                        .select('id, role')
+                        .select('id, role, is_verified')
                         .eq('id', session.user.id)
                         .single()
 
                     if (existingProfile) {
                         // Profile exists, update it
+                        const updateData: {
+                            role: string
+                            display_name: string
+                            username: string | null
+                            avatar_url: string | null
+                            is_verified?: boolean
+                            updated_at: string
+                        } = {
+                            role: pendingRole,
+                            display_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || existingProfile.role,
+                            username: session.user.user_metadata?.username || null,
+                            avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null,
+                            updated_at: new Date().toISOString()
+                        }
+
+                        // If user is a client and email is confirmed, set is_verified to true
+                        if (pendingRole === 'client' && session.user.email_confirmed_at && !existingProfile.is_verified) {
+                            updateData.is_verified = true
+                        }
+
                         const { error: updateError } = await supabase
                             .from('profiles')
-                            .update({
-                                role: pendingRole,
-                                display_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || existingProfile.role,
-                                username: session.user.user_metadata?.username || null,
-                                avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture
-                            })
+                            .update(updateData)
                             .eq('id', session.user.id)
 
                         if (updateError) {
@@ -100,22 +115,36 @@ export default function AuthCallbackPage() {
 
                     const { data: profile, error: profileError } = await supabase
                         .from('profiles')
-                        .select('role')
+                        .select('role, is_verified')
                         .eq('id', session.user.id)
                         .single()
 
                     if (profileError) {
                         console.error('[Auth Callback] Profile fetch error:', profileError)
                         // Profile might not exist, create it with default role
+                        const createData: {
+                            id: string
+                            role: string
+                            display_name: string
+                            avatar_url: string | null
+                            email: string
+                            is_verified?: boolean
+                        } = {
+                            id: session.user.id,
+                            role: 'client',
+                            display_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || 'User',
+                            avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null,
+                            email: session.user.email || ''
+                        }
+
+                        // If email is confirmed, set is_verified to true for clients
+                        if (session.user.email_confirmed_at) {
+                            createData.is_verified = true
+                        }
+
                         const { error: createError } = await supabase
                             .from('profiles')
-                            .insert({
-                                id: session.user.id,
-                                role: 'client',
-                                display_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || 'User',
-                                avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
-                                email: session.user.email || ''
-                            })
+                            .insert(createData)
 
                         if (createError) {
                             console.error('[Auth Callback] Profile creation fallback error:', createError)
@@ -125,6 +154,21 @@ export default function AuthCallbackPage() {
                         router.push('/dashboard')
                         router.refresh()
                         return
+                    }
+
+                    // Check if client's email is confirmed and update is_verified if needed
+                    if (profile.role === 'client' && session.user.email_confirmed_at && !profile.is_verified) {
+                        const { error: verifyError } = await supabase
+                            .from('profiles')
+                            .update({
+                                is_verified: true,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', session.user.id)
+
+                        if (verifyError) {
+                            console.error('[Auth Callback] Failed to update is_verified:', verifyError)
+                        }
                     }
 
                     setStatus('Redirecting...')

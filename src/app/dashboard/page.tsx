@@ -7,8 +7,13 @@ export const metadata = {
     description: 'Your personal dashboard on Nego',
 }
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+    searchParams: Promise<{ verified?: string }>
+}
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
     const supabase = await createClient()
+    const params = await searchParams
 
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -79,6 +84,7 @@ export default async function DashboardPage() {
             featuredTalents={shuffledTalents}
             activeBookings={activeBookingsCount || 0}
             favoritesCount={favoritesCount || 0}
+            showVerificationSuccess={params.verified === 'true'}
         />
     )
 }

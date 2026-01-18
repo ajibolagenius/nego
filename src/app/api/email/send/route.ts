@@ -58,6 +58,16 @@ export async function POST(request: Request) {
         recipientEmail = to
         template = emailTemplates.adminDigest(data)
         break
+
+      case 'verify_email':
+        recipientEmail = data.email
+        template = emailTemplates.verifyEmail(data.name, data.verificationUrl)
+        break
+
+      case 'email_verified':
+        recipientEmail = data.email
+        template = emailTemplates.emailVerified(data.name)
+        break
         
       default:
         return NextResponse.json({ error: 'Invalid email type' }, { status: 400 })
