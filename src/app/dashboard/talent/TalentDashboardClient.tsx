@@ -30,6 +30,7 @@ const serviceIcons: Record<string, Icon> = {
     'clock': Clock,
     'moon': Moon,
     'heart': Heart,
+    'sparkle': Sparkle,
 }
 
 interface TalentMenu {
@@ -158,8 +159,8 @@ export function TalentDashboardClient({
     const [accountName, setAccountName] = useState('')
     const [isWithdrawing, setIsWithdrawing] = useState(false)
 
-    // Minimum service price in coins (100,000 NGN = 100,000 coins)
-    const MIN_SERVICE_PRICE = 100000
+    // Minimum service price in coins (₦100,000 = 10,000 coins at 1 coin = ₦10 rate)
+    const MIN_SERVICE_PRICE = 10000
 
     const formatPrice = (price: number) => {
         return `${new Intl.NumberFormat('en-NG', {
@@ -180,7 +181,8 @@ export function TalentDashboardClient({
     const validatePrice = (price: string) => {
         const numPrice = parseInt(price)
         if (isNaN(numPrice) || numPrice < MIN_SERVICE_PRICE) {
-            setPriceError(`Minimum price is ${MIN_SERVICE_PRICE.toLocaleString()} coins (₦${MIN_SERVICE_PRICE.toLocaleString()})`)
+            const nairaEquivalent = MIN_SERVICE_PRICE * 10
+            setPriceError(`Minimum price is ${MIN_SERVICE_PRICE.toLocaleString()} coins (₦${nairaEquivalent.toLocaleString()})`)
             return false
         }
         setPriceError('')
@@ -918,7 +920,7 @@ export function TalentDashboardClient({
                                 <span>Available Balance</span>
                             </div>
                             <p className="text-3xl font-bold text-white mb-1">{(wallet?.balance || 0).toLocaleString()}</p>
-                            <p className="text-white/50 text-xs">coins available</p>
+                            <p className="text-white/50 text-xs">coins (≈ ₦{((wallet?.balance || 0) * 10).toLocaleString()})</p>
                         </div>
 
                         <div className="p-5 rounded-2xl bg-gradient-to-br from-green-500/20 to-transparent border border-green-500/30 hover:border-green-500/50 transition-colors">
@@ -1157,7 +1159,7 @@ export function TalentDashboardClient({
                                                 </p>
                                             )}
                                             <p id="price-help" className="text-white/40 text-xs mt-1.5">
-                                                Minimum: ₦{MIN_SERVICE_PRICE.toLocaleString()} ({MIN_SERVICE_PRICE.toLocaleString()} coins)
+                                                Minimum: ₦{(MIN_SERVICE_PRICE * 10).toLocaleString()} ({MIN_SERVICE_PRICE.toLocaleString()} coins)
                                             </p>
                                         </div>
                                     </div>

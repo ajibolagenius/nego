@@ -177,7 +177,10 @@ export function DashboardLayout({
                                     className="hidden sm:flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-[#df2531]/10 border border-[#df2531]/20 hover:bg-[#df2531]/20 transition-all"
                                 >
                                     <Coin size={18} weight="duotone" className="text-[#df2531]" />
-                                    <span className="text-white font-medium text-sm">{wallet?.balance || 0}</span>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-white font-medium text-sm">{wallet?.balance || 0}</span>
+                                        <span className="text-white/50 text-[10px]">₦{((wallet?.balance || 0) * 10).toLocaleString()}</span>
+                                    </div>
                                     <Plus size={14} weight="bold" className="text-[#df2531]" />
                                 </Link>
 

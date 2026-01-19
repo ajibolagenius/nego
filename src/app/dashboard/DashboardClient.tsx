@@ -365,6 +365,7 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                                 </div>
                                 <p className="text-white/50 text-xs mb-1">Coin Balance</p>
                                 <p className="text-white text-xl font-bold">{wallet?.balance?.toLocaleString() || 0}</p>
+                                <p className="text-white/40 text-xs mt-0.5">≈ ₦{((wallet?.balance || 0) * 10).toLocaleString()}</p>
                             </Link>
                             <Link href="/dashboard/bookings" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
                                 <div className="flex items-center justify-between mb-3">

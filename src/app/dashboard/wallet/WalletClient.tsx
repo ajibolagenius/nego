@@ -589,12 +589,15 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
 
                         <div className="relative">
                             <p className="text-white/70 text-sm mb-1">Available Balance</p>
-                            <div className="flex items-baseline gap-3 mb-4">
+                            <div className="flex items-baseline gap-3 mb-2">
                                 <span className="text-5xl md:text-6xl font-bold text-white">
                                     {(wallet?.balance || 0).toLocaleString()}
                                 </span>
                                 <span className="text-white/70 text-xl">coins</span>
                             </div>
+                            <p className="text-white/50 text-sm mb-4">
+                                ≈ {formatNaira((wallet?.balance || 0) * 10)} (1 coin = ₦10)
+                            </p>
 
                             <div className="flex flex-wrap gap-4">
                                 {(wallet?.escrow_balance || 0) > 0 && (

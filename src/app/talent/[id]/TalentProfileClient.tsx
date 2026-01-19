@@ -8,7 +8,7 @@ import {
     ArrowLeft, MapPin, Star, Heart, Share, Circle,
     Check, Calendar, Clock, SpinnerGap, X, ShieldCheck,
     ForkKnife, CalendarCheck, Airplane, Lock, Camera, Coin, Warning, ChatCircle, Crown, Eye,
-    ShareNetwork, Copy, CheckCircle, Moon
+    ShareNetwork, Copy, CheckCircle, Moon, Sparkle
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -45,6 +45,7 @@ const serviceIcons: Record<string, Icon> = {
     'clock': Clock,
     'moon': Moon,
     'heart': Heart,
+    'sparkle': Sparkle,
 }
 
 // Gallery Section with Free/Premium Tabs and Unlock functionality
@@ -598,10 +599,14 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
     const [currentBalance, setCurrentBalance] = useState(userBalance)
 
     const formatPrice = (price: number) => {
+        const nairaEquivalent = price * 10
         return `${new Intl.NumberFormat('en-NG', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
-        }).format(price)} coins`
+        }).format(price)} coins (₦${new Intl.NumberFormat('en-NG', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(nairaEquivalent)})`
     }
 
     // Validate booking date (must be future date)
@@ -1606,6 +1611,7 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                                             <p className={`font-bold text-xl ${hasInsufficientBalance ? 'text-amber-400' : 'text-white'}`}>
                                                 {userBalance.toLocaleString()} coins
                                             </p>
+                                            <p className="text-white/50 text-xs">≈ ₦{(userBalance * 10).toLocaleString()}</p>
                                         </div>
                                     </div>
                                     <Link
