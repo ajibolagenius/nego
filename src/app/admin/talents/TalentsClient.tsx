@@ -23,7 +23,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { StatusBadge } from '@/components/admin/StatusBadge'
 import { EmptyState } from '@/components/admin/EmptyState'
 import { LoadingSpinner } from '@/components/admin/LoadingSpinner'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
@@ -453,7 +452,20 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                                                 )}
                                             </td>
                                             <td className="px-6 py-4">
-                                                <StatusBadge status={talent.status} />
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                                                    talent.status === 'online'
+                                                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                        : talent.status === 'booked'
+                                                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                            : 'bg-white/10 text-white/60 border border-white/10'
+                                                }`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${
+                                                        talent.status === 'online' ? 'bg-green-400' :
+                                                        talent.status === 'booked' ? 'bg-amber-400' : 'bg-white/40'
+                                                    }`} />
+                                                    {talent.status === 'online' ? 'Online' :
+                                                        talent.status === 'booked' ? 'Booked' : talent.status || 'Offline'}
+                                                </span>
                                             </td>
                                             <td className="px-6 py-4">
                                                 {talent.is_verified ? (
@@ -600,7 +612,20 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                                                 <span className="text-sm font-medium">Unverified</span>
                                             </div>
                                         )}
-                                        <StatusBadge status={selectedTalent.status} />
+                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                                            selectedTalent.status === 'online'
+                                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                : selectedTalent.status === 'booked'
+                                                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                    : 'bg-white/10 text-white/60 border border-white/10'
+                                        }`}>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${
+                                                selectedTalent.status === 'online' ? 'bg-green-400' :
+                                                selectedTalent.status === 'booked' ? 'bg-amber-400' : 'bg-white/40'
+                                            }`} />
+                                            {selectedTalent.status === 'online' ? 'Online' :
+                                                selectedTalent.status === 'booked' ? 'Booked' : selectedTalent.status || 'Offline'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
