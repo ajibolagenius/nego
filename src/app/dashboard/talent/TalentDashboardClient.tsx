@@ -10,7 +10,7 @@ import {
     CurrencyDollar, CalendarCheck, Clock, Eye, EyeSlash, Star,
     CaretRight, Coin, CheckCircle, XCircle, Hourglass, X,
     Camera, MapPin, Sparkle, Receipt, ChartLine, Icon, Bank, Money, Gift,
-    Warning, SpinnerGap, ForkKnife, Airplane, Lock, Calendar, Moon, Heart
+    Warning, SpinnerGap, ForkKnife, Airplane, Lock, Calendar, Moon, Heart, CaretDown
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
@@ -18,6 +18,7 @@ import { MediaManager } from '@/components/MediaManager'
 import { ProfileImageUpload } from '@/components/ProfileImageUpload'
 import { useWallet } from '@/hooks/useWallet'
 import { getTalentUrl } from '@/lib/talent-url'
+import { NIGERIAN_LOCATIONS } from '@/lib/nigerian-locations'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet, ServiceType, Booking } from '@/types/database'
 
@@ -398,8 +399,9 @@ export function TalentDashboardClient({
             setIsSaving(false)
             return
         }
-        if (location.length > 100) {
-            setProfileError('Location must be 100 characters or less')
+        // Location validation - must be from the predefined list
+        if (location && !NIGERIAN_LOCATIONS.includes(location as any)) {
+            setProfileError('Please select a valid location from the dropdown')
             setIsSaving(false)
             return
         }
@@ -763,15 +765,22 @@ export function TalentDashboardClient({
                                     </div>
                                     <div>
                                         <label className="block text-white/70 text-sm mb-2">Location</label>
-                                        <input
-                                            type="text"
-                                            value={location}
-                                            onChange={(e) => setLocation(e.target.value)}
-                                            maxLength={100}
-                                            className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-[#df2531]"
-                                            placeholder="Your location (e.g., Lagos, Nigeria)"
-                                        />
-                                        <p className="text-white/40 text-xs mt-1">{location.length}/100 characters</p>
+                                        <div className="relative">
+                                            <select
+                                                value={location || ''}
+                                                onChange={(e) => setLocation(e.target.value)}
+                                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-[#df2531] appearance-none cursor-pointer pr-10"
+                                                aria-label="Location"
+                                            >
+                                                <option value="" className="bg-black text-white/60">Select location</option>
+                                                {NIGERIAN_LOCATIONS.map(loc => (
+                                                    <option key={loc} value={loc} className="bg-black text-white">
+                                                        {loc}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <CaretDown className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" size={16} />
+                                        </div>
                                     </div>
                                     <div className="flex gap-2">
                                         <Button

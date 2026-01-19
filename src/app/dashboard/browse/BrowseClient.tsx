@@ -12,6 +12,7 @@ import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { useFavorites } from '@/hooks/useFavorites'
 import { getTalentUrl } from '@/lib/talent-url'
+import { NIGERIAN_LOCATIONS, locationMatches } from '@/lib/nigerian-locations'
 import type { Profile, ServiceType, TalentMenu } from '@/types/database'
 
 interface TalentWithMenu extends Profile {
@@ -24,47 +25,8 @@ interface BrowseClientProps {
     userId: string
 }
 
-// All Nigerian states and FCT for location filter
-const locations = [
-    'All Locations',
-    'Abia',
-    'Adamawa',
-    'Akwa Ibom',
-    'Anambra',
-    'Bauchi',
-    'Bayelsa',
-    'Benue',
-    'Borno',
-    'Cross River',
-    'Delta',
-    'Ebonyi',
-    'Edo',
-    'Ekiti',
-    'Enugu',
-    'FCT (Abuja)',
-    'Gombe',
-    'Imo',
-    'Jigawa',
-    'Kaduna',
-    'Kano',
-    'Katsina',
-    'Kebbi',
-    'Kogi',
-    'Kwara',
-    'Lagos',
-    'Nasarawa',
-    'Niger',
-    'Ogun',
-    'Ondo',
-    'Osun',
-    'Oyo',
-    'Plateau',
-    'Rivers',
-    'Sokoto',
-    'Taraba',
-    'Yobe',
-    'Zamfara'
-]
+// All locations including "All Locations" option
+const locations = ['All Locations', ...NIGERIAN_LOCATIONS]
 
 export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProps) {
     const [searchQuery, setSearchQuery] = useState('')
@@ -86,25 +48,9 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
             )
         }
 
-        // Location filter - handle variations (e.g., "Abuja" matches "FCT (Abuja)")
+        // Location filter - handle variations using shared helper function
         if (selectedLocation !== 'All Locations') {
-            result = result.filter(t => {
-                if (!t.location) return false
-                const talentLocation = t.location.toLowerCase().trim()
-                const selectedLocationLower = selectedLocation.toLowerCase()
-
-                // Exact match
-                if (talentLocation === selectedLocationLower) return true
-
-                // Handle FCT/Abuja variations
-                if (selectedLocation === 'FCT (Abuja)') {
-                    return talentLocation.includes('abuja') || talentLocation.includes('fct')
-                }
-
-                // Handle state name variations (e.g., "Lagos State" matches "Lagos")
-                return talentLocation.includes(selectedLocationLower) ||
-                    selectedLocationLower.includes(talentLocation)
-            })
+            result = result.filter(t => locationMatches(t.location, selectedLocation))
         }
 
         // Service filter

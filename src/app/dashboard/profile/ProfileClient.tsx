@@ -8,12 +8,13 @@ import { createClient } from '@/lib/supabase/client'
 import {
     ArrowLeft, User, PencilSimple, MapPin, Envelope,
     Calendar, Coin, CalendarCheck, CheckCircle,
-    CaretRight, Star, SpinnerGap, X, Warning, Check
+    CaretRight, Star, SpinnerGap, X, Warning, Check, CaretDown
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { ProfileImageUpload } from '@/components/ProfileImageUpload'
 import { useWallet } from '@/hooks/useWallet'
+import { NIGERIAN_LOCATIONS } from '@/lib/nigerian-locations'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet } from '@/types/database'
 
@@ -59,7 +60,6 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
     const DISPLAY_NAME_MAX = 50
     const USERNAME_MIN = 3
     const USERNAME_MAX = 30
-    const LOCATION_MAX = 100
     const BIO_MAX = 500
 
     // Validate username
@@ -208,8 +208,9 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
                 return usernameError || 'Please fix the username error'
             }
         }
-        if (location.length > LOCATION_MAX) {
-            return `Location must be ${LOCATION_MAX} characters or less`
+        // Location validation - must be from the predefined list
+        if (location && !NIGERIAN_LOCATIONS.includes(location as any)) {
+            return 'Please select a valid location from the dropdown'
         }
         if (bio.length > BIO_MAX) {
             return `Bio must be ${BIO_MAX} characters or less`
@@ -554,24 +555,22 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
                         {/* Location (editable) */}
                         {isEditing ? (
                             <div className="w-full max-w-[300px] mt-2">
-                                <div className="flex items-center gap-2 justify-center">
+                                <div className="relative flex items-center gap-2 justify-center">
                                     <MapPin size={16} className="text-white/40" aria-hidden="true" />
-                                    <input
-                                        type="text"
-                                        value={location}
+                                    <select
+                                        value={location || ''}
                                         onChange={(e) => setLocation(e.target.value)}
-                                        maxLength={LOCATION_MAX}
-                                        className="text-white/60 bg-transparent border-b border-white/20 text-center outline-none text-sm flex-1 focus:border-[#df2531] transition-colors"
-                                        placeholder="Enter your location (e.g., Lagos, Nigeria)"
+                                        className="text-white/60 bg-transparent border-b border-white/20 text-center outline-none text-sm flex-1 focus:border-[#df2531] transition-colors cursor-pointer appearance-none pr-6"
                                         aria-label="Location"
-                                        aria-describedby="location-counter"
-                                    />
-                                </div>
-                                <div className="flex justify-end items-center text-xs text-white/40 mt-1">
-                                    <span id="location-counter" className="sr-only">Character count</span>
-                                    <span aria-live="polite">
-                                        {location.length}/{LOCATION_MAX}
-                                    </span>
+                                    >
+                                        <option value="" className="bg-black text-white/60">Select location</option>
+                                        {NIGERIAN_LOCATIONS.map(loc => (
+                                            <option key={loc} value={loc} className="bg-black text-white">
+                                                {loc}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <CaretDown className="absolute right-0 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" size={14} />
                                 </div>
                             </div>
                         ) : location ? (
