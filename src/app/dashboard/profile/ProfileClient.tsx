@@ -141,8 +141,9 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
 
     const userRole = profile?.role === 'talent' ? 'talent' : 'client'
 
-    // Check if client needs verification
-    const needsVerification = userRole === 'client' && !user.email_confirmed_at
+    // Check if client needs verification (based on is_verified in profiles table, not Supabase email confirmation)
+    // Show banner if is_verified is false, null, or undefined (treat null/undefined as unverified)
+    const needsVerification = userRole === 'client' && profile?.is_verified !== true
 
     // Show verification banner if needed
     useEffect(() => {

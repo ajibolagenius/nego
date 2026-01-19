@@ -82,8 +82,9 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
     // Real-time wallet synchronization
     const { wallet } = useWallet({ userId: user.id, initialWallet })
 
-    // Check if client needs verification
-    const needsVerification = profile?.role === 'client' && !user.email_confirmed_at
+    // Check if client needs verification (based on is_verified in profiles table, not Supabase email confirmation)
+    // Show banner if is_verified is false, null, or undefined (treat null/undefined as unverified)
+    const needsVerification = profile?.role === 'client' && profile?.is_verified !== true
 
     // Show verification banner if needed
     useEffect(() => {

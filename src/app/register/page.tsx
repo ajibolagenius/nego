@@ -106,8 +106,8 @@ export default function RegisterPage() {
             setUsernameValid(false)
             return false
         }
-        if (trimmed.length > 30) {
-            setUsernameError('Username must be 30 characters or less')
+        if (trimmed.length > 20) {
+            setUsernameError('Username must be 20 characters or less')
             setUsernameValid(false)
             return false
         }
@@ -248,24 +248,34 @@ export default function RegisterPage() {
                 throw error
             }
 
-            // Update profile with username if talent
-            if (data.user && role === 'talent' && username.trim()) {
+            // Ensure profile exists (fallback if database trigger failed)
+            if (data.user) {
                 try {
-                    const { error: profileError } = await supabase
-                        .from('profiles')
-                        .update({
-                            username: username.trim().toLowerCase(),
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('id', data.user.id)
+                    // Use API route to create profile/wallet server-side (bypasses RLS)
+                    const createProfileResponse = await fetch('/api/auth/create-profile', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            userId: data.user.id,
+                            role: role,
+                            displayName: name.trim(),
+                            fullName: name.trim(),
+                            username: role === 'talent' ? username.trim().toLowerCase() : null,
+                        }),
+                    })
 
-                    if (profileError) {
-                        console.error('[Register] Error updating profile with username:', profileError)
-                        // Continue anyway, user can set it later
+                    if (!createProfileResponse.ok) {
+                        const errorData = await createProfileResponse.json().catch(() => ({}))
+                        console.error('[Register] Error creating profile via API:', errorData)
+                        // Don't throw - user is created, profile can be created later
+                    } else {
+                        console.log('[Register] Profile and wallet created successfully via API')
                     }
                 } catch (err) {
-                    console.error('[Register] Error updating profile:', err)
-                    // Continue anyway
+                    console.error('[Register] Error ensuring profile/wallet exists:', err)
+                    // Continue anyway - user is created, profile/wallet can be created later
                 }
             }
 

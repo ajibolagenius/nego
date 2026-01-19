@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { AppHeader } from "@/components/AppHeader"
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration"
@@ -26,22 +26,23 @@ export const metadata: Metadata = {
         statusBarStyle: "black-translucent",
         title: "Nego",
     },
-    viewport: {
-        width: "device-width",
-        initialScale: 1,
-        maximumScale: 5,
-        userScalable: true,
-        viewportFit: "cover",
-    },
-    themeColor: [
-        { media: "(prefers-color-scheme: light)", color: "#000000" },
-        { media: "(prefers-color-scheme: dark)", color: "#000000" },
-    ],
     other: {
         "mobile-web-app-capable": "yes",
         "apple-mobile-web-app-capable": "yes",
         "apple-mobile-web-app-status-bar-style": "black-translucent",
     },
+}
+
+export const viewport: Viewport = {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+    viewportFit: "cover",
+    themeColor: [
+        { media: "(prefers-color-scheme: light)", color: "#000000" },
+        { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    ],
 }
 
 export default function RootLayout({

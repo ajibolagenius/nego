@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Magic Link - Nego</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #000000;">
+  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(180deg, #0a0a0a 0%, #111111 100%); color: #ffffff;">
+    <!-- Header -->
+    <div style="text-align: center; padding: 40px 40px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+      <div style="font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+        <span style="color: #ffffff;">NEGO</span><span style="color: #df2531;">.</span>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div style="padding: 40px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 48px;">🔗</span>
+      </div>
+
+      <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 16px; color: #ffffff; text-align: center;">
+        Your Magic Link
+      </h1>
+
+      <p style="font-size: 15px; line-height: 1.6; color: rgba(255,255,255,0.7); margin-bottom: 24px; text-align: center;">
+        Hi {{ .Email }}, click the button below to sign in to your Nego account. This one-time link will log you in instantly—no password needed.
+      </p>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; margin: 24px 0; text-align: center;">
+        <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0 0 12px 0;">
+          QUICK & SECURE
+        </p>
+        <p style="color: #ffffff; font-size: 15px; margin: 0; line-height: 1.6;">
+          • One-click sign in<br>
+          • No password required<br>
+          • Secure and encrypted<br>
+          • Link expires in 1 hour
+        </p>
+      </div>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="{{ .ConfirmationURL }}" style="display: inline-block; background: #df2531; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 15px;">
+          Log In →
+        </a>
+      </div>
+
+      <p style="font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.5); margin-bottom: 24px; text-align: center;">
+        If the button doesn't work, copy and paste this link into your browser:<br>
+        <span style="color: #df2531; word-break: break-all;">{{ .ConfirmationURL }}</span>
+      </p>
+
+      <p style="font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.4); margin-bottom: 24px; text-align: center;">
+        This link will expire in 1 hour. If you didn't request this magic link, please ignore this email. Your account remains secure.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; padding: 32px 40px; border-top: 1px solid rgba(255,255,255,0.05);">
+      <p style="font-size: 12px; color: rgba(255,255,255,0.4); margin: 0;">
+        © 2025 Nego. All rights reserved.
+      </p>
+      <p style="font-size: 12px; color: rgba(255,255,255,0.4); margin: 8px 0 0 0;">
+        Excellence with discretion.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
