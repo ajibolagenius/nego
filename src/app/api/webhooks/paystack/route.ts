@@ -29,15 +29,22 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
         }
 
-        const event = JSON.parse(bodyText)
+        const event = JSON.parse(bodyText) as {
+            event: string
+            data?: {
+                reference: string
+                amount: number
+                customer?: unknown
+            }
+        }
         console.log('[Paystack Webhook] Event received:', event.event)
 
         // Only process successful charges
-        if (event.event !== 'charge.success') {
+        if (event.event !== 'charge.success' || !event.data) {
             return NextResponse.json({ status: 'ignored' })
         }
 
-        const { reference, amount, customer } = event.data
+        const { reference, amount } = event.data
         const amountInNaira = amount / 100 // Convert from kobo to naira
 
         // Use API client (service role) to bypass RLS for wallet operations
@@ -70,32 +77,26 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Amount mismatch' }, { status: 400 })
         }
 
-        // Update transaction status to completed
-        const { error: updateError } = await supabase
+        // Update transaction status to completed (only if still pending - prevents double processing)
+        const { data: updatedTransaction, error: updateError } = await supabase
             .from('transactions')
             .update({
                 status: 'completed',
                 updated_at: new Date().toISOString(),
             })
             .eq('id', transaction.id)
+            .eq('status', 'pending') // Atomic check: only update if still pending
+            .select()
+            .single()
 
-        if (updateError) {
-            console.error('[Paystack Webhook] Failed to update transaction:', updateError)
-
-            // Create failure notification
-            await supabase.from('notifications').insert({
-                user_id: transaction.user_id,
-                type: 'purchase_failed',
-                title: 'Purchase Failed ❌',
-                message: `Your purchase could not be processed. Please contact support. Reference: ${reference}`,
-                data: {
-                    transaction_id: transaction.id,
-                    reference: reference,
-                    error: 'Transaction update failed',
-                },
+        if (updateError || !updatedTransaction) {
+            // Transaction was already processed (likely by verification endpoint)
+            console.log('[Paystack Webhook] Transaction already processed or update failed:', updateError)
+            // Return success since transaction was already handled
+            return NextResponse.json({
+                status: 'success',
+                message: 'Transaction already processed'
             })
-
-            return NextResponse.json({ error: 'Update failed' }, { status: 500 })
         }
 
         // Credit coins to user's wallet

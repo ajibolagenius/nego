@@ -19,6 +19,12 @@ import type { Profile, Wallet, Transaction } from '@/types/database'
 import { COIN_PACKAGES, formatNaira, type CoinPackage } from '@/lib/coinPackages'
 
 // Declare Paystack global type
+interface PaystackResponse {
+    reference: string
+    status: string
+    transaction: string
+}
+
 declare global {
     interface Window {
         PaystackPop: {
@@ -28,7 +34,7 @@ declare global {
                 amount: number
                 currency: string
                 ref: string
-                callback: (response: unknown) => void
+                callback: (response: PaystackResponse) => void
                 onClose: () => void
             }) => { openIframe: () => void }
         }
@@ -115,8 +121,42 @@ function PaymentModal({
                 amount: pkg.priceInKobo,
                 currency: 'NGN',
                 ref: reference,
-                callback: () => {
-                    onSuccess()
+                callback: async (response: PaystackResponse) => {
+                    // Verify payment status with our API (works for test API where webhooks don't reach localhost)
+                    try {
+                        console.log('[PaymentModal] Payment callback received, verifying payment...')
+                        const verifyResponse = await fetch('/api/transactions/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ reference: response.reference || reference }),
+                        })
+
+                        if (!verifyResponse.ok) {
+                            const errorData = await verifyResponse.json()
+
+                            // If transaction was already processed (by webhook), that's okay - just refresh
+                            if (verifyResponse.status === 409 && errorData.alreadyCompleted) {
+                                console.log('[PaymentModal] Transaction already processed by webhook, refreshing...')
+                                onSuccess()
+                                return
+                            }
+
+                            console.error('[PaymentModal] Payment verification failed:', errorData)
+                            setError(errorData.error || 'Payment verification failed. Please contact support.')
+                            setIsProcessing(false)
+                            return
+                        }
+
+                        const verifyData = await verifyResponse.json()
+                        console.log('[PaymentModal] Payment verified successfully:', verifyData)
+
+                        // Call onSuccess to refresh wallet and show success modal
+                        onSuccess()
+                    } catch (verifyError) {
+                        console.error('[PaymentModal] Error verifying payment:', verifyError)
+                        // Still call onSuccess - the webhook might handle it, or user can refresh
+                        onSuccess()
+                    }
                 },
                 onClose: () => {
                     setIsProcessing(false)
@@ -551,33 +591,33 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                 <div className="max-w-4xl mx-auto px-4 py-6 pt-[128px] lg:pt-6 space-y-6">
                     {/* Search Bar - Only show in history tab */}
                     {activeTab === 'history' && transactions.length > 0 && (
-                            <div className="relative">
-                                <MagnifyingGlass
-                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
-                                    size={18}
-                                    aria-hidden="true"
-                                />
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search transactions by description, type, or ID..."
-                                    autoComplete="off"
-                                    aria-label="Search transactions"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50"
-                                />
-                                {searchQuery && (
-                                    <button
-                                        onClick={clearSearch}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
-                                        aria-label="Clear search"
-                                        title="Clear search"
-                                    >
-                                        <X size={18} aria-hidden="true" />
-                                    </button>
-                                )}
-                            </div>
-                        )}
+                        <div className="relative">
+                            <MagnifyingGlass
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
+                                size={18}
+                                aria-hidden="true"
+                            />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search transactions by description, type, or ID..."
+                                autoComplete="off"
+                                aria-label="Search transactions"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50"
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={clearSearch}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                                    aria-label="Clear search"
+                                    title="Clear search"
+                                >
+                                    <X size={18} aria-hidden="true" />
+                                </button>
+                            )}
+                        </div>
+                    )}
                     {/* Balance Card */}
                     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#df2531] via-[#b91c26] to-[#7a1219] p-6 md:p-8">
                         {/* Decorative elements */}
