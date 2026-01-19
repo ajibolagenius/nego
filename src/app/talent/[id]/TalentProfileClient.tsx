@@ -8,7 +8,7 @@ import {
     ArrowLeft, MapPin, Star, Heart, Share, Circle,
     Check, Calendar, Clock, SpinnerGap, X, ShieldCheck,
     ForkKnife, CalendarCheck, Airplane, Lock, Camera, Coin, Warning, ChatCircle, Crown, Eye,
-    ShareNetwork, Copy, CheckCircle
+    ShareNetwork, Copy, CheckCircle, Moon
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -42,6 +42,9 @@ const serviceIcons: Record<string, Icon> = {
     'plane': Airplane,
     'lock': Lock,
     'camera': Camera,
+    'clock': Clock,
+    'moon': Moon,
+    'heart': Heart,
 }
 
 // Gallery Section with Free/Premium Tabs and Unlock functionality

@@ -10,7 +10,7 @@ import {
     CurrencyDollar, CalendarCheck, Clock, Eye, EyeSlash, Star,
     CaretRight, Coin, CheckCircle, XCircle, Hourglass, X,
     Camera, MapPin, Sparkle, Receipt, ChartLine, Icon, Bank, Money, Gift,
-    Warning, SpinnerGap, ForkKnife, Airplane, Lock, Calendar
+    Warning, SpinnerGap, ForkKnife, Airplane, Lock, Calendar, Moon, Heart
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
@@ -27,6 +27,9 @@ const serviceIcons: Record<string, Icon> = {
     'plane': Airplane,
     'lock': Lock,
     'camera': Camera,
+    'clock': Clock,
+    'moon': Moon,
+    'heart': Heart,
 }
 
 interface TalentMenu {
