@@ -9,6 +9,7 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { useFavorites } from '@/hooks/useFavorites'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile, ServiceType, TalentMenu } from '@/types/database'
@@ -228,13 +229,17 @@ function TalentCard({ talent, formatPrice, userId }: { talent: TalentWithMenu; f
             className="group bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:border-[#df2531]/30 transition-all duration-300"
         >
             <div className="aspect-[3/4] relative overflow-hidden">
-                <Image
-                    src={talent.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80'}
-                    alt={talent.display_name || 'Talent'}
-                    fill
-                    sizes="(max-width: 768px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                />
+                {talent.avatar_url ? (
+                    <Image
+                        src={talent.avatar_url}
+                        alt={talent.display_name || 'Talent'}
+                        fill
+                        sizes="(max-width: 768px) 50vw, 33vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                ) : (
+                    <AvatarPlaceholder size="md" />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
                 {/* Status Badge */}

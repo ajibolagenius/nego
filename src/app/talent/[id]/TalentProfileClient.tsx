@@ -16,6 +16,7 @@ import { ReviewCard, ReviewSummary } from '@/components/Reviews'
 import { GiftCoins } from '@/components/GiftCoins'
 import { GiftLeaderboard } from '@/components/GiftLeaderboard'
 import { MediaLightbox } from '@/components/MediaLightbox'
+import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useWallet } from '@/hooks/useWallet'
 import type { Profile, ServiceType, TalentMenu, Media, Wallet, Review } from '@/types/database'
@@ -1085,14 +1086,18 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                 <div className="flex flex-col md:flex-row gap-6 mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                     {/* Avatar Section */}
                     <div className="relative w-full md:w-72 aspect-[3/4] rounded-2xl overflow-hidden shrink-0 group">
-                        <Image
-                            src={talent.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&q=80'}
-                            alt={talent.display_name || 'Talent profile picture'}
-                            fill
-                            sizes="(max-width: 768px) 100vw, 288px"
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                            priority
-                        />
+                        {talent.avatar_url ? (
+                            <Image
+                                src={talent.avatar_url}
+                                alt={talent.display_name || 'Talent profile picture'}
+                                fill
+                                sizes="(max-width: 768px) 100vw, 288px"
+                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                priority
+                            />
+                        ) : (
+                            <AvatarPlaceholder className="rounded-2xl" size="lg" />
+                        )}
                         {/* Gradient Overlay */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 

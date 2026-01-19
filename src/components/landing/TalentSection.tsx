@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { MapPin, Heart, Eye, ArrowRight, SpinnerGap, CaretLeft, CaretRight } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { createClient } from '@/lib/supabase/client'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile } from '@/types/database'
@@ -29,13 +30,17 @@ function TalentCard({ talent, index, isVisible }: TalentCardProps) {
             onMouseLeave={() => setIsHovered(false)}
         >
             <div className="aspect-[3/4] overflow-hidden relative">
-                <Image
-                    src={talent.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80'}
-                    alt={`${talent.display_name || 'Talent'} profile - ${talent.location || 'Location not specified'}`}
-                    fill
-                    sizes="(max-width: 640px) 160px, (max-width: 768px) 200px, 240px"
-                    className="object-cover transition-all duration-700 group-hover:scale-110"
-                />
+                {talent.avatar_url ? (
+                    <Image
+                        src={talent.avatar_url}
+                        alt={`${talent.display_name || 'Talent'} profile - ${talent.location || 'Location not specified'}`}
+                        fill
+                        sizes="(max-width: 640px) 160px, (max-width: 768px) 200px, 240px"
+                        className="object-cover transition-all duration-700 group-hover:scale-110"
+                    />
+                ) : (
+                    <AvatarPlaceholder size="md" />
+                )}
 
                 {/* Overlay gradient */}
                 <div className={`absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent transition-opacity duration-500 ${isHovered ? 'opacity-100' : 'opacity-70'}`} />

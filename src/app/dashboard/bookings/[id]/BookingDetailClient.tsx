@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { useWallet } from '@/hooks/useWallet'
 import { WriteReviewModal } from '@/components/Reviews'
+import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { getTalentUrl } from '@/lib/talent-url'
 import { toast } from 'sonner'
 import type { Profile, Wallet, BookingStatus, Review } from '@/types/database'
@@ -441,13 +442,17 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                     className="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/10 hover:border-white/20 transition-colors"
                 >
                     <div className="relative w-16 h-16 rounded-full overflow-hidden">
-                        <Image
-                            src={booking.talent.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80'}
-                            alt={booking.talent.display_name || 'Talent'}
-                            fill
-                            sizes="64px"
-                            className="object-cover"
-                        />
+                        {booking.talent.avatar_url ? (
+                            <Image
+                                src={booking.talent.avatar_url}
+                                alt={booking.talent.display_name || 'Talent'}
+                                fill
+                                sizes="64px"
+                                className="object-cover"
+                            />
+                        ) : (
+                            <AvatarPlaceholder className="rounded-full" size="sm" />
+                        )}
                     </div>
                     <div className="flex-1">
                         <p className="text-white font-semibold">{booking.talent.display_name || 'Talent'}</p>

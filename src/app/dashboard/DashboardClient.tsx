@@ -14,6 +14,7 @@ import { createClient } from '@/lib/supabase/client'
 import { NotificationBell } from '@/components/NotificationBell'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { OnboardingModal, useOnboarding } from '@/components/OnboardingModal'
+import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { useWallet } from '@/hooks/useWallet'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet as WalletType } from '@/types/database'
@@ -410,13 +411,17 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                                         className="group bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:border-[#df2531]/30 transition-all duration-300"
                                     >
                                         <div className="aspect-[3/4] relative overflow-hidden">
-                                            <Image
-                                                src={talent.avatar_url || 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80'}
-                                                alt={talent.display_name || 'Talent'}
-                                                fill
-                                                sizes="(max-width: 768px) 50vw, 25vw"
-                                                className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                            />
+                                            {talent.avatar_url ? (
+                                                <Image
+                                                    src={talent.avatar_url}
+                                                    alt={talent.display_name || 'Talent'}
+                                                    fill
+                                                    sizes="(max-width: 768px) 50vw, 25vw"
+                                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                                />
+                                            ) : (
+                                                <AvatarPlaceholder size="md" />
+                                            )}
                                             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
 
                                             {/* Status */}
