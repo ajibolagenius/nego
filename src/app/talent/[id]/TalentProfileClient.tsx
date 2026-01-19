@@ -58,6 +58,8 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
     const [activeTab, setActiveTab] = useState<'free' | 'premium'>('free')
     const [unlocking, setUnlocking] = useState<string | null>(null)
     const [unlockedMedia, setUnlockedMedia] = useState<Set<string>>(new Set())
+    const [isMobile, setIsMobile] = useState<boolean>(false)
+    const [showAll, setShowAll] = useState<boolean>(false)
 
     const freeMedia = media.filter(m => !m.is_premium)
     const premiumMedia = media.filter(m => m.is_premium)
@@ -87,8 +89,31 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
         }
     }, [userId, media])
 
+    // Track viewport size for responsive media limits
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768)
+        }
+
+        handleResize()
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
+
+    // Reset "View More" state when switching between free/premium tabs
+    useEffect(() => {
+        setShowAll(false)
+    }, [activeTab])
+
     // Don't render if no media at all
     if (media.length === 0) return null
+
+    // Determine how many media items to show based on screen size
+    const baseLimit = isMobile ? 6 : 9
+    const effectiveLimit = showAll ? currentMedia.length : baseLimit
+    const visibleMedia = currentMedia.slice(0, effectiveLimit)
 
     const handleUnlock = async (item: Media, e?: React.MouseEvent) => {
         e?.stopPropagation()
@@ -179,8 +204,9 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
                     )}
                 </div>
             ) : (
-                <div className="grid grid-cols-3 gap-3">
-                    {currentMedia.map((item) => {
+                <>
+                    <div className="grid grid-cols-3 gap-3">
+                        {visibleMedia.map((item) => {
                         const unlocked = isUnlocked(item.id)
                         const showBlur = item.is_premium && !unlocked
                         const canOpen = !item.is_premium || unlocked
@@ -271,7 +297,23 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
                             </div>
                         )
                     })}
-                </div>
+                    </div>
+
+                    {currentMedia.length > baseLimit && (
+                        <div className="mt-4 flex justify-center">
+                            <button
+                                type="button"
+                                onClick={() => setShowAll(prev => !prev)}
+                                className="px-4 py-2 rounded-full text-sm font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                aria-label={showAll ? 'View fewer media items' : 'View more media items'}
+                            >
+                                {showAll
+                                    ? 'View Less'
+                                    : `View More (${currentMedia.length - visibleMedia.length} more)`}
+                            </button>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     )
