@@ -621,6 +621,7 @@ export function PayoutsClient({
                                                 src={talent.avatar_url}
                                                 alt={talent.display_name || ''}
                                                 fill
+                                                sizes="48px"
                                                 className="object-cover"
                                             />
                                         ) : (

@@ -203,6 +203,7 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
                                         src={item.url}
                                         alt="Gallery"
                                         fill
+                                        sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                                         className={`object-cover transition-all ${showBlur ? 'blur-xl scale-110' : ''}`}
                                     />
                                 )}

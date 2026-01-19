@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createApiClient } from '@/lib/supabase/api'
 import { NextResponse } from 'next/server'
-import { sendEmail, emailTemplates } from '@/lib/email'
 
 export async function GET(request: Request) {
     const requestUrl = new URL(request.url)
@@ -99,21 +98,11 @@ export async function GET(request: Request) {
                 // Continue anyway - verification was successful, just DB update failed
             } else {
                 console.log('[Verify Email] Successfully updated is_verified for client:', user.id)
-
-                // Send confirmation email
-                try {
-                    await sendEmail(
-                        user.email || profile?.email || '',
-                        emailTemplates.emailVerified(profile.display_name || 'User')
-                    )
-                } catch (emailError) {
-                    console.error('[Verify Email] Failed to send confirmation email:', emailError)
-                    // Don't fail the verification if email fails
-                }
             }
         }
 
         // Redirect to dashboard with success message
+        console.log('[Verify Email] Redirecting to dashboard')
         return NextResponse.redirect(`${origin}/dashboard?verified=true`)
     } catch (err) {
         console.error('[Verify Email] Unexpected error:', err)

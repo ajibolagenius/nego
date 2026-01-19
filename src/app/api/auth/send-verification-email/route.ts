@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { sendEmail, emailTemplates } from '@/lib/email'
 
 export async function POST(request: Request) {
     console.log('[Send Verification Email] API route called')
@@ -33,7 +32,7 @@ export async function POST(request: Request) {
             }, { status: 400 })
         }
 
-        // Check if account is already verified (based on is_verified in profiles table, not Supabase email confirmation)
+        // Check if account is already verified (based on is_verified in profiles table)
         if (profile?.is_verified === true) {
             console.log('[Send Verification Email] Already verified, returning error')
             return NextResponse.json({
@@ -41,23 +40,27 @@ export async function POST(request: Request) {
             }, { status: 400 })
         }
 
-        console.log('[Send Verification Email] Profile validated, proceeding with link generation')
+        console.log('[Send Verification Email] Profile validated, proceeding with email send')
 
+        // Get redirect URL
         const origin = process.env.NEXT_PUBLIC_APP_URL ||
             (request.headers.get('origin') || 'https://negoempire.vercel.app')
 
-        // Use Supabase Admin API to generate verification link
+        const redirectTo = `${origin}/auth/verify-email`
+
+        console.log('[Send Verification Email] Using redirect URL:', redirectTo)
+
+        // Get Supabase admin client
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
         const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
         if (!supabaseUrl || !serviceRoleKey) {
+            console.error('[Send Verification Email] Missing Supabase configuration')
             return NextResponse.json({
                 error: 'Server configuration error'
             }, { status: 500 })
         }
 
-        // Use Supabase Admin API to generate verification link
-        // This works regardless of "Confirm email" setting
         const { createClient: createSupabaseClient } = await import('@supabase/supabase-js')
         const adminSupabase = createSupabaseClient(supabaseUrl, serviceRoleKey, {
             auth: {
@@ -66,27 +69,41 @@ export async function POST(request: Request) {
             }
         })
 
-        let linkData: any = null
-        let linkType: 'signup' | 'magiclink' | 'recovery' = 'signup'
-        let linkError: any = null
+        // IMPORTANT: Temporarily unconfirm the email so Supabase will send a confirmation email
+        // This is necessary because auth.resend() only works for unconfirmed emails
+        console.log('[Send Verification Email] Temporarily unconfirming email to enable resend')
+        const { error: unconfirmError } = await adminSupabase.auth.admin.updateUserById(
+            user.id,
+            { email_confirm: false }
+        )
 
-        // Try signup link first (generates verification token even for existing users)
-        console.log('[Send Verification Email] Attempting to generate signup link for:', user.email)
+        if (unconfirmError) {
+            console.error('[Send Verification Email] Failed to unconfirm email:', unconfirmError)
+            return NextResponse.json({
+                error: 'Failed to prepare email sending. Please try again.',
+                details: unconfirmError.message
+            }, { status: 500 })
+        }
 
-        const { data: signupLinkData, error: signupLinkError } = await adminSupabase.auth.admin.generateLink({
+        console.log('[Send Verification Email] Email unconfirmed, now sending verification email')
+
+        // Now use Supabase's resend method - this will send the email via Supabase's email service
+        const { data: resendData, error: resendError } = await supabase.auth.resend({
             type: 'signup',
             email: user.email!,
-            password: `temp_${Date.now()}_${Math.random().toString(36).slice(2)}`,
             options: {
-                redirectTo: `${origin}/auth/verify-email`
+                emailRedirectTo: redirectTo
             }
         })
 
-        if (signupLinkError || !signupLinkData) {
-            console.error('[Send Verification Email] Signup link generation error:', signupLinkError)
+        if (resendError) {
+            console.error('[Send Verification Email] Resend error:', resendError)
+
+            // Re-confirm the email before returning error
+            await adminSupabase.auth.admin.updateUserById(user.id, { email_confirm: true })
 
             // Check if it's a rate limit error
-            const errorMessage = signupLinkError?.message || ''
+            const errorMessage = resendError.message || ''
             if (errorMessage.includes('after') && errorMessage.includes('seconds')) {
                 const secondsMatch = errorMessage.match(/(\d+)\s+seconds?/i)
                 const seconds = secondsMatch ? parseInt(secondsMatch[1]) : 60
@@ -97,131 +114,24 @@ export async function POST(request: Request) {
                 }, { status: 429 })
             }
 
-            // Try magiclink as fallback
-            console.log('[Send Verification Email] Signup link failed, trying magiclink')
-            const { data: magicLinkData, error: magicLinkError } = await adminSupabase.auth.admin.generateLink({
-                type: 'magiclink',
-                email: user.email!,
-                options: {
-                    redirectTo: `${origin}/auth/verify-email`
-                }
-            })
-
-            if (magicLinkError || !magicLinkData) {
-                console.error('[Send Verification Email] Magiclink generation error:', magicLinkError)
-
-                // Check if it's a rate limit error
-                const magicErrorMessage = magicLinkError?.message || ''
-                if (magicErrorMessage.includes('after') && magicErrorMessage.includes('seconds')) {
-                    const secondsMatch = magicErrorMessage.match(/(\d+)\s+seconds?/i)
-                    const seconds = secondsMatch ? parseInt(secondsMatch[1]) : 60
-                    return NextResponse.json({
-                        error: `Please wait ${seconds} seconds before requesting another verification email. This is a security measure to prevent spam.`,
-                        rateLimited: true,
-                        retryAfter: seconds
-                    }, { status: 429 })
-                }
-
-                // Try recovery as last resort
-                console.log('[Send Verification Email] Magiclink failed, trying recovery')
-                const { data: recoveryLinkData, error: recoveryError } = await adminSupabase.auth.admin.generateLink({
-                    type: 'recovery',
-                    email: user.email!,
-                    options: {
-                        redirectTo: `${origin}/auth/verify-email`
-                    }
-                })
-
-                if (recoveryError || !recoveryLinkData) {
-                    console.error('[Send Verification Email] Recovery link generation also failed:', recoveryError)
-
-                    // Check if it's a rate limit error
-                    const recoveryErrorMessage = recoveryError?.message || ''
-                    if (recoveryErrorMessage.includes('after') && recoveryErrorMessage.includes('seconds')) {
-                        const secondsMatch = recoveryErrorMessage.match(/(\d+)\s+seconds?/i)
-                        const seconds = secondsMatch ? parseInt(secondsMatch[1]) : 60
-                        return NextResponse.json({
-                            error: `Please wait ${seconds} seconds before requesting another verification email. This is a security measure to prevent spam.`,
-                            rateLimited: true,
-                            retryAfter: seconds
-                        }, { status: 429 })
-                    }
-
-                    return NextResponse.json({
-                        error: recoveryError?.message || 'Failed to generate verification link. Please try again later.',
-                        details: recoveryError
-                    }, { status: 500 })
-                }
-
-                linkData = recoveryLinkData
-                linkType = 'recovery'
-                console.log('[Send Verification Email] Recovery link generated successfully')
-            } else {
-                linkData = magicLinkData
-                linkType = 'magiclink'
-                console.log('[Send Verification Email] Magiclink generated successfully')
-            }
-        } else {
-            linkData = signupLinkData
-            linkType = 'signup'
-            console.log('[Send Verification Email] Signup link generated successfully')
-        }
-
-        // Extract verification URL from the generated link
-        let verificationUrl = `${origin}/auth/verify-email`
-
-        if (linkData?.properties?.action_link) {
-            try {
-                const actionLinkUrl = new URL(linkData.properties.action_link)
-                const token = actionLinkUrl.searchParams.get('token') || actionLinkUrl.searchParams.get('token_hash')
-
-                if (token) {
-                    verificationUrl = `${origin}/auth/verify-email?token_hash=${token}&type=${linkType}`
-                } else {
-                    // Use action_link directly - it will handle verification and redirect to our callback
-                    verificationUrl = linkData.properties.action_link
-                }
-            } catch (urlError) {
-                console.error('[Send Verification Email] URL parsing error:', urlError)
-                // If URL parsing fails, use hashed_token if available
-                if (linkData?.properties?.hashed_token) {
-                    verificationUrl = `${origin}/auth/verify-email?token_hash=${linkData.properties.hashed_token}&type=${linkType}`
-                }
-            }
-        } else if (linkData?.properties?.hashed_token) {
-            verificationUrl = `${origin}/auth/verify-email?token_hash=${linkData.properties.hashed_token}&type=${linkType}`
-        }
-
-        // Send our custom email template via Resend
-        console.log('[Send Verification Email] Sending email to:', user.email)
-        console.log('[Send Verification Email] Verification URL:', verificationUrl)
-        console.log('[Send Verification Email] Link type:', linkType)
-
-        const emailResult = await sendEmail(
-            user.email!,
-            emailTemplates.verifyEmail(
-                profile.display_name || user.user_metadata?.full_name || 'User',
-                verificationUrl
-            )
-        )
-
-        console.log('[Send Verification Email] Email result:', emailResult)
-
-        if (!emailResult.success) {
-            console.error('[Send Verification Email] Email send error:', emailResult.error)
+            // Return error - 'signup' is the only valid type for verification emails
             return NextResponse.json({
-                error: emailResult.error || 'Failed to send verification email. Please check your Resend API configuration.',
-                details: emailResult
+                error: resendError.message || 'Failed to send verification email. Please check your Supabase email configuration.',
+                details: resendError
             }, { status: 500 })
         }
 
-        console.log('[Send Verification Email] Email sent successfully')
-        console.log('[Send Verification Email] Returning success response')
+        console.log('[Send Verification Email] Signup resend successful')
+
+        // Note: We don't re-confirm the email here because:
+        // 1. The user needs to click the verification link to confirm
+        // 2. When they click the link, Supabase will confirm the email automatically
+        // 3. Our verify-email route will update is_verified in profiles table
+
+        console.log('[Send Verification Email] Email sent successfully via Supabase')
         return NextResponse.json({
             success: true,
-            message: 'Verification email sent successfully. Please check your inbox.',
-            emailSent: true,
-            verificationUrl: verificationUrl.substring(0, 50) + '...' // Log first 50 chars for debugging
+            message: 'Verification email sent successfully. Please check your inbox.'
         })
     } catch (error) {
         console.error('[Send Verification Email] Unexpected error:', error)

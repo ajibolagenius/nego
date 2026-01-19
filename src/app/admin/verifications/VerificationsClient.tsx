@@ -535,6 +535,7 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                                 src={signedUrls[verification.selfie_url] || verification.selfie_url}
                                                 alt="Client Verification Selfie"
                                                 fill
+                                                sizes="(max-width: 640px) 56px, 64px"
                                                 className="object-cover"
                                                 unoptimized={true}
                                                 onError={(e) => {
@@ -668,6 +669,7 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
                                                         src={signedUrls[selectedVerification.selfie_url] || selectedVerification.selfie_url}
                                                         alt="Client Verification Selfie - Captured during booking verification"
                                                         fill
+                                                        sizes="(max-width: 768px) 100vw, 600px"
                                                         className="object-cover transition-transform group-hover:scale-105 pointer-events-none"
                                                         unoptimized={true}
                                                         onError={(e) => {
