@@ -82,7 +82,6 @@ export async function POST(request: NextRequest) {
             .from('transactions')
             .update({
                 status: 'completed',
-                updated_at: new Date().toISOString(),
             })
             .eq('id', transaction.id)
             .eq('status', 'pending') // Atomic check: only update if still pending

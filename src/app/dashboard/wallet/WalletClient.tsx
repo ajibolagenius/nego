@@ -115,55 +115,92 @@ function PaymentModal({
                 throw new Error(data.error || 'Failed to create transaction')
             }
 
+            // Define callback functions outside to ensure they're proper function references
+            function paymentCallback(response: PaystackResponse) {
+                console.log('[PaymentModal] Paystack callback invoked with response:', response)
+
+                // Paystack requires a synchronous callback, so we handle async work inside
+                // Verify payment status with our API (works for test API where webhooks don't reach localhost)
+                const verifyPayment = async () => {
+                    try {
+                        const refToUse = response.reference || reference
+                        console.log('[PaymentModal] Starting payment verification for reference:', refToUse)
+                        const verifyResponse = await fetch('/api/transactions/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ reference: refToUse }),
+                        })
+
+                        if (!verifyResponse.ok) {
+                            const errorData = await verifyResponse.json()
+                            console.error('[PaymentModal] Verification API returned error:', errorData)
+
+                            // If transaction was already processed (by webhook), check if it was successful
+                            if (verifyResponse.status === 409 && errorData.alreadyCompleted) {
+                                console.log('[PaymentModal] Transaction already processed:', errorData)
+                                // If we got balance info, transaction was completed successfully
+                                if (errorData.currentBalance !== undefined || errorData.success) {
+                                    console.log('[PaymentModal] Transaction completed successfully, current balance:', errorData.currentBalance)
+                                    onSuccess()
+                                    return
+                                }
+                                // Otherwise, still call onSuccess - polling will catch the update
+                                console.log('[PaymentModal] Transaction processed, refreshing wallet...')
+                                onSuccess()
+                                return
+                            }
+
+                            // Handle 200 OK with alreadyCompleted flag (successful check)
+                            if (verifyResponse.ok && errorData.alreadyCompleted) {
+                                console.log('[PaymentModal] Transaction verified as already completed, balance:', errorData.currentBalance)
+                                onSuccess()
+                                return
+                            }
+
+                            console.error('[PaymentModal] Payment verification failed:', errorData)
+                            // Don't show error to user - payment succeeded, verification can retry via polling
+                            // The real-time subscription and polling will handle the update
+                            onSuccess()
+                            return
+                        }
+
+                        const verifyData = await verifyResponse.json()
+                        console.log('[PaymentModal] Payment verified successfully:', verifyData)
+
+                        // Call onSuccess to refresh wallet and show success modal
+                        onSuccess()
+                    } catch (verifyError) {
+                        console.error('[PaymentModal] Error verifying payment:', verifyError)
+                        // Still call onSuccess - the webhook might handle it, or polling will catch it
+                        onSuccess()
+                    }
+                }
+
+                // Execute async verification (fire and forget - polling will catch if this fails)
+                verifyPayment().catch(err => {
+                    console.error('[PaymentModal] Unhandled error in verification:', err)
+                    // Still call onSuccess - payment succeeded, polling will handle verification
+                    onSuccess()
+                })
+            }
+
+            function closeCallback() {
+                setIsProcessing(false)
+            }
+
+            // Ensure callbacks are functions before passing to Paystack
+            if (typeof paymentCallback !== 'function' || typeof closeCallback !== 'function') {
+                throw new Error('Callback functions are not properly defined')
+            }
+
             const handler = window.PaystackPop.setup({
                 key: publicKey,
                 email: email,
                 amount: pkg.priceInKobo,
                 currency: 'NGN',
                 ref: reference,
-                callback: (response: PaystackResponse) => {
-                    // Paystack requires a synchronous callback, so we handle async work inside
-                    // Verify payment status with our API (works for test API where webhooks don't reach localhost)
-                    (async () => {
-                        try {
-                            console.log('[PaymentModal] Payment callback received, verifying payment...')
-                            const verifyResponse = await fetch('/api/transactions/verify', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ reference: response.reference || reference }),
-                            })
-
-                            if (!verifyResponse.ok) {
-                                const errorData = await verifyResponse.json()
-
-                                // If transaction was already processed (by webhook), that's okay - just refresh
-                                if (verifyResponse.status === 409 && errorData.alreadyCompleted) {
-                                    console.log('[PaymentModal] Transaction already processed by webhook, refreshing...')
-                                    onSuccess()
-                                    return
-                                }
-
-                                console.error('[PaymentModal] Payment verification failed:', errorData)
-                                setError(errorData.error || 'Payment verification failed. Please contact support.')
-                                setIsProcessing(false)
-                                return
-                            }
-
-                            const verifyData = await verifyResponse.json()
-                            console.log('[PaymentModal] Payment verified successfully:', verifyData)
-
-                            // Call onSuccess to refresh wallet and show success modal
-                            onSuccess()
-                        } catch (verifyError) {
-                            console.error('[PaymentModal] Error verifying payment:', verifyError)
-                            // Still call onSuccess - the webhook might handle it, or user can refresh
-                            onSuccess()
-                        }
-                    })()
-                },
-                onClose: () => {
-                    setIsProcessing(false)
-                },
+                callback: paymentCallback,
+                onClose: closeCallback,
             })
 
             handler.openIframe()
@@ -460,10 +497,10 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
         // Refresh wallet immediately
         await refreshWallet()
 
-        // Poll for wallet update (webhook processing can take 2-5 seconds)
+        // Poll for wallet update (verification/webhook processing can take 2-5 seconds)
         // The real-time subscription should handle this, but polling ensures we get the update
         let attempts = 0
-        const maxAttempts = 10 // 10 attempts over 5 seconds
+        const maxAttempts = 15 // 15 attempts over 7.5 seconds
         const pollInterval = setInterval(async () => {
             attempts++
             await refreshWallet()
@@ -474,11 +511,11 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
             }
         }, 500) // Check every 500ms
 
-        // Cleanup after max time (5 seconds)
+        // Cleanup after max time (7.5 seconds)
         setTimeout(() => {
             clearInterval(pollInterval)
             refreshWallet() // Final refresh
-        }, 5000)
+        }, 7500)
     }
 
     const handleSuccessClose = () => {

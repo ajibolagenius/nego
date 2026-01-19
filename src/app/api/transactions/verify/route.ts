@@ -94,7 +94,6 @@ export async function POST(request: NextRequest) {
             .from('transactions')
             .update({
                 status: 'completed',
-                updated_at: new Date().toISOString(),
             })
             .eq('id', transaction.id)
             .eq('status', 'pending') // Atomic check: only update if still pending
@@ -102,12 +101,41 @@ export async function POST(request: NextRequest) {
             .single()
 
         if (updateError || !updatedTransaction) {
-            // Transaction was already processed (likely by webhook)
-            console.log('[Verify Payment] Transaction already processed or update failed:', updateError)
+            // Update failed - check if transaction is already completed
+            console.log('[Verify Payment] Status update failed, checking transaction status...', updateError)
+
+            const { data: currentTransaction } = await apiClient
+                .from('transactions')
+                .select('*')
+                .eq('reference', verifiedReference)
+                .eq('user_id', user.id)
+                .single()
+
+            if (currentTransaction && currentTransaction.status === 'completed') {
+                // Transaction is already completed, verify wallet was credited
+                const { data: currentWallet } = await apiClient
+                    .from('wallets')
+                    .select('balance')
+                    .eq('user_id', user.id)
+                    .single()
+
+                console.log('[Verify Payment] Transaction already completed, current wallet balance:', currentWallet?.balance)
+
+                // Return success with current balance
+                return NextResponse.json({
+                    success: true,
+                    alreadyCompleted: true,
+                    transaction: currentTransaction,
+                    currentBalance: currentWallet?.balance || 0
+                })
+            }
+
+            // Transaction is still pending - this shouldn't happen, but try to process it
+            console.error('[Verify Payment] Transaction update failed but transaction is still pending:', updateError)
             return NextResponse.json({
-                error: 'Transaction already processed',
-                alreadyCompleted: true
-            }, { status: 409 }) // 409 Conflict - resource already modified
+                error: 'Failed to update transaction status',
+                details: updateError?.message || 'Unknown error'
+            }, { status: 500 })
         }
 
         // Credit coins to user's wallet
