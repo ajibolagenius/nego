@@ -95,20 +95,34 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
 
     const handleSendVerificationEmail = async () => {
         setSendingVerificationEmail(true)
+        console.log('[Dashboard] Sending verification email request...')
         try {
             const response = await fetch('/api/auth/send-verification-email', {
                 method: 'POST',
             })
 
-            const data = await response.json()
+            console.log('[Dashboard] Response status:', response.status, response.statusText)
+
+            let data
+            try {
+                data = await response.json()
+                console.log('[Dashboard] Response data:', data)
+            } catch (jsonError) {
+                const text = await response.text()
+                console.error('[Dashboard] Failed to parse JSON response:', text)
+                alert('Failed to send verification email. Server returned invalid response.')
+                setSendingVerificationEmail(false)
+                return
+            }
 
             if (response.ok) {
+                console.log('[Dashboard] Verification email sent successfully')
                 setVerificationEmailSent(true)
                 setTimeout(() => {
                     setShowVerificationBanner(false)
                 }, 5000)
             } else {
-                console.error('[Dashboard] Failed to send verification email:', data.error)
+                console.error('[Dashboard] Failed to send verification email:', data.error, data)
                 // Handle rate limiting specifically
                 if (response.status === 429 && data.rateLimited) {
                     const retryAfter = data.retryAfter || 60

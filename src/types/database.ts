@@ -33,6 +33,7 @@ export interface Profile {
     is_verified: boolean
     status: TalentStatus
     starting_price: number | null
+    admin_notes: string | null
     created_at: string
     updated_at: string
 }
