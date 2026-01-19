@@ -121,42 +121,45 @@ function PaymentModal({
                 amount: pkg.priceInKobo,
                 currency: 'NGN',
                 ref: reference,
-                callback: async (response: PaystackResponse) => {
+                callback: (response: PaystackResponse) => {
+                    // Paystack requires a synchronous callback, so we handle async work inside
                     // Verify payment status with our API (works for test API where webhooks don't reach localhost)
-                    try {
-                        console.log('[PaymentModal] Payment callback received, verifying payment...')
-                        const verifyResponse = await fetch('/api/transactions/verify', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ reference: response.reference || reference }),
-                        })
+                    (async () => {
+                        try {
+                            console.log('[PaymentModal] Payment callback received, verifying payment...')
+                            const verifyResponse = await fetch('/api/transactions/verify', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ reference: response.reference || reference }),
+                            })
 
-                        if (!verifyResponse.ok) {
-                            const errorData = await verifyResponse.json()
+                            if (!verifyResponse.ok) {
+                                const errorData = await verifyResponse.json()
 
-                            // If transaction was already processed (by webhook), that's okay - just refresh
-                            if (verifyResponse.status === 409 && errorData.alreadyCompleted) {
-                                console.log('[PaymentModal] Transaction already processed by webhook, refreshing...')
-                                onSuccess()
+                                // If transaction was already processed (by webhook), that's okay - just refresh
+                                if (verifyResponse.status === 409 && errorData.alreadyCompleted) {
+                                    console.log('[PaymentModal] Transaction already processed by webhook, refreshing...')
+                                    onSuccess()
+                                    return
+                                }
+
+                                console.error('[PaymentModal] Payment verification failed:', errorData)
+                                setError(errorData.error || 'Payment verification failed. Please contact support.')
+                                setIsProcessing(false)
                                 return
                             }
 
-                            console.error('[PaymentModal] Payment verification failed:', errorData)
-                            setError(errorData.error || 'Payment verification failed. Please contact support.')
-                            setIsProcessing(false)
-                            return
+                            const verifyData = await verifyResponse.json()
+                            console.log('[PaymentModal] Payment verified successfully:', verifyData)
+
+                            // Call onSuccess to refresh wallet and show success modal
+                            onSuccess()
+                        } catch (verifyError) {
+                            console.error('[PaymentModal] Error verifying payment:', verifyError)
+                            // Still call onSuccess - the webhook might handle it, or user can refresh
+                            onSuccess()
                         }
-
-                        const verifyData = await verifyResponse.json()
-                        console.log('[PaymentModal] Payment verified successfully:', verifyData)
-
-                        // Call onSuccess to refresh wallet and show success modal
-                        onSuccess()
-                    } catch (verifyError) {
-                        console.error('[PaymentModal] Error verifying payment:', verifyError)
-                        // Still call onSuccess - the webhook might handle it, or user can refresh
-                        onSuccess()
-                    }
+                    })()
                 },
                 onClose: () => {
                     setIsProcessing(false)
