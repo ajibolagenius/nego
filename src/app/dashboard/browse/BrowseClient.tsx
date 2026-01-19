@@ -24,8 +24,47 @@ interface BrowseClientProps {
     userId: string
 }
 
-// Nigerian cities for filter
-const locations = ['All Locations', 'Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan', 'Enugu']
+// All Nigerian states and FCT for location filter
+const locations = [
+    'All Locations',
+    'Abia',
+    'Adamawa',
+    'Akwa Ibom',
+    'Anambra',
+    'Bauchi',
+    'Bayelsa',
+    'Benue',
+    'Borno',
+    'Cross River',
+    'Delta',
+    'Ebonyi',
+    'Edo',
+    'Ekiti',
+    'Enugu',
+    'FCT (Abuja)',
+    'Gombe',
+    'Imo',
+    'Jigawa',
+    'Kaduna',
+    'Kano',
+    'Katsina',
+    'Kebbi',
+    'Kogi',
+    'Kwara',
+    'Lagos',
+    'Nasarawa',
+    'Niger',
+    'Ogun',
+    'Ondo',
+    'Osun',
+    'Oyo',
+    'Plateau',
+    'Rivers',
+    'Sokoto',
+    'Taraba',
+    'Yobe',
+    'Zamfara'
+]
 
 export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProps) {
     const [searchQuery, setSearchQuery] = useState('')
@@ -47,9 +86,25 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
             )
         }
 
-        // Location filter
+        // Location filter - handle variations (e.g., "Abuja" matches "FCT (Abuja)")
         if (selectedLocation !== 'All Locations') {
-            result = result.filter(t => t.location === selectedLocation)
+            result = result.filter(t => {
+                if (!t.location) return false
+                const talentLocation = t.location.toLowerCase().trim()
+                const selectedLocationLower = selectedLocation.toLowerCase()
+
+                // Exact match
+                if (talentLocation === selectedLocationLower) return true
+
+                // Handle FCT/Abuja variations
+                if (selectedLocation === 'FCT (Abuja)') {
+                    return talentLocation.includes('abuja') || talentLocation.includes('fct')
+                }
+
+                // Handle state name variations (e.g., "Lagos State" matches "Lagos")
+                return talentLocation.includes(selectedLocationLower) ||
+                    selectedLocationLower.includes(talentLocation)
+            })
         }
 
         // Service filter
@@ -127,8 +182,8 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                         <Button
                             onClick={() => setShowFilters(!showFilters)}
                             className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all ${showFilters || selectedService
-                                    ? 'bg-[#df2531] border-[#df2531] text-white'
-                                    : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
+                                ? 'bg-[#df2531] border-[#df2531] text-white'
+                                : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
                                 }`}
                         >
                             <Funnel size={18} />
@@ -161,8 +216,8 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                                             selectedService === service.id ? null : service.id
                                         )}
                                         className={`px-4 py-2 rounded-full text-sm transition-all ${selectedService === service.id
-                                                ? 'bg-[#df2531] text-white'
-                                                : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                                            ? 'bg-[#df2531] text-white'
+                                            : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
                                             }`}
                                     >
                                         {service.name}
@@ -183,8 +238,8 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                                             key={option.value}
                                             onClick={() => setSortBy(option.value as typeof sortBy)}
                                             className={`px-4 py-2 rounded-full text-sm transition-all ${sortBy === option.value
-                                                    ? 'bg-white/10 text-white border border-white/20'
-                                                    : 'text-white/50 hover:text-white'
+                                                ? 'bg-white/10 text-white border border-white/20'
+                                                : 'text-white/50 hover:text-white'
                                                 }`}
                                         >
                                             {option.label}
@@ -245,10 +300,10 @@ function TalentCard({ talent, formatPrice, userId }: { talent: TalentWithMenu; f
                 {/* Status Badge */}
                 <div className="absolute top-3 left-3">
                     <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${talent.status === 'online'
-                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                            : talent.status === 'booked'
-                                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                : 'bg-white/10 text-white/60 border border-white/10'
+                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                        : talent.status === 'booked'
+                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                            : 'bg-white/10 text-white/60 border border-white/10'
                         }`}>
                         <Circle size={6} weight="fill" className={
                             talent.status === 'online' ? 'text-green-400' :
