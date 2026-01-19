@@ -145,12 +145,17 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
     // Show banner if is_verified is false, null, or undefined (treat null/undefined as unverified)
     const needsVerification = userRole === 'client' && profile?.is_verified !== true
 
-    // Show verification banner if needed
+    // Temporary flag: hide manual verification banner/UI for clients
+    // Since verification is not currently tied to any activities, we disable the banner
+    // until the email verification flow is fully resolved.
+    const showClientVerificationUI = false
+
+    // Show verification banner if needed (currently disabled via showClientVerificationUI)
     useEffect(() => {
-        if (needsVerification) {
+        if (showClientVerificationUI && needsVerification) {
             setShowVerificationBanner(true)
         }
-    }, [needsVerification])
+    }, [needsVerification, showClientVerificationUI])
 
     const handleSendVerificationEmail = async () => {
         setSendingVerificationEmail(true)
@@ -295,8 +300,8 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
 
     return (
         <>
-            {/* Verification Pending Banner */}
-            {showVerificationBanner && needsVerification && (
+            {/* Verification Pending Banner (temporarily disabled while email flow is being fixed) */}
+            {showClientVerificationUI && showVerificationBanner && needsVerification && (
                 <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500/10 border-b border-amber-500/20 backdrop-blur-xl">
                     <div className="max-w-7xl mx-auto px-4 py-3">
                         <div className="flex items-center justify-between gap-4">

@@ -9,7 +9,12 @@ export async function POST(request: Request) {
 
         // Verify the user is authenticated
         const { data: { user }, error: authError } = await supabase.auth.getUser()
-        console.log('[Send Verification Email] User check:', { userId: user?.id, email: user?.email, authError: authError?.message })
+        console.log('[Send Verification Email] User check:', {
+            userId: user?.id,
+            email: user?.email,
+            emailConfirmed: user?.email_confirmed_at,
+            authError: authError?.message
+        })
 
         if (authError || !user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -69,12 +74,24 @@ export async function POST(request: Request) {
             }
         })
 
+        // Check current email confirmation status
+        const { data: userData } = await adminSupabase.auth.admin.getUserById(user.id)
+        console.log('[Send Verification Email] Current user email status:', {
+            email: userData?.user?.email,
+            emailConfirmed: userData?.user?.email_confirmed_at,
+            createdAt: userData?.user?.created_at
+        })
+
         // IMPORTANT: Temporarily unconfirm the email so Supabase will send a confirmation email
         // This is necessary because auth.resend() only works for unconfirmed emails
         console.log('[Send Verification Email] Temporarily unconfirming email to enable resend')
-        const { error: unconfirmError } = await adminSupabase.auth.admin.updateUserById(
+        const { data: updateData, error: unconfirmError } = await adminSupabase.auth.admin.updateUserById(
             user.id,
-            { email_confirm: false }
+            {
+                email_confirm: false,
+                // Also clear email_confirmed_at timestamp
+                email_confirmed_at: null
+            }
         )
 
         if (unconfirmError) {
@@ -85,9 +102,19 @@ export async function POST(request: Request) {
             }, { status: 500 })
         }
 
-        console.log('[Send Verification Email] Email unconfirmed, now sending verification email')
+        console.log('[Send Verification Email] Email unconfirmed successfully')
 
-        // Now use Supabase's resend method - this will send the email via Supabase's email service
+        // Wait a moment for the update to propagate
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // Verify the email is now unconfirmed
+        const { data: verifyData } = await adminSupabase.auth.admin.getUserById(user.id)
+        console.log('[Send Verification Email] After unconfirm - email status:', {
+            emailConfirmed: verifyData?.user?.email_confirmed_at
+        })
+
+        // Now use Supabase's resend method - this will send the email via Supabase's email service (Brevo SMTP)
+        console.log('[Send Verification Email] Calling auth.resend() to send email via Supabase/Brevo')
         const { data: resendData, error: resendError } = await supabase.auth.resend({
             type: 'signup',
             email: user.email!,
@@ -96,11 +123,20 @@ export async function POST(request: Request) {
             }
         })
 
+        console.log('[Send Verification Email] Resend response:', {
+            data: resendData,
+            error: resendError?.message,
+            errorCode: resendError?.status
+        })
+
         if (resendError) {
             console.error('[Send Verification Email] Resend error:', resendError)
 
             // Re-confirm the email before returning error
-            await adminSupabase.auth.admin.updateUserById(user.id, { email_confirm: true })
+            await adminSupabase.auth.admin.updateUserById(user.id, {
+                email_confirm: true,
+                email_confirmed_at: user.email_confirmed_at || new Date().toISOString()
+            })
 
             // Check if it's a rate limit error
             const errorMessage = resendError.message || ''
@@ -114,24 +150,28 @@ export async function POST(request: Request) {
                 }, { status: 429 })
             }
 
-            // Return error - 'signup' is the only valid type for verification emails
+            // Return detailed error for debugging
             return NextResponse.json({
-                error: resendError.message || 'Failed to send verification email. Please check your Supabase email configuration.',
-                details: resendError
+                error: resendError.message || 'Failed to send verification email.',
+                details: {
+                    code: resendError.status,
+                    message: resendError.message,
+                    hint: 'Check Supabase Dashboard → Authentication → Settings → SMTP Settings. Ensure Brevo SMTP is configured correctly.'
+                }
             }, { status: 500 })
         }
 
-        console.log('[Send Verification Email] Signup resend successful')
+        console.log('[Send Verification Email] Signup resend successful - email should be sent via Brevo SMTP')
 
         // Note: We don't re-confirm the email here because:
         // 1. The user needs to click the verification link to confirm
         // 2. When they click the link, Supabase will confirm the email automatically
         // 3. Our verify-email route will update is_verified in profiles table
 
-        console.log('[Send Verification Email] Email sent successfully via Supabase')
+        console.log('[Send Verification Email] Email sent successfully via Supabase/Brevo')
         return NextResponse.json({
             success: true,
-            message: 'Verification email sent successfully. Please check your inbox.'
+            message: 'Verification email sent successfully. Please check your inbox (and spam folder).'
         })
     } catch (error) {
         console.error('[Send Verification Email] Unexpected error:', error)
