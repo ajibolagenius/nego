@@ -84,13 +84,12 @@ export async function POST(request: Request) {
 
         // IMPORTANT: Temporarily unconfirm the email so Supabase will send a confirmation email
         // This is necessary because auth.resend() only works for unconfirmed emails
+        // Note: Setting email_confirm to false will automatically clear email_confirmed_at
         console.log('[Send Verification Email] Temporarily unconfirming email to enable resend')
         const { data: updateData, error: unconfirmError } = await adminSupabase.auth.admin.updateUserById(
             user.id,
             {
-                email_confirm: false,
-                // Also clear email_confirmed_at timestamp
-                email_confirmed_at: null
+                email_confirm: false
             }
         )
 
@@ -133,9 +132,9 @@ export async function POST(request: Request) {
             console.error('[Send Verification Email] Resend error:', resendError)
 
             // Re-confirm the email before returning error
+            // Note: Setting email_confirm to true will automatically set email_confirmed_at
             await adminSupabase.auth.admin.updateUserById(user.id, {
-                email_confirm: true,
-                email_confirmed_at: user.email_confirmed_at || new Date().toISOString()
+                email_confirm: true
             })
 
             // Check if it's a rate limit error
