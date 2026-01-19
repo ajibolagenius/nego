@@ -109,7 +109,13 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                 }, 5000)
             } else {
                 console.error('[Dashboard] Failed to send verification email:', data.error)
-                alert(data.error || 'Failed to send verification email. Please try again.')
+                // Handle rate limiting specifically
+                if (response.status === 429 && data.rateLimited) {
+                    const retryAfter = data.retryAfter || 60
+                    alert(`Please wait ${retryAfter} seconds before requesting another verification email. This is a security measure to prevent spam.`)
+                } else {
+                    alert(data.error || 'Failed to send verification email. Please try again.')
+                }
             }
         } catch (error) {
             console.error('[Dashboard] Error sending verification email:', error)

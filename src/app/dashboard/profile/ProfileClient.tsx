@@ -168,7 +168,13 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
                 }, 5000)
             } else {
                 console.error('[Profile] Failed to send verification email:', data.error)
-                setError(data.error || 'Failed to send verification email. Please try again.')
+                // Handle rate limiting specifically
+                if (response.status === 429 && data.rateLimited) {
+                    const retryAfter = data.retryAfter || 60
+                    setError(`Please wait ${retryAfter} seconds before requesting another verification email. This is a security measure to prevent spam.`)
+                } else {
+                    setError(data.error || 'Failed to send verification email. Please try again.')
+                }
             }
         } catch (error) {
             console.error('[Profile] Error sending verification email:', error)
