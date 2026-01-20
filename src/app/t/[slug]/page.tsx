@@ -123,7 +123,7 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
     // For non-authenticated users, regular client will only return free media (due to RLS)
     // This allows public viewing of free media while protecting premium content
     let media = null
-    
+
     if (user) {
         // Authenticated users - use admin client to see all media (including premium)
         // The client will filter based on unlocked status
@@ -212,7 +212,7 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
     // Fetch current user's profile and wallet (only if authenticated)
     let currentUserProfile = null
     let wallet = null
-    
+
     if (user) {
         const [profileResult, walletResult] = await Promise.all([
             supabase
@@ -226,7 +226,7 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
                 .eq('user_id', user.id)
                 .single()
         ])
-        
+
         currentUserProfile = profileResult.data
         wallet = walletResult.data
     }

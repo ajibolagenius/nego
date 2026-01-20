@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeSlash, Envelope, Lock, SpinnerGap, GoogleLogo, XCircle, CheckCircle } from '@phosphor-icons/react'
@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 // Email validation regex
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export default function LoginPage() {
+function LoginFormContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const redirectPath = searchParams.get('redirect') || null
@@ -305,5 +305,29 @@ export default function LoginPage() {
                 </div>
             </div>
         </main>
+    )
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <main className="min-h-screen bg-black flex items-center justify-center p-4 pt-20">
+                <div className="relative w-full max-w-md">
+                    <div className="flex justify-center mb-8">
+                        <span className="text-3xl logo-font">
+                            <span className="text-white">NEGO</span>
+                            <span className="text-[#df2531]">.</span>
+                        </span>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10">
+                        <div className="flex items-center justify-center py-8">
+                            <SpinnerGap size={32} className="animate-spin text-[#df2531]" />
+                        </div>
+                    </div>
+                </div>
+            </main>
+        }>
+            <LoginFormContent />
+        </Suspense>
     )
 }
