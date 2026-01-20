@@ -50,10 +50,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         return generateTalentOpenGraphMetadata('Talent Profile', undefined, slug)
     }
 
+    // Prefer username if available, otherwise use ID for OG image generation
     return generateTalentOpenGraphMetadata(
         talent.display_name || 'Talent Profile',
         undefined, // Don't pass image URL, let the OG route fetch it
-        talent.username || slug,
+        talent.username || null, // Pass null if no username, so OG route uses ID
         talent.id
     )
 }

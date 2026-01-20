@@ -50,6 +50,45 @@ export async function GET(request: NextRequest) {
         const textColor = '#ffffff'
         const textSecondary = '#a0a0a0'
 
+        // Fetch avatar image if available and convert to data URI
+        // Note: For OG images, we need to embed the image as base64 data URI
+        let avatarDataUri: string | null = null
+        if (avatarUrl) {
+            try {
+                // Fetch the avatar image
+                const avatarResponse = await fetch(avatarUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0',
+                    },
+                })
+
+                if (avatarResponse.ok) {
+                    const arrayBuffer = await avatarResponse.arrayBuffer()
+
+                    // Limit image size to prevent issues (max 500KB for OG images)
+                    if (arrayBuffer.byteLength > 500 * 1024) {
+                        console.warn(`Avatar image too large (${arrayBuffer.byteLength} bytes), skipping embed`)
+                    } else {
+                        const uint8Array = new Uint8Array(arrayBuffer)
+
+                        // Convert ArrayBuffer to base64 (edge runtime compatible)
+                        // Build binary string character by character (works reliably in edge runtime)
+                        let binaryString = ''
+                        for (let i = 0; i < uint8Array.length; i++) {
+                            binaryString += String.fromCharCode(uint8Array[i])
+                        }
+
+                        const base64 = btoa(binaryString)
+                        const mimeType = avatarResponse.headers.get('content-type') || 'image/png'
+                        avatarDataUri = `data:${mimeType};base64,${base64}`
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching avatar for OG image:', error)
+                // Continue without avatar - will show fallback star icon
+            }
+        }
+
         return new ImageResponse(
             (
                 <div
@@ -88,19 +127,17 @@ export async function GET(request: NextRequest) {
                             marginRight: 60,
                         }}
                     >
-                        {avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                                src={avatarUrl}
-                                alt={talentName}
-                                width={280}
-                                height={280}
+                        {avatarDataUri ? (
+                            <div
                                 style={{
                                     width: 280,
                                     height: 280,
                                     borderRadius: 140,
                                     border: `4px solid ${primaryColor}`,
-                                    objectFit: 'cover',
+                                    backgroundImage: `url(${avatarDataUri})`,
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                    backgroundRepeat: 'no-repeat',
                                 }}
                             />
                         ) : (
