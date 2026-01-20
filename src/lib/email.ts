@@ -5,7 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 // Sender email - use verified domain or Resend's test domain
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'Nego <onboarding@resend.dev>'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://nego.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 
 // Shared email styles
 const styles = {

@@ -1,11 +1,17 @@
 import { createApiClient } from '@/lib/supabase/api'
 import { VerificationsClient } from './VerificationsClient'
 import type { VerificationWithBooking, BookingWithRelations } from '@/types/admin'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
-export const metadata = {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata = generateOpenGraphMetadata({
     title: 'Verifications - Nego Admin',
     description: 'Review and manage client verifications',
-}
+    url: `${APP_URL}/admin/verifications`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 export default async function VerificationsPage() {
     // Use API client (service role) to bypass RLS for admin operations

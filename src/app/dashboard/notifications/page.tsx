@@ -1,41 +1,47 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { NotificationsClient } from './NotificationsClient'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
-export const metadata = {
-  title: 'Notifications - Nego',
-  description: 'View all your notifications on Nego',
-}
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata = generateOpenGraphMetadata({
+    title: 'Notifications - Nego',
+    description: 'View all your notifications on Nego - Stay updated with bookings, messages, and updates',
+    url: `${APP_URL}/dashboard/notifications`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 export default async function NotificationsPage() {
-  const supabase = await createClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
-    redirect('/login')
-  }
+    const supabase = await createClient()
 
-  // Fetch user profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  // Fetch all notifications for user
-  const { data: notifications } = await supabase
-    .from('notifications')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(50)
+    if (!user) {
+        redirect('/login')
+    }
 
-  return (
-    <NotificationsClient 
-      user={user}
-      profile={profile}
-      notifications={notifications || []}
-    />
-  )
+    // Fetch user profile
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+    // Fetch all notifications for user
+    const { data: notifications } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+    return (
+        <NotificationsClient
+            user={user}
+            profile={profile}
+            notifications={notifications || []}
+        />
+    )
 }

@@ -5,10 +5,20 @@ import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistratio
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt"
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt"
 import { NetworkStatus } from "@/components/NetworkStatus"
+import { generateOpenGraphMetadata } from "@/lib/og-metadata"
 
-export const metadata: Metadata = {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+const baseMetadata = generateOpenGraphMetadata({
     title: "Nego - Premium Managed Talent Marketplace",
     description: "The premier managed marketplace connecting discerning clients with verified, elite talent. Excellence with discretion.",
+    url: APP_URL,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
+
+export const metadata: Metadata = {
+    ...baseMetadata,
     manifest: "/manifest.json",
     icons: {
         icon: [

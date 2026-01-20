@@ -1,11 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { GiftHistoryClient } from './GiftHistoryClient'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
-export const metadata = {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata = generateOpenGraphMetadata({
     title: 'Gift History - Nego',
     description: 'Track all your coin gifts sent and received on Nego',
-}
+    url: `${APP_URL}/dashboard/gifts`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 export default async function GiftHistoryPage() {
     const supabase = await createClient()

@@ -1,11 +1,17 @@
 import { createApiClient } from '@/lib/supabase/api'
 import { TalentsClient } from './TalentsClient'
 import type { Profile } from '@/types/database'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
-export const metadata = {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata = generateOpenGraphMetadata({
     title: 'Talents - Nego Admin',
     description: 'Manage talent accounts and verification status',
-}
+    url: `${APP_URL}/admin/talents`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 export default async function TalentsPage() {
     // Use API client (service role) to bypass RLS for admin operations

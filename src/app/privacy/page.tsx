@@ -1,10 +1,16 @@
 import Link from 'next/link'
 import { ArrowLeft, ShieldCheck, Database, Lock, Globe, User, Eye } from '@phosphor-icons/react/dist/ssr'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
-export const metadata = {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata = generateOpenGraphMetadata({
     title: 'Privacy Policy - Nego',
     description: 'Learn how Nego protects your privacy and handles your personal information',
-}
+    url: `${APP_URL}/privacy`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 export default function PrivacyPage() {
     return (

@@ -1,11 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ProfileClient } from './ProfileClient'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
-export const metadata = {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata = generateOpenGraphMetadata({
     title: 'Profile - Nego',
     description: 'View and manage your profile, update your information, and see your account statistics on Nego',
-}
+    url: `${APP_URL}/dashboard/profile`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 export default async function ProfilePage() {
     const supabase = await createClient()

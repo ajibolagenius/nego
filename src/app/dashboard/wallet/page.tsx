@@ -1,11 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { WalletClient } from './WalletClient'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
-export const metadata = {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata = generateOpenGraphMetadata({
     title: 'Wallet - Nego',
     description: 'Manage your coins and view transaction history on Nego',
-}
+    url: `${APP_URL}/dashboard/wallet`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 export default async function WalletPage() {
     const supabase = await createClient()

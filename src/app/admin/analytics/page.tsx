@@ -1,11 +1,17 @@
 import { createApiClient } from '@/lib/supabase/api'
 import { AnalyticsClient } from './AnalyticsClient'
 import { cache, CACHE_KEYS } from '@/lib/admin/cache'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
-export const metadata = {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata = generateOpenGraphMetadata({
     title: 'Analytics - Nego Admin',
     description: 'Platform analytics and reporting',
-}
+    url: `${APP_URL}/admin/analytics`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 export default async function AnalyticsPage() {
     // Use API client (service role) to bypass RLS for admin operations

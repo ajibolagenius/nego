@@ -1,10 +1,16 @@
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle, User, ShieldCheck, CreditCard, Calendar, Lock, FileText, Warning, XCircle } from '@phosphor-icons/react/dist/ssr'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
-export const metadata = {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata = generateOpenGraphMetadata({
     title: 'Terms & Conditions - Nego',
     description: 'Terms and Conditions for using the Nego platform',
-}
+    url: `${APP_URL}/terms`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 export default function TermsPage() {
     return (

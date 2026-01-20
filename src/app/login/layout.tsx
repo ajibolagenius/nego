@@ -1,14 +1,20 @@
 import { Metadata } from 'next'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
-export const metadata: Metadata = {
-  title: 'Sign In - Nego',
-  description: 'Sign in to your Nego account',
-}
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata: Metadata = generateOpenGraphMetadata({
+    title: 'Sign In - Nego',
+    description: 'Sign in to your Nego account to access premium talent marketplace',
+    url: `${APP_URL}/login`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 export default function LoginLayout({
-  children,
+    children,
 }: {
-  children: React.ReactNode
+    children: React.ReactNode
 }) {
-  return children
+    return children
 }

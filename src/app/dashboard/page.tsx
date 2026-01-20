@@ -1,11 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { DashboardClient } from './DashboardClient'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
-export const metadata = {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata = generateOpenGraphMetadata({
     title: 'Dashboard - Nego',
-    description: 'Your personal dashboard on Nego',
-}
+    description: 'Your personal dashboard on Nego - Manage bookings, browse talent, and access all features',
+    url: `${APP_URL}/dashboard`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 interface DashboardPageProps {
     searchParams: Promise<{ verified?: string }>

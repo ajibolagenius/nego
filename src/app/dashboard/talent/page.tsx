@@ -1,11 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { TalentDashboardClient } from './TalentDashboardClient'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
-export const metadata = {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata = generateOpenGraphMetadata({
     title: 'Talent Dashboard - Nego',
-    description: 'Manage your services and bookings on Nego',
-}
+    description: 'Manage your services, bookings, earnings, and media on Nego',
+    url: `${APP_URL}/dashboard/talent`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 export default async function TalentDashboardPage() {
     const supabase = await createClient()

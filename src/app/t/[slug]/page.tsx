@@ -3,6 +3,9 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { redirect, notFound } from 'next/navigation'
 import { TalentProfileClient } from '@/app/talent/[id]/TalentProfileClient'
 import { Metadata } from 'next'
+import { generateTalentOpenGraphMetadata } from '@/lib/og-metadata'
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 
 // Create admin client lazily with service role key for bypassing RLS
 function getAdminClient() {
@@ -38,15 +41,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // Try to find talent by username first
     const { data: talent } = await supabase
         .from('profiles')
-        .select('display_name, username')
+        .select('display_name, username, avatar_url')
         .eq('role', 'talent')
         .or(`username.eq.${slug}`)
         .single()
 
-    return {
-        title: talent?.display_name ? `${talent.display_name} - Nego` : 'Talent Profile - Nego',
-        description: `View ${talent?.display_name || 'talent'}'s profile and services on Nego`,
+    if (!talent) {
+        return generateTalentOpenGraphMetadata('Talent Profile', undefined, slug)
     }
+
+    // avatar_url is already a full URL from Supabase storage or Cloudinary
+    const talentImage = talent.avatar_url || undefined
+
+    return generateTalentOpenGraphMetadata(
+        talent.display_name || 'Talent Profile',
+        talentImage,
+        talent.username || slug
+    )
 }
 
 export default async function TalentProfileBySlugPage({ params }: PageProps) {

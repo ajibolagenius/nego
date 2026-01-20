@@ -1,14 +1,24 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { BookingDetailClient } from './BookingDetailClient'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
+import { Metadata } from 'next'
 
-export const metadata = {
-    title: 'Booking Details - Nego',
-    description: 'View your booking details on Nego',
-}
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 
 interface PageProps {
     params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+    const { id } = await params
+    return generateOpenGraphMetadata({
+        title: 'Booking Details - Nego',
+        description: 'View your booking details on Nego',
+        url: `${APP_URL}/dashboard/bookings/${id}`,
+        image: `${APP_URL}/og-image.png`,
+        type: 'website',
+    })
 }
 
 export default async function BookingDetailPage({ params }: PageProps) {

@@ -1,6 +1,17 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { MessagesClient } from './MessagesClient'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata = generateOpenGraphMetadata({
+    title: 'Messages - Nego',
+    description: 'Connect and communicate with talent and clients on Nego',
+    url: `${APP_URL}/dashboard/messages`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 export default async function MessagesPage() {
     const supabase = await createClient()

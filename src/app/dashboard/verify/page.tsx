@@ -1,11 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { VerifyClient } from './VerifyClient'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
-export const metadata = {
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+export const metadata = generateOpenGraphMetadata({
     title: 'Verify Identity - Nego',
     description: 'Complete identity verification for your booking',
-}
+    url: `${APP_URL}/dashboard/verify`,
+    image: `${APP_URL}/og-image.png`,
+    type: 'website',
+})
 
 interface VerifyPageProps {
     searchParams: Promise<{ booking?: string }>
