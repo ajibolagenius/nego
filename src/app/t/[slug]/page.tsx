@@ -62,11 +62,8 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
     const { slug } = await params
     const supabase = await createClient()
 
+    // Check if user is authenticated (optional - allows public viewing)
     const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-        redirect('/login')
-    }
 
     // First try exact username match (without media)
     let { data: talent } = await supabase
@@ -122,19 +119,33 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
         console.error('[TalentProfile] Error fetching talent_menus:', menusError)
     }
 
-    // Fetch ALL media (including premium) using admin client to bypass RLS
+    // Fetch media - use admin client only for authenticated users to bypass RLS
+    // For non-authenticated users, regular client will only return free media (due to RLS)
+    // This allows public viewing of free media while protecting premium content
     let media = null
-    const supabaseAdmin = getAdminClient()
-
-    if (supabaseAdmin) {
-        const { data: mediaData } = await supabaseAdmin
-            .from('media')
-            .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
-            .eq('talent_id', talent.id)
-            .order('created_at', { ascending: false })
-        media = mediaData
+    
+    if (user) {
+        // Authenticated users - use admin client to see all media (including premium)
+        // The client will filter based on unlocked status
+        const supabaseAdmin = getAdminClient()
+        if (supabaseAdmin) {
+            const { data: mediaData } = await supabaseAdmin
+                .from('media')
+                .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
+                .eq('talent_id', talent.id)
+                .order('created_at', { ascending: false })
+            media = mediaData
+        } else {
+            // Fallback to regular client if admin client unavailable
+            const { data: mediaData } = await supabase
+                .from('media')
+                .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
+                .eq('talent_id', talent.id)
+                .order('created_at', { ascending: false })
+            media = mediaData
+        }
     } else {
-        // Fallback to regular client (will only get non-premium media due to RLS)
+        // Non-authenticated users - RLS will only return free media
         const { data: mediaData } = await supabase
             .from('media')
             .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
@@ -198,18 +209,27 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
         averageRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
     }
 
-    // Fetch current user's profile and wallet
-    const { data: currentUserProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-    const { data: wallet } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
+    // Fetch current user's profile and wallet (only if authenticated)
+    let currentUserProfile = null
+    let wallet = null
+    
+    if (user) {
+        const [profileResult, walletResult] = await Promise.all([
+            supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single(),
+            supabase
+                .from('wallets')
+                .select('*')
+                .eq('user_id', user.id)
+                .single()
+        ])
+        
+        currentUserProfile = profileResult.data
+        wallet = walletResult.data
+    }
 
     return (
         <TalentProfileClient
@@ -221,7 +241,7 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
             }}
             currentUser={currentUserProfile}
             wallet={wallet}
-            userId={user.id}
+            userId={user?.id || ''}
         />
     )
 }

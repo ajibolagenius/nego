@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeSlash, Envelope, Lock, SpinnerGap, GoogleLogo, XCircle, CheckCircle } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -12,6 +12,8 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function LoginPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const redirectPath = searchParams.get('redirect') || null
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
@@ -85,8 +87,11 @@ export default function LoginPage() {
                     .eq('id', data.user.id)
                     .single()
 
-                // Use router.push instead of window.location.href
-                if (profile?.role === 'admin') {
+                // Redirect to the original page if redirect parameter exists, otherwise use role-based redirect
+                if (redirectPath) {
+                    router.push(redirectPath)
+                    router.refresh()
+                } else if (profile?.role === 'admin') {
                     router.push('/admin')
                     router.refresh()
                 } else if (profile?.role === 'talent') {
@@ -97,7 +102,7 @@ export default function LoginPage() {
                     router.refresh()
                 }
             } else {
-                router.push('/dashboard')
+                router.push(redirectPath || '/dashboard')
                 router.refresh()
             }
         } catch (err: unknown) {

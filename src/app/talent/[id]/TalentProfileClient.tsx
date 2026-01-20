@@ -34,7 +34,7 @@ interface TalentProfileClientProps {
     talent: TalentWithDetails
     currentUser: Profile | null
     wallet: Wallet | null
-    userId: string
+    userId: string // Empty string if not authenticated
 }
 
 const serviceIcons: Record<string, Icon> = {
@@ -52,7 +52,7 @@ const serviceIcons: Record<string, Icon> = {
 // Gallery Section with Free/Premium Tabs and Unlock functionality
 interface GallerySectionProps {
     media: Media[]
-    userId: string
+    userId: string // Empty string if not authenticated
     userBalance: number
     talentName: string
     onUnlock: (mediaId: string, unlockPrice: number) => Promise<boolean>
@@ -667,6 +667,11 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
 
     // Start or open conversation with talent
     const handleStartChat = async () => {
+        if (!userId) {
+            router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))
+            return
+        }
+
         if (currentUser?.role === 'talent') {
             setError('Talents cannot message other talents.')
             setShowErrorBanner(true)
@@ -727,6 +732,10 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
     }
 
     const handleFavoriteToggle = () => {
+        if (!userId) {
+            router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))
+            return
+        }
         toggleFavorite(talent.id)
     }
 
@@ -764,6 +773,11 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
     }
 
     const handleUnlockMedia = async (mediaId: string, unlockPrice: number): Promise<boolean> => {
+        if (!userId) {
+            router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))
+            return false
+        }
+
         if (currentBalance < unlockPrice) {
             setError(`Insufficient balance. You need ${unlockPrice} coins to unlock this content.`)
             setShowErrorBanner(true)
@@ -850,6 +864,11 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
     }
 
     const handleBooking = async () => {
+        if (!userId) {
+            router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))
+            return
+        }
+
         if (selectedServices.length === 0) {
             setError('Please select at least one service')
             setShowErrorBanner(true)
@@ -1413,8 +1432,14 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                                     </div>
                                 </div>
                                 <Button
-                                    onClick={() => setShowBookingModal(true)}
-                                    disabled={hasInsufficientBalance}
+                                    onClick={() => {
+                                        if (!userId) {
+                                            router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))
+                                            return
+                                        }
+                                        setShowBookingModal(true)
+                                    }}
+                                    disabled={hasInsufficientBalance || !userId}
                                     aria-label={hasInsufficientBalance ? 'Insufficient balance to book' : `Book ${selectedServices.length} services for ${totalPrice} coins`}
                                     className={`font-bold px-8 py-4 rounded-xl text-base transition-all ${hasInsufficientBalance
                                         ? 'bg-white/10 text-white/50 cursor-not-allowed'
