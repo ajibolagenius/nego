@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Talent Dashboard - Nego',
     description: 'Manage your services, bookings, earnings, and media on Nego',
     url: `${APP_URL}/dashboard/talent`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'dashboard',
 })
 
 export default async function TalentDashboardPage() {

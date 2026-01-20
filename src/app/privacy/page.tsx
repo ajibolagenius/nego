@@ -8,8 +8,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Privacy Policy - Nego',
     description: 'Learn how Nego protects your privacy and handles your personal information',
     url: `${APP_URL}/privacy`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'legal',
 })
 
 export default function PrivacyPage() {

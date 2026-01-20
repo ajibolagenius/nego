@@ -8,8 +8,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Cookie Policy - Nego',
     description: 'Learn about how Nego uses cookies to enhance your experience and improve our platform',
     url: `${APP_URL}/cookies`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'legal',
 })
 
 export default function CookiesPage() {

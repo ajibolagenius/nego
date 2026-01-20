@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Analytics - Nego Admin',
     description: 'Platform analytics and reporting',
     url: `${APP_URL}/admin/analytics`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'admin',
 })
 
 export default async function AnalyticsPage() {

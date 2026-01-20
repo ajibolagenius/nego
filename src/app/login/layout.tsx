@@ -7,8 +7,8 @@ export const metadata: Metadata = generateOpenGraphMetadata({
     title: 'Sign In - Nego',
     description: 'Sign in to your Nego account to access premium talent marketplace',
     url: `${APP_URL}/login`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'auth',
 })
 
 export default function LoginLayout({

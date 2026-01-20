@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Wallet - Nego',
     description: 'Manage your coins and view transaction history on Nego',
     url: `${APP_URL}/dashboard/wallet`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'dashboard',
 })
 
 export default async function WalletPage() {

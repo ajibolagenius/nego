@@ -8,8 +8,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Payouts - Nego Admin',
     description: 'Manage talent payouts',
     url: `${APP_URL}/admin/payouts`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'admin',
 })
 
 export default async function PayoutsPage() {

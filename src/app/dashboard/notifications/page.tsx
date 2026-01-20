@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Notifications - Nego',
     description: 'View all your notifications on Nego - Stay updated with bookings, messages, and updates',
     url: `${APP_URL}/dashboard/notifications`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'dashboard',
 })
 
 export default async function NotificationsPage() {

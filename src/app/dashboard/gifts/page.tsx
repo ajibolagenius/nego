@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Gift History - Nego',
     description: 'Track all your coin gifts sent and received on Nego',
     url: `${APP_URL}/dashboard/gifts`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'dashboard',
 })
 
 export default async function GiftHistoryPage() {

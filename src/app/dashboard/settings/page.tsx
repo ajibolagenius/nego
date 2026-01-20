@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Settings - Nego',
     description: 'Manage your account settings, preferences, and security on Nego',
     url: `${APP_URL}/dashboard/settings`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'dashboard',
 })
 
 export default async function SettingsPage() {

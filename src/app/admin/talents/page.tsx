@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Talents - Nego Admin',
     description: 'Manage talent accounts and verification status',
     url: `${APP_URL}/admin/talents`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'admin',
 })
 
 export default async function TalentsPage() {

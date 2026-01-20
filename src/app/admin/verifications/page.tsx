@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Verifications - Nego Admin',
     description: 'Review and manage client verifications',
     url: `${APP_URL}/admin/verifications`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'admin',
 })
 
 export default async function VerificationsPage() {

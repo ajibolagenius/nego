@@ -7,8 +7,8 @@ export const metadata: Metadata = generateOpenGraphMetadata({
     title: 'Create Account - Nego',
     description: 'Join Nego as a client or talent. Connect with verified, elite talent or showcase your services.',
     url: `${APP_URL}/register`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'auth',
 })
 
 export default function RegisterLayout({

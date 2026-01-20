@@ -13,8 +13,8 @@ export const metadata = generateOpenGraphMetadata({
     title: "Nego - Premium Managed Talent Marketplace",
     description: "The premier managed marketplace connecting discerning clients with verified, elite talent. Excellence with discretion.",
     url: APP_URL,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'default',
 })
 
 export default function Home() {

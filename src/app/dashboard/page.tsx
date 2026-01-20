@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Dashboard - Nego',
     description: 'Your personal dashboard on Nego - Manage bookings, browse talent, and access all features',
     url: `${APP_URL}/dashboard`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'dashboard',
 })
 
 interface DashboardPageProps {

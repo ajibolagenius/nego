@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // Try to find talent by username first
     const { data: talent } = await supabase
         .from('profiles')
-        .select('display_name, username, avatar_url')
+        .select('id, display_name, username, avatar_url')
         .eq('role', 'talent')
         .or(`username.eq.${slug}`)
         .single()
@@ -50,13 +50,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         return generateTalentOpenGraphMetadata('Talent Profile', undefined, slug)
     }
 
-    // avatar_url is already a full URL from Supabase storage or Cloudinary
-    const talentImage = talent.avatar_url || undefined
-
     return generateTalentOpenGraphMetadata(
         talent.display_name || 'Talent Profile',
-        talentImage,
-        talent.username || slug
+        undefined, // Don't pass image URL, let the OG route fetch it
+        talent.username || slug,
+        talent.id
     )
 }
 

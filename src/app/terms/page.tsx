@@ -8,8 +8,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Terms & Conditions - Nego',
     description: 'Terms and Conditions for using the Nego platform',
     url: `${APP_URL}/terms`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'legal',
 })
 
 export default function TermsPage() {

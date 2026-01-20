@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Verify Identity - Nego',
     description: 'Complete identity verification for your booking',
     url: `${APP_URL}/dashboard/verify`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'dashboard',
 })
 
 interface VerifyPageProps {

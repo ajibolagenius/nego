@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         title: 'Booking Details - Nego',
         description: 'View your booking details on Nego',
         url: `${APP_URL}/dashboard/bookings/${id}`,
-        image: `${APP_URL}/og-image.png`,
         type: 'website',
+        pageType: 'dashboard',
     })
 }
 

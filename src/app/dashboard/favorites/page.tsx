@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Saved Favorites - Nego',
     description: 'View and manage your saved favorite talents on Nego',
     url: `${APP_URL}/dashboard/favorites`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'dashboard',
 })
 
 export default async function FavoritesPage() {

@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Profile - Nego',
     description: 'View and manage your profile, update your information, and see your account statistics on Nego',
     url: `${APP_URL}/dashboard/profile`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'dashboard',
 })
 
 export default async function ProfilePage() {

@@ -3,6 +3,8 @@ import { Metadata } from 'next'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 const SITE_NAME = 'Nego'
 
+export type PageType = 'default' | 'dashboard' | 'auth' | 'legal' | 'admin' | 'talent'
+
 export interface OpenGraphMetadataOptions {
     title: string
     description: string
@@ -11,6 +13,7 @@ export interface OpenGraphMetadataOptions {
     type?: 'website' | 'profile' | 'article'
     siteName?: string
     locale?: string
+    pageType?: PageType
 }
 
 /**
@@ -25,10 +28,23 @@ export function generateOpenGraphMetadata(options: OpenGraphMetadataOptions): Me
         type = 'website',
         siteName = SITE_NAME,
         locale = 'en_US',
+        pageType = 'default',
     } = options
 
-    // Default Open Graph image - use logo or create a default OG image
-    const ogImage = image || `${APP_URL}/og-image.png`
+    // Generate dynamic OG image URL based on page type
+    let ogImage: string
+    if (image) {
+        ogImage = image
+    } else {
+        // Build dynamic OG image URL with query parameters
+        const ogParams = new URLSearchParams({
+            title: title.substring(0, 100), // Limit title length
+            description: description.substring(0, 200), // Limit description length
+            type: pageType,
+        })
+        ogImage = `${APP_URL}/api/og?${ogParams.toString()}`
+    }
+
     const ogUrl = url || APP_URL
 
     return {
@@ -68,10 +84,19 @@ export function generateOpenGraphMetadata(options: OpenGraphMetadataOptions): Me
 export function generateTalentOpenGraphMetadata(
     talentName: string,
     talentImage?: string | null,
-    username?: string | null
+    username?: string | null,
+    talentId?: string | null
 ): Metadata {
     const talentUrl = username ? `${APP_URL}/t/${username}` : undefined
-    const ogImage = talentImage || `${APP_URL}/og-image.png`
+
+    // Generate dynamic talent OG image URL
+    const ogParams = new URLSearchParams()
+    if (username) {
+        ogParams.set('username', username)
+    } else if (talentId) {
+        ogParams.set('id', talentId)
+    }
+    const ogImage = `${APP_URL}/api/og/talent?${ogParams.toString()}`
 
     return generateOpenGraphMetadata({
         title: `${talentName} - Nego`,
@@ -79,5 +104,6 @@ export function generateTalentOpenGraphMetadata(
         url: talentUrl,
         image: ogImage,
         type: 'profile',
+        pageType: 'talent',
     })
 }

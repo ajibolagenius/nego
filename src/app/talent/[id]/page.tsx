@@ -16,21 +16,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     const { data: talent } = await supabase
         .from('profiles')
-        .select('display_name, username, avatar_url')
+        .select('id, display_name, username, avatar_url')
         .eq('id', id)
         .single()
 
     if (!talent) {
-        return generateTalentOpenGraphMetadata('Talent Profile')
+        return generateTalentOpenGraphMetadata('Talent Profile', undefined, undefined, id)
     }
-
-    // avatar_url is already a full URL from Supabase storage or Cloudinary
-    const talentImage = talent.avatar_url || undefined
 
     return generateTalentOpenGraphMetadata(
         talent.display_name || 'Talent Profile',
-        talentImage,
-        talent.username
+        undefined, // Don't pass image URL, let the OG route fetch it
+        talent.username,
+        talent.id
     )
 }
 

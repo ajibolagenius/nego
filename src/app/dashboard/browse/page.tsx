@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Browse Talent - Nego',
     description: 'Discover and connect with verified talent on Nego - Premium Managed Talent Marketplace',
     url: `${APP_URL}/dashboard/browse`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'dashboard',
 })
 
 export default async function BrowsePage() {

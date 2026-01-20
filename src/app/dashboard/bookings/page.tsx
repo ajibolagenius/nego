@@ -9,8 +9,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'My Bookings - Nego',
     description: 'View and manage your bookings on Nego - Track your service requests and appointments',
     url: `${APP_URL}/dashboard/bookings`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'dashboard',
 })
 
 export default async function BookingsPage() {

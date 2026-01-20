@@ -8,8 +8,8 @@ export const metadata = generateOpenGraphMetadata({
     title: 'Admin Dashboard - Nego',
     description: 'Nego Admin Dashboard - Manage platform operations, verifications, and payouts',
     url: `${APP_URL}/admin`,
-    image: `${APP_URL}/og-image.png`,
     type: 'website',
+    pageType: 'admin',
 })
 
 export default async function AdminDashboardPage() {
