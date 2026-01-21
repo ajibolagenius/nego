@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { DisputesPageClient } from './DisputesPageClient'
+import { DashboardLayout } from '@/components/DashboardLayout'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
@@ -21,6 +22,20 @@ export default async function DisputesPage() {
     if (!user) {
         redirect('/login')
     }
+
+    // Fetch user profile
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+    // Fetch wallet
+    const { data: wallet } = await supabase
+        .from('wallets')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
 
     // Fetch user's disputes
     const { data: disputes } = await supabase
@@ -47,5 +62,9 @@ export default async function DisputesPage() {
         .order('created_at', { ascending: false })
         .limit(50)
 
-    return <DisputesPageClient userId={user.id} disputes={disputes || []} bookings={bookings || []} />
+    return (
+        <DashboardLayout user={user} profile={profile} wallet={wallet} showSearch={false} title="Disputes">
+            <DisputesPageClient userId={user.id} disputes={disputes || []} bookings={bookings || []} />
+        </DashboardLayout>
+    )
 }

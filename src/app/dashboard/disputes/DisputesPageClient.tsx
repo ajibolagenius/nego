@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-    Warning, Plus, Eye, X, Calendar, User, Message
+    Warning, Plus, Eye, X, Calendar, User, ChatCircle
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -110,15 +110,15 @@ export function DisputesPageClient({ userId, disputes, bookings }: DisputesPageC
     })
 
     return (
-        <div className="min-h-screen bg-black pt-16 lg:pt-0 pb-20 lg:pb-0">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <Fragment>
+            <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h1 className="text-3xl font-bold text-white mb-2">Disputes</h1>
                         <p className="text-white/60">File and manage booking disputes</p>
                     </div>
-                    {availableBookings.length > 0 && (
+                    {availableBookings.length > 0 ? (
                         <Button
                             onClick={() => setShowForm(true)}
                             className="bg-[#df2531] hover:bg-[#df2531]/90"
@@ -126,7 +126,12 @@ export function DisputesPageClient({ userId, disputes, bookings }: DisputesPageC
                             <Plus size={18} />
                             File Dispute
                         </Button>
-                    )}
+                    ) : bookings.length > 0 ? (
+                        <div className="text-right">
+                            <p className="text-white/60 text-sm mb-1">No eligible bookings</p>
+                            <p className="text-white/40 text-xs">Only confirmed/completed bookings can have disputes</p>
+                        </div>
+                    ) : null}
                 </div>
 
                 {/* My Disputes */}
@@ -134,7 +139,18 @@ export function DisputesPageClient({ userId, disputes, bookings }: DisputesPageC
                     <div className="text-center py-20">
                         <Warning size={64} className="text-white/20 mx-auto mb-4" />
                         <p className="text-white/50 text-lg mb-2">No disputes found</p>
-                        <p className="text-white/30 text-sm">File a dispute if you have an issue with a booking</p>
+                        <p className="text-white/30 text-sm mb-6">File a dispute if you have an issue with a booking</p>
+                        {availableBookings.length > 0 ? (
+                            <Button
+                                onClick={() => setShowForm(true)}
+                                className="bg-[#df2531] hover:bg-[#df2531]/90"
+                            >
+                                <Plus size={18} />
+                                File Your First Dispute
+                            </Button>
+                        ) : (
+                            <p className="text-white/40 text-sm">You need a completed booking to file a dispute</p>
+                        )}
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -282,8 +298,8 @@ export function DisputesPageClient({ userId, disputes, bookings }: DisputesPageC
                             </div>
                         </div>
                     </div>
-                )}
+                </div>
             )}
-        </div>
+        </Fragment>
     )
 }

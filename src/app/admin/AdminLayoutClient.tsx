@@ -105,47 +105,45 @@ export function AdminLayoutClient({ user, children }: AdminLayoutClientProps) {
 
             <div className="flex pt-14 lg:pt-0 pb-20 lg:pb-0">
                 {/* Desktop Sidebar */}
-                <aside className="hidden lg:flex w-64 bg-[#0a0a0a] border-r border-white/10 flex-col fixed left-0 top-0 bottom-0">
+                <aside className="hidden lg:flex flex-col w-64 bg-white/5 border-r border-white/10 fixed left-0 top-0 bottom-0">
                     {/* Logo */}
                     <div className="p-6 border-b border-white/10">
-                        <Link href="/admin" className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-[#df2531] flex items-center justify-center">
-                                <ShieldCheck size={24} weight="bold" className="text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-white font-bold" style={{ fontFamily: 'Cinzel Decorative, serif' }}>
-                                    NEGO
-                                </h1>
-                                <p className="text-white/40 text-xs">Admin Panel</p>
-                            </div>
+                        <Link href="/admin" className="flex items-center">
+                            <span className="text-2xl logo-font">
+                                <span className="text-white">NEGO</span>
+                                <span className="text-[#df2531]">.</span>
+                            </span>
                         </Link>
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 p-4 space-y-1">
-                        {navItems.map((item) => {
-                            const isActive = pathname === item.href
-                            const Icon = item.icon
+                    <nav className="flex-1 p-4 overflow-y-auto">
+                        <ul className="space-y-2">
+                            {navItems.map((item) => {
+                                const isActive = pathname === item.href
+                                const Icon = item.icon
 
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive
-                                            ? 'bg-[#df2531] text-white'
-                                            : 'text-white/60 hover:bg-white/5 hover:text-white'
-                                        }`}
-                                >
-                                    <Icon size={20} weight={isActive ? 'fill' : 'regular'} />
-                                    <span className="font-medium">{item.label}</span>
-                                </Link>
-                            )
-                        })}
+                                return (
+                                    <li key={item.href}>
+                                        <Link
+                                            href={item.href}
+                                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${isActive
+                                                    ? 'bg-[#df2531] text-white'
+                                                    : 'text-white/60 hover:bg-white/5 hover:text-white'
+                                                }`}
+                                        >
+                                            <Icon size={20} weight={isActive ? 'fill' : 'regular'} />
+                                            <span className="text-sm font-medium">{item.label}</span>
+                                        </Link>
+                                    </li>
+                                )
+                            })}
+                        </ul>
                     </nav>
 
                     {/* Footer */}
                     <div className="p-4 border-t border-white/10">
-                        <div className="flex items-center gap-3 px-4 py-3 text-white/60">
+                        <div className="flex items-center gap-3 px-4 py-3 text-white/60 mb-2">
                             <div className="w-8 h-8 rounded-full bg-[#df2531]/20 flex items-center justify-center">
                                 <span className="text-[#df2531] font-bold text-sm">
                                     {user.email?.charAt(0).toUpperCase()}
@@ -159,10 +157,10 @@ export function AdminLayoutClient({ user, children }: AdminLayoutClientProps) {
 
                         <button
                             onClick={handleSignOut}
-                            className="w-full flex items-center gap-3 px-4 py-3 mt-2 rounded-xl text-white/60 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-white/60 hover:bg-white/5 hover:text-white transition-all duration-300"
                         >
                             <SignOut size={20} />
-                            <span>Sign Out</span>
+                            <span className="text-sm font-medium">Logout</span>
                         </button>
                     </div>
                 </aside>

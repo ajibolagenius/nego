@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
     House, User, Wallet, CalendarCheck, Heart, Gear, SignOut,
     MagnifyingGlass, Coin, Plus, Briefcase, ChatCircle, SpinnerGap,
-    Gift, Bell
+    Gift, Bell, Warning
 } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
 import { NotificationBell } from '@/components/NotificationBell'
@@ -32,6 +32,7 @@ const clientNavItems = [
     { icon: CalendarCheck, label: 'Bookings', href: '/dashboard/bookings' },
     { icon: ChatCircle, label: 'Messages', href: '/dashboard/messages' },
     { icon: Heart, label: 'Favorites', href: '/dashboard/favorites' },
+    { icon: Warning, label: 'Disputes', href: '/dashboard/disputes' },
     { icon: Gift, label: 'Gift History', href: '/dashboard/gifts' },
     { icon: Wallet, label: 'Wallet', href: '/dashboard/wallet' },
     { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },
@@ -45,6 +46,7 @@ const talentNavItems = [
     { icon: Briefcase, label: 'Talent Dashboard', href: '/dashboard/talent' },
     { icon: CalendarCheck, label: 'Bookings', href: '/dashboard/bookings' },
     { icon: ChatCircle, label: 'Messages', href: '/dashboard/messages' },
+    { icon: Warning, label: 'Disputes', href: '/dashboard/disputes' },
     { icon: Gift, label: 'Gift History', href: '/dashboard/gifts' },
     { icon: Wallet, label: 'Wallet', href: '/dashboard/wallet' },
     { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },

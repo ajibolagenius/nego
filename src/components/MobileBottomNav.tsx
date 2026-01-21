@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { 
   House, MagnifyingGlass, CalendarCheck, ChatCircle, User,
-  Briefcase, Wallet, Heart, Gear, Gift, Bell, List, X
+  Briefcase, Wallet, Heart, Gear, Gift, Bell, List, X, Warning
 } from '@phosphor-icons/react'
 
 interface MobileBottomNavProps {
@@ -38,6 +38,7 @@ export function MobileBottomNav({ userRole = 'client' }: MobileBottomNavProps) {
     { icon: CalendarCheck, label: 'Bookings', href: '/dashboard/bookings' },
     { icon: ChatCircle, label: 'Messages', href: '/dashboard/messages' },
     { icon: Heart, label: 'Favorites', href: '/dashboard/favorites' },
+    { icon: Warning, label: 'Disputes', href: '/dashboard/disputes' },
     { icon: Gift, label: 'Gift History', href: '/dashboard/gifts' },
     { icon: Wallet, label: 'Wallet', href: '/dashboard/wallet' },
     { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },
@@ -50,6 +51,7 @@ export function MobileBottomNav({ userRole = 'client' }: MobileBottomNavProps) {
     { icon: Briefcase, label: 'Talent Dashboard', href: '/dashboard/talent' },
     { icon: CalendarCheck, label: 'Bookings', href: '/dashboard/bookings' },
     { icon: ChatCircle, label: 'Messages', href: '/dashboard/messages' },
+    { icon: Warning, label: 'Disputes', href: '/dashboard/disputes' },
     { icon: Gift, label: 'Gift History', href: '/dashboard/gifts' },
     { icon: Wallet, label: 'Wallet', href: '/dashboard/wallet' },
     { icon: Bell, label: 'Notifications', href: '/dashboard/notifications' },
