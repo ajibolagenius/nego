@@ -9,7 +9,7 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import type { Media } from '@/types/database'
+import type { Media, ModerationStatus } from '@/types/database'
 import { useRouter } from 'next/navigation'
 
 interface ContentModerationClientProps {
@@ -25,7 +25,7 @@ interface UndoAction {
     type: 'moderate' | 'flag' | 'unflag' | 'suspend' | 'unsuspend'
     mediaId?: string
     userId?: string
-    previousStatus?: string | null
+    previousStatus?: ModerationStatus | null
     previousFlagged?: boolean
     previousFlaggedReason?: string | null
     previousSuspended?: boolean
@@ -254,7 +254,7 @@ export function ContentModerationClient({
                 const { error } = await supabase
                     .from('media')
                     .update({
-                        moderation_status: action.previousStatus as 'approved' | 'rejected' | 'pending' | null,
+                        moderation_status: action.previousStatus as ModerationStatus | null,
                         moderation_notes: null,
                         moderated_at: null
                     })
