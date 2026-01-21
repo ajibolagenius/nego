@@ -20,6 +20,9 @@ export type NotificationType =
     | 'gift_sent'
     | 'general'
 export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'completed'
+export type ModerationStatus = 'pending' | 'approved' | 'rejected'
+export type DisputeStatus = 'open' | 'under_review' | 'resolved' | 'closed' | 'rejected'
+export type DisputeType = 'service_not_delivered' | 'payment_issue' | 'cancellation' | 'quality_issue' | 'other'
 
 export interface Profile {
     id: string
@@ -34,6 +37,10 @@ export interface Profile {
     status: TalentStatus
     starting_price: number | null
     admin_notes: string | null
+    is_suspended?: boolean
+    suspension_reason?: string | null
+    suspended_at?: string | null
+    suspended_by?: string | null
     created_at: string
     updated_at: string
 }
@@ -96,7 +103,16 @@ export interface Media {
     type: 'image' | 'video'
     is_premium: boolean
     unlock_price: number
+    moderation_status?: ModerationStatus
+    moderation_notes?: string | null
+    moderated_by?: string | null
+    moderated_at?: string | null
+    flagged?: boolean
+    flagged_reason?: string | null
     created_at: string
+    // Joined data
+    talent?: Profile
+    moderator?: Profile
 }
 
 export type TransactionType = 'purchase' | 'unlock' | 'booking' | 'refund' | 'payout' | 'withdrawal' | 'gift'
@@ -202,4 +218,55 @@ export interface Gift {
     // Joined data
     sender?: Profile
     recipient?: Profile
+}
+
+export interface CoinPackage {
+    id: string
+    coins: number
+    price: number
+    price_in_kobo: number
+    display_name: string
+    description: string | null
+    popular: boolean
+    best_value: boolean
+    is_active: boolean
+    display_order: number
+    created_at: string
+    updated_at: string
+    created_by?: string | null
+    updated_by?: string | null
+}
+
+export interface Dispute {
+    id: string
+    booking_id: string | null
+    client_id: string
+    talent_id: string
+    dispute_type: DisputeType
+    title: string
+    description: string
+    status: DisputeStatus
+    resolution: string | null
+    resolution_notes: string | null
+    resolved_by: string | null
+    resolved_at: string | null
+    evidence_urls: string[]
+    created_at: string
+    updated_at: string
+    // Joined data
+    booking?: Booking
+    client?: Profile
+    talent?: Profile
+    resolver?: Profile
+}
+
+export interface DisputeMessage {
+    id: string
+    dispute_id: string
+    sender_id: string
+    message: string
+    is_admin: boolean
+    created_at: string
+    // Joined data
+    sender?: Profile
 }

@@ -12,7 +12,10 @@ import {
     ChartLine,
     List,
     X,
-    Users
+    Users,
+    ImageSquare,
+    Coins,
+    Warning
 } from '@phosphor-icons/react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
@@ -24,6 +27,9 @@ const navItems = [
     { href: '/admin', label: 'Dashboard', icon: House },
     { href: '/admin/verifications', label: 'Verifications', icon: UserCheck },
     { href: '/admin/talents', label: 'Talents', icon: Users },
+    { href: '/admin/content', label: 'Content Moderation', icon: ImageSquare },
+    { href: '/admin/coin-packages', label: 'Coin Packages', icon: Coins },
+    { href: '/admin/disputes', label: 'Disputes', icon: Warning },
     { href: '/admin/payouts', label: 'Payouts', icon: Money },
     { href: '/admin/analytics', label: 'Analytics', icon: ChartLine },
 ]

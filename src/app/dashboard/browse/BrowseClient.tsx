@@ -32,6 +32,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedLocation, setSelectedLocation] = useState('All Locations')
     const [selectedService, setSelectedService] = useState<string | null>(null)
+    const [selectedAvailability, setSelectedAvailability] = useState<'all' | 'online' | 'offline' | 'booked'>('all')
     const [showFilters, setShowFilters] = useState(false)
     const [sortBy, setSortBy] = useState<'recent' | 'price_low' | 'price_high'>('recent')
 
@@ -60,6 +61,11 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
             )
         }
 
+        // Availability filter
+        if (selectedAvailability !== 'all') {
+            result = result.filter(t => t.status === selectedAvailability)
+        }
+
         // Sort
         if (sortBy === 'price_low') {
             result.sort((a, b) => (a.starting_price || 0) - (b.starting_price || 0))
@@ -68,7 +74,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
         }
 
         return result
-    }, [talents, searchQuery, selectedLocation, selectedService, sortBy])
+    }, [talents, searchQuery, selectedLocation, selectedService, selectedAvailability, sortBy])
 
     const formatPrice = (price: number) => {
         return `${new Intl.NumberFormat('en-NG', {
@@ -127,14 +133,14 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                         {/* Filter Button */}
                         <Button
                             onClick={() => setShowFilters(!showFilters)}
-                            className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all ${showFilters || selectedService
+                            className={`flex items-center gap-2 px-4 py-3 rounded-xl border transition-all ${showFilters || selectedService || selectedAvailability !== 'all'
                                 ? 'bg-[#df2531] border-[#df2531] text-white'
                                 : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
                                 }`}
                         >
                             <Funnel size={18} />
                             Filters
-                            {selectedService && (
+                            {(selectedService || selectedAvailability !== 'all') && (
                                 <span className="w-2 h-2 bg-white rounded-full" />
                             )}
                         </Button>
@@ -143,32 +149,75 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                     {/* Expanded Filters */}
                     {showFilters && (
                         <div className="bg-white/5 rounded-2xl p-6 border border-white/10 mb-8 animate-fade-in-up">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-white font-semibold">Filter by Service</h3>
-                                {selectedService && (
-                                    <button
-                                        onClick={() => setSelectedService(null)}
-                                        className="text-[#df2531] text-sm hover:underline"
-                                    >
-                                        Clear
-                                    </button>
-                                )}
+                            {/* Availability Filter */}
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-white font-semibold">Availability</h3>
+                                    {selectedAvailability !== 'all' && (
+                                        <button
+                                            onClick={() => setSelectedAvailability('all')}
+                                            className="text-[#df2531] text-sm hover:underline"
+                                        >
+                                            Clear
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        { value: 'all', label: 'All' },
+                                        { value: 'online', label: 'Online' },
+                                        { value: 'offline', label: 'Offline' },
+                                        { value: 'booked', label: 'Booked' },
+                                    ].map(option => (
+                                        <button
+                                            key={option.value}
+                                            onClick={() => setSelectedAvailability(option.value as typeof selectedAvailability)}
+                                            className={`px-4 py-2 rounded-full text-sm transition-all flex items-center gap-1.5 ${selectedAvailability === option.value
+                                                ? 'bg-[#df2531] text-white'
+                                                : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                                                }`}
+                                        >
+                                            {option.value !== 'all' && (
+                                                <Circle size={6} weight="fill" className={
+                                                    option.value === 'online' ? 'text-green-400' :
+                                                        option.value === 'booked' ? 'text-amber-400' : 'text-white/40'
+                                                } />
+                                            )}
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                                {serviceTypes.map(service => (
-                                    <button
-                                        key={service.id}
-                                        onClick={() => setSelectedService(
-                                            selectedService === service.id ? null : service.id
-                                        )}
-                                        className={`px-4 py-2 rounded-full text-sm transition-all ${selectedService === service.id
-                                            ? 'bg-[#df2531] text-white'
-                                            : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
-                                            }`}
-                                    >
-                                        {service.name}
-                                    </button>
-                                ))}
+
+                            {/* Service Filter */}
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-white font-semibold">Filter by Service</h3>
+                                    {selectedService && (
+                                        <button
+                                            onClick={() => setSelectedService(null)}
+                                            className="text-[#df2531] text-sm hover:underline"
+                                        >
+                                            Clear
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {serviceTypes.map(service => (
+                                        <button
+                                            key={service.id}
+                                            onClick={() => setSelectedService(
+                                                selectedService === service.id ? null : service.id
+                                            )}
+                                            className={`px-4 py-2 rounded-full text-sm transition-all ${selectedService === service.id
+                                                ? 'bg-[#df2531] text-white'
+                                                : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                                                }`}
+                                        >
+                                            {service.name}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Sort */}

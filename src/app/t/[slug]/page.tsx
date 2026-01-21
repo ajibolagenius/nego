@@ -134,6 +134,7 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
                 .from('media')
                 .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
                 .eq('talent_id', talent.id)
+                .or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending')
                 .order('created_at', { ascending: false })
             media = mediaData
         } else {
@@ -142,17 +143,20 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
                 .from('media')
                 .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
                 .eq('talent_id', talent.id)
+                .or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending')
                 .order('created_at', { ascending: false })
             media = mediaData
         }
     } else {
         // Non-authenticated users - RLS will only return free media
+        // Hide rejected media from public view
         const { data: mediaData } = await supabase
             .from('media')
             .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
             .eq('talent_id', talent.id)
+            .or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending')
             .order('created_at', { ascending: false })
-        media = mediaData
+            media = mediaData
     }
 
     // Attach media and services to talent object with proper structure
