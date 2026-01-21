@@ -9,6 +9,8 @@ export interface CoinPackage {
   description: string
   popular?: boolean
   bestValue?: boolean
+  isNew?: boolean
+  isRecommended?: boolean
   is_active?: boolean
   display_order?: number
 }
@@ -53,6 +55,15 @@ export const COIN_PACKAGES: CoinPackage[] = [
     displayName: '10,000 Coins',
     description: 'Premium package - One minimum service',
     bestValue: true,
+  },
+  {
+    id: 'coins-15000',
+    coins: 15000,
+    price: 150000,
+    priceInKobo: 15000000,
+    displayName: '15,000 Coins',
+    description: 'Premium Plus package - One and a half services',
+    isRecommended: true,
   },
   {
     id: 'coins-25000',
@@ -100,6 +111,8 @@ export async function getCoinPackagesFromDB(supabase: any): Promise<CoinPackage[
       description: pkg.description || '',
       popular: pkg.popular || false,
       bestValue: pkg.best_value || false,
+      isNew: pkg.is_new || false,
+      isRecommended: pkg.is_recommended || false,
       is_active: pkg.is_active,
       display_order: pkg.display_order
     }))
@@ -132,6 +145,8 @@ export async function getCoinPackageByIdFromDB(supabase: any, id: string): Promi
       description: data.description || '',
       popular: data.popular || false,
       bestValue: data.best_value || false,
+      isNew: data.is_new || false,
+      isRecommended: data.is_recommended || false,
       is_active: data.is_active,
       display_order: data.display_order
     }

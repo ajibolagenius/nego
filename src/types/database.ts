@@ -229,6 +229,8 @@ export interface CoinPackage {
     description: string | null
     popular: boolean
     best_value: boolean
+    is_new: boolean
+    is_recommended: boolean
     is_active: boolean
     display_order: number
     created_at: string

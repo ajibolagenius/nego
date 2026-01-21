@@ -396,6 +396,8 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                     description: pkg.description || '',
                     popular: pkg.popular || false,
                     bestValue: pkg.best_value || false,
+                    isNew: pkg.is_new || false,
+                    isRecommended: pkg.is_recommended || false,
                     is_active: pkg.is_active,
                     display_order: pkg.display_order
                 }))
@@ -811,6 +813,18 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                                                     <span className="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs rounded-full border border-amber-500/30 flex items-center gap-1">
                                                         <Crown size={12} weight="fill" />
                                                         Best Value
+                                                    </span>
+                                                )}
+                                                {pkg.isNew && (
+                                                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full border border-blue-500/30 flex items-center gap-1">
+                                                        <Sparkle size={12} weight="fill" />
+                                                        New
+                                                    </span>
+                                                )}
+                                                {pkg.isRecommended && (
+                                                    <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30 flex items-center gap-1">
+                                                        <CheckCircle size={12} weight="fill" />
+                                                        Recommended
                                                     </span>
                                                 )}
                                             </div>

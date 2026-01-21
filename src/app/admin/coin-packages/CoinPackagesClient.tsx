@@ -3,7 +3,7 @@
 import { useState, Fragment } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-    Plus, Pencil, Trash, Check, X, Star, Crown
+    Plus, Pencil, Trash, Check, X, Star, Crown, Sparkle, CheckCircle
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -29,6 +29,8 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
         description: '',
         popular: false,
         best_value: false,
+        is_new: false,
+        is_recommended: false,
         is_active: true,
         display_order: packages.length + 1
     })
@@ -50,6 +52,8 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
             description: '',
             popular: false,
             best_value: false,
+            is_new: false,
+            is_recommended: false,
             is_active: true,
             display_order: packages.length + 1
         })
@@ -65,6 +69,8 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
             description: pkg.description || '',
             popular: pkg.popular,
             best_value: pkg.best_value,
+            is_new: pkg.is_new || false,
+            is_recommended: pkg.is_recommended || false,
             is_active: pkg.is_active,
             display_order: pkg.display_order
         })
@@ -101,6 +107,8 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
                 description: formData.description || null,
                 popular: formData.popular,
                 best_value: formData.best_value,
+                is_new: formData.is_new,
+                is_recommended: formData.is_recommended,
                 is_active: formData.is_active,
                 display_order: formData.display_order
             }
@@ -251,6 +259,18 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
                                             <span className="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs rounded-full border border-amber-500/30 flex items-center gap-1">
                                                 <Crown size={12} weight="fill" />
                                                 Best Value
+                                            </span>
+                                        )}
+                                        {pkg.is_new && (
+                                            <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full border border-blue-500/30 flex items-center gap-1">
+                                                <Sparkle size={12} weight="fill" />
+                                                New
+                                            </span>
+                                        )}
+                                        {pkg.is_recommended && (
+                                            <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30 flex items-center gap-1">
+                                                <CheckCircle size={12} weight="fill" />
+                                                Recommended
                                             </span>
                                         )}
                                     </div>
@@ -420,6 +440,26 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
                                             className="w-4 h-4 rounded border-white/10 bg-white/5 text-[#df2531] focus:ring-[#df2531]"
                                         />
                                         <span className="text-white">Mark as Best Value</span>
+                                    </label>
+
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.is_new}
+                                            onChange={(e) => setFormData({ ...formData, is_new: e.target.checked })}
+                                            className="w-4 h-4 rounded border-white/10 bg-white/5 text-[#df2531] focus:ring-[#df2531]"
+                                        />
+                                        <span className="text-white">Mark as New</span>
+                                    </label>
+
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.is_recommended}
+                                            onChange={(e) => setFormData({ ...formData, is_recommended: e.target.checked })}
+                                            className="w-4 h-4 rounded border-white/10 bg-white/5 text-[#df2531] focus:ring-[#df2531]"
+                                        />
+                                        <span className="text-white">Mark as Recommended</span>
                                     </label>
 
                                     <label className="flex items-center gap-2 cursor-pointer">

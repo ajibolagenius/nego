@@ -780,11 +780,12 @@ export function ContentModerationClient({
                                         return null
                                     })()}
 
-                                    {/* Flag Button / Undo Flag */}
+                                    {/* Flag Button / Undo Flag / Undo Unflag */}
                                     {(() => {
                                         const flagUndoAction = undoActions.get(selectedMedia.id)
                                         const canShowFlag = !selectedMedia.flagged
                                         const showUndoFlag = flagUndoAction?.type === 'flag' && selectedMedia.flagged
+                                        const showUndoUnflag = flagUndoAction?.type === 'unflag' && !selectedMedia.flagged
                                         
                                         if (showUndoFlag) {
                                             return (
@@ -796,6 +797,18 @@ export function ContentModerationClient({
                                                 >
                                                     <ArrowCounterClockwise size={18} />
                                                     Undo Flag
+                                                </Button>
+                                            )
+                                        } else if (showUndoUnflag) {
+                                            return (
+                                                <Button
+                                                    onClick={() => handleUndo(flagUndoAction)}
+                                                    disabled={isProcessing}
+                                                    variant="outline"
+                                                    className="border-white/10 text-white/60 hover:bg-white/10"
+                                                >
+                                                    <ArrowCounterClockwise size={18} />
+                                                    Undo Unflag
                                                 </Button>
                                             )
                                         } else if (canShowFlag) {
