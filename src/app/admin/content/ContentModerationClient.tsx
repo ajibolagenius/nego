@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -34,9 +34,9 @@ interface UndoAction {
 }
 
 export function ContentModerationClient({
-    pendingMedia,
-    flaggedMedia,
-    allMedia
+    pendingMedia: initialPendingMedia,
+    flaggedMedia: initialFlaggedMedia,
+    allMedia: initialAllMedia
 }: ContentModerationClientProps) {
     const router = useRouter()
     const supabase = createClient()
@@ -48,6 +48,18 @@ export function ContentModerationClient({
     const [undoActions, setUndoActions] = useState<Map<string, UndoAction>>(new Map())
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 24 // 4 columns x 6 rows for optimal grid display
+
+    // Local state for media that updates optimistically
+    const [pendingMedia, setPendingMedia] = useState<Media[]>(initialPendingMedia)
+    const [flaggedMedia, setFlaggedMedia] = useState<Media[]>(initialFlaggedMedia)
+    const [allMedia, setAllMedia] = useState<Media[]>(initialAllMedia)
+
+    // Sync props to state when they change (from router.refresh())
+    useEffect(() => {
+        setPendingMedia(initialPendingMedia)
+        setFlaggedMedia(initialFlaggedMedia)
+        setAllMedia(initialAllMedia)
+    }, [initialPendingMedia, initialFlaggedMedia, initialAllMedia])
 
     // Memoized filtered media
     const filteredMedia = useMemo(() => {
@@ -101,7 +113,7 @@ export function ContentModerationClient({
 
             if (error) throw error
 
-            // Store undo action
+            // Store undo action with composite key to avoid overwriting other action types
             const undoAction: UndoAction = {
                 id: `moderate-${mediaId}-${Date.now()}`,
                 type: 'moderate',
@@ -111,12 +123,22 @@ export function ContentModerationClient({
             }
             setUndoActions(prev => {
                 const newMap = new Map(prev)
-                newMap.set(mediaId, undoAction)
+                newMap.set(`${mediaId}-moderate`, undoAction)
                 return newMap
             })
 
             toast.success(`Media ${status === 'approved' ? 'Approved' : 'Rejected'}`)
-            // Optimistically update selected media state
+            
+            // Optimistically update media lists
+            const updatedMedia = allMedia.map(m => 
+                m.id === mediaId ? { ...m, moderation_status: status as ModerationStatus } : m
+            )
+            setAllMedia(updatedMedia)
+            
+            // Remove from pending if it was there
+            setPendingMedia(prev => prev.filter(m => m.id !== mediaId))
+            
+            // Update selected media state
             if (selectedMedia && selectedMedia.id === mediaId) {
                 setSelectedMedia({
                     ...selectedMedia,
@@ -152,7 +174,7 @@ export function ContentModerationClient({
 
             if (error) throw error
 
-            // Store undo action
+            // Store undo action with composite key to avoid overwriting other action types
             const undoAction: UndoAction = {
                 id: `flag-${mediaId}-${Date.now()}`,
                 type: 'flag',
@@ -163,12 +185,25 @@ export function ContentModerationClient({
             }
             setUndoActions(prev => {
                 const newMap = new Map(prev)
-                newMap.set(mediaId, undoAction)
+                newMap.set(`${mediaId}-flag`, undoAction)
                 return newMap
             })
 
             toast.success('Media flagged')
-            // Optimistically update selected media state
+            
+            // Optimistically update media lists
+            const updatedMedia = allMedia.map(m => 
+                m.id === mediaId ? { ...m, flagged: true, flagged_reason: reason } : m
+            )
+            setAllMedia(updatedMedia)
+            
+            // Add to flagged list if not already there
+            const mediaToFlag = allMedia.find(m => m.id === mediaId)
+            if (mediaToFlag && !flaggedMedia.some(m => m.id === mediaId)) {
+                setFlaggedMedia(prev => [{ ...mediaToFlag, flagged: true, flagged_reason: reason }, ...prev])
+            }
+            
+            // Update selected media state
             if (selectedMedia && selectedMedia.id === mediaId) {
                 setSelectedMedia({
                     ...selectedMedia,
@@ -203,7 +238,7 @@ export function ContentModerationClient({
 
             if (error) throw error
 
-            // Store undo action
+            // Store undo action with composite key to avoid overwriting other action types
             const undoAction: UndoAction = {
                 id: `unflag-${mediaId}-${Date.now()}`,
                 type: 'unflag',
@@ -214,12 +249,22 @@ export function ContentModerationClient({
             }
             setUndoActions(prev => {
                 const newMap = new Map(prev)
-                newMap.set(mediaId, undoAction)
+                newMap.set(`${mediaId}-unflag`, undoAction)
                 return newMap
             })
 
             toast.success('Flag removed')
-            // Optimistically update selected media state
+            
+            // Optimistically update media lists
+            const updatedMedia = allMedia.map(m => 
+                m.id === mediaId ? { ...m, flagged: false, flagged_reason: null } : m
+            )
+            setAllMedia(updatedMedia)
+            
+            // Remove from flagged list
+            setFlaggedMedia(prev => prev.filter(m => m.id !== mediaId))
+            
+            // Update selected media state
             if (selectedMedia && selectedMedia.id === mediaId) {
                 setSelectedMedia({
                     ...selectedMedia,
@@ -309,7 +354,22 @@ export function ContentModerationClient({
 
                 if (error) throw error
                 toast.success('Moderation action undone')
-                // Optimistically update selected media state
+                
+                // Optimistically update media lists
+                const updatedMedia = allMedia.map(m => 
+                    m.id === action.mediaId ? { ...m, moderation_status: action.previousStatus as ModerationStatus | undefined } : m
+                )
+                setAllMedia(updatedMedia)
+                
+                // Add back to pending if status was 'pending'
+                if (action.previousStatus === 'pending') {
+                    const mediaToAdd = updatedMedia.find(m => m.id === action.mediaId)
+                    if (mediaToAdd && !pendingMedia.some(m => m.id === action.mediaId)) {
+                        setPendingMedia(prev => [mediaToAdd, ...prev])
+                    }
+                }
+                
+                // Update selected media state
                 if (selectedMedia && selectedMedia.id === action.mediaId) {
                     setSelectedMedia({
                         ...selectedMedia,
@@ -328,7 +388,19 @@ export function ContentModerationClient({
 
                 if (error) throw error
                 toast.success('Flag action undone')
-                // Optimistically update selected media state
+                
+                // Optimistically update media lists
+                const updatedMedia = allMedia.map(m => 
+                    m.id === action.mediaId ? { ...m, flagged: action.previousFlagged || false, flagged_reason: action.previousFlaggedReason || null } : m
+                )
+                setAllMedia(updatedMedia)
+                
+                // Remove from flagged list if it was unflagged
+                if (!action.previousFlagged) {
+                    setFlaggedMedia(prev => prev.filter(m => m.id !== action.mediaId))
+                }
+                
+                // Update selected media state
                 if (selectedMedia && selectedMedia.id === action.mediaId) {
                     setSelectedMedia({
                         ...selectedMedia,
@@ -341,13 +413,34 @@ export function ContentModerationClient({
                 const { error } = await supabase
                     .from('media')
                     .update({
-                        flagged: action.previousFlagged || true,
-                        flagged_reason: action.previousFlaggedReason || 'Previously flagged'
+                        flagged: true,
+                        flagged_reason: action.previousFlaggedReason || null
                     })
                     .eq('id', action.mediaId)
 
                 if (error) throw error
                 toast.success('Unflag action undone')
+                
+                // Optimistically update media lists
+                const updatedMedia = allMedia.map(m => 
+                    m.id === action.mediaId ? { ...m, flagged: true, flagged_reason: action.previousFlaggedReason || null } : m
+                )
+                setAllMedia(updatedMedia)
+                
+                // Add back to flagged list if not already there
+                const mediaToFlag = updatedMedia.find(m => m.id === action.mediaId)
+                if (mediaToFlag && !flaggedMedia.some(m => m.id === action.mediaId)) {
+                    setFlaggedMedia(prev => [mediaToFlag, ...prev])
+                }
+                
+                // Update selected media state
+                if (selectedMedia && selectedMedia.id === action.mediaId) {
+                    setSelectedMedia({
+                        ...selectedMedia,
+                        flagged: true,
+                        flagged_reason: action.previousFlaggedReason || null
+                    })
+                }
             } else if (action.type === 'suspend' && action.userId) {
                 // Restore previous suspension state
                 const { error } = await supabase
@@ -373,10 +466,22 @@ export function ContentModerationClient({
                 }
             }
 
-            // Remove undo action from map
+            // Remove undo action from map using composite key
             setUndoActions(prev => {
                 const newMap = new Map(prev)
-                const key = action.mediaId || (action.userId ? `user-${action.userId}` : '')
+                let key: string | undefined
+                if (action.mediaId) {
+                    // Use composite key based on action type
+                    if (action.type === 'moderate') {
+                        key = `${action.mediaId}-moderate`
+                    } else if (action.type === 'flag') {
+                        key = `${action.mediaId}-flag`
+                    } else if (action.type === 'unflag') {
+                        key = `${action.mediaId}-unflag`
+                    }
+                } else if (action.userId) {
+                    key = `user-${action.userId}`
+                }
                 if (key) newMap.delete(key)
                 return newMap
             })
@@ -412,25 +517,27 @@ export function ContentModerationClient({
                 {/* Filters */}
                 <div className="flex flex-wrap gap-2 mb-6">
                     {[
-                        { value: 'pending', label: 'Pending', count: pendingMedia.length },
-                        { value: 'flagged', label: 'Flagged', count: flaggedMedia.length },
-                        { value: 'approved', label: 'Approved', count: allMedia.filter(m => m.moderation_status === 'approved').length },
-                        { value: 'rejected', label: 'Rejected', count: allMedia.filter(m => m.moderation_status === 'rejected').length },
-                        { value: 'all', label: 'All', count: allMedia.length },
-                    ].map(option => (
+                        { value: 'pending', label: 'Pending', count: pendingMedia.length, priority: 1 },
+                        { value: 'flagged', label: 'Flagged', count: flaggedMedia.length, priority: 2 },
+                        { value: 'approved', label: 'Approved', count: allMedia.filter(m => m.moderation_status === 'approved').length, priority: 3 },
+                        { value: 'rejected', label: 'Rejected', count: allMedia.filter(m => m.moderation_status === 'rejected').length, priority: 4 },
+                        { value: 'all', label: 'All', count: allMedia.length, priority: 5 },
+                    ]
+                    .sort((a, b) => a.priority - b.priority)
+                    .map(option => (
                         <button
                             key={option.value}
                             onClick={() => handleFilterChange(option.value as FilterType)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                                 filter === option.value
                                     ? 'bg-[#df2531] text-white'
                                     : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
                             }`}
                         >
-                            {option.label}
+                            <span>{option.label}</span>
                             {option.count > 0 && (
-                                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                                    filter === option.value ? 'bg-white/20' : 'bg-[#df2531]/20 text-[#df2531]'
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                    filter === option.value ? 'bg-white/20 text-white' : 'bg-[#df2531]/20 text-[#df2531]'
                                 }`}>
                                     {option.count}
                                 </span>
@@ -718,7 +825,7 @@ export function ContentModerationClient({
                                 <div className="flex flex-wrap gap-3">
                                     {/* Reject Button / Undo Reject */}
                                     {(() => {
-                                        const rejectUndoAction = undoActions.get(selectedMedia.id)
+                                        const rejectUndoAction = undoActions.get(`${selectedMedia.id}-moderate`)
                                         const canShowReject = selectedMedia.moderation_status !== 'rejected'
                                         const showUndoReject = rejectUndoAction?.type === 'moderate' && selectedMedia.moderation_status === 'rejected'
                                         
@@ -750,7 +857,7 @@ export function ContentModerationClient({
 
                                     {/* Approve Button / Undo Approve */}
                                     {(() => {
-                                        const approveUndoAction = undoActions.get(selectedMedia.id)
+                                        const approveUndoAction = undoActions.get(`${selectedMedia.id}-moderate`)
                                         const canShowApprove = selectedMedia.moderation_status !== 'approved'
                                         const showUndoApprove = approveUndoAction?.type === 'moderate' && selectedMedia.moderation_status === 'approved'
                                         
@@ -782,10 +889,11 @@ export function ContentModerationClient({
 
                                     {/* Flag Button / Undo Flag / Undo Unflag */}
                                     {(() => {
-                                        const flagUndoAction = undoActions.get(selectedMedia.id)
+                                        const flagUndoAction = undoActions.get(`${selectedMedia.id}-flag`)
+                                        const unflagUndoAction = undoActions.get(`${selectedMedia.id}-unflag`)
                                         const canShowFlag = !selectedMedia.flagged
                                         const showUndoFlag = flagUndoAction?.type === 'flag' && selectedMedia.flagged
-                                        const showUndoUnflag = flagUndoAction?.type === 'unflag' && !selectedMedia.flagged
+                                        const showUndoUnflag = unflagUndoAction?.type === 'unflag' && !selectedMedia.flagged
                                         
                                         if (showUndoFlag) {
                                             return (
@@ -802,7 +910,7 @@ export function ContentModerationClient({
                                         } else if (showUndoUnflag) {
                                             return (
                                                 <Button
-                                                    onClick={() => handleUndo(flagUndoAction)}
+                                                    onClick={() => handleUndo(unflagUndoAction)}
                                                     disabled={isProcessing}
                                                     variant="outline"
                                                     className="border-white/10 text-white/60 hover:bg-white/10"
