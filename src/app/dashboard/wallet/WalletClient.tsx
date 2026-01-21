@@ -8,7 +8,7 @@ import {
     Clock, CheckCircle, XCircle, Sparkle, ShoppingCart,
     Gift, CreditCard, Receipt, CaretRight, Warning,
     Wallet as WalletIcon, TrendUp, TrendDown, Bank, Lightning, Crown,
-    MagnifyingGlass, X, SpinnerGap, ArrowsClockwise
+    MagnifyingGlass, X, SpinnerGap, ArrowsClockwise, Star
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
@@ -799,16 +799,22 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                                                 : 'border-white/10 bg-white/5 hover:border-white/30'
                                             }`}
                                     >
-                                        {pkg.popular && (
-                                            <div className="absolute -top-2 left-4 px-2 py-0.5 bg-[#df2531] rounded-full">
-                                                <span className="text-[10px] text-white font-bold uppercase">Popular</span>
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex items-center gap-2">
+                                                {pkg.popular && (
+                                                    <span className="px-2 py-1 bg-[#df2531]/20 text-[#df2531] text-xs rounded-full border border-[#df2531]/30 flex items-center gap-1">
+                                                        <Star size={12} weight="fill" />
+                                                        Popular
+                                                    </span>
+                                                )}
+                                                {pkg.bestValue && (
+                                                    <span className="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs rounded-full border border-amber-500/30 flex items-center gap-1">
+                                                        <Crown size={12} weight="fill" />
+                                                        Best Value
+                                                    </span>
+                                                )}
                                             </div>
-                                        )}
-                                        {pkg.bestValue && (
-                                            <div className="absolute -top-2 left-4 px-2 py-0.5 bg-green-500 rounded-full">
-                                                <span className="text-[10px] text-white font-bold uppercase">Best Value</span>
-                                            </div>
-                                        )}
+                                        </div>
 
                                         <div className="flex items-center gap-2 mb-3">
                                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pkg.bestValue ? 'bg-green-500/20' : pkg.popular ? 'bg-[#df2531]/20' : 'bg-white/10'

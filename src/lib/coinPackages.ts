@@ -26,6 +26,7 @@ export interface LegacyCoinPackage {
 }
 
 // Coin packages based on 1 Coin = ₦10 rate
+// Updated per SERVICE_RECOMMENDATIONS.md
 export const COIN_PACKAGES: CoinPackage[] = [
   {
     id: 'coins-1000',
@@ -33,7 +34,7 @@ export const COIN_PACKAGES: CoinPackage[] = [
     price: 10000,
     priceInKobo: 1000000,
     displayName: '1,000 Coins',
-    description: 'Starter package',
+    description: 'Starter package - Good for testing the platform',
   },
   {
     id: 'coins-5000',
@@ -41,7 +42,7 @@ export const COIN_PACKAGES: CoinPackage[] = [
     price: 50000,
     priceInKobo: 5000000,
     displayName: '5,000 Coins',
-    description: 'Standard package',
+    description: 'Standard package - Partial payment towards minimum service',
     popular: true,
   },
   {
@@ -59,7 +60,7 @@ export const COIN_PACKAGES: CoinPackage[] = [
     price: 250000,
     priceInKobo: 25000000,
     displayName: '25,000 Coins',
-    description: 'Deluxe package',
+    description: 'Deluxe package - Multiple services or premium packages',
   },
   {
     id: 'coins-50000',
@@ -67,7 +68,7 @@ export const COIN_PACKAGES: CoinPackage[] = [
     price: 500000,
     priceInKobo: 50000000,
     displayName: '50,000 Coins',
-    description: 'Ultimate package',
+    description: 'Ultimate package - High-value services and multiple bookings',
   },
 ]
 
