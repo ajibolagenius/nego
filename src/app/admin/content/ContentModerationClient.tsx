@@ -45,7 +45,7 @@ export function ContentModerationClient({
     const [showDetailModal, setShowDetailModal] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [moderationNotes, setModerationNotes] = useState('')
-    const [undoActions, setUndoActions] = useState<UndoAction[]>([])
+    const [undoActions, setUndoActions] = useState<Map<string, UndoAction>>(new Map())
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 24 // 4 columns x 6 rows for optimal grid display
 
@@ -109,17 +109,22 @@ export function ContentModerationClient({
                 previousStatus,
                 timestamp: Date.now()
             }
-            setUndoActions(prev => [undoAction, ...prev.slice(0, 9)]) // Keep last 10 actions
-
-            toast.success(`Media ${status === 'approved' ? 'Approved' : 'Rejected'}`, {
-                action: {
-                    label: 'Undo',
-                    onClick: () => handleUndo(undoAction)
-                },
-                duration: 5000
+            setUndoActions(prev => {
+                const newMap = new Map(prev)
+                newMap.set(mediaId, undoAction)
+                return newMap
             })
-            setShowDetailModal(false)
+
+            toast.success(`Media ${status === 'approved' ? 'Approved' : 'Rejected'}`)
+            // Optimistically update selected media state
+            if (selectedMedia && selectedMedia.id === mediaId) {
+                setSelectedMedia({
+                    ...selectedMedia,
+                    moderation_status: status as ModerationStatus
+                })
+            }
             setModerationNotes('')
+            // Don't close modal - keep it open so user can see undo button
             router.refresh()
         } catch (error) {
             console.error('Moderation error:', error)
@@ -156,15 +161,21 @@ export function ContentModerationClient({
                 previousFlaggedReason,
                 timestamp: Date.now()
             }
-            setUndoActions(prev => [undoAction, ...prev.slice(0, 9)])
-
-            toast.success('Media flagged', {
-                action: {
-                    label: 'Undo',
-                    onClick: () => handleUndo(undoAction)
-                },
-                duration: 5000
+            setUndoActions(prev => {
+                const newMap = new Map(prev)
+                newMap.set(mediaId, undoAction)
+                return newMap
             })
+
+            toast.success('Media flagged')
+            // Optimistically update selected media state
+            if (selectedMedia && selectedMedia.id === mediaId) {
+                setSelectedMedia({
+                    ...selectedMedia,
+                    flagged: true,
+                    flagged_reason: reason
+                })
+            }
             router.refresh()
         } catch (error) {
             console.error('Flag error:', error)
@@ -201,15 +212,21 @@ export function ContentModerationClient({
                 previousFlaggedReason,
                 timestamp: Date.now()
             }
-            setUndoActions(prev => [undoAction, ...prev.slice(0, 9)])
-
-            toast.success('Flag removed', {
-                action: {
-                    label: 'Undo',
-                    onClick: () => handleUndo(undoAction)
-                },
-                duration: 5000
+            setUndoActions(prev => {
+                const newMap = new Map(prev)
+                newMap.set(mediaId, undoAction)
+                return newMap
             })
+
+            toast.success('Flag removed')
+            // Optimistically update selected media state
+            if (selectedMedia && selectedMedia.id === mediaId) {
+                setSelectedMedia({
+                    ...selectedMedia,
+                    flagged: false,
+                    flagged_reason: null
+                })
+            }
             router.refresh()
         } catch (error) {
             console.error('Unflag error:', error)
@@ -250,15 +267,23 @@ export function ContentModerationClient({
                 previousSuspended,
                 timestamp: Date.now()
             }
-            setUndoActions(prev => [undoAction, ...prev.slice(0, 9)])
-
-            toast.success('User suspended', {
-                action: {
-                    label: 'Undo',
-                    onClick: () => handleUndo(undoAction)
-                },
-                duration: 5000
+            setUndoActions(prev => {
+                const newMap = new Map(prev)
+                newMap.set(`user-${userId}`, undoAction)
+                return newMap
             })
+
+            toast.success('User suspended')
+            // Optimistically update selected media state
+            if (selectedMedia && selectedMedia.talent && selectedMedia.talent.id === userId) {
+                setSelectedMedia({
+                    ...selectedMedia,
+                    talent: {
+                        ...selectedMedia.talent,
+                        is_suspended: true
+                    }
+                })
+            }
             router.refresh()
         } catch (error) {
             console.error('Suspend error:', error)
@@ -284,6 +309,13 @@ export function ContentModerationClient({
 
                 if (error) throw error
                 toast.success('Moderation action undone')
+                // Optimistically update selected media state
+                if (selectedMedia && selectedMedia.id === action.mediaId) {
+                    setSelectedMedia({
+                        ...selectedMedia,
+                        moderation_status: action.previousStatus as ModerationStatus | undefined
+                    })
+                }
             } else if (action.type === 'flag' && action.mediaId) {
                 // Restore previous flag state
                 const { error } = await supabase
@@ -296,6 +328,14 @@ export function ContentModerationClient({
 
                 if (error) throw error
                 toast.success('Flag action undone')
+                // Optimistically update selected media state
+                if (selectedMedia && selectedMedia.id === action.mediaId) {
+                    setSelectedMedia({
+                        ...selectedMedia,
+                        flagged: action.previousFlagged || false,
+                        flagged_reason: action.previousFlaggedReason || null
+                    })
+                }
             } else if (action.type === 'unflag' && action.mediaId) {
                 // Restore flag
                 const { error } = await supabase
@@ -321,10 +361,26 @@ export function ContentModerationClient({
 
                 if (error) throw error
                 toast.success('Suspension undone')
+                // Optimistically update selected media state
+                if (selectedMedia && selectedMedia.talent && selectedMedia.talent.id === action.userId) {
+                    setSelectedMedia({
+                        ...selectedMedia,
+                        talent: {
+                            ...selectedMedia.talent,
+                            is_suspended: action.previousSuspended || false
+                        }
+                    })
+                }
             }
 
-            // Remove undo action from list
-            setUndoActions(prev => prev.filter(a => a.id !== action.id))
+            // Remove undo action from map
+            setUndoActions(prev => {
+                const newMap = new Map(prev)
+                const key = action.mediaId || (action.userId ? `user-${action.userId}` : '')
+                if (key) newMap.delete(key)
+                return newMap
+            })
+            // Don't close modal after undo - keep it open
             router.refresh()
         } catch (error) {
             console.error('Undo error:', error)
@@ -660,62 +716,152 @@ export function ContentModerationClient({
                                 </div>
 
                                 <div className="flex flex-wrap gap-3">
-                                    {selectedMedia.moderation_status !== 'approved' && (
-                                        <Button
-                                            onClick={() => handleModerate(selectedMedia.id, 'approved')}
-                                            disabled={isProcessing}
-                                            className="bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30"
-                                        >
-                                            <CheckCircle size={18} />
-                                            Approve
-                                        </Button>
-                                    )}
-                                    {selectedMedia.moderation_status !== 'rejected' && (
-                                        <Button
-                                            onClick={() => handleModerate(selectedMedia.id, 'rejected')}
-                                            disabled={isProcessing}
-                                            className="bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30"
-                                        >
-                                            <XCircle size={18} />
-                                            Reject
-                                        </Button>
-                                    )}
-                                    {!selectedMedia.flagged && (
-                                        <Button
-                                            onClick={() => handleFlag(selectedMedia.id, 'Inappropriate content')}
-                                            disabled={isProcessing}
-                                            variant="outline"
-                                            className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
-                                        >
-                                            <Flag size={18} />
-                                            Flag
-                                        </Button>
-                                    )}
-                                    {selectedMedia.flagged && (
-                                        <Button
-                                            onClick={() => handleUnflag(selectedMedia.id)}
-                                            disabled={isProcessing}
-                                            variant="outline"
-                                            className="border-white/10 text-white/60 hover:bg-white/10"
-                                        >
-                                            Remove Flag
-                                        </Button>
-                                    )}
-                                    {selectedMedia.talent && !selectedMedia.talent.is_suspended && (
-                                        <Button
-                                            onClick={() => {
-                                                if (confirm('Suspend this user? They will not be able to use the platform.')) {
-                                                    handleSuspendUser(selectedMedia.talent!.id, 'Content violation')
-                                                }
-                                            }}
-                                            disabled={isProcessing}
-                                            variant="outline"
-                                            className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                                        >
-                                            <ShieldCheck size={18} />
-                                            Suspend User
-                                        </Button>
-                                    )}
+                                    {/* Reject Button / Undo Reject */}
+                                    {(() => {
+                                        const rejectUndoAction = undoActions.get(selectedMedia.id)
+                                        const canShowReject = selectedMedia.moderation_status !== 'rejected'
+                                        const showUndoReject = rejectUndoAction?.type === 'moderate' && selectedMedia.moderation_status === 'rejected'
+                                        
+                                        if (showUndoReject) {
+                                            return (
+                                                <Button
+                                                    onClick={() => handleUndo(rejectUndoAction)}
+                                                    disabled={isProcessing}
+                                                    className="bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30"
+                                                >
+                                                    <ArrowCounterClockwise size={18} />
+                                                    Undo Reject
+                                                </Button>
+                                            )
+                                        } else if (canShowReject) {
+                                            return (
+                                                <Button
+                                                    onClick={() => handleModerate(selectedMedia.id, 'rejected')}
+                                                    disabled={isProcessing}
+                                                    className="bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30"
+                                                >
+                                                    <XCircle size={18} />
+                                                    Reject
+                                                </Button>
+                                            )
+                                        }
+                                        return null
+                                    })()}
+
+                                    {/* Approve Button / Undo Approve */}
+                                    {(() => {
+                                        const approveUndoAction = undoActions.get(selectedMedia.id)
+                                        const canShowApprove = selectedMedia.moderation_status !== 'approved'
+                                        const showUndoApprove = approveUndoAction?.type === 'moderate' && selectedMedia.moderation_status === 'approved'
+                                        
+                                        if (showUndoApprove) {
+                                            return (
+                                                <Button
+                                                    onClick={() => handleUndo(approveUndoAction)}
+                                                    disabled={isProcessing}
+                                                    className="bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30"
+                                                >
+                                                    <ArrowCounterClockwise size={18} />
+                                                    Undo Approve
+                                                </Button>
+                                            )
+                                        } else if (canShowApprove) {
+                                            return (
+                                                <Button
+                                                    onClick={() => handleModerate(selectedMedia.id, 'approved')}
+                                                    disabled={isProcessing}
+                                                    className="bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30"
+                                                >
+                                                    <CheckCircle size={18} />
+                                                    Approve
+                                                </Button>
+                                            )
+                                        }
+                                        return null
+                                    })()}
+
+                                    {/* Flag Button / Undo Flag */}
+                                    {(() => {
+                                        const flagUndoAction = undoActions.get(selectedMedia.id)
+                                        const canShowFlag = !selectedMedia.flagged
+                                        const showUndoFlag = flagUndoAction?.type === 'flag' && selectedMedia.flagged
+                                        
+                                        if (showUndoFlag) {
+                                            return (
+                                                <Button
+                                                    onClick={() => handleUndo(flagUndoAction)}
+                                                    disabled={isProcessing}
+                                                    variant="outline"
+                                                    className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                                                >
+                                                    <ArrowCounterClockwise size={18} />
+                                                    Undo Flag
+                                                </Button>
+                                            )
+                                        } else if (canShowFlag) {
+                                            return (
+                                                <Button
+                                                    onClick={() => handleFlag(selectedMedia.id, 'Inappropriate content')}
+                                                    disabled={isProcessing}
+                                                    variant="outline"
+                                                    className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                                                >
+                                                    <Flag size={18} />
+                                                    Flag
+                                                </Button>
+                                            )
+                                        } else if (selectedMedia.flagged) {
+                                            return (
+                                                <Button
+                                                    onClick={() => handleUnflag(selectedMedia.id)}
+                                                    disabled={isProcessing}
+                                                    variant="outline"
+                                                    className="border-white/10 text-white/60 hover:bg-white/10"
+                                                >
+                                                    Remove Flag
+                                                </Button>
+                                            )
+                                        }
+                                        return null
+                                    })()}
+
+                                    {/* Suspend User Button / Undo Suspend */}
+                                    {selectedMedia.talent && (() => {
+                                        const suspendUndoAction = undoActions.get(`user-${selectedMedia.talent!.id}`)
+                                        const canShowSuspend = !selectedMedia.talent!.is_suspended
+                                        const showUndoSuspend = suspendUndoAction?.type === 'suspend' && selectedMedia.talent!.is_suspended
+                                        
+                                        if (showUndoSuspend) {
+                                            return (
+                                                <Button
+                                                    onClick={() => handleUndo(suspendUndoAction)}
+                                                    disabled={isProcessing}
+                                                    variant="outline"
+                                                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                                >
+                                                    <ArrowCounterClockwise size={18} />
+                                                    Undo Suspend
+                                                </Button>
+                                            )
+                                        } else if (canShowSuspend) {
+                                            return (
+                                                <Button
+                                                    onClick={() => {
+                                                        if (confirm('Suspend this user? They will not be able to use the platform.')) {
+                                                            handleSuspendUser(selectedMedia.talent!.id, 'Content violation')
+                                                        }
+                                                    }}
+                                                    disabled={isProcessing}
+                                                    variant="outline"
+                                                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                                >
+                                                    <ShieldCheck size={18} />
+                                                    Suspend User
+                                                </Button>
+                                            )
+                                        }
+                                        return null
+                                    })()}
                                 </div>
                             </div>
                         </div>
