@@ -5,7 +5,8 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import {
     CheckCircle, XCircle, Flag, Eye, User, Calendar,
-    Funnel, X, VideoCamera, Image as ImageIcon, ShieldCheck, ArrowCounterClockwise
+    Funnel, X, VideoCamera, Image as ImageIcon, ShieldCheck, ArrowCounterClockwise,
+    CaretLeft, CaretRight
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -45,7 +46,10 @@ export function ContentModerationClient({
     const [isProcessing, setIsProcessing] = useState(false)
     const [moderationNotes, setModerationNotes] = useState('')
     const [undoActions, setUndoActions] = useState<UndoAction[]>([])
+    const [currentPage, setCurrentPage] = useState(1)
+    const itemsPerPage = 24 // 4 columns x 6 rows for optimal grid display
 
+    // Memoized filtered media
     const filteredMedia = useMemo(() => {
         switch (filter) {
             case 'pending':
@@ -60,6 +64,24 @@ export function ContentModerationClient({
                 return allMedia
         }
     }, [filter, pendingMedia, flaggedMedia, allMedia])
+
+    // Memoized paginated media
+    const paginatedMedia = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage
+        const endIndex = startIndex + itemsPerPage
+        return filteredMedia.slice(startIndex, endIndex)
+    }, [filteredMedia, currentPage, itemsPerPage])
+
+    // Memoized total pages
+    const totalPages = useMemo(() => {
+        return Math.ceil(filteredMedia.length / itemsPerPage)
+    }, [filteredMedia.length, itemsPerPage])
+
+    // Reset to page 1 when filter changes
+    const handleFilterChange = (newFilter: FilterType) => {
+        setFilter(newFilter)
+        setCurrentPage(1)
+    }
 
     const handleModerate = async (mediaId: string, status: 'approved' | 'rejected') => {
         setIsProcessing(true)
@@ -342,7 +364,7 @@ export function ContentModerationClient({
                     ].map(option => (
                         <button
                             key={option.value}
-                            onClick={() => setFilter(option.value as FilterType)}
+                            onClick={() => handleFilterChange(option.value as FilterType)}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                                 filter === option.value
                                     ? 'bg-[#df2531] text-white'
@@ -367,8 +389,9 @@ export function ContentModerationClient({
                         <p className="text-white/50 text-lg">No media found</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {filteredMedia.map((media) => (
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {paginatedMedia.map((media) => (
                             <div
                                 key={media.id}
                                 className="bg-white/5 rounded-xl border border-white/10 overflow-hidden hover:border-[#df2531]/30 transition-all cursor-pointer"
@@ -438,7 +461,74 @@ export function ContentModerationClient({
                                 </div>
                             </div>
                         ))}
-                    </div>
+                        </div>
+
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/10">
+                                <div className="text-white/60 text-sm">
+                                    Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredMedia.length)} of {filteredMedia.length} media
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                        disabled={currentPage === 1}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                                            currentPage === 1
+                                                ? 'bg-white/5 text-white/30 cursor-not-allowed'
+                                                : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                                        }`}
+                                    >
+                                        <CaretLeft size={16} />
+                                        Previous
+                                    </button>
+                                    
+                                    {/* Page Numbers */}
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                            let pageNum: number
+                                            if (totalPages <= 5) {
+                                                pageNum = i + 1
+                                            } else if (currentPage <= 3) {
+                                                pageNum = i + 1
+                                            } else if (currentPage >= totalPages - 2) {
+                                                pageNum = totalPages - 4 + i
+                                            } else {
+                                                pageNum = currentPage - 2 + i
+                                            }
+                                            
+                                            return (
+                                                <button
+                                                    key={pageNum}
+                                                    onClick={() => setCurrentPage(pageNum)}
+                                                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
+                                                        currentPage === pageNum
+                                                            ? 'bg-[#df2531] text-white'
+                                                            : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                                                    }`}
+                                                >
+                                                    {pageNum}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                        disabled={currentPage === totalPages}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                                            currentPage === totalPages
+                                                ? 'bg-white/5 text-white/30 cursor-not-allowed'
+                                                : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                                        }`}
+                                    >
+                                        Next
+                                        <CaretRight size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
