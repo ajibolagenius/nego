@@ -125,6 +125,17 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
             }
 
             setShowForm(false)
+            
+            // Immediately refresh packages from database
+            const { data: updatedPackages, error: fetchError } = await supabase
+                .from('coin_packages')
+                .select('*')
+                .order('display_order', { ascending: true })
+
+            if (!fetchError && updatedPackages) {
+                setPackages(updatedPackages)
+            }
+            
             router.refresh()
         } catch (error) {
             console.error('Save error:', error)
@@ -144,6 +155,17 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
                 .eq('id', id)
 
             if (error) throw error
+            
+            // Immediately refresh packages from database
+            const { data: updatedPackages, error: fetchError } = await supabase
+                .from('coin_packages')
+                .select('*')
+                .order('display_order', { ascending: true })
+
+            if (!fetchError && updatedPackages) {
+                setPackages(updatedPackages)
+            }
+            
             toast.success('Package deleted')
             router.refresh()
         } catch (error) {
@@ -160,6 +182,17 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
                 .eq('id', pkg.id)
 
             if (error) throw error
+            
+            // Immediately refresh packages from database
+            const { data: updatedPackages, error: fetchError } = await supabase
+                .from('coin_packages')
+                .select('*')
+                .order('display_order', { ascending: true })
+
+            if (!fetchError && updatedPackages) {
+                setPackages(updatedPackages)
+            }
+            
             toast.success(`Package ${!pkg.is_active ? 'activated' : 'deactivated'}`)
             router.refresh()
         } catch (error) {

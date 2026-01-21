@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getCoinPackageById } from '@/lib/coinPackages'
+import { getCoinPackageByIdFromDB } from '@/lib/coinPackages'
 
 export async function POST(request: NextRequest) {
     try {
@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Missing required fields: packageId and reference are required' }, { status: 400 })
         }
 
-        // Validate package
-        const coinPackage = getCoinPackageById(packageId)
+        // Validate package - fetch from database
+        const coinPackage = await getCoinPackageByIdFromDB(supabase, packageId)
         if (!coinPackage) {
             return NextResponse.json({ success: false, error: 'Invalid package selected. Please choose a valid coin package.' }, { status: 400 })
         }

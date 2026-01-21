@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { WalletClient } from './WalletClient'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
+import { getCoinPackagesFromDB } from '@/lib/coinPackages'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 
@@ -44,12 +45,16 @@ export default async function WalletPage() {
         .order('created_at', { ascending: false })
         .limit(50)
 
+    // Fetch coin packages from database
+    const coinPackages = await getCoinPackagesFromDB(supabase)
+
     return (
         <WalletClient
             user={user}
             profile={profile}
             wallet={wallet}
             transactions={transactions || []}
+            coinPackages={coinPackages}
         />
     )
 }

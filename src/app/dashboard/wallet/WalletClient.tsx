@@ -16,7 +16,7 @@ import { useWallet } from '@/hooks/useWallet'
 import { createClient } from '@/lib/supabase/client'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Wallet, Transaction } from '@/types/database'
-import { COIN_PACKAGES, formatNaira, type CoinPackage } from '@/lib/coinPackages'
+import { formatNaira, type CoinPackage } from '@/lib/coinPackages'
 
 // Declare Paystack global type
 interface PaystackResponse {
@@ -46,6 +46,7 @@ interface WalletClientProps {
     profile: Profile | null
     wallet: Wallet | null
     transactions: Transaction[]
+    coinPackages: CoinPackage[]
 }
 
 const transactionConfig: Record<string, { icon: typeof Coin; color: string; bg: string; label: string }> = {
@@ -351,9 +352,10 @@ function SuccessModal({ coins, onClose }: { coins: number; onClose: () => void }
     )
 }
 
-export function WalletClient({ user, profile, wallet: initialWallet, transactions: initialTransactions }: WalletClientProps) {
+export function WalletClient({ user, profile, wallet: initialWallet, transactions: initialTransactions, coinPackages: initialCoinPackages }: WalletClientProps) {
     const router = useRouter()
     const supabase = createClient()
+    const [coinPackages, setCoinPackages] = useState<CoinPackage[]>(initialCoinPackages)
     const [selectedPackage, setSelectedPackage] = useState<CoinPackage | null>(null)
     const [showSuccess, setShowSuccess] = useState(false)
     const [purchasedCoins, setPurchasedCoins] = useState(0)
@@ -373,6 +375,39 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
     useEffect(() => {
         setMounted(true)
     }, [])
+
+    // Refresh coin packages periodically to get latest from database
+    useEffect(() => {
+        const refreshPackages = async () => {
+            const { data, error } = await supabase
+                .from('coin_packages')
+                .select('*')
+                .eq('is_active', true)
+                .order('display_order', { ascending: true })
+
+            if (!error && data) {
+                // Transform to CoinPackage format
+                const transformed = data.map((pkg: any) => ({
+                    id: pkg.id,
+                    coins: pkg.coins,
+                    price: pkg.price,
+                    priceInKobo: pkg.price_in_kobo,
+                    displayName: pkg.display_name,
+                    description: pkg.description || '',
+                    popular: pkg.popular || false,
+                    bestValue: pkg.best_value || false,
+                    is_active: pkg.is_active,
+                    display_order: pkg.display_order
+                }))
+                setCoinPackages(transformed)
+            }
+        }
+
+        // Refresh on mount and every 30 seconds
+        refreshPackages()
+        const interval = setInterval(refreshPackages, 30000)
+        return () => clearInterval(interval)
+    }, [supabase])
 
     // Manual refresh function (includes transactions)
     const handleRefresh = useCallback(async () => {
@@ -752,7 +787,7 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                {COIN_PACKAGES.map((pkg) => (
+                                {coinPackages.map((pkg) => (
                                     <button
                                         key={pkg.id}
                                         onClick={() => handlePurchaseClick(pkg)}

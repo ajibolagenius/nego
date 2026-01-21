@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import {
     CheckCircle, XCircle, Flag, Eye, User, Calendar,
-    Funnel, X, VideoCamera, Image as ImageIcon, ShieldCheck
+    Funnel, X, VideoCamera, Image as ImageIcon, ShieldCheck, ArrowCounterClockwise
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -20,6 +20,18 @@ interface ContentModerationClientProps {
 
 type FilterType = 'all' | 'pending' | 'approved' | 'rejected' | 'flagged'
 
+interface UndoAction {
+    id: string
+    type: 'moderate' | 'flag' | 'unflag' | 'suspend' | 'unsuspend'
+    mediaId?: string
+    userId?: string
+    previousStatus?: string | null
+    previousFlagged?: boolean
+    previousFlaggedReason?: string | null
+    previousSuspended?: boolean
+    timestamp: number
+}
+
 export function ContentModerationClient({
     pendingMedia,
     flaggedMedia,
@@ -32,6 +44,7 @@ export function ContentModerationClient({
     const [showDetailModal, setShowDetailModal] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [moderationNotes, setModerationNotes] = useState('')
+    const [undoActions, setUndoActions] = useState<UndoAction[]>([])
 
     const filteredMedia = useMemo(() => {
         switch (filter) {
@@ -51,6 +64,10 @@ export function ContentModerationClient({
     const handleModerate = async (mediaId: string, status: 'approved' | 'rejected') => {
         setIsProcessing(true)
         try {
+            // Get current state before update
+            const media = allMedia.find(m => m.id === mediaId)
+            const previousStatus = media?.moderation_status || null
+
             const { error } = await supabase
                 .from('media')
                 .update({
@@ -62,7 +79,23 @@ export function ContentModerationClient({
 
             if (error) throw error
 
-            toast.success(`Media ${status === 'approved' ? 'Approved' : 'Rejected'}`)
+            // Store undo action
+            const undoAction: UndoAction = {
+                id: `moderate-${mediaId}-${Date.now()}`,
+                type: 'moderate',
+                mediaId,
+                previousStatus,
+                timestamp: Date.now()
+            }
+            setUndoActions(prev => [undoAction, ...prev.slice(0, 9)]) // Keep last 10 actions
+
+            toast.success(`Media ${status === 'approved' ? 'Approved' : 'Rejected'}`, {
+                action: {
+                    label: 'Undo',
+                    onClick: () => handleUndo(undoAction)
+                },
+                duration: 5000
+            })
             setShowDetailModal(false)
             setModerationNotes('')
             router.refresh()
@@ -77,6 +110,11 @@ export function ContentModerationClient({
     const handleFlag = async (mediaId: string, reason: string) => {
         setIsProcessing(true)
         try {
+            // Get current state before update
+            const media = allMedia.find(m => m.id === mediaId)
+            const previousFlagged = media?.flagged || false
+            const previousFlaggedReason = media?.flagged_reason || null
+
             const { error } = await supabase
                 .from('media')
                 .update({
@@ -87,7 +125,24 @@ export function ContentModerationClient({
 
             if (error) throw error
 
-            toast.success('Media flagged')
+            // Store undo action
+            const undoAction: UndoAction = {
+                id: `flag-${mediaId}-${Date.now()}`,
+                type: 'flag',
+                mediaId,
+                previousFlagged,
+                previousFlaggedReason,
+                timestamp: Date.now()
+            }
+            setUndoActions(prev => [undoAction, ...prev.slice(0, 9)])
+
+            toast.success('Media flagged', {
+                action: {
+                    label: 'Undo',
+                    onClick: () => handleUndo(undoAction)
+                },
+                duration: 5000
+            })
             router.refresh()
         } catch (error) {
             console.error('Flag error:', error)
@@ -100,6 +155,11 @@ export function ContentModerationClient({
     const handleUnflag = async (mediaId: string) => {
         setIsProcessing(true)
         try {
+            // Get current state before update
+            const media = allMedia.find(m => m.id === mediaId)
+            const previousFlagged = media?.flagged || false
+            const previousFlaggedReason = media?.flagged_reason || null
+
             const { error } = await supabase
                 .from('media')
                 .update({
@@ -110,7 +170,24 @@ export function ContentModerationClient({
 
             if (error) throw error
 
-            toast.success('Flag removed')
+            // Store undo action
+            const undoAction: UndoAction = {
+                id: `unflag-${mediaId}-${Date.now()}`,
+                type: 'unflag',
+                mediaId,
+                previousFlagged,
+                previousFlaggedReason,
+                timestamp: Date.now()
+            }
+            setUndoActions(prev => [undoAction, ...prev.slice(0, 9)])
+
+            toast.success('Flag removed', {
+                action: {
+                    label: 'Undo',
+                    onClick: () => handleUndo(undoAction)
+                },
+                duration: 5000
+            })
             router.refresh()
         } catch (error) {
             console.error('Unflag error:', error)
@@ -123,6 +200,15 @@ export function ContentModerationClient({
     const handleSuspendUser = async (userId: string, reason: string) => {
         setIsProcessing(true)
         try {
+            // Get current state before update
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('is_suspended')
+                .eq('id', userId)
+                .single()
+            
+            const previousSuspended = profile?.is_suspended || false
+
             const { error } = await supabase
                 .from('profiles')
                 .update({
@@ -134,11 +220,93 @@ export function ContentModerationClient({
 
             if (error) throw error
 
-            toast.success('User suspended')
+            // Store undo action
+            const undoAction: UndoAction = {
+                id: `suspend-${userId}-${Date.now()}`,
+                type: 'suspend',
+                userId,
+                previousSuspended,
+                timestamp: Date.now()
+            }
+            setUndoActions(prev => [undoAction, ...prev.slice(0, 9)])
+
+            toast.success('User suspended', {
+                action: {
+                    label: 'Undo',
+                    onClick: () => handleUndo(undoAction)
+                },
+                duration: 5000
+            })
             router.refresh()
         } catch (error) {
             console.error('Suspend error:', error)
             toast.error('Failed to suspend user')
+        } finally {
+            setIsProcessing(false)
+        }
+    }
+
+    const handleUndo = async (action: UndoAction) => {
+        setIsProcessing(true)
+        try {
+            if (action.type === 'moderate' && action.mediaId) {
+                // Restore previous moderation status
+                const { error } = await supabase
+                    .from('media')
+                    .update({
+                        moderation_status: action.previousStatus as 'approved' | 'rejected' | 'pending' | null,
+                        moderation_notes: null,
+                        moderated_at: null
+                    })
+                    .eq('id', action.mediaId)
+
+                if (error) throw error
+                toast.success('Moderation action undone')
+            } else if (action.type === 'flag' && action.mediaId) {
+                // Restore previous flag state
+                const { error } = await supabase
+                    .from('media')
+                    .update({
+                        flagged: action.previousFlagged || false,
+                        flagged_reason: action.previousFlaggedReason || null
+                    })
+                    .eq('id', action.mediaId)
+
+                if (error) throw error
+                toast.success('Flag action undone')
+            } else if (action.type === 'unflag' && action.mediaId) {
+                // Restore flag
+                const { error } = await supabase
+                    .from('media')
+                    .update({
+                        flagged: action.previousFlagged || true,
+                        flagged_reason: action.previousFlaggedReason || 'Previously flagged'
+                    })
+                    .eq('id', action.mediaId)
+
+                if (error) throw error
+                toast.success('Unflag action undone')
+            } else if (action.type === 'suspend' && action.userId) {
+                // Restore previous suspension state
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({
+                        is_suspended: action.previousSuspended || false,
+                        suspension_reason: null,
+                        suspended_at: null
+                    })
+                    .eq('id', action.userId)
+
+                if (error) throw error
+                toast.success('Suspension undone')
+            }
+
+            // Remove undo action from list
+            setUndoActions(prev => prev.filter(a => a.id !== action.id))
+            router.refresh()
+        } catch (error) {
+            console.error('Undo error:', error)
+            toast.error('Failed to undo action')
         } finally {
             setIsProcessing(false)
         }
