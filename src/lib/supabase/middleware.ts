@@ -12,6 +12,9 @@ export async function updateSession(request: NextRequest) {
     // Redirect to auth callback to handle the code
     const url = request.nextUrl.clone()
     url.pathname = '/auth/callback'
+    if (!url.searchParams.has('next')) {
+      url.searchParams.set('next', request.nextUrl.pathname)
+    }
     return NextResponse.redirect(url)
   }
 
