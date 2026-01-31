@@ -6,7 +6,7 @@ A premium, dark-themed talent marketplace built with Next.js 16, Supabase, and T
 
 ```bash
 # Clone the repository
-git clone https://github.com/ajibolagenius/nego.git
+git clone https://github.com/<username>/nego.git
 cd nego
 
 # Install dependencies
