@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
         // Get redirect URL
         const origin = process.env.NEXT_PUBLIC_APP_URL ||
-            (request.headers.get('origin') || 'https://negoempire.vercel.app')
+            (request.headers.get('origin') || 'https://negoempire.live')
 
         const redirectTo = `${origin}/auth/verify-email`
 
