@@ -64,7 +64,19 @@ export async function processSuccessfulTransaction(
 
         if (updateError || !updatedTransaction) {
             console.log(`[${provider} Payment] Transaction already processed or update failed:`, updateError)
-            return { status: 'success', message: 'Transaction already processed' }
+
+            // Return current balance if already processed
+            const { data: currentWallet } = await supabase
+                .from('wallets')
+                .select('balance')
+                .eq('user_id', transaction.user_id)
+                .single()
+
+            return {
+                status: 'success',
+                message: 'Transaction already processed',
+                newBalance: currentWallet?.balance
+            }
         }
 
         // 4. Credit user's wallet

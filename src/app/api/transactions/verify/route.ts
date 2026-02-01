@@ -63,6 +63,21 @@ export async function POST(request: NextRequest) {
         const { reference: verifiedReference, amount } = paystackData.data
         const amountInNaira = amount / 100 // Convert from kobo to naira
 
+        // Verify transaction ownership
+        const { data: transaction } = await supabase
+            .from('transactions')
+            .select('user_id')
+            .eq('reference', verifiedReference)
+            .single()
+
+        if (transaction && transaction.user_id !== user.id) {
+            console.error('[Verify Payment] Transaction ownership mismatch:', {
+                expected: user.id,
+                actual: transaction.user_id
+            })
+            return NextResponse.json({ error: 'Unauthorized transaction verification' }, { status: 403 })
+        }
+
         const result = await processSuccessfulTransaction(verifiedReference, amountInNaira, 'paystack')
 
         if (result.status === 'failed') {

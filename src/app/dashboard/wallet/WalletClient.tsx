@@ -46,7 +46,7 @@ const PAYMENT_METHODS: PaymentMethod[] = [
     {
         id: 'nowpayments',
         name: 'Crypto',
-        icon: Lightning, 
+        icon: Lightning,
         description: 'Bitcoin, USDT, ETH, etc.',
         color: 'text-amber-400'
     },
@@ -513,21 +513,13 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                     ))
 
                     // If transaction status changed to 'completed', refresh wallet
-                    // This handles Paystack webhook updates
+                    // This handles Paystack webhook updates and external payments
                     if (updatedTransaction.status === 'completed' && updatedTransaction.type === 'purchase') {
-                        console.log('[Real-time] Purchase transaction completed, refreshing wallet...')
+                        console.log('[Real-time] Purchase transaction completed, refreshing wallet...', updatedTransaction)
                         // Small delay to ensure database has updated wallet
                         setTimeout(() => {
                             refreshWallet()
                         }, 500)
-                    }
-
-                    // Check for successful payment via webhooks (Segpay/NOWPayments)
-                    if (updatedTransaction.status === 'completed' && updatedTransaction.type === 'purchase') {
-                        // Assuming the modal might be closed or we are on the page waiting
-                        // We can show a toast or auto-update balance
-                        console.log('[Real-time] External payment verified', updatedTransaction)
-                        refreshWallet()
                     }
                 }
             )
