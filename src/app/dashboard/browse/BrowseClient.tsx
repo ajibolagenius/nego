@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import {
     MagnifyingGlass, MapPin, Funnel, X, CaretDown,
@@ -29,7 +30,10 @@ interface BrowseClientProps {
 const locations = ['All Locations', ...NIGERIAN_LOCATIONS]
 
 export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProps) {
-    const [searchQuery, setSearchQuery] = useState('')
+    const searchParams = useSearchParams()
+    const initialQuery = searchParams.get('q') || ''
+
+    const [searchQuery, setSearchQuery] = useState(initialQuery)
     const [selectedLocation, setSelectedLocation] = useState('All Locations')
     const [selectedService, setSelectedService] = useState<string | null>(null)
     const [selectedAvailability, setSelectedAvailability] = useState<'all' | 'online' | 'offline' | 'booked'>('all')

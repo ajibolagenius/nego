@@ -320,6 +320,14 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                                     placeholder="Search talents, locations..."
                                     className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors text-sm"
                                     aria-label="Search talents and locations"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            const query = e.currentTarget.value
+                                            if (query.trim()) {
+                                                router.push(`/dashboard/browse?q=${encodeURIComponent(query)}`)
+                                            }
+                                        }
+                                    }}
                                 />
                             </div>
 

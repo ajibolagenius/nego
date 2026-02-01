@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
 
             if (!response.ok) {
                 console.error('[NOWPayments] Error creating invoice:', data)
-                return NextResponse.json({ error: 'Failed to create crypto invoice' }, { status: 500 })
+                return NextResponse.json({ error: `Failed to create crypto invoice: ${data.message || JSON.stringify(data)}` }, { status: 500 })
             }
 
             return NextResponse.json({
