@@ -128,6 +128,7 @@ export interface Transaction {
     reference: string | null
     reference_id: string | null
     description: string | null
+    metadata?: Record<string, any> | null
     created_at: string
     updated_at?: string
 }

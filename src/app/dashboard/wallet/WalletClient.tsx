@@ -25,6 +25,40 @@ interface PaystackResponse {
     transaction: string
 }
 
+type PaymentProvider = 'paystack' | 'segpay' | 'nowpayments'
+
+interface PaymentMethod {
+    id: PaymentProvider
+    name: string
+    icon: any
+    description: string
+    color: string
+}
+
+const PAYMENT_METHODS: PaymentMethod[] = [
+    {
+        id: 'segpay',
+        name: 'Credit/Debit Card',
+        icon: CreditCard,
+        description: 'Pay securely with Card',
+        color: 'text-blue-400'
+    },
+    {
+        id: 'nowpayments',
+        name: 'Crypto',
+        icon: Lightning, 
+        description: 'Bitcoin, USDT, ETH, etc.',
+        color: 'text-amber-400'
+    },
+    {
+        id: 'paystack',
+        name: 'Paystack (Legacy)',
+        icon: CreditCard,
+        description: 'Pay with Card via Paystack',
+        color: 'text-green-400'
+    }
+]
+
 declare global {
     interface Window {
         PaystackPop: {
@@ -78,8 +112,16 @@ function PaymentModal({
     const [error, setError] = useState<string | null>(null)
     const [paystackLoaded, setPaystackLoaded] = useState(false)
 
+    const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('segpay')
+
     const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || ''
     const isPaystackConfigured = publicKey && publicKey !== 'pk_test_your_paystack_public_key'
+
+    // Hide Paystack if not configured or preferred
+    const availableMethods = PAYMENT_METHODS.filter(m => {
+        if (m.id === 'paystack' && !isPaystackConfigured) return false
+        return true
+    })
 
     useEffect(() => {
         if (typeof window !== 'undefined' && !window.PaystackPop) {
@@ -94,7 +136,7 @@ function PaymentModal({
     }, [])
 
     const handlePayment = async () => {
-        if (!paystackLoaded || typeof window === 'undefined' || !window.PaystackPop) {
+        if ((selectedProvider === 'paystack') && (!paystackLoaded || typeof window === 'undefined' || !window.PaystackPop)) {
             setError('Payment system not loaded. Please refresh the page.')
             return
         }
@@ -102,110 +144,92 @@ function PaymentModal({
         setIsProcessing(true)
         setError(null)
 
-        const reference = `nego_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-
         try {
-            const response = await fetch('/api/transactions/create', {
+            const response = await fetch('/api/payments/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ packageId: pkg.id, reference }),
+                body: JSON.stringify({
+                    packageId: pkg.id,
+                    provider: selectedProvider,
+                }),
             })
 
             if (!response.ok) {
                 const data = await response.json()
-                throw new Error(data.error || 'Failed to create transaction')
+                throw new Error(data.error || 'Failed to initiate payment')
             }
 
-            // Define callback functions outside to ensure they're proper function references
-            function paymentCallback(response: PaystackResponse) {
-                console.log('[PaymentModal] Paystack callback invoked with response:', response)
+            const data = await response.json()
+            const { reference, provider, url } = data
 
-                // Paystack requires a synchronous callback, so we handle async work inside
-                // Verify payment status with our API (works for test API where webhooks don't reach localhost)
-                const verifyPayment = async () => {
-                    try {
-                        const refToUse = response.reference || reference
-                        console.log('[PaymentModal] Starting payment verification for reference:', refToUse)
-                        const verifyResponse = await fetch('/api/transactions/verify', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ reference: refToUse }),
-                        })
+            // Handle Segpay / NOWPayments Redirects
+            if (provider === 'segpay' || provider === 'nowpayments') {
+                if (url) {
+                    window.location.href = url
+                    return
+                } else {
+                    throw new Error('Payment URL not found')
+                }
+            }
 
-                        if (!verifyResponse.ok) {
-                            const errorData = await verifyResponse.json()
-                            console.error('[PaymentModal] Verification API returned error:', errorData)
+            // Handle Paystack SDK
+            if (provider === 'paystack') {
+                // Define callback functions
+                const paymentCallback = (response: PaystackResponse) => {
+                    console.log('[PaymentModal] Paystack callback:', response)
 
-                            // If transaction was already processed (by webhook), check if it was successful
-                            if (verifyResponse.status === 409 && errorData.alreadyCompleted) {
-                                console.log('[PaymentModal] Transaction already processed:', errorData)
-                                // If we got balance info, transaction was completed successfully
-                                if (errorData.currentBalance !== undefined || errorData.success) {
-                                    console.log('[PaymentModal] Transaction completed successfully, current balance:', errorData.currentBalance)
+                    const verifyPayment = async () => {
+                        try {
+                            const refToUse = response.reference || reference
+                            const verifyResponse = await fetch('/api/transactions/verify', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ reference: refToUse }),
+                            })
+
+                            if (!verifyResponse.ok) {
+                                const errorData = await verifyResponse.json()
+                                console.error('[PaymentModal] Verification error:', errorData)
+                                if (verifyResponse.status === 409 || errorData.alreadyCompleted) {
                                     onSuccess()
                                     return
                                 }
-                                // Otherwise, still call onSuccess - polling will catch the update
-                                console.log('[PaymentModal] Transaction processed, refreshing wallet...')
+                                // Even if verification fails visually, polling might catch it later
+                                // But usually better to just close and let user check history
                                 onSuccess()
                                 return
                             }
 
-                            // Handle 200 OK with alreadyCompleted flag (successful check)
-                            if (verifyResponse.ok && errorData.alreadyCompleted) {
-                                console.log('[PaymentModal] Transaction verified as already completed, balance:', errorData.currentBalance)
-                                onSuccess()
-                                return
-                            }
-
-                            console.error('[PaymentModal] Payment verification failed:', errorData)
-                            // Don't show error to user - payment succeeded, verification can retry via polling
-                            // The real-time subscription and polling will handle the update
+                            // Successful verification
                             onSuccess()
-                            return
+                        } catch (err) {
+                            console.error('[PaymentModal] Verification error:', err)
+                            onSuccess()
                         }
-
-                        const verifyData = await verifyResponse.json()
-                        console.log('[PaymentModal] Payment verified successfully:', verifyData)
-
-                        // Call onSuccess to refresh wallet and show success modal
-                        onSuccess()
-                    } catch (verifyError) {
-                        console.error('[PaymentModal] Error verifying payment:', verifyError)
-                        // Still call onSuccess - the webhook might handle it, or polling will catch it
-                        onSuccess()
                     }
+
+                    verifyPayment()
                 }
 
-                // Execute async verification (fire and forget - polling will catch if this fails)
-                verifyPayment().catch(err => {
-                    console.error('[PaymentModal] Unhandled error in verification:', err)
-                    // Still call onSuccess - payment succeeded, polling will handle verification
-                    onSuccess()
+                const closeCallback = () => {
+                    setIsProcessing(false)
+                }
+
+                const handler = window.PaystackPop.setup({
+                    key: publicKey,
+                    email: email,
+                    amount: pkg.priceInKobo,
+                    currency: 'NGN',
+                    ref: reference,
+                    callback: paymentCallback,
+                    onClose: closeCallback,
                 })
+
+                handler.openIframe()
             }
 
-            function closeCallback() {
-                setIsProcessing(false)
-            }
-
-            // Ensure callbacks are functions before passing to Paystack
-            if (typeof paymentCallback !== 'function' || typeof closeCallback !== 'function') {
-                throw new Error('Callback functions are not properly defined')
-            }
-
-            const handler = window.PaystackPop.setup({
-                key: publicKey,
-                email: email,
-                amount: pkg.priceInKobo,
-                currency: 'NGN',
-                ref: reference,
-                callback: paymentCallback,
-                onClose: closeCallback,
-            })
-
-            handler.openIframe()
         } catch (err: unknown) {
+            console.error('Payment error:', err)
             const errorMessage = err instanceof Error ? err.message : 'Payment failed'
             setError(errorMessage)
             setIsProcessing(false)
@@ -216,7 +240,7 @@ function PaymentModal({
                     user_id: userId,
                     type: 'purchase_failed',
                     title: 'Purchase Failed ❌',
-                    message: `Your purchase attempt failed: ${errorMessage}. Please try again or contact support.`,
+                    message: `Your purchase attempt failed: ${errorMessage}. Please try again.`,
                     data: {
                         package_id: pkg.id,
                         package_name: pkg.displayName,
@@ -238,7 +262,7 @@ function PaymentModal({
             aria-labelledby="payment-modal-title"
         >
             <div
-                className="bg-[#0a0a0f] border border-white/10 rounded-2xl p-6 w-full max-w-md"
+                className="bg-[#0a0a0f] border border-white/10 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center gap-4 mb-6">
@@ -253,31 +277,39 @@ function PaymentModal({
 
                 <div className="space-y-3 mb-6">
                     <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
-                        <span className="text-white/60">Package</span>
-                        <span className="text-white font-medium">{pkg.displayName}</span>
-                    </div>
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
                         <span className="text-white/60">Amount</span>
                         <span className="text-white font-bold text-lg">{formatNaira(pkg.price)}</span>
                     </div>
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-[#df2531]/10 to-transparent border border-[#df2531]/20">
-                        <span className="text-white/60">You&apos;ll receive</span>
-                        <div className="flex items-center gap-2">
-                            <Coin size={20} className="text-[#df2531]" aria-hidden="true" />
-                            <span className="text-[#df2531] font-bold text-xl">{pkg.coins.toLocaleString()}</span>
+
+                    <div className="space-y-2">
+                        <label className="text-white/60 text-sm pl-1">Select Payment Method</label>
+                        <div className="grid gap-2">
+                            {availableMethods.map((method) => (
+                                <button
+                                    key={method.id}
+                                    onClick={() => setSelectedProvider(method.id)}
+                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${selectedProvider === method.id
+                                        ? 'bg-white/10 border-[#df2531]'
+                                        : 'bg-white/5 border-transparent hover:bg-white/10'
+                                        }`}
+                                >
+                                    <div className={`p-2 rounded-lg bg-white/5 ${method.color}`}>
+                                        <method.icon size={20} weight="duotone" />
+                                    </div>
+                                    <div className="text-left flex-1">
+                                        <div className="text-white font-medium text-sm">{method.name}</div>
+                                        <div className="text-white/40 text-xs">{method.description}</div>
+                                    </div>
+                                    {selectedProvider === method.id && (
+                                        <div className="w-4 h-4 rounded-full bg-[#df2531] border-2 border-[#df2531] flex items-center justify-center">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                                        </div>
+                                    )}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>
-
-                {!isPaystackConfigured && (
-                    <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl mb-4" role="alert">
-                        <Warning size={20} className="text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
-                        <div>
-                            <p className="text-amber-400 text-sm font-medium">Paystack Not Configured</p>
-                            <p className="text-amber-400/70 text-xs mt-1">Add your Paystack API keys to enable payments.</p>
-                        </div>
-                    </div>
-                )}
 
                 {error && (
                     <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl mb-4" role="alert">
@@ -298,9 +330,9 @@ function PaymentModal({
                     </Button>
                     <Button
                         onClick={handlePayment}
-                        disabled={isProcessing || !isPaystackConfigured}
+                        disabled={isProcessing}
                         className="flex-1 bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold"
-                        aria-label={`Pay ${formatNaira(pkg.price)} for ${pkg.coins.toLocaleString()} coins`}
+                        aria-label={`Pay ${formatNaira(pkg.price)}`}
                     >
                         {isProcessing ? (
                             <div className="flex items-center gap-2">
@@ -314,7 +346,7 @@ function PaymentModal({
                 </div>
 
                 <p className="text-center text-white/30 text-xs mt-4">
-                    🔒 Secured by Paystack
+                    🔒 Secured by {availableMethods.find(m => m.id === selectedProvider)?.name}
                 </p>
             </div>
         </div>
@@ -488,6 +520,14 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                         setTimeout(() => {
                             refreshWallet()
                         }, 500)
+                    }
+
+                    // Check for successful payment via webhooks (Segpay/NOWPayments)
+                    if (updatedTransaction.status === 'completed' && updatedTransaction.type === 'purchase') {
+                        // Assuming the modal might be closed or we are on the page waiting
+                        // We can show a toast or auto-update balance
+                        console.log('[Real-time] External payment verified', updatedTransaction)
+                        refreshWallet()
                     }
                 }
             )
