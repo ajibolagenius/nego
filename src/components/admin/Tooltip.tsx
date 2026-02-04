@@ -88,6 +88,7 @@ export function Tooltip({ content, children, position = 'top', delay = 200 }: To
                 onFocus={showTooltip}
                 onBlur={hideTooltip}
                 className="inline-block"
+            // eslint-disable-next-line jsx-a11y/no-static-element-interactions
             >
                 {children}
             </div>
@@ -104,9 +105,9 @@ export function Tooltip({ content, children, position = 'top', delay = 200 }: To
                     {content}
                     <div
                         className={`absolute w-2 h-2 bg-black/95 border border-white/20 rotate-45 ${position === 'top' ? 'bottom-[-4px] left-1/2 -translate-x-1/2 border-t-0 border-r-0' :
-                                position === 'bottom' ? 'top-[-4px] left-1/2 -translate-x-1/2 border-b-0 border-l-0' :
-                                    position === 'left' ? 'right-[-4px] top-1/2 -translate-y-1/2 border-l-0 border-b-0' :
-                                        'left-[-4px] top-1/2 -translate-y-1/2 border-r-0 border-t-0'
+                            position === 'bottom' ? 'top-[-4px] left-1/2 -translate-x-1/2 border-b-0 border-l-0' :
+                                position === 'left' ? 'right-[-4px] top-1/2 -translate-y-1/2 border-l-0 border-b-0' :
+                                    'left-[-4px] top-1/2 -translate-y-1/2 border-r-0 border-t-0'
                             }`}
                     />
                 </div>

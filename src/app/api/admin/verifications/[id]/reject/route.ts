@@ -33,7 +33,7 @@ export async function POST(
 
         // Validate verification exists
         const verificationCheck = await validateVerification(bookingId)
-        if (!verificationCheck.isValid) {
+        if (!verificationCheck.isValid || !verificationCheck.verification) {
             return NextResponse.json(
                 { error: verificationCheck.error || 'Verification not found' },
                 { status: 404 }

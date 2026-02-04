@@ -28,7 +28,7 @@ export function BookingModal({
     services,
     selectedServices,
     totalPrice,
-    userBalance: _userBalance,
+
     onSubmit,
     isLoading,
     error,
@@ -117,6 +117,10 @@ export function BookingModal({
         <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
             onClick={onClose}
+            onKeyDown={(e) => {
+                if (e.key === 'Escape') onClose()
+            }}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby="booking-modal-title"
@@ -124,6 +128,8 @@ export function BookingModal({
             <div
                 className="bg-[#0a0a0f] rounded-2xl w-full max-w-lg border border-white/10 overflow-hidden animate-fade-in-up"
                 onClick={(e) => e.stopPropagation()}
+                role="document"
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
             >
                 {/* Modal Header */}
                 <div className="flex items-center justify-between p-6 border-b border-white/10">

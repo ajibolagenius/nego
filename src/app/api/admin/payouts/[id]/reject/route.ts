@@ -25,7 +25,7 @@ export async function POST(
 
     // Validate withdrawal request exists and is pending
     const requestCheck = await validateWithdrawalRequest(requestId)
-    if (!requestCheck.isValid) {
+    if (!requestCheck.isValid || !requestCheck.request) {
       return NextResponse.json(
         { error: requestCheck.error || 'Withdrawal request not found' },
         { status: requestCheck.error?.includes('already') ? 400 : 404 }

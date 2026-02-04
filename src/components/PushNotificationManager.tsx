@@ -315,14 +315,18 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
                 <div
                     className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
                     onClick={() => !loading && setShowPrompt(false)}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="push-notification-modal-title"
-                    aria-describedby="push-notification-modal-description"
+                    onKeyDown={(e) => {
+                        if (e.key === 'Escape' && !loading) setShowPrompt(false)
+                    }}
+                    tabIndex={-1}
                 >
                     <div
                         className="bg-[#0a0a0f] rounded-2xl w-full max-w-sm border border-white/10 p-6 relative"
                         onClick={(e) => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="push-notification-modal-title"
+                        aria-describedby="push-notification-modal-description"
                     >
                         {/* Close Button */}
                         <button

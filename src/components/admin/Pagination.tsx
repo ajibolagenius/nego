@@ -70,17 +70,19 @@ export function Pagination({
       {/* Items per page selector */}
       {onItemsPerPageChange && (
         <div className="flex items-center gap-2">
-          <label className="text-white/60 text-sm">Items per page:</label>
-          <select
-            value={itemsPerPage}
-            onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
-            className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-[#df2531]/50"
-          >
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
+          <label className="flex items-center gap-2 text-white/60 text-sm">
+            Items per page:
+            <select
+              value={itemsPerPage}
+              onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+              className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-[#df2531]/50"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </label>
         </div>
       )}
 
@@ -117,11 +119,10 @@ export function Pagination({
               <button
                 key={pageNum}
                 onClick={() => onPageChange(pageNum)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isActive
                     ? 'bg-[#df2531] text-white'
                     : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-                }`}
+                  }`}
                 aria-label={`Go to page ${pageNum}`}
                 aria-current={isActive ? 'page' : undefined}
               >

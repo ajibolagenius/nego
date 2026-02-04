@@ -4,7 +4,7 @@ import { CaretLeft, CaretRight, HandWaving } from '@phosphor-icons/react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useEffect, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
+
 
 const heroImages = [
     "https://customer-assets.emergentagent.com/job_secure-booking-3/artifacts/00ey4ncl_naked-black-4664328_1920.jpg",
@@ -137,10 +137,9 @@ export function HeroSection() {
                         style={{ transitionDelay: '1s' }}
                     >
                         <Link href="/dashboard" aria-label="Get started - Navigate to dashboard">
-                            <Button
+                            <span
                                 data-testid="hero-negotiate-btn"
-                                className="group relative bg-[#df2531] hover:bg-transparent text-white font-bold px-10 md:px-12 py-5 md:py-6 rounded-full text-sm md:text-base border-2 border-[#df2531] overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
-                                aria-label="Get started and explore our talent collection"
+                                className="group relative inline-flex items-center justify-center bg-[#df2531] hover:bg-transparent text-white font-bold px-10 md:px-12 py-5 md:py-6 rounded-full text-sm md:text-base border-2 border-[#df2531] overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
                             >
                                 <span className="relative flex items-center gap-3">
                                     <span className="text-white group-hover:text-[#df2531] transition-colors duration-300">Get Started</span>
@@ -148,7 +147,7 @@ export function HeroSection() {
                                         <HandWaving size={18} weight="fill" className="text-white group-hover:text-[#df2531] group-hover:rotate-12 transition-all duration-300" />
                                     </span>
                                 </span>
-                            </Button>
+                            </span>
                         </Link>
                     </div>
                 </div>

@@ -29,7 +29,7 @@ export function DataTable<T extends Record<string, unknown>>({
     searchable = false,
     searchPlaceholder = 'Search...',
     exportable = false,
-    exportFilename: _exportFilename = 'data',
+
     onExport,
     emptyMessage = 'No data available',
     className = '',

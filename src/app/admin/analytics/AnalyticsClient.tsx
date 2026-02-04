@@ -337,7 +337,12 @@ export function AnalyticsClient({
     const revenueChartRef = useRef<SVGSVGElement>(null)
 
     const handleExport = () => {
-        exportAnalyticsData(stats, userGrowthData, bookingTrendsData, revenueData)
+        exportAnalyticsData(
+            stats as unknown as Record<string, number>,
+            userGrowthData as unknown as Record<string, unknown>[],
+            bookingTrendsData as unknown as Record<string, unknown>[],
+            revenueData as unknown as Record<string, unknown>[]
+        )
         toast.success('Export Started', {
             description: 'Analytics data is being downloaded as CSV.'
         })

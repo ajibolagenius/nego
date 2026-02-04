@@ -1,10 +1,10 @@
-
 'use client'
 
+import { useState, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import {
     Upload, X, Warning, Crown
 } from '@phosphor-icons/react'
-import { useState, useRef, useCallback } from 'react'
 import { compressImage } from '@/lib/media-utils'
 import { createClient } from '@/lib/supabase/client'
 
@@ -95,7 +95,7 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
             setUploadProgress(30)
 
             // Upload to Supabase Storage
-            const { error: uploadError, data: _uploadData } = await supabase.storage
+            const { error: uploadError } = await supabase.storage
                 .from('media')
                 .upload(fileName, fileToUpload, {
                     cacheControl: '3600',
@@ -180,6 +180,10 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
                     onClose()
                 }
             }}
+            onKeyDown={(e) => {
+                if (e.key === 'Escape') onClose()
+            }}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby="upload-modal-title"
@@ -188,6 +192,8 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
                 className="bg-[#0a0a0f] rounded-2xl w-full max-w-md border border-white/10 overflow-hidden shadow-2xl animate-fade-in-up"
                 data-testid="upload-media-modal"
                 onClick={(e) => e.stopPropagation()}
+                role="document"
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
             >
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-white/10">
@@ -273,11 +279,15 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
                                         aria-label="Video preview"
                                     />
                                 ) : (
-                                    <img
-                                        src={previewUrl!}
-                                        alt="Preview"
-                                        className="max-h-48 mx-auto rounded-lg object-contain"
-                                    />
+                                    <div className="relative w-full h-48">
+                                        <Image
+                                            src={previewUrl!}
+                                            alt="Preview"
+                                            fill
+                                            className="object-contain rounded-lg"
+                                            unoptimized // For local blob URLs
+                                        />
+                                    </div>
                                 )}
                                 <button
                                     onClick={() => {

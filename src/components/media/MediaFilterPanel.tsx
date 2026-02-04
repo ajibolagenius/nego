@@ -38,8 +38,8 @@ export function MediaFilterPanel({
             <div className="flex flex-wrap gap-4">
                 {/* Sort By */}
                 <div className="flex-1 min-w-[150px]">
-                    <label className="block text-white/60 text-xs mb-2 font-medium uppercase tracking-wide">Sort By</label>
-                    <div className="flex gap-2">
+                    <span id="sort-label" className="block text-white/60 text-xs mb-2 font-medium uppercase tracking-wide">Sort By</span>
+                    <div className="flex gap-2" role="group" aria-labelledby="sort-label">
                         <button
                             onClick={() => onSortChange('newest')}
                             aria-pressed={sortBy === 'newest'}
@@ -67,8 +67,8 @@ export function MediaFilterPanel({
 
                 {/* Filter By Type */}
                 <div className="flex-1 min-w-[200px]">
-                    <label className="block text-white/60 text-xs mb-2 font-medium uppercase tracking-wide">Filter By Type</label>
-                    <div className="flex gap-2">
+                    <span id="filter-label" className="block text-white/60 text-xs mb-2 font-medium uppercase tracking-wide">Filter By Type</span>
+                    <div className="flex gap-2" role="group" aria-labelledby="filter-label">
                         <button
                             onClick={() => onFilterChange('all')}
                             aria-pressed={filterBy === 'all'}

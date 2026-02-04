@@ -18,7 +18,7 @@ const compressImage = (file: File, maxWidth: number = 800, quality: number = 0.8
     return new Promise((resolve, reject) => {
         const reader = new FileReader()
 
-        reader.onload = (e) => {
+        reader.onload = (e: ProgressEvent<FileReader>) => {
             const img = document.createElement('img')
 
             img.onload = () => {
