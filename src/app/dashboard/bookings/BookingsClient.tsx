@@ -6,7 +6,7 @@ import Image from 'next/image'
 import {
     ArrowLeft, CalendarCheck, User, MapPin, Clock,
     CheckCircle, XCircle, Hourglass, CaretRight, Coin,
-    MagnifyingGlass, Funnel, ShieldCheck
+    MagnifyingGlass, ShieldCheck
 } from '@phosphor-icons/react'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -33,7 +33,7 @@ const statusConfig: Record<string, { bg: string; text: string; icon: typeof Chec
     cancelled: { bg: 'bg-red-500/10', text: 'text-red-400', icon: XCircle, label: 'Cancelled' },
 }
 
-export function BookingsClient({ user, profile, bookings, isClient }: BookingsClientProps) {
+export function BookingsClient({ user: _user, profile, bookings, isClient }: BookingsClientProps) {
     const [filter, setFilter] = useState<string>('all')
     const [searchQuery, setSearchQuery] = useState('')
 
@@ -106,8 +106,8 @@ export function BookingsClient({ user, profile, bookings, isClient }: BookingsCl
                                         key={option.value}
                                         onClick={() => setFilter(option.value)}
                                         className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filter === option.value
-                                                ? 'bg-[#df2531] text-white'
-                                                : 'bg-white/5 text-white/60 hover:bg-white/10'
+                                            ? 'bg-[#df2531] text-white'
+                                            : 'bg-white/5 text-white/60 hover:bg-white/10'
                                             }`}
                                     >
                                         {option.label}
@@ -148,7 +148,7 @@ export function BookingsClient({ user, profile, bookings, isClient }: BookingsCl
                         <div className="space-y-4">
                             {filteredBookings.map((booking) => {
                                 const status = statusConfig[booking.status] || statusConfig.payment_pending
-                                const StatusIcon = status.icon
+                                const _StatusIcon = status.icon
                                 const otherParty = isClient ? booking.talent : booking.client
 
                                 return (

@@ -19,7 +19,7 @@ export default async function AnalyticsPage() {
 
     // Check cache first (5 minute TTL)
     const cacheKey = CACHE_KEYS.ANALYTICS_STATS
-    const cachedStats = cache.get(cacheKey)
+    const _cachedStats = cache.get(cacheKey) // TODO: Use cached data if available
 
     // For now, we'll still fetch fresh data but cache the results
     // In a real implementation, you might want to return cached data if available
@@ -40,7 +40,7 @@ export default async function AnalyticsPage() {
         { data: recentUsers },
         { data: recentBookings },
         { data: transactions },
-        { data: withdrawals },
+        { data: _withdrawals },
     ] = await Promise.all([
         // Total users
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
@@ -95,11 +95,12 @@ export default async function AnalyticsPage() {
         hourCounts[hour] = (hourCounts[hour] || 0) + 1
     })
 
-    const peakHour = Object.keys(hourCounts).length > 0
+    const peakHourEntry = Object.keys(hourCounts).length > 0
         ? Object.entries(hourCounts).reduce((a, b) =>
-            hourCounts[Number(a[0])] > hourCounts[Number(b[0])] ? a : b
-        )[0]
+            (hourCounts[Number(a[0])] ?? 0) > (hourCounts[Number(b[0])] ?? 0) ? a : b
+        )
         : undefined
+    const peakHour = peakHourEntry?.[0]
 
     // Calculate client retention (users who made multiple bookings)
     const clientBookingCounts: { [key: string]: number } = {}

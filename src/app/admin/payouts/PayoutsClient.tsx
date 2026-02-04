@@ -9,9 +9,7 @@ import {
     CheckCircle,
     Clock,
     XCircle,
-    Bank,
     Wallet,
-    ArrowRight,
     SpinnerGap,
     Warning,
     MagnifyingGlass,
@@ -24,7 +22,6 @@ import type { WithdrawalRequestWithTalent, PayoutTransaction } from '@/types/adm
 import { toast } from 'sonner'
 import { StatusBadge } from '@/components/admin/StatusBadge'
 import { EmptyState } from '@/components/admin/EmptyState'
-import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { Pagination } from '@/components/admin/Pagination'
 import { usePagination } from '@/hooks/admin/usePagination'
 import { exportWithdrawalRequests, exportPayoutHistory } from '@/lib/admin/export-utils'
@@ -329,36 +326,36 @@ export function PayoutsClient({
         <div className="p-4 sm:p-8">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Payouts</h1>
-          <div className="flex items-center gap-2">
-            <p className="text-white/60">Manage talent earnings and process withdrawal requests</p>
-            <Tooltip content="Approve withdrawals to deduct coins from talent wallets. Rejected withdrawals keep the coins in the talent's wallet.">
-              <Info size={16} className="text-white/40 hover:text-white/60 cursor-help" />
-            </Tooltip>
-          </div>
-        </div>
+                <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Payouts</h1>
+                    <div className="flex items-center gap-2">
+                        <p className="text-white/60">Manage talent earnings and process withdrawal requests</p>
+                        <Tooltip content="Approve withdrawals to deduct coins from talent wallets. Rejected withdrawals keep the coins in the talent's wallet.">
+                            <Info size={16} className="text-white/40 hover:text-white/60 cursor-help" />
+                        </Tooltip>
+                    </div>
+                </div>
                 <div className="flex gap-2">
-          {activeTab === 'requests' && (
-            <button
-              onClick={handleExportRequests}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
-              aria-label="Export withdrawal requests to CSV"
-            >
-              <Download size={18} aria-hidden="true" />
-              <span className="text-sm font-medium">Export CSV</span>
-            </button>
-          )}
-          {activeTab === 'history' && (
-            <button
-              onClick={handleExportHistory}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
-              aria-label="Export payout history to CSV"
-            >
-              <Download size={18} aria-hidden="true" />
-              <span className="text-sm font-medium">Export CSV</span>
-            </button>
-          )}
+                    {activeTab === 'requests' && (
+                        <button
+                            onClick={handleExportRequests}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+                            aria-label="Export withdrawal requests to CSV"
+                        >
+                            <Download size={18} aria-hidden="true" />
+                            <span className="text-sm font-medium">Export CSV</span>
+                        </button>
+                    )}
+                    {activeTab === 'history' && (
+                        <button
+                            onClick={handleExportHistory}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+                            aria-label="Export payout history to CSV"
+                        >
+                            <Download size={18} aria-hidden="true" />
+                            <span className="text-sm font-medium">Export CSV</span>
+                        </button>
+                    )}
                 </div>
             </div>
 

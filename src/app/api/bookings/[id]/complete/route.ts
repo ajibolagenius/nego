@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createApiClient } from '@/lib/supabase/api'
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {

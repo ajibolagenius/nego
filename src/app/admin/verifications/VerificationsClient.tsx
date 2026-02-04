@@ -6,17 +6,10 @@ import { useRouter } from 'next/navigation'
 import {
     CheckCircle,
     XCircle,
-    Clock,
     Phone,
-    MapPin,
-    User,
     Eye,
     X,
-    Warning,
-    CaretLeft,
-    CaretRight,
     MagnifyingGlass,
-    Funnel,
     ArrowClockwise,
     Camera,
     Download,
@@ -27,7 +20,6 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { StatusBadge } from '@/components/admin/StatusBadge'
 import { EmptyState } from '@/components/admin/EmptyState'
-import { LoadingSpinner } from '@/components/admin/LoadingSpinner'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { Pagination } from '@/components/admin/Pagination'
 import { usePagination } from '@/hooks/admin/usePagination'
@@ -261,17 +253,16 @@ export function VerificationsClient({ verifications: initialVerifications }: Ver
 
     const pendingCount = verifications.filter((v) => v.status === 'pending').length
 
-    // Pagination
     const {
         currentData: paginatedVerifications,
         currentPage,
         totalPages,
         totalItems,
         goToPage,
-        nextPage,
-        previousPage,
-        canGoNext,
-        canGoPrevious,
+        nextPage: _nextPage,
+        previousPage: _previousPage,
+        canGoNext: _canGoNext,
+        canGoPrevious: _canGoPrevious,
         setItemsPerPage,
     } = usePagination({
         data: filteredVerifications,

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createApiClient } from '@/lib/supabase/api'
 import { validateAdmin, validateVerification } from '@/lib/admin/validation'
 import { logAdminAction, getClientIP, getUserAgent } from '@/lib/admin/audit-log'
@@ -42,7 +41,6 @@ export async function POST(
       )
     }
 
-    const supabase = await createClient()
     const apiClient = createApiClient()
 
     // Update verification status using API client to bypass RLS

@@ -8,12 +8,10 @@ import {
     CalendarCheck,
     Money,
     TrendUp,
-    TrendDown,
     ChartLine,
     ChartBar,
     ChartPie,
     ArrowUp,
-    ArrowDown,
     Coin,
     Clock,
     Download,
@@ -83,7 +81,6 @@ function SimpleLineChart({
 }) {
     const values = data.map(d => d[dataKey] || 0)
     const maxValue = Math.max(...values, 1)
-    const minValue = Math.min(...values)
 
     // Create SVG path
     const points = data.map((d, i) => {
@@ -97,7 +94,6 @@ function SimpleLineChart({
 
         const rect = e.currentTarget.getBoundingClientRect()
         const x = ((e.clientX - rect.left) / rect.width) * 100
-        const y = ((e.clientY - rect.top) / rect.height) * 100
 
         // Find closest point
         let closestPoint = points[0]
@@ -111,12 +107,14 @@ function SimpleLineChart({
             }
         })
 
-        onHover({
-            x: e.clientX,
-            y: e.clientY,
-            value: closestPoint.value,
-            label: closestPoint.label
-        })
+        if (closestPoint) {
+            onHover({
+                x: e.clientX,
+                y: e.clientY,
+                value: closestPoint.value,
+                label: closestPoint.label
+            })
+        }
     }
 
     const handleMouseLeave = () => {
@@ -336,7 +334,6 @@ export function AnalyticsClient({
     const [customEndDate, setCustomEndDate] = useState('')
 
     // Refs for chart export
-    const userGrowthChartRef = useRef<SVGSVGElement>(null)
     const revenueChartRef = useRef<SVGSVGElement>(null)
 
     const handleExport = () => {
@@ -381,12 +378,6 @@ export function AnalyticsClient({
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
         }).format(amount)
-    }
-
-    // Calculate growth percentages (mock for now - would need historical data)
-    const calculateGrowth = (current: number, previous: number) => {
-        if (previous === 0) return current > 0 ? 100 : 0
-        return ((current - previous) / previous) * 100
     }
 
     return (

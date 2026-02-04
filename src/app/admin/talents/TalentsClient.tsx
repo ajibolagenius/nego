@@ -8,13 +8,11 @@ import {
     XCircle,
     User,
     MagnifyingGlass,
-    Funnel,
     ArrowClockwise,
     ShieldCheck,
     ShieldSlash,
     Calendar,
     MapPin,
-    CurrencyDollar,
     Eye,
     X,
     PencilSimple,
@@ -24,7 +22,6 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { EmptyState } from '@/components/admin/EmptyState'
-import { LoadingSpinner } from '@/components/admin/LoadingSpinner'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { Pagination } from '@/components/admin/Pagination'
 import { usePagination } from '@/hooks/admin/usePagination'
@@ -145,14 +142,13 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
         return true
     })
 
-    // Pagination
     const {
         currentPage,
         totalPages,
         currentData: paginatedData,
         goToPage,
-        nextPage,
-        previousPage,
+        nextPage: _nextPage,
+        previousPage: _previousPage,
         setItemsPerPage
     } = usePagination({ data: filteredTalents, itemsPerPage: 20 })
 
@@ -326,32 +322,29 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                     <div className="flex gap-2">
                         <button
                             onClick={() => setFilter('all')}
-                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                                filter === 'all'
+                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${filter === 'all'
                                     ? 'bg-[#df2531] text-white'
                                     : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-                            }`}
+                                }`}
                         >
                             All ({talents.length})
                         </button>
                         <button
                             onClick={() => setFilter('verified')}
-                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${
-                                filter === 'verified'
+                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${filter === 'verified'
                                     ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                                     : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-                            }`}
+                                }`}
                         >
                             <CheckCircle size={16} weight="fill" />
                             Verified ({talents.filter(t => t.is_verified).length})
                         </button>
                         <button
                             onClick={() => setFilter('unverified')}
-                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${
-                                filter === 'unverified'
+                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${filter === 'unverified'
                                     ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                                     : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-                            }`}
+                                }`}
                         >
                             <XCircle size={16} weight="fill" />
                             Unverified ({talents.filter(t => !t.is_verified).length})
@@ -452,17 +445,15 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                                                 )}
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                                                    talent.status === 'online'
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${talent.status === 'online'
                                                         ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                                                         : talent.status === 'booked'
                                                             ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                                                             : 'bg-white/10 text-white/60 border border-white/10'
-                                                }`}>
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${
-                                                        talent.status === 'online' ? 'bg-green-400' :
-                                                        talent.status === 'booked' ? 'bg-amber-400' : 'bg-white/40'
-                                                    }`} />
+                                                    }`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${talent.status === 'online' ? 'bg-green-400' :
+                                                            talent.status === 'booked' ? 'bg-amber-400' : 'bg-white/40'
+                                                        }`} />
                                                     {talent.status === 'online' ? 'Online' :
                                                         talent.status === 'booked' ? 'Booked' : talent.status || 'Offline'}
                                                 </span>
@@ -612,17 +603,15 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                                                 <span className="text-sm font-medium">Unverified</span>
                                             </div>
                                         )}
-                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                                            selectedTalent.status === 'online'
+                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${selectedTalent.status === 'online'
                                                 ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                                                 : selectedTalent.status === 'booked'
                                                     ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                                                     : 'bg-white/10 text-white/60 border border-white/10'
-                                        }`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${
-                                                selectedTalent.status === 'online' ? 'bg-green-400' :
-                                                selectedTalent.status === 'booked' ? 'bg-amber-400' : 'bg-white/40'
-                                            }`} />
+                                            }`}>
+                                            <span className={`w-1.5 h-1.5 rounded-full ${selectedTalent.status === 'online' ? 'bg-green-400' :
+                                                    selectedTalent.status === 'booked' ? 'bg-amber-400' : 'bg-white/40'
+                                                }`} />
                                             {selectedTalent.status === 'online' ? 'Online' :
                                                 selectedTalent.status === 'booked' ? 'Booked' : selectedTalent.status || 'Offline'}
                                         </span>

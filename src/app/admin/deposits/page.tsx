@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
     Bank, CheckCircle, XCircle, Clock, MagnifyingGlass,
-    ArrowUpRight, Copy, Funnel, CalendarBlank, ImageSquare,
-    ArrowsClockwise
+    ArrowUpRight, ArrowsClockwise, ImageSquare, CalendarBlank
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import Image from 'next/image'
@@ -431,7 +430,7 @@ export default function DepositsPage() {
     )
 }
 
-function Coin({ size, weight, className }: any) {
+function Coin({ size, weight: _weight, className }: any) {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="currentColor" viewBox="0 0 256 256" className={className}>
             <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z"></path>

@@ -3,7 +3,7 @@
  * This is a fallback when the app fails to render entirely.
  */
 export default function GlobalError({
-    error,
+    error: _error,
     reset,
 }: {
     error: Error & { digest?: string }

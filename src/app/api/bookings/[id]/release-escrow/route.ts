@@ -7,7 +7,7 @@ import { createApiClient } from '@/lib/supabase/api'
  * This can be used to fix bookings that were completed before escrow release logic was added
  */
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {

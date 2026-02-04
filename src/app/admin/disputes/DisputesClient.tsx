@@ -4,8 +4,8 @@ import { useState, useMemo, Fragment } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import {
-    Warning, CheckCircle, XCircle, Clock, ChatCircle, User, Calendar,
-    Eye, X, ArrowRight
+    CheckCircle, XCircle, Clock, ChatCircle, User, Calendar,
+    Eye, X
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -21,7 +21,7 @@ type DisputeFilter = 'all' | 'open' | 'under_review' | 'resolved' | 'closed'
 export function DisputesClient({ initialDisputes }: DisputesClientProps) {
     const router = useRouter()
     const supabase = createClient()
-    const [disputes, setDisputes] = useState<Dispute[]>(initialDisputes)
+    const [disputes, _setDisputes] = useState<Dispute[]>(initialDisputes)
     const [filter, setFilter] = useState<DisputeFilter>('open')
     const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null)
     const [showDetailModal, setShowDetailModal] = useState(false)
@@ -154,107 +154,105 @@ export function DisputesClient({ initialDisputes }: DisputesClientProps) {
         <Fragment>
             <div className="p-6 lg:p-8">
                 <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-white mb-2">Dispute Resolution</h1>
-                    <p className="text-white/60">Manage and resolve booking disputes</p>
-                </div>
+                    {/* Header */}
+                    <div className="mb-8">
+                        <h1 className="text-3xl font-bold text-white mb-2">Dispute Resolution</h1>
+                        <p className="text-white/60">Manage and resolve booking disputes</p>
+                    </div>
 
-                {/* Filters */}
-                <div className="flex flex-wrap gap-2 mb-6">
-                    {[
-                        { value: 'open', label: 'Open', count: disputes.filter(d => d.status === 'open').length },
-                        { value: 'under_review', label: 'Under Review', count: disputes.filter(d => d.status === 'under_review').length },
-                        { value: 'resolved', label: 'Resolved', count: disputes.filter(d => d.status === 'resolved').length },
-                        { value: 'closed', label: 'Closed', count: disputes.filter(d => d.status === 'closed').length },
-                        { value: 'all', label: 'All', count: disputes.length },
-                    ].map(option => (
-                        <button
-                            key={option.value}
-                            onClick={() => setFilter(option.value as DisputeFilter)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                filter === option.value
+                    {/* Filters */}
+                    <div className="flex flex-wrap gap-2 mb-6">
+                        {[
+                            { value: 'open', label: 'Open', count: disputes.filter(d => d.status === 'open').length },
+                            { value: 'under_review', label: 'Under Review', count: disputes.filter(d => d.status === 'under_review').length },
+                            { value: 'resolved', label: 'Resolved', count: disputes.filter(d => d.status === 'resolved').length },
+                            { value: 'closed', label: 'Closed', count: disputes.filter(d => d.status === 'closed').length },
+                            { value: 'all', label: 'All', count: disputes.length },
+                        ].map(option => (
+                            <button
+                                key={option.value}
+                                onClick={() => setFilter(option.value as DisputeFilter)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === option.value
                                     ? 'bg-[#df2531] text-white'
                                     : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
-                            }`}
-                        >
-                            {option.label}
-                            {option.count > 0 && (
-                                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                                    filter === option.value ? 'bg-white/20' : 'bg-[#df2531]/20 text-[#df2531]'
-                                }`}>
-                                    {option.count}
-                                </span>
-                            )}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Disputes List */}
-                {filteredDisputes.length === 0 ? (
-                    <div className="text-center py-20">
-                        <p className="text-white/50 text-lg">No disputes found</p>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {filteredDisputes.map((dispute) => (
-                            <div
-                                key={dispute.id}
-                                className="bg-white/5 rounded-xl border border-white/10 p-6 hover:border-[#df2531]/30 transition-all"
+                                    }`}
                             >
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(dispute.status)}`}>
-                                                {dispute.status.replace('_', ' ').toUpperCase()}
-                                            </span>
-                                            <span className="px-3 py-1 rounded-full text-xs bg-white/10 text-white/60 border border-white/10">
-                                                {dispute.dispute_type.replace('_', ' ')}
-                                            </span>
-                                        </div>
-
-                                        <h3 className="text-xl font-bold text-white mb-2">{dispute.title}</h3>
-                                        <p className="text-white/70 mb-4 line-clamp-2">{dispute.description}</p>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                            <div className="flex items-center gap-2 text-white/60 text-sm">
-                                                <User size={16} />
-                                                <span>
-                                                    Client: <span className="text-white">{dispute.client?.display_name || 'Unknown'}</span>
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-white/60 text-sm">
-                                                <User size={16} />
-                                                <span>
-                                                    Talent: <span className="text-white">{dispute.talent?.display_name || 'Unknown'}</span>
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-white/60 text-sm">
-                                                <Calendar size={16} />
-                                                <span>{formatDate(dispute.created_at)}</span>
-                                            </div>
-                                        </div>
-
-                                        {dispute.booking && (
-                                            <div className="text-sm text-white/60">
-                                                Booking ID: <span className="text-white font-mono">{dispute.booking_id?.substring(0, 8)}...</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <Button
-                                        onClick={() => handleViewDetails(dispute)}
-                                        variant="outline"
-                                        className="ml-4 border-white/10"
-                                    >
-                                        <Eye size={18} />
-                                        View
-                                    </Button>
-                                </div>
-                            </div>
+                                {option.label}
+                                {option.count > 0 && (
+                                    <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${filter === option.value ? 'bg-white/20' : 'bg-[#df2531]/20 text-[#df2531]'
+                                        }`}>
+                                        {option.count}
+                                    </span>
+                                )}
+                            </button>
                         ))}
                     </div>
-                )}
+
+                    {/* Disputes List */}
+                    {filteredDisputes.length === 0 ? (
+                        <div className="text-center py-20">
+                            <p className="text-white/50 text-lg">No disputes found</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {filteredDisputes.map((dispute) => (
+                                <div
+                                    key={dispute.id}
+                                    className="bg-white/5 rounded-xl border border-white/10 p-6 hover:border-[#df2531]/30 transition-all"
+                                >
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(dispute.status)}`}>
+                                                    {dispute.status.replace('_', ' ').toUpperCase()}
+                                                </span>
+                                                <span className="px-3 py-1 rounded-full text-xs bg-white/10 text-white/60 border border-white/10">
+                                                    {dispute.dispute_type.replace('_', ' ')}
+                                                </span>
+                                            </div>
+
+                                            <h3 className="text-xl font-bold text-white mb-2">{dispute.title}</h3>
+                                            <p className="text-white/70 mb-4 line-clamp-2">{dispute.description}</p>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                                <div className="flex items-center gap-2 text-white/60 text-sm">
+                                                    <User size={16} />
+                                                    <span>
+                                                        Client: <span className="text-white">{dispute.client?.display_name || 'Unknown'}</span>
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-white/60 text-sm">
+                                                    <User size={16} />
+                                                    <span>
+                                                        Talent: <span className="text-white">{dispute.talent?.display_name || 'Unknown'}</span>
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-white/60 text-sm">
+                                                    <Calendar size={16} />
+                                                    <span>{formatDate(dispute.created_at)}</span>
+                                                </div>
+                                            </div>
+
+                                            {dispute.booking && (
+                                                <div className="text-sm text-white/60">
+                                                    Booking ID: <span className="text-white font-mono">{dispute.booking_id?.substring(0, 8)}...</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <Button
+                                            onClick={() => handleViewDetails(dispute)}
+                                            variant="outline"
+                                            className="ml-4 border-white/10"
+                                        >
+                                            <Eye size={18} />
+                                            View
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -371,15 +369,13 @@ export function DisputesClient({ initialDisputes }: DisputesClientProps) {
                                                     </div>
                                                 )}
                                                 <div className={`flex-1 ${msg.is_admin ? 'text-right' : ''}`}>
-                                                    <div className={`inline-block p-3 rounded-lg ${
-                                                        msg.is_admin
-                                                            ? 'bg-[#df2531]/20 text-white'
-                                                            : 'bg-white/5 text-white/80'
-                                                    }`}>
-                                                        <p className="text-sm">{msg.message}</p>
-                                                        <p className={`text-xs mt-1 ${
-                                                            msg.is_admin ? 'text-white/60' : 'text-white/40'
+                                                    <div className={`inline-block p-3 rounded-lg ${msg.is_admin
+                                                        ? 'bg-[#df2531]/20 text-white'
+                                                        : 'bg-white/5 text-white/80'
                                                         }`}>
+                                                        <p className="text-sm">{msg.message}</p>
+                                                        <p className={`text-xs mt-1 ${msg.is_admin ? 'text-white/60' : 'text-white/40'
+                                                            }`}>
                                                             {formatDate(msg.created_at)}
                                                         </p>
                                                     </div>

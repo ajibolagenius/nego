@@ -4,8 +4,8 @@ import { useState, useMemo, useEffect } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import {
-    CheckCircle, XCircle, Flag, Eye, User, Calendar,
-    Funnel, X, VideoCamera, Image as ImageIcon, ShieldCheck, ArrowCounterClockwise,
+    CheckCircle, XCircle, Flag, User, Calendar,
+    X, VideoCamera, ShieldCheck, ArrowCounterClockwise,
     CaretLeft, CaretRight
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
@@ -128,16 +128,16 @@ export function ContentModerationClient({
             })
 
             toast.success(`Media ${status === 'approved' ? 'Approved' : 'Rejected'}`)
-            
+
             // Optimistically update media lists
-            const updatedMedia = allMedia.map(m => 
+            const updatedMedia = allMedia.map(m =>
                 m.id === mediaId ? { ...m, moderation_status: status as ModerationStatus } : m
             )
             setAllMedia(updatedMedia)
-            
+
             // Remove from pending if it was there
             setPendingMedia(prev => prev.filter(m => m.id !== mediaId))
-            
+
             // Update selected media state
             if (selectedMedia && selectedMedia.id === mediaId) {
                 setSelectedMedia({
@@ -190,19 +190,19 @@ export function ContentModerationClient({
             })
 
             toast.success('Media flagged')
-            
+
             // Optimistically update media lists
-            const updatedMedia = allMedia.map(m => 
+            const updatedMedia = allMedia.map(m =>
                 m.id === mediaId ? { ...m, flagged: true, flagged_reason: reason } : m
             )
             setAllMedia(updatedMedia)
-            
+
             // Add to flagged list if not already there
             const mediaToFlag = allMedia.find(m => m.id === mediaId)
             if (mediaToFlag && !flaggedMedia.some(m => m.id === mediaId)) {
                 setFlaggedMedia(prev => [{ ...mediaToFlag, flagged: true, flagged_reason: reason }, ...prev])
             }
-            
+
             // Update selected media state
             if (selectedMedia && selectedMedia.id === mediaId) {
                 setSelectedMedia({
@@ -254,16 +254,16 @@ export function ContentModerationClient({
             })
 
             toast.success('Flag removed')
-            
+
             // Optimistically update media lists
-            const updatedMedia = allMedia.map(m => 
+            const updatedMedia = allMedia.map(m =>
                 m.id === mediaId ? { ...m, flagged: false, flagged_reason: null } : m
             )
             setAllMedia(updatedMedia)
-            
+
             // Remove from flagged list
             setFlaggedMedia(prev => prev.filter(m => m.id !== mediaId))
-            
+
             // Update selected media state
             if (selectedMedia && selectedMedia.id === mediaId) {
                 setSelectedMedia({
@@ -290,7 +290,7 @@ export function ContentModerationClient({
                 .select('is_suspended')
                 .eq('id', userId)
                 .single()
-            
+
             const previousSuspended = profile?.is_suspended || false
 
             const { error } = await supabase
@@ -354,13 +354,13 @@ export function ContentModerationClient({
 
                 if (error) throw error
                 toast.success('Moderation action undone')
-                
+
                 // Optimistically update media lists
-                const updatedMedia = allMedia.map(m => 
+                const updatedMedia = allMedia.map(m =>
                     m.id === action.mediaId ? { ...m, moderation_status: action.previousStatus as ModerationStatus | undefined } : m
                 )
                 setAllMedia(updatedMedia)
-                
+
                 // Add back to pending if status was 'pending'
                 if (action.previousStatus === 'pending') {
                     const mediaToAdd = updatedMedia.find(m => m.id === action.mediaId)
@@ -368,7 +368,7 @@ export function ContentModerationClient({
                         setPendingMedia(prev => [mediaToAdd, ...prev])
                     }
                 }
-                
+
                 // Update selected media state
                 if (selectedMedia && selectedMedia.id === action.mediaId) {
                     setSelectedMedia({
@@ -388,18 +388,18 @@ export function ContentModerationClient({
 
                 if (error) throw error
                 toast.success('Flag action undone')
-                
+
                 // Optimistically update media lists
-                const updatedMedia = allMedia.map(m => 
+                const updatedMedia = allMedia.map(m =>
                     m.id === action.mediaId ? { ...m, flagged: action.previousFlagged || false, flagged_reason: action.previousFlaggedReason || null } : m
                 )
                 setAllMedia(updatedMedia)
-                
+
                 // Remove from flagged list if it was unflagged
                 if (!action.previousFlagged) {
                     setFlaggedMedia(prev => prev.filter(m => m.id !== action.mediaId))
                 }
-                
+
                 // Update selected media state
                 if (selectedMedia && selectedMedia.id === action.mediaId) {
                     setSelectedMedia({
@@ -420,19 +420,19 @@ export function ContentModerationClient({
 
                 if (error) throw error
                 toast.success('Unflag action undone')
-                
+
                 // Optimistically update media lists
-                const updatedMedia = allMedia.map(m => 
+                const updatedMedia = allMedia.map(m =>
                     m.id === action.mediaId ? { ...m, flagged: true, flagged_reason: action.previousFlaggedReason || null } : m
                 )
                 setAllMedia(updatedMedia)
-                
+
                 // Add back to flagged list if not already there
                 const mediaToFlag = updatedMedia.find(m => m.id === action.mediaId)
                 if (mediaToFlag && !flaggedMedia.some(m => m.id === action.mediaId)) {
                     setFlaggedMedia(prev => [mediaToFlag, ...prev])
                 }
-                
+
                 // Update selected media state
                 if (selectedMedia && selectedMedia.id === action.mediaId) {
                     setSelectedMedia({
@@ -523,27 +523,25 @@ export function ContentModerationClient({
                         { value: 'rejected', label: 'Rejected', count: allMedia.filter(m => m.moderation_status === 'rejected').length, priority: 4 },
                         { value: 'all', label: 'All', count: allMedia.length, priority: 5 },
                     ]
-                    .sort((a, b) => a.priority - b.priority)
-                    .map(option => (
-                        <button
-                            key={option.value}
-                            onClick={() => handleFilterChange(option.value as FilterType)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                                filter === option.value
-                                    ? 'bg-[#df2531] text-white'
-                                    : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
-                            }`}
-                        >
-                            <span>{option.label}</span>
-                            {option.count > 0 && (
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                    filter === option.value ? 'bg-white/20 text-white' : 'bg-[#df2531]/20 text-[#df2531]'
-                                }`}>
-                                    {option.count}
-                                </span>
-                            )}
-                        </button>
-                    ))}
+                        .sort((a, b) => a.priority - b.priority)
+                        .map(option => (
+                            <button
+                                key={option.value}
+                                onClick={() => handleFilterChange(option.value as FilterType)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${filter === option.value
+                                        ? 'bg-[#df2531] text-white'
+                                        : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                                    }`}
+                            >
+                                <span>{option.label}</span>
+                                {option.count > 0 && (
+                                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${filter === option.value ? 'bg-white/20 text-white' : 'bg-[#df2531]/20 text-[#df2531]'
+                                        }`}>
+                                        {option.count}
+                                    </span>
+                                )}
+                            </button>
+                        ))}
                 </div>
 
                 {/* Media Grid */}
@@ -555,75 +553,75 @@ export function ContentModerationClient({
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {paginatedMedia.map((media) => (
-                            <div
-                                key={media.id}
-                                className="bg-white/5 rounded-xl border border-white/10 overflow-hidden hover:border-[#df2531]/30 transition-all cursor-pointer"
-                                onClick={() => {
-                                    setSelectedMedia(media)
-                                    setShowDetailModal(true)
-                                }}
-                            >
-                                <div className="aspect-square relative bg-black/20">
-                                    {media.type === 'image' ? (
-                                        <Image
-                                            src={media.url}
-                                            alt="Media"
-                                            fill
-                                            className="object-cover"
-                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center">
-                                            <VideoCamera size={48} className="text-white/40" />
-                                        </div>
-                                    )}
-                                    <div className="absolute top-2 right-2 flex gap-2">
-                                        {media.flagged && (
-                                            <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full border border-red-500/30">
-                                                Flagged
-                                            </span>
-                                        )}
-                                        {media.moderation_status === 'pending' && (
-                                            <span className="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs rounded-full border border-amber-500/30">
-                                                Pending
-                                            </span>
-                                        )}
-                                        {media.moderation_status === 'approved' && (
-                                            <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">
-                                                Approved
-                                            </span>
-                                        )}
-                                        {media.moderation_status === 'rejected' && (
-                                            <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full border border-red-500/30">
-                                                Rejected
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="p-3">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        {media.talent?.avatar_url ? (
+                                <div
+                                    key={media.id}
+                                    className="bg-white/5 rounded-xl border border-white/10 overflow-hidden hover:border-[#df2531]/30 transition-all cursor-pointer"
+                                    onClick={() => {
+                                        setSelectedMedia(media)
+                                        setShowDetailModal(true)
+                                    }}
+                                >
+                                    <div className="aspect-square relative bg-black/20">
+                                        {media.type === 'image' ? (
                                             <Image
-                                                src={media.talent.avatar_url}
-                                                alt={media.talent.display_name || 'Talent'}
-                                                width={24}
-                                                height={24}
-                                                className="rounded-full"
+                                                src={media.url}
+                                                alt="Media"
+                                                fill
+                                                className="object-cover"
+                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                                             />
                                         ) : (
-                                            <User size={24} className="text-white/40" />
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                <VideoCamera size={48} className="text-white/40" />
+                                            </div>
                                         )}
-                                        <p className="text-white text-sm font-medium truncate">
-                                            {media.talent?.display_name || 'Unknown'}
-                                        </p>
+                                        <div className="absolute top-2 right-2 flex gap-2">
+                                            {media.flagged && (
+                                                <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full border border-red-500/30">
+                                                    Flagged
+                                                </span>
+                                            )}
+                                            {media.moderation_status === 'pending' && (
+                                                <span className="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs rounded-full border border-amber-500/30">
+                                                    Pending
+                                                </span>
+                                            )}
+                                            {media.moderation_status === 'approved' && (
+                                                <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/30">
+                                                    Approved
+                                                </span>
+                                            )}
+                                            {media.moderation_status === 'rejected' && (
+                                                <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full border border-red-500/30">
+                                                    Rejected
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2 text-white/40 text-xs">
-                                        <Calendar size={12} />
-                                        <span>{formatDate(media.created_at)}</span>
+                                    <div className="p-3">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            {media.talent?.avatar_url ? (
+                                                <Image
+                                                    src={media.talent.avatar_url}
+                                                    alt={media.talent.display_name || 'Talent'}
+                                                    width={24}
+                                                    height={24}
+                                                    className="rounded-full"
+                                                />
+                                            ) : (
+                                                <User size={24} className="text-white/40" />
+                                            )}
+                                            <p className="text-white text-sm font-medium truncate">
+                                                {media.talent?.display_name || 'Unknown'}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-white/40 text-xs">
+                                            <Calendar size={12} />
+                                            <span>{formatDate(media.created_at)}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
                         </div>
 
                         {/* Pagination */}
@@ -636,16 +634,15 @@ export function ContentModerationClient({
                                     <button
                                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                                         disabled={currentPage === 1}
-                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                                            currentPage === 1
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${currentPage === 1
                                                 ? 'bg-white/5 text-white/30 cursor-not-allowed'
                                                 : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
-                                        }`}
+                                            }`}
                                     >
                                         <CaretLeft size={16} />
                                         Previous
                                     </button>
-                                    
+
                                     {/* Page Numbers */}
                                     <div className="flex items-center gap-1">
                                         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -659,16 +656,15 @@ export function ContentModerationClient({
                                             } else {
                                                 pageNum = currentPage - 2 + i
                                             }
-                                            
+
                                             return (
                                                 <button
                                                     key={pageNum}
                                                     onClick={() => setCurrentPage(pageNum)}
-                                                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
-                                                        currentPage === pageNum
+                                                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${currentPage === pageNum
                                                             ? 'bg-[#df2531] text-white'
                                                             : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     {pageNum}
                                                 </button>
@@ -679,11 +675,10 @@ export function ContentModerationClient({
                                     <button
                                         onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                                         disabled={currentPage === totalPages}
-                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                                            currentPage === totalPages
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${currentPage === totalPages
                                                 ? 'bg-white/5 text-white/30 cursor-not-allowed'
                                                 : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
-                                        }`}
+                                            }`}
                                     >
                                         Next
                                         <CaretRight size={16} />
@@ -788,11 +783,10 @@ export function ContentModerationClient({
                                             {selectedMedia.moderation_status && (
                                                 <div className="flex justify-between">
                                                     <span className="text-white/60">Status:</span>
-                                                    <span className={`capitalize ${
-                                                        selectedMedia.moderation_status === 'approved' ? 'text-green-400' :
-                                                        selectedMedia.moderation_status === 'rejected' ? 'text-red-400' :
-                                                        'text-amber-400'
-                                                    }`}>
+                                                    <span className={`capitalize ${selectedMedia.moderation_status === 'approved' ? 'text-green-400' :
+                                                            selectedMedia.moderation_status === 'rejected' ? 'text-red-400' :
+                                                                'text-amber-400'
+                                                        }`}>
                                                         {selectedMedia.moderation_status}
                                                     </span>
                                                 </div>
@@ -828,7 +822,7 @@ export function ContentModerationClient({
                                         const rejectUndoAction = undoActions.get(`${selectedMedia.id}-moderate`)
                                         const canShowReject = selectedMedia.moderation_status !== 'rejected'
                                         const showUndoReject = rejectUndoAction?.type === 'moderate' && selectedMedia.moderation_status === 'rejected'
-                                        
+
                                         if (showUndoReject) {
                                             return (
                                                 <Button
@@ -860,7 +854,7 @@ export function ContentModerationClient({
                                         const approveUndoAction = undoActions.get(`${selectedMedia.id}-moderate`)
                                         const canShowApprove = selectedMedia.moderation_status !== 'approved'
                                         const showUndoApprove = approveUndoAction?.type === 'moderate' && selectedMedia.moderation_status === 'approved'
-                                        
+
                                         if (showUndoApprove) {
                                             return (
                                                 <Button
@@ -894,7 +888,7 @@ export function ContentModerationClient({
                                         const canShowFlag = !selectedMedia.flagged
                                         const showUndoFlag = flagUndoAction?.type === 'flag' && selectedMedia.flagged
                                         const showUndoUnflag = unflagUndoAction?.type === 'unflag' && !selectedMedia.flagged
-                                        
+
                                         if (showUndoFlag) {
                                             return (
                                                 <Button
@@ -951,7 +945,7 @@ export function ContentModerationClient({
                                         const suspendUndoAction = undoActions.get(`user-${selectedMedia.talent!.id}`)
                                         const canShowSuspend = !selectedMedia.talent!.is_suspended
                                         const showUndoSuspend = suspendUndoAction?.type === 'suspend' && selectedMedia.talent!.is_suspended
-                                        
+
                                         if (showUndoSuspend) {
                                             return (
                                                 <Button
