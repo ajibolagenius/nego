@@ -400,7 +400,7 @@ export function TalentDashboardClient({
             return
         }
         // Location validation - must be from the predefined list
-        if (location && !NIGERIAN_LOCATIONS.includes(location as any)) {
+        if (location && !(NIGERIAN_LOCATIONS as readonly string[]).includes(location)) {
             setProfileError('Please select a valid location from the dropdown')
             setIsSaving(false)
             return

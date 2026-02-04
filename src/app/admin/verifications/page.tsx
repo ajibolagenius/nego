@@ -59,7 +59,50 @@ export default async function VerificationsPage() {
     // Transform data to include id field (use booking_id as id)
     // Handle booking as array (from join) or single object
     // Type assertion needed because Supabase returns arrays for joined relations
-    const transformedVerifications: VerificationWithBooking[] = (verifications || []).map((v: any) => {
+    // Define the type for the raw verification data from Supabase
+    interface RawVerification {
+        booking_id: string
+        selfie_url: string
+        full_name: string
+        phone: string
+        status: 'pending' | 'verified' | 'rejected'
+        admin_notes: string | null
+        created_at: string
+        gps_coords: unknown // PostGIS types can be complex, keeping strictness relaxed here for now if needed, or string
+        booking: {
+            id: string
+            total_price: number
+            status: string
+            created_at: string
+            client: {
+                id: string
+                display_name: string
+                full_name: string
+                avatar_url: string
+            } | {
+                id: string
+                display_name: string
+                full_name: string
+                avatar_url: string
+            }[]
+            talent: {
+                id: string
+                display_name: string
+            } | {
+                id: string
+                display_name: string
+            }[]
+        } | {
+            id: string
+            total_price: number
+            status: string
+            created_at: string
+            client: unknown
+            talent: unknown
+        }[]
+    }
+
+    const transformedVerifications: VerificationWithBooking[] = (verifications || []).map((v: RawVerification) => {
         // Supabase returns booking as array due to join, get first element
         const bookingArray = Array.isArray(v.booking) ? v.booking : (v.booking ? [v.booking] : [])
         const booking = bookingArray[0] || null

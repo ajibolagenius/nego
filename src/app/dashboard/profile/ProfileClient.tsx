@@ -208,7 +208,7 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
             }
         }
         // Location validation - must be from the predefined list
-        if (location && !NIGERIAN_LOCATIONS.includes(location as any)) {
+        if (location && !(NIGERIAN_LOCATIONS as readonly string[]).includes(location)) {
             return 'Please select a valid location from the dropdown'
         }
         if (bio.length > BIO_MAX) {
@@ -230,7 +230,7 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
 
         setIsSaving(true)
         try {
-            const updateData: any = {
+            const updateData: Record<string, unknown> = {
                 display_name: displayName.trim(),
                 location: location.trim(),
                 bio: bio.trim(),

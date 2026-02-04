@@ -443,7 +443,18 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
 
                         if (fullProfile) {
                             // Map talent_menus to proper structure
-                            const menusData = (fullProfile.talent_menus || []).map((m: any) => {
+                            // Define interface for raw menu data from join
+                            interface RawFullProfileMenu {
+                                id: string
+                                talent_id: string
+                                service_type_id: string
+                                price: number
+                                is_active: boolean
+                                created_at: string
+                                service_type: ServiceType | ServiceType[]
+                            }
+
+                            const menusData = (fullProfile.talent_menus as unknown as RawFullProfileMenu[] || []).map((m) => {
                                 const serviceType = Array.isArray(m.service_type) ? m.service_type[0] : m.service_type
                                 return {
                                     id: m.id,
@@ -537,6 +548,8 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                             .from('talent_menus')
                             .select(`
                                 id,
+                                talent_id,
+                                service_type_id,
                                 price,
                                 is_active,
                                 service_type:service_types (
@@ -551,7 +564,7 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                         if (menusData) {
                             setTalent(prev => ({
                                 ...prev,
-                                talent_menus: menusData.map((m: any) => {
+                                talent_menus: menusData.map((m) => {
                                     const serviceType = Array.isArray(m.service_type) ? m.service_type[0] : m.service_type
                                     return {
                                         id: m.id,

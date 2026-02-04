@@ -10,13 +10,17 @@ import { useState, useMemo, Fragment } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import type { Dispute, DisputeMessage } from '@/types/database'
+import type { Dispute, DisputeMessage, Profile } from '@/types/database'
 
 interface DisputesClientProps {
     initialDisputes: Dispute[]
 }
 
 type DisputeFilter = 'all' | 'open' | 'under_review' | 'resolved' | 'closed'
+
+interface DisputeMessageWithSender extends Omit<DisputeMessage, 'sender'> {
+    sender: Pick<Profile, 'id' | 'display_name' | 'avatar_url' | 'role'>
+}
 
 export function DisputesClient({ initialDisputes }: DisputesClientProps) {
     const router = useRouter()
@@ -28,7 +32,7 @@ export function DisputesClient({ initialDisputes }: DisputesClientProps) {
     const [isProcessing, setIsProcessing] = useState(false)
     const [resolutionNotes, setResolutionNotes] = useState('')
     const [newMessage, setNewMessage] = useState('')
-    const [messages, setMessages] = useState<DisputeMessage[]>([])
+    const [messages, setMessages] = useState<DisputeMessageWithSender[]>([])
 
     const filteredDisputes = useMemo(() => {
         if (filter === 'all') return disputes
@@ -47,7 +51,7 @@ export function DisputesClient({ initialDisputes }: DisputesClientProps) {
                 .order('created_at', { ascending: true })
 
             if (data) {
-                setMessages(data as any)
+                setMessages(data as unknown as DisputeMessageWithSender[])
             }
         } catch (error) {
             console.error('Error loading messages:', error)

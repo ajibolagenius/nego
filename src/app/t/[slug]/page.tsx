@@ -159,7 +159,22 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
 
     // Attach media and services to talent object with proper structure
     // Map talent_menus to match expected structure (same as dashboard)
-    const mappedMenus = (talentMenus || []).map((m: any) => {
+    // Define the structure of the raw menu item from Supabase join
+    interface RawTalentMenu {
+        id: string
+        talent_id: string
+        service_type_id: string
+        price: number
+        is_active: boolean
+        created_at: string
+        service_type: {
+            id: string
+            name: string
+            description: string | null
+        }
+    }
+
+    const mappedMenus = (talentMenus || []).map((m: RawTalentMenu) => {
         // service_types(*) returns an object, not an array
         const serviceType = m.service_type
         return {

@@ -55,7 +55,7 @@ export async function POST(
         }
 
         // Update talent verification status and optionally admin notes
-        const updateData: any = {
+        const updateData: Record<string, unknown> = {
             is_verified: true,
             updated_at: new Date().toISOString()
         }

@@ -98,9 +98,9 @@ export default function DepositsPage() {
 
             toast.success('Deposit approved and wallet credited')
             setReviewModalOpen(false)
-        } catch (error: any) {
+        } catch (error) {
             console.error('Approval error:', error)
-            toast.error(error.message)
+            toast.error(error instanceof Error ? error.message : 'An unknown error occurred')
         } finally {
             setProcessingId(null)
         }
@@ -129,9 +129,9 @@ export default function DepositsPage() {
             toast.success('Deposit rejected')
             setReviewModalOpen(false)
             setRejectReason('')
-        } catch (error: any) {
+        } catch (error) {
             console.error('Rejection error:', error)
-            toast.error(error.message)
+            toast.error(error instanceof Error ? error.message : 'An unknown error occurred')
         } finally {
             setProcessingId(null)
         }
@@ -430,7 +430,13 @@ export default function DepositsPage() {
     )
 }
 
-function Coin({ size, weight: _weight, className }: any) {
+interface CoinProps {
+    size: number
+    weight?: string | number
+    className?: string
+}
+
+function Coin({ size, weight: _weight, className }: CoinProps) {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="currentColor" viewBox="0 0 256 256" className={className}>
             <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z"></path>

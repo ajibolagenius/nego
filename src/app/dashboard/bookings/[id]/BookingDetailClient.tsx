@@ -586,7 +586,7 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                                     <div className="flex-1">
                                         <h4 className="text-white font-semibold mb-1">Awaiting Admin Verification</h4>
                                         <p className="text-white/60 text-sm">
-                                            The client's verification is being reviewed by admin. You'll be able to accept or decline once admin approves the verification.
+                                            The client&apos;s verification is being reviewed by admin. You&apos;ll be able to accept or decline once admin approves the verification.
                                         </p>
                                     </div>
                                 </div>
@@ -601,11 +601,11 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                                     <div className="flex-1">
                                         <h4 className="text-white font-semibold mb-1">Verification Rejected</h4>
                                         <p className="text-white/60 text-sm mb-2">
-                                            The client's verification was rejected by admin. This booking has been cancelled.
+                                            The client&apos;s verification was rejected by admin. This booking has been cancelled.
                                         </p>
                                         {booking.verification.admin_notes && (
                                             <div className="mt-2 p-3 bg-black/20 rounded-lg">
-                                                <p className="text-white/40 text-xs mb-1 font-medium">Admin's Reason:</p>
+                                                <p className="text-white/40 text-xs mb-1 font-medium">Admin&apos;s Reason:</p>
                                                 <p className="text-white/70 text-sm">{booking.verification.admin_notes}</p>
                                             </div>
                                         )}
@@ -812,9 +812,9 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                                                 />
                                             ))}
                                         </div>
-                                        <p className="text-white/60 text-sm">You've already reviewed this booking</p>
+                                        <p className="text-white/60 text-sm">You&apos;ve already reviewed this booking</p>
                                         {booking.review?.comment && (
-                                            <p className="text-white/50 text-sm mt-2 italic">"{booking.review.comment}"</p>
+                                            <p className="text-white/50 text-sm mt-2 italic">&quot;{booking.review.comment}&quot;</p>
                                         )}
                                     </div>
                                 ) : (
@@ -871,7 +871,7 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                                 </div>
                                 {booking.verification?.admin_notes && (
                                     <p className="text-white/50 text-xs mt-2 italic">
-                                        This cancellation was due to the client's verification being rejected by admin.
+                                        This cancellation was due to the client&apos;s verification being rejected by admin.
                                     </p>
                                 )}
                             </div>
@@ -892,7 +892,7 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                         {/* Display talent decline reason if available */}
                         {booking.notes && booking.notes.includes('Declined by talent') && booking.notes.length > 'Declined by talent'.length && (
                             <div className="mt-4 pt-4 border-t border-red-500/20">
-                                <p className="text-white/40 text-xs mb-2 font-medium">Talent's Reason:</p>
+                                <p className="text-white/40 text-xs mb-2 font-medium">Talent&apos;s Reason:</p>
                                 <div className="bg-black/20 rounded-lg p-4">
                                     <p className="text-white/80 text-sm leading-relaxed">
                                         {booking.notes.replace('Declined by talent: ', '').replace('Declined by talent', '')}

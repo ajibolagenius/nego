@@ -9,6 +9,10 @@ interface BeforeInstallPromptEvent extends Event {
     userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
+interface NavigatorWithStandalone extends Navigator {
+    standalone?: boolean
+}
+
 export function PWAInstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
     const [showPrompt, setShowPrompt] = useState(false)
@@ -17,7 +21,7 @@ export function PWAInstallPrompt() {
     useEffect(() => {
         // Check if app is already installed
         if (window.matchMedia('(display-mode: standalone)').matches ||
-            (window.navigator as any).standalone === true) {
+            (window.navigator as NavigatorWithStandalone).standalone === true) {
             const timer = setTimeout(() => setIsInstalled(true), 0)
             return () => clearTimeout(timer)
         }

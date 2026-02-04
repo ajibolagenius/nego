@@ -30,7 +30,7 @@ type PaymentProvider = 'paystack' | 'segpay' | 'nowpayments' | 'bank_transfer'
 interface PaymentMethod {
     id: PaymentProvider
     name: string
-    icon: any
+    icon: React.ElementType
     description: string
     color: string
     comingSoon?: boolean
@@ -193,9 +193,9 @@ function PaymentModal({
                 }
 
                 onSuccess()
-            } catch (err: any) {
+            } catch (err) {
                 console.error('Manual payment error:', err)
-                setError(err.message || 'Failed to submit request')
+                setError(err instanceof Error ? err.message : 'Failed to submit request')
                 setIsProcessing(false)
             }
             return
@@ -532,7 +532,21 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
 
             if (!error && data) {
                 // Transform to CoinPackage format
-                const transformed = data.map((pkg: any) => ({
+                interface RawPackage {
+                    id: string
+                    coins: number
+                    price: number
+                    price_in_kobo: number
+                    display_name: string
+                    description: string | null
+                    popular: boolean
+                    best_value: boolean
+                    is_new: boolean
+                    is_recommended: boolean
+                    is_active: boolean
+                    display_order: number
+                }
+                const transformed = data.map((pkg: RawPackage) => ({
                     id: pkg.id,
                     coins: pkg.coins,
                     price: pkg.price,
