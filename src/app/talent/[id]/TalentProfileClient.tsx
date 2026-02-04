@@ -696,15 +696,10 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
     // Start or open conversation with talent
     const handleStartChat = async () => {
         if (!userId) {
-            router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))
+            handleLoginRedirect()
             return
         }
 
-        if (currentUser?.role === 'talent') {
-            setError('Talents cannot message other talents.')
-            setShowErrorBanner(true)
-            return
-        }
 
         setStartingChat(true)
         setError('')
@@ -1057,8 +1052,8 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                                     onAuthRequired={handleLoginRedirect}
                                 />
                             )}
-                            {/* Message Button - Only show for logsged in clients */}
-                            {currentUser && currentUser.role === 'client' && (
+                            {/* Message Button - Visible to all (Login prompt for guests) */}
+                            {(!currentUser || currentUser.id !== talent.id) && (
                                 <button
                                     onClick={handleStartChat}
                                     disabled={startingChat}
