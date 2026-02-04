@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { CaretLeft, CaretRight, HandWaving } from '@phosphor-icons/react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { CaretLeft, CaretRight, HandWaving } from '@phosphor-icons/react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 
 const heroImages = [

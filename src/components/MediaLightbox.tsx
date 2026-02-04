@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
-import Image from 'next/image'
 import { X } from '@phosphor-icons/react'
+import Image from 'next/image'
+import { useEffect } from 'react'
 import type { Media } from '@/types/database'
 
 interface MediaLightboxProps {

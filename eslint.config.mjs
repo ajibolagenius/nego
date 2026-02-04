@@ -1,7 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
-import jsxA11y from "eslint-plugin-jsx-a11y";
+// import jsxA11y from "eslint-plugin-jsx-a11y";
 import importPlugin from "eslint-plugin-import";
 
 const eslintConfig = defineConfig([
@@ -9,9 +9,7 @@ const eslintConfig = defineConfig([
   ...nextTs,
   // Accessibility plugin for catching a11y issues
   {
-    plugins: {
-      "jsx-a11y": jsxA11y,
-    },
+    // Plugin already defined in nextVitals
     rules: {
       // Enforce accessible button labels
       "jsx-a11y/alt-text": "warn",

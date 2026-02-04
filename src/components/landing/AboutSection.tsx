@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { ArrowRight, ShieldCheck, Heart, Sparkle, Eye } from '@phosphor-icons/react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, ShieldCheck, Heart, Sparkle, Eye } from '@phosphor-icons/react'
+import { useState, useEffect, useRef } from 'react'
 
 const aboutImages = [
     "https://customer-assets.emergentagent.com/job_secure-booking-3/artifacts/pkva1jgy_pexels-jaime-baskin-1089908384-20644317.jpg",

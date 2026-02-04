@@ -1,20 +1,20 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import Webcam from 'react-webcam'
-import { createClient } from '@/lib/supabase/client'
 import {
     ArrowLeft, Camera, User, Phone, MapPin, ShieldCheck,
     CheckCircle, XCircle, Hourglass, Warning,
     Lock, VideoCamera, ArrowCounterClockwise, Check, X, SpinnerGap
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import Webcam from 'react-webcam'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
 import type { Profile, Booking, Verification } from '@/types/database'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 // Use complete Profile type for talent
 interface BookingWithTalent extends Omit<Booking, 'talent'> {

@@ -1,8 +1,5 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Coin, Plus, ArrowUpRight, ArrowDownLeft,
     Clock, CheckCircle, XCircle, Sparkle, ShoppingCart,
@@ -10,13 +7,16 @@ import {
     Wallet as WalletIcon, TrendUp, TrendDown, Bank, Lightning, Crown,
     MagnifyingGlass, X, ArrowsClockwise, Star
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { Button } from '@/components/ui/button'
 import { useWallet } from '@/hooks/useWallet'
-import { createClient } from '@/lib/supabase/client'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
-import type { Profile, Wallet, Transaction } from '@/types/database'
 import { formatNaira, type CoinPackage } from '@/lib/coinPackages'
+import { createClient } from '@/lib/supabase/client'
+import type { Profile, Wallet, Transaction } from '@/types/database'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 // Declare Paystack global type
 interface PaystackResponse {

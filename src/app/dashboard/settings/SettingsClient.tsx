@@ -1,18 +1,18 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Bell, Lock, Envelope, Globe, SignOut, Trash, Warning,
     CaretRight, ShieldCheck, Eye, EyeSlash, SpinnerGap, CheckCircle, X, Check, Circle
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useCallback, useEffect } from 'react'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { PushNotificationManager } from '@/components/PushNotificationManager'
+import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile } from '@/types/database'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface SettingsClientProps {
     user: SupabaseUser

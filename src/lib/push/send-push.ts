@@ -1,5 +1,5 @@
-import type { PushSubscription as WebPushSubscription } from 'web-push'
 import { getVapidPrivateKey } from './vapid'
+import type { PushSubscription as WebPushSubscription } from 'web-push'
 
 export interface PushNotificationPayload {
     title: string

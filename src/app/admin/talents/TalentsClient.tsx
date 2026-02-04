@@ -1,8 +1,5 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import {
     CheckCircle,
     XCircle,
@@ -18,13 +15,16 @@ import {
     PencilSimple,
     FloppyDisk
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
-import { EmptyState } from '@/components/admin/EmptyState'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
+import { EmptyState } from '@/components/admin/EmptyState'
 import { Pagination } from '@/components/admin/Pagination'
+import { Button } from '@/components/ui/button'
 import { usePagination } from '@/hooks/admin/usePagination'
+import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types/database'
 
 interface TalentsClientProps {

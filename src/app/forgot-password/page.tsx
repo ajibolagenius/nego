@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import Link from 'next/link'
 import { Envelope, SpinnerGap, CheckCircle, ArrowLeft, XCircle } from '@phosphor-icons/react'
+import Link from 'next/link'
+import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 

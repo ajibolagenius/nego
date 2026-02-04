@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import {
     X, MagnifyingGlass, CreditCard, ShieldCheck, Handshake,
     UserCircle, ListBullets, CalendarCheck, Wallet,
     Users, CheckCircle, ChartLine, ArrowRight, ArrowLeft
 } from '@phosphor-icons/react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 
 type OnboardingRole = 'client' | 'talent' | 'admin'

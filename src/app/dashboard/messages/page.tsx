@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 import { createClient } from '@/lib/supabase/server'
 import { MessagesClient } from './MessagesClient'
-import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 

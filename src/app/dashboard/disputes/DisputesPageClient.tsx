@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import {
     Warning, Plus, X, Calendar, User, ChatCircle, ArrowLeft, CaretRight
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
-import type { Dispute, Booking } from '@/types/database'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect, useMemo } from 'react'
+import { toast } from 'sonner'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
+import type { Dispute, Booking } from '@/types/database'
 
 interface DisputesPageClientProps {
     userId: string

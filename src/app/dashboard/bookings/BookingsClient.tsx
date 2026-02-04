@@ -1,16 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
 import {
     ArrowLeft, CalendarCheck, User, MapPin, Clock,
     CheckCircle, XCircle, Hourglass, CaretRight, Coin,
     MagnifyingGlass, ShieldCheck
 } from '@phosphor-icons/react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useState } from 'react'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Booking } from '@/types/database'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 // Use complete Profile type for talent and client
 interface BookingWithParties extends Omit<Booking, 'talent' | 'client'> {

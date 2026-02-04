@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createApiClient } from '@/lib/supabase/api'
-import { validateAdmin, validateVerification } from '@/lib/admin/validation'
 import { logAdminAction, getClientIP, getUserAgent } from '@/lib/admin/audit-log'
+import { validateAdmin, validateVerification } from '@/lib/admin/validation'
+import { createApiClient } from '@/lib/supabase/api'
 
 export async function POST(
   request: NextRequest,

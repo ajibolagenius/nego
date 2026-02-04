@@ -1,16 +1,16 @@
 
 'use client'
 
-import { useState, useMemo } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import {
     Plus, Lock, Eye, FunnelSimple, GridFour, List, Crown, Image as ImageIcon
 } from '@phosphor-icons/react'
+import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { TalentMedia, MediaTab, SortOption, FilterOption, ViewMode } from './media/types'
+import { createClient } from '@/lib/supabase/client'
 import { MediaFilterPanel } from './media/MediaFilterPanel'
 import { MediaGallery } from './media/MediaGallery'
 import { MediaUploadModal } from './media/MediaUploadModal'
+import { TalentMedia, MediaTab, SortOption, FilterOption, ViewMode } from './media/types'
 
 interface MediaManagerProps {
     talentId: string

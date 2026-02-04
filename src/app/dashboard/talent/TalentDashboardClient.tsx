@@ -1,10 +1,5 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import {
     ArrowLeft, User, PencilSimple, Plus, Trash, Image as ImageIcon,
     CurrencyDollar, CalendarCheck, Clock, Eye, EyeSlash,
@@ -12,15 +7,20 @@ import {
     Camera, MapPin, Sparkle, Receipt, ChartLine, Icon, Bank, Money, Gift,
     Warning, SpinnerGap, ForkKnife, Airplane, Lock, Calendar, Moon, Heart, CaretDown
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
-import { MobileBottomNav } from '@/components/MobileBottomNav'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
 import { MediaManager } from '@/components/MediaManager'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { ProfileImageUpload } from '@/components/ProfileImageUpload'
+import { Button } from '@/components/ui/button'
 import { useWallet } from '@/hooks/useWallet'
-import { getTalentUrl } from '@/lib/talent-url'
 import { NIGERIAN_LOCATIONS } from '@/lib/nigerian-locations'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client'
+import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile, Wallet, ServiceType, Booking } from '@/types/database'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 const serviceIcons: Record<string, Icon> = {
     'utensils': ForkKnife,

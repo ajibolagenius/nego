@@ -1,8 +1,8 @@
 'use client'
 
+import { House, UserCheck, Money, ChartLine, Users } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { House, UserCheck, Money, ChartLine, Users } from '@phosphor-icons/react'
 
 export function AdminMobileNav() {
     const pathname = usePathname()

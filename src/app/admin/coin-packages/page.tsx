@@ -1,6 +1,6 @@
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 import { createApiClient } from '@/lib/supabase/api'
 import { CoinPackagesClient } from './CoinPackagesClient'
-import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 

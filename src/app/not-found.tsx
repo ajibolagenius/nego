@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { House, ArrowLeft, MagnifyingGlass, Sparkle } from '@phosphor-icons/react'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 
 export default function NotFound() {

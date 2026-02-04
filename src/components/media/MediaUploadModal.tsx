@@ -1,12 +1,12 @@
 
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import {
     Upload, X, Warning, Crown
 } from '@phosphor-icons/react'
+import { useState, useRef, useCallback } from 'react'
 import { compressImage } from '@/lib/media-utils'
+import { createClient } from '@/lib/supabase/client'
 
 interface MediaUploadModalProps {
     talentId: string,

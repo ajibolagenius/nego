@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import {
     Bank, CheckCircle, XCircle, Clock, MagnifyingGlass,
     ArrowUpRight, ArrowsClockwise, ImageSquare, CalendarBlank
 } from '@phosphor-icons/react'
-import { toast } from 'sonner'
 import Image from 'next/image'
+import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase/client'
 
 interface DepositRequest {
     id: string

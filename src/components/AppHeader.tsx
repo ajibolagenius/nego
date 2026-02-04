@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import {
     List, X, Coin, CaretDown, User, SignOut, House, Heart,
     CalendarCheck, Wallet, Gear, ChatCircle, MagnifyingGlass,
     Briefcase
 } from '@phosphor-icons/react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { NotificationBell } from '@/components/NotificationBell'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import { NotificationBell } from '@/components/NotificationBell'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface AppHeaderProps {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createApiClient } from '@/lib/supabase/api'
 import { sendEmail, emailTemplates } from '@/lib/email'
+import { createApiClient } from '@/lib/supabase/api'
 
 // Weekly Admin Digest - Call via cron job every week
 export async function POST(request: NextRequest) {

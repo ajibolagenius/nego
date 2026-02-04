@@ -1,26 +1,26 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, MapPin, Star, Heart, Share, Circle,
     Calendar, Clock, SpinnerGap, X, ShieldCheck,
     ForkKnife, CalendarCheck, Airplane, Lock, Camera, Warning, ChatCircle, Crown, Eye,
     ShareNetwork, Copy, CheckCircle, Moon, Sparkle
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import { ReviewCard, ReviewSummary } from '@/components/Reviews'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
+import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { GiftCoins } from '@/components/GiftCoins'
 import { GiftLeaderboard } from '@/components/GiftLeaderboard'
 import { MediaLightbox } from '@/components/MediaLightbox'
-import { ServicesList } from '@/components/talent/ServicesList'
+import { ReviewCard, ReviewSummary } from '@/components/Reviews'
 import { BookingModal } from '@/components/talent/BookingModal'
-import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
+import { ServicesList } from '@/components/talent/ServicesList'
+import { Button } from '@/components/ui/button'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useWallet } from '@/hooks/useWallet'
+import { createClient } from '@/lib/supabase/client'
 import type { Profile, ServiceType, TalentMenu, Media, Wallet, Review } from '@/types/database'
 import type { Icon } from '@phosphor-icons/react'
 

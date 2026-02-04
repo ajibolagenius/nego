@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import { CaretUp, CaretDown, MagnifyingGlass, Download } from '@phosphor-icons/react'
+import { useState } from 'react'
 
 interface Column<T> {
     key: string

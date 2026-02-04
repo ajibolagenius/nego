@@ -1,19 +1,19 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
 import {
     ArrowLeft, PaperPlaneRight, User, Chat, MagnifyingGlass,
     SpinnerGap, CheckCircle, Checks,
     CalendarPlus
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import { MobileBottomNav } from '@/components/MobileBottomNav'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { GiftCoins } from '@/components/GiftCoins'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { Button } from '@/components/ui/button'
 import { useWallet } from '@/hooks/useWallet'
+import { createClient } from '@/lib/supabase/client'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { Conversation, Message, Profile } from '@/types/database'
 

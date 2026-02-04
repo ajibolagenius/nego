@@ -1,7 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { DashboardClient } from './DashboardClient'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
+import { createClient } from '@/lib/supabase/server'
+import { DashboardClient } from './DashboardClient'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 

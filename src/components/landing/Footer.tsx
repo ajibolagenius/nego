@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import Link from 'next/link'
 import { Globe, InstagramLogo, TwitterLogo, ArrowUp, MapPin, Phone, Envelope } from '@phosphor-icons/react'
+import Link from 'next/link'
+import { useState, useEffect, useRef } from 'react'
 
 const navLinks = [
     { name: 'Home', href: '#home' },

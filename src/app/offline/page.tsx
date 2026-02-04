@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { WifiSlash, ArrowClockwise, House, CloudArrowUp } from '@phosphor-icons/react'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 
 export default function OfflinePage() {

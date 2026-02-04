@@ -1,21 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Calendar, Clock, MapPin, CheckCircle,
     SpinnerGap, WarningCircle, CreditCard, ShieldCheck,
     Receipt, Coin, CaretRight, XCircle, User, Star, Hourglass, Wallet as WalletIcon, Hash
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import { useWallet } from '@/hooks/useWallet'
-import { WriteReviewModal } from '@/components/Reviews'
-import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
-import { getTalentUrl } from '@/lib/talent-url'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
+import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
+import { WriteReviewModal } from '@/components/Reviews'
+import { Button } from '@/components/ui/button'
+import { useWallet } from '@/hooks/useWallet'
+import { createClient } from '@/lib/supabase/client'
+import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile, Wallet, BookingStatus, Review } from '@/types/database'
 
 interface BookingWithTalent {

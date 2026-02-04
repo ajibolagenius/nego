@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { ArrowClockwise, X } from '@phosphor-icons/react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { usePWA } from '@/hooks/usePWA'
 

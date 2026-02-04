@@ -1,24 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import {
     House, User, Wallet, CalendarCheck, Heart, Gear, SignOut,
     MagnifyingGlass, Coin, ArrowRight, SpinnerGap, MapPin,
     Plus, CaretRight, Briefcase, ChatCircle, Gift, Bell, CheckCircle, X, Warning, Envelope
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import { NotificationBell } from '@/components/NotificationBell'
-import { MobileBottomNav } from '@/components/MobileBottomNav'
-import { OnboardingModal, useOnboarding } from '@/components/OnboardingModal'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { NotificationBell } from '@/components/NotificationBell'
+import { OnboardingModal, useOnboarding } from '@/components/OnboardingModal'
+import { Button } from '@/components/ui/button'
 import { useWallet } from '@/hooks/useWallet'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
-import type { Profile, Wallet as WalletType } from '@/types/database'
+import { createClient } from '@/lib/supabase/client'
 import { getTalentUrl } from '@/lib/talent-url'
+import type { Profile, Wallet as WalletType } from '@/types/database'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 // Use full Profile type with talent_menus for featured talents
 interface TalentWithMenu extends Profile {

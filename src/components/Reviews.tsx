@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Image from 'next/image'
 import { Star, User, ChatCircle, PaperPlaneTilt, SpinnerGap, X, Warning } from '@phosphor-icons/react'
+import Image from 'next/image'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { Review, Profile } from '@/types/database'

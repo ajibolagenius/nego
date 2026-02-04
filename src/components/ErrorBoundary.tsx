@@ -1,7 +1,7 @@
 'use client'
 
-import { Component, ReactNode } from 'react'
 import { Warning, ArrowClockwise } from '@phosphor-icons/react'
+import { Component, ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 
 interface ErrorBoundaryProps {

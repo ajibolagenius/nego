@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
 import { createApiClient } from '@/lib/supabase/api'
+import { createClient } from '@/lib/supabase/server'
 
 /**
  * Validates that the current user is an admin

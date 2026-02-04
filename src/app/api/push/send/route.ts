@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { sendPushNotification } from '@/lib/push/send-push'
+import { createClient } from '@/lib/supabase/server'
 import type { PushSubscription } from '@/lib/push/send-push'
 
 /**

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Trophy, Crown, Medal, Coin, SpinnerGap } from '@phosphor-icons/react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Trophy, Crown, Medal, Coin, SpinnerGap } from '@phosphor-icons/react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getTalentUrl } from '@/lib/talent-url'
 

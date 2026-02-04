@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useMemo, Fragment } from 'react'
-import Image from 'next/image'
-import { createClient } from '@/lib/supabase/client'
 import {
     CheckCircle, XCircle, Clock, ChatCircle, User, Calendar,
     Eye, X
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
-import type { Dispute, DisputeMessage } from '@/types/database'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useState, useMemo, Fragment } from 'react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
+import type { Dispute, DisputeMessage } from '@/types/database'
 
 interface DisputesClientProps {
     initialDisputes: Dispute[]

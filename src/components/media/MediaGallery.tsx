@@ -1,12 +1,12 @@
 
 'use client'
 
-import Image from 'next/image'
 import {
     Image as ImageIcon, Trash, SpinnerGap, Crown, VideoCamera
 } from '@phosphor-icons/react'
-import { TalentMedia, ViewMode } from './types'
+import Image from 'next/image'
 import { isVideo } from '@/lib/media-utils'
+import { TalentMedia, ViewMode } from './types'
 
 interface MediaGalleryProps {
     items: TalentMedia[]

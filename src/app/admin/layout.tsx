@@ -1,7 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { AdminLayoutClient } from './AdminLayoutClient'
 import { ErrorBoundary } from '@/components/admin/ErrorBoundary'
+import { createClient } from '@/lib/supabase/server'
+import { AdminLayoutClient } from './AdminLayoutClient'
 
 export default async function AdminLayout({
     children,

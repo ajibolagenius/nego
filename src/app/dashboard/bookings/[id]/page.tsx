@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect, notFound } from 'next/navigation'
-import { BookingDetailClient } from './BookingDetailClient'
-import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 import { Metadata } from 'next'
+import { redirect, notFound } from 'next/navigation'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
+import { createClient } from '@/lib/supabase/server'
+import { BookingDetailClient } from './BookingDetailClient'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { Heart, Lock, Sparkle, Crown, Star, SpinnerGap } from '@phosphor-icons/react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Heart, Lock, Sparkle, Crown, Star, SpinnerGap } from '@phosphor-icons/react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 
 const fallbackImages = [

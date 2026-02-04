@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { AppHeader } from "@/components/AppHeader"
-import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration"
+import { NetworkStatus } from "@/components/NetworkStatus"
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt"
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt"
-import { NetworkStatus } from "@/components/NetworkStatus"
-import { generateOpenGraphMetadata } from "@/lib/og-metadata"
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration"
 import { fontVariables } from "@/lib/fonts"
+import { generateOpenGraphMetadata } from "@/lib/og-metadata"
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 

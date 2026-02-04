@@ -1,7 +1,7 @@
-import { createApiClient } from '@/lib/supabase/api'
-import { AnalyticsClient } from './AnalyticsClient'
 import { cache, CACHE_KEYS } from '@/lib/admin/cache'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
+import { createApiClient } from '@/lib/supabase/api'
+import { AnalyticsClient } from './AnalyticsClient'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 

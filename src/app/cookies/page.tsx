@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import { ArrowLeft, Cookie, ShieldCheck, ChartLine, Megaphone } from '@phosphor-icons/react/dist/ssr'
+import Link from 'next/link'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'

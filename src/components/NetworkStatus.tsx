@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { WifiHigh, WifiSlash } from '@phosphor-icons/react'
+import { useEffect, useState } from 'react'
 import { usePWA } from '@/hooks/usePWA'
 
 export function NetworkStatus() {

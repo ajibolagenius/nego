@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
 import { Warning, ArrowClockwise, House } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { useEffect } from 'react'
+import { Button } from '@/components/ui/button'
 
 interface ErrorProps {
     error: Error & { digest?: string }

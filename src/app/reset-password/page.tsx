@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Lock, Eye, EyeSlash, SpinnerGap, CheckCircle, WarningCircle, Check, X } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Lock, Eye, EyeSlash, SpinnerGap, CheckCircle, WarningCircle, Check, X } from '@phosphor-icons/react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 

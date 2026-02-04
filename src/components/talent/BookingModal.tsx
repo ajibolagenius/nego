@@ -1,6 +1,6 @@
 
-import { useState } from 'react'
 import { X, Warning, CalendarCheck, Clock, Calendar, CheckCircle } from '@phosphor-icons/react'
+import { useState } from 'react'
 import type { TalentMenu, ServiceType } from '@/types/database'
 
 interface BookingModalProps {

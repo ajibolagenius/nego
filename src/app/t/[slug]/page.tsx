@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { TalentProfileClient } from '@/app/talent/[id]/TalentProfileClient'
-import { Metadata } from 'next'
 import { generateTalentOpenGraphMetadata } from '@/lib/og-metadata'
+import { createClient } from '@/lib/supabase/server'
 
 // Create admin client lazily with service role key for bypassing RLS
 function getAdminClient() {

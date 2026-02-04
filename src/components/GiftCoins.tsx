@@ -13,10 +13,10 @@
  * - Comprehensive error handling with user-friendly messages
  */
 
-import { useState, useCallback } from 'react'
 import { Gift, Coin, X, SpinnerGap, Check, Warning } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { useState, useCallback } from 'react'
+import { Button } from '@/components/ui/button'
 import { GIFT_CONSTANTS, isValidUUID, isValidAmount as _isValidAmount } from '@/lib/gift-validation'
 
 interface GiftCoinsProps {

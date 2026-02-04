@@ -1,21 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import {
     ArrowLeft, User, PencilSimple, MapPin, Envelope,
     Calendar, Coin, CalendarCheck, CheckCircle,
     CaretRight, SpinnerGap, X, Warning, CaretDown
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { ProfileImageUpload } from '@/components/ProfileImageUpload'
+import { Button } from '@/components/ui/button'
 import { useWallet } from '@/hooks/useWallet'
 import { NIGERIAN_LOCATIONS } from '@/lib/nigerian-locations'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client'
 import type { Profile, Wallet } from '@/types/database'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface ProfileClientProps {
     user: SupabaseUser

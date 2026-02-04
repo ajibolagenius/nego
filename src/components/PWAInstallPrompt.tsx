@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { X, Download, DeviceMobile } from '@phosphor-icons/react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 
 interface BeforeInstallPromptEvent extends Event {

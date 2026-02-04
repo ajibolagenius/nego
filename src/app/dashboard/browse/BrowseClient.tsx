@@ -1,19 +1,19 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import Image from 'next/image'
 import {
     MagnifyingGlass, MapPin, Funnel, CaretDown,
     Heart, Star, Circle, ArrowLeft
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
-import { MobileBottomNav } from '@/components/MobileBottomNav'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { useState, useMemo } from 'react'
 import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { Button } from '@/components/ui/button'
 import { useFavorites } from '@/hooks/useFavorites'
-import { getTalentUrl } from '@/lib/talent-url'
 import { NIGERIAN_LOCATIONS, locationMatches } from '@/lib/nigerian-locations'
+import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile, ServiceType, TalentMenu } from '@/types/database'
 
 interface TalentWithMenu extends Profile {

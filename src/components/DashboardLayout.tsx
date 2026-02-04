@@ -1,19 +1,19 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
 import {
     House, User, Wallet, CalendarCheck, Heart, Gear, SignOut,
     MagnifyingGlass, Coin, Plus, Briefcase, ChatCircle, SpinnerGap,
     Gift, Bell, Warning
 } from '@phosphor-icons/react'
-import { createClient } from '@/lib/supabase/client'
-import { NotificationBell } from '@/components/NotificationBell'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { NotificationBell } from '@/components/NotificationBell'
 import { useWallet } from '@/hooks/useWallet'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client'
 import type { Profile, Wallet as WalletType } from '@/types/database'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface DashboardLayoutProps {
     user: SupabaseUser

@@ -1,7 +1,7 @@
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 import { createApiClient } from '@/lib/supabase/api'
 import { VerificationsClient } from './VerificationsClient'
 import type { VerificationWithBooking, BookingWithRelations } from '@/types/admin'
-import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 

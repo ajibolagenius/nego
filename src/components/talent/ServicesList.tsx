@@ -1,7 +1,7 @@
 
 import { Check, Calendar } from '@phosphor-icons/react'
-import type { Icon } from '@phosphor-icons/react'
 import type { TalentMenu, ServiceType } from '@/types/database'
+import type { Icon } from '@phosphor-icons/react'
 
 interface ServicesListProps {
     services: (TalentMenu & { service_type: ServiceType })[]

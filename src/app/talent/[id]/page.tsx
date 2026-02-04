@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect, notFound } from 'next/navigation'
-import { getTalentUrl } from '@/lib/talent-url'
 import { Metadata } from 'next'
+import { redirect, notFound } from 'next/navigation'
 import { generateTalentOpenGraphMetadata } from '@/lib/og-metadata'
+import { createClient } from '@/lib/supabase/server'
+import { getTalentUrl } from '@/lib/talent-url'
 
 interface PageProps {
     params: Promise<{ id: string }>

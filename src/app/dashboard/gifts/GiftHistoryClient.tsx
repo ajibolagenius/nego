@@ -1,17 +1,17 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
 import {
     ArrowLeft, Gift, Coin, ArrowUpRight, ArrowDownLeft,
     Calendar, ChatCircle, MagnifyingGlass, X
 } from '@phosphor-icons/react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useState, useMemo } from 'react'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { useWallet } from '@/hooks/useWallet'
 import { getTalentUrl } from '@/lib/talent-url'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { Profile, Gift as GiftType, Wallet } from '@/types/database'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface GiftHistoryClientProps {
     user: SupabaseUser

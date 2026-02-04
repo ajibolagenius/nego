@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { WalletClient } from './WalletClient'
-import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 import { getCoinPackagesFromDB } from '@/lib/coinPackages'
+import { generateOpenGraphMetadata } from '@/lib/og-metadata'
+import { createClient } from '@/lib/supabase/server'
+import { WalletClient } from './WalletClient'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 
