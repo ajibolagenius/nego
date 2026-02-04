@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Global error page for critical errors that occur during server-side rendering.
  * This is a fallback when the app fails to render entirely.
