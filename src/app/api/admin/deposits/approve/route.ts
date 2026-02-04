@@ -1,9 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
     try {
-        const supabase = await createClient()
+        const supabase = await createServerClient()
 
         // Check Auth & Admin Role
         const { data: { user } } = await supabase.auth.getUser()
@@ -53,11 +54,21 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to update request status' }, { status: 500 })
         }
 
+        // Initialize Admin Client for privileged operations (Bypassing RLS)
+        const adminSupabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            {
+                auth: {
+                    autoRefreshToken: false,
+                    persistSession: false
+                }
+            }
+        )
+
         // 2. Credit User Wallet
-        // We use the rpc call if available, or fetch-and-update. 
-        // Best practice is RPC for atomicity, but standard update is acceptable for MVP if RPC missing.
-        // Let's try to get the current wallet first.
-        const { data: wallet } = await supabase
+        // Use admin client to bypass "Users can only update their own wallet" RLS
+        const { data: wallet } = await adminSupabase
             .from('wallets')
             .select('balance')
             .eq('user_id', depositRequest.user_id)
@@ -66,7 +77,7 @@ export async function POST(request: Request) {
         const coinsToAdd = Math.floor(depositRequest.amount / 10) // 1 coin = 10 Naira as per WalletClient
         const newBalance = (wallet?.balance || 0) + coinsToAdd
 
-        const { error: walletError } = await supabase
+        const { error: walletError } = await adminSupabase
             .from('wallets')
             .upsert({
                 user_id: depositRequest.user_id,
@@ -78,11 +89,11 @@ export async function POST(request: Request) {
             console.error('Error crediting wallet:', walletError)
             // Revert status update (manual rollback since no transaction)
             await supabase.from('deposit_requests').update({ status: 'pending' }).eq('id', requestId)
-            return NextResponse.json({ error: 'Failed to credit wallet' }, { status: 500 })
+            return NextResponse.json({ error: `Failed to credit wallet: ${walletError.message}` }, { status: 500 })
         }
 
         // 3. Create Transaction Record
-        await supabase
+        const { error: transactionError } = await adminSupabase
             .from('transactions')
             .insert({
                 user_id: depositRequest.user_id,
@@ -90,13 +101,20 @@ export async function POST(request: Request) {
                 type: 'purchase',
                 reference_id: requestId,
                 description: `Manual Deposit: ${depositRequest.reference || 'Bank Transfer'}`,
-                created_at: new Date().toISOString()
+                created_at: new Date().toISOString(),
+                status: 'completed',
+                currency: 'NGN',
+                coins: coinsToAdd
             })
 
+        if (transactionError) {
+            console.error('Error creating transaction:', transactionError)
+        }
+
         // 4. Send Notification
-        await supabase.from('notifications').insert({
+        await adminSupabase.from('notifications').insert({
             user_id: depositRequest.user_id,
-            type: 'purchase_success', // Reusing existing type if possible
+            type: 'purchase_success',
             title: 'Deposit Approved ✅',
             message: `Your deposit of ₦${depositRequest.amount.toLocaleString()} has been approved. ${coinsToAdd.toLocaleString()} coins added.`,
             data: {
@@ -107,8 +125,8 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ success: true, coinsAdded: coinsToAdd })
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Admin approval error:', error)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
     }
 }

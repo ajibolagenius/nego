@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
     Bank, CheckCircle, XCircle, Clock, MagnifyingGlass,
-    ArrowUpRight, Copy, Funnel, CalendarBlank
+    ArrowUpRight, Copy, Funnel, CalendarBlank, ImageSquare
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import Image from 'next/image'
@@ -35,6 +35,7 @@ export default function DepositsPage() {
     const [reviewModalOpen, setReviewModalOpen] = useState(false)
     const [selectedDeposit, setSelectedDeposit] = useState<DepositRequest | null>(null)
     const [rejectReason, setRejectReason] = useState('')
+    const [lightboxImage, setLightboxImage] = useState<string | null>(null)
 
     useEffect(() => {
         fetchDeposits()
@@ -221,7 +222,7 @@ export default function DepositsPage() {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#df2531] to-[#9a1b23] flex items-center justify-center text-white font-bold text-xs">
-                                                    {deposit.profiles?.email?.charAt(0).toUpperCase() || '?'}
+                                                    {(deposit.profiles?.email && deposit.profiles.email.length > 0) ? deposit.profiles.email.charAt(0).toUpperCase() : '?'}
                                                 </div>
                                                 <div>
                                                     <div className="text-white font-medium">
@@ -237,15 +238,13 @@ export default function DepositsPage() {
                                             {formatNaira(deposit.amount)}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <a
-                                                href={deposit.proof_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
+                                            <button
+                                                onClick={() => setLightboxImage(deposit.proof_url)}
                                                 className="inline-flex items-center gap-1 text-[#df2531] hover:underline text-xs bg-[#df2531]/10 px-2 py-1 rounded-md border border-[#df2531]/20"
                                             >
                                                 <ImageSquare size={14} weight="duotone" />
                                                 View Proof
-                                            </a>
+                                            </button>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2 text-xs">
@@ -258,10 +257,10 @@ export default function DepositsPage() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${deposit.status === 'approved'
-                                                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                                    : deposit.status === 'rejected'
-                                                        ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                                                        : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                                ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                                : deposit.status === 'rejected'
+                                                    ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                                                    : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                                                 }`}>
                                                 {deposit.status === 'approved' && <CheckCircle size={12} weight="fill" />}
                                                 {deposit.status === 'rejected' && <XCircle size={12} weight="fill" />}
@@ -319,15 +318,13 @@ export default function DepositsPage() {
                                         className="object-contain"
                                         unoptimized
                                     />
-                                    <a
-                                        href={selectedDeposit.proof_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <button
+                                        onClick={() => setLightboxImage(selectedDeposit.proof_url)}
                                         className="absolute bottom-4 right-4 bg-black/80 hover:bg-[#df2531] text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0"
                                         title="Open full size"
                                     >
                                         <ArrowUpRight size={20} />
-                                    </a>
+                                    </button>
                                 </div>
                             </div>
 
@@ -338,9 +335,9 @@ export default function DepositsPage() {
                                         <label className="text-xs text-white/40 uppercase font-bold tracking-wider">User</label>
                                         <div className="flex items-center gap-2 mt-1">
                                             <div className="w-6 h-6 rounded-full bg-[#df2531] flex items-center justify-center text-xs font-bold text-white">
-                                                {selectedDeposit.profiles.email.charAt(0).toUpperCase()}
+                                                {(selectedDeposit.profiles?.email && selectedDeposit.profiles.email.length > 0) ? selectedDeposit.profiles.email.charAt(0).toUpperCase() : '?'}
                                             </div>
-                                            <p className="text-white font-medium">{selectedDeposit.profiles.full_name}</p>
+                                            <p className="text-white font-medium">{selectedDeposit.profiles?.full_name || 'Unknown'}</p>
                                         </div>
                                     </div>
 
@@ -392,15 +389,31 @@ export default function DepositsPage() {
                     </div>
                 </div>
             )}
-        </div>
-    )
-}
 
-function ImageSquare({ size, weight, className }: any) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="currentColor" viewBox="0 0 256 256" className={className}>
-            <path d="M208,32H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm-48,80a12,12,0,1,1-12-12A12,12,0,0,1,160,112Zm48,96H48V48H208V208ZM80,184l32-32a8,8,0,0,1,11.32,0l40.68,40.69,16-16a8,8,0,0,1,11.32,0l16.68,16.69V200H80Z"></path>
-        </svg>
+            {/* Lightbox Modal */}
+            {lightboxImage && (
+                <div
+                    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-md p-4"
+                    onClick={() => setLightboxImage(null)}
+                >
+                    <button
+                        onClick={() => setLightboxImage(null)}
+                        className="absolute top-6 right-6 text-white/60 hover:text-white transition-colors"
+                    >
+                        <XCircle size={40} weight="fill" />
+                    </button>
+                    <div className="relative w-full h-full max-w-5xl max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                        <Image
+                            src={lightboxImage}
+                            alt="Proof of payment full size"
+                            fill
+                            className="object-contain"
+                            unoptimized
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
     )
 }
 

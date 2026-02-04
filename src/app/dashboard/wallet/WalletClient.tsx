@@ -33,6 +33,7 @@ interface PaymentMethod {
     icon: any
     description: string
     color: string
+    comingSoon?: boolean
 }
 
 const PAYMENT_METHODS: PaymentMethod[] = [
@@ -41,21 +42,24 @@ const PAYMENT_METHODS: PaymentMethod[] = [
         name: 'Credit/Debit Card',
         icon: CreditCard,
         description: 'Pay securely with Card',
-        color: 'text-blue-400'
+        color: 'text-blue-400',
+        comingSoon: true
     },
     {
         id: 'nowpayments',
         name: 'Crypto',
         icon: Lightning,
         description: 'Bitcoin, USDT, ETH, etc.',
-        color: 'text-amber-400'
+        color: 'text-amber-400',
+        comingSoon: true
     },
     {
         id: 'paystack',
         name: 'Paystack (Legacy)',
         icon: CreditCard,
         description: 'Pay with Card via Paystack',
-        color: 'text-green-400'
+        color: 'text-green-400',
+        comingSoon: true
     },
     {
         id: 'bank_transfer',
@@ -119,7 +123,7 @@ function PaymentModal({
     const [error, setError] = useState<string | null>(null)
     const [paystackLoaded, setPaystackLoaded] = useState(false)
 
-    const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('segpay')
+    const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('bank_transfer')
     const [proofFile, setProofFile] = useState<File | null>(null)
 
     const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || ''
@@ -348,17 +352,27 @@ function PaymentModal({
                             {availableMethods.map((method) => (
                                 <button
                                     key={method.id}
-                                    onClick={() => setSelectedProvider(method.id)}
-                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${selectedProvider === method.id
+                                    onClick={() => !method.comingSoon && setSelectedProvider(method.id)}
+                                    disabled={method.comingSoon}
+                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all w-full relative group ${selectedProvider === method.id
                                         ? 'bg-white/10 border-[#df2531]'
-                                        : 'bg-white/5 border-transparent hover:bg-white/10'
+                                        : method.comingSoon
+                                            ? 'bg-white/5 border-transparent opacity-60 cursor-not-allowed'
+                                            : 'bg-white/5 border-transparent hover:bg-white/10'
                                         }`}
                                 >
-                                    <div className={`p-2 rounded-lg bg-white/5 ${method.color}`}>
+                                    <div className={`p-2 rounded-lg bg-white/5 ${method.color} ${method.comingSoon ? 'grayscale' : ''}`}>
                                         <method.icon size={20} weight="duotone" />
                                     </div>
                                     <div className="text-left flex-1">
-                                        <div className="text-white font-medium text-sm">{method.name}</div>
+                                        <div className="text-white font-medium text-sm flex items-center gap-2">
+                                            {method.name}
+                                            {method.comingSoon && (
+                                                <span className="text-[10px] uppercase tracking-wider font-bold bg-white/10 text-white/50 px-1.5 py-0.5 rounded border border-white/10">
+                                                    Coming Soon
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="text-white/40 text-xs">{method.description}</div>
                                     </div>
                                     {selectedProvider === method.id && (
@@ -471,7 +485,7 @@ function SuccessModal({ coins, onClose }: { coins: number; onClose: () => void }
                             <span className="text-[#df2531] font-bold">{coins.toLocaleString()}</span> coins have been added to your wallet.
                         </>
                     ) : (
-                        "Your deposit request is under review. You will be notified once approved."
+                        "Your deposit request is under review. Verifications typically take 2-5 minutes. You will be notified once approved."
                     )}
                 </p>
 
