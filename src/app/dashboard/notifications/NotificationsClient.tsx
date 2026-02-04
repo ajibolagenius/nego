@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+// import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
     ArrowLeft, Bell, BellRinging, Check, CheckCircle, Trash,
@@ -32,7 +32,7 @@ const notificationIcons: Record<string, { icon: typeof Bell; color: string; bg: 
 }
 
 export function NotificationsClient({ user, profile, notifications: initialNotifications }: NotificationsClientProps) {
-    const _router = useRouter()
+    // const _router = useRouter()
     const supabase = createClient()
 
     const [notificationsList, setNotificationsList] = useState(initialNotifications)
@@ -146,10 +146,10 @@ export function NotificationsClient({ user, profile, notifications: initialNotif
         [notificationsList]
     )
 
-    const _filteredUnreadCount = useMemo(
-        () => filteredNotifications.filter((n) => !n.is_read).length,
-        [filteredNotifications]
-    )
+    // const _filteredUnreadCount = useMemo(
+    //     () => filteredNotifications.filter((n) => !n.is_read).length,
+    //     [filteredNotifications]
+    // )
 
     const formatTime = useCallback((dateString: string) => {
         const date = new Date(dateString)

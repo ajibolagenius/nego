@@ -19,7 +19,7 @@ export default async function AnalyticsPage() {
 
     // Check cache first (5 minute TTL)
     const cacheKey = CACHE_KEYS.ANALYTICS_STATS
-    const _cachedStats = cache.get(cacheKey) // TODO: Use cached data if available
+    // const _cachedStats = cache.get(cacheKey) // TODO: Use cached data if available
 
     // For now, we'll still fetch fresh data but cache the results
     // In a real implementation, you might want to return cached data if available

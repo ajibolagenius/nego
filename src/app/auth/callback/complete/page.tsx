@@ -99,7 +99,7 @@ export default function AuthCallbackPage() {
                     // Existing user - fetch their role and redirect appropriately
                     setStatus('Loading your profile...')
 
-                    const { data: profile, error: profileError } = await supabase
+                    const { error: profileError } = await supabase
                         .from('profiles')
                         .select('role')
                         .eq('id', session.user.id)

@@ -667,31 +667,8 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
         return null
     }
 
-    const _handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value
-        setBookingDate(value)
-        const error = validateBookingDate(value)
-        setDateError(error || '')
-
-        // Also validate time if both are set
-        if (value && bookingTime) {
-            const timeErr = validateBookingTime(value, bookingTime)
-            setTimeError(timeErr || '')
-        }
-    }
-
-    const _handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value
-        setBookingTime(value)
-
-        // Validate time if date is also set
-        if (bookingDate) {
-            const error = validateBookingTime(bookingDate, value)
-            setTimeError(error || '')
-        } else {
-            setTimeError('')
-        }
-    }
+    // const _handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => { ... }
+    // const _handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => { ... }
 
     // Start or open conversation with talent
     const handleStartChat = async () => {

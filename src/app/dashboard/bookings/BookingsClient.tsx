@@ -149,7 +149,7 @@ export function BookingsClient({ user: _user, profile, bookings, isClient }: Boo
                             {filteredBookings.map((booking) => {
                                 const defaultStatus = { icon: Hourglass, bg: 'bg-white/10', text: 'text-white/40', label: 'Unknown' }
                                 const status = statusConfig[booking.status] ?? statusConfig.payment_pending ?? defaultStatus
-                                const _StatusIcon = status.icon
+                                // const _StatusIcon = status.icon
                                 const otherParty = isClient ? booking.talent : booking.client
 
                                 return (

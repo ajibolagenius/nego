@@ -245,16 +245,7 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
     }
 
     // Send a local notification (for testing and immediate feedback)
-    const _sendLocalNotification = useCallback((title: string, body: string, data?: Record<string, unknown>) => {
-        if (permission !== 'granted') return
-
-        new Notification(title, {
-            body,
-            icon: '/icon-192.png',
-            tag: 'nego-notification',
-            data
-        })
-    }, [permission])
+    // Local notification function removed as unused
 
     if (permission === 'unsupported') {
         return null // Don't show anything if not supported

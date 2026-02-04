@@ -160,7 +160,7 @@ export function OnboardingModal({ role, isOpen, onClose: _onClose, onComplete }:
     if (!currentStep$) return null
 
     const CurrentIcon = currentStep$.icon
-    const _progress = ((currentStep + 1) / steps.length) * 100
+    // const _progress = ((currentStep + 1) / steps.length) * 100
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">

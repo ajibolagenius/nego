@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import {
     ArrowLeft, PaperPlaneRight, User, Chat, MagnifyingGlass,
     SpinnerGap, CheckCircle, Checks,
@@ -26,7 +26,7 @@ interface MessagesClientProps {
 export function MessagesClient({ userId, conversations: initialConversations, userRole = 'client' }: MessagesClientProps) {
     const supabase = createClient()
     const searchParams = useSearchParams()
-    const _router = useRouter()
+    // const _router = useRouter()
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
