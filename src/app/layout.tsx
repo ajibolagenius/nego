@@ -6,6 +6,7 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt"
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt"
 import { NetworkStatus } from "@/components/NetworkStatus"
 import { generateOpenGraphMetadata } from "@/lib/og-metadata"
+import { fontVariables } from "@/lib/fonts"
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 
@@ -61,7 +62,7 @@ export default function RootLayout({
     children: React.ReactNode
 }>) {
     return (
-        <html lang="en" data-scroll-behavior="smooth">
+        <html lang="en" data-scroll-behavior="smooth" className={fontVariables}>
             <head>
                 <meta name="apple-mobile-web-app-title" content="Nego" />
                 <meta name="application-name" content="Nego" />
