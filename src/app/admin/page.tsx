@@ -29,12 +29,19 @@ export default async function AdminDashboardPage() {
         supabase.from('withdrawal_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     ])
 
+    // Fetch pending disputes
+    const { count: pendingDisputes } = await supabase
+        .from('disputes')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'open')
+
     return (
         <AdminDashboardClient
-            initialPendingVerifications={pendingVerifications || 0}
-            initialTotalUsers={totalUsers || 0}
-            initialTotalBookings={totalBookings || 0}
-            initialPendingPayouts={pendingPayouts || 0}
+            initialPendingVerifications={pendingVerifications ?? 0}
+            initialTotalUsers={totalUsers ?? 0}
+            initialTotalBookings={totalBookings ?? 0}
+            initialPendingPayouts={pendingPayouts ?? 0}
+            initialPendingDisputes={pendingDisputes ?? 0}
         />
     )
 }

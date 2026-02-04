@@ -156,7 +156,7 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
             .eq('talent_id', talent.id)
             .or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending')
             .order('created_at', { ascending: false })
-            media = mediaData
+        media = mediaData
     }
 
     // Attach media and services to talent object with proper structure

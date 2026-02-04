@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { UserCheck, Money, Users, CalendarCheck } from '@phosphor-icons/react'
+import { UserCheck, Money, Users, CalendarCheck, Warning } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
 
 interface AdminDashboardClientProps {
@@ -10,6 +10,7 @@ interface AdminDashboardClientProps {
     initialTotalUsers: number
     initialTotalBookings: number
     initialPendingPayouts: number
+    initialPendingDisputes: number
 }
 
 export function AdminDashboardClient({
@@ -17,6 +18,7 @@ export function AdminDashboardClient({
     initialTotalUsers,
     initialTotalBookings,
     initialPendingPayouts,
+    initialPendingDisputes,
 }: AdminDashboardClientProps) {
     const supabase = createClient()
     const dashboardChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
@@ -25,6 +27,7 @@ export function AdminDashboardClient({
     const [totalUsers, setTotalUsers] = useState(initialTotalUsers)
     const [totalBookings, setTotalBookings] = useState(initialTotalBookings)
     const [pendingPayouts, setPendingPayouts] = useState(initialPendingPayouts)
+    const [pendingDisputes, setPendingDisputes] = useState(initialPendingDisputes)
 
     // Real-time subscription for all dashboard stats
     useEffect(() => {
@@ -39,6 +42,7 @@ export function AdminDashboardClient({
                     broadcast: { self: false }
                 }
             })
+            // Verifications subscription
             .on(
                 'postgres_changes',
                 {
@@ -111,6 +115,24 @@ export function AdminDashboardClient({
                     }
                 }
             )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'disputes',
+                },
+                async () => {
+                    // Refetch pending disputes count
+                    const { count } = await supabase
+                        .from('disputes')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('status', 'open')
+                    if (count !== null) {
+                        setPendingDisputes(count)
+                    }
+                }
+            )
             .subscribe((status) => {
                 console.log('[Admin Dashboard] Channel subscription status:', status)
             })
@@ -141,6 +163,14 @@ export function AdminDashboardClient({
             href: '/admin/payouts',
             color: 'bg-green-500/10 text-green-400',
             urgent: pendingPayouts > 0,
+        },
+        {
+            label: 'Open Disputes',
+            value: pendingDisputes,
+            icon: Warning,
+            href: '/admin/disputes',
+            color: 'bg-red-500/10 text-red-400',
+            urgent: pendingDisputes > 0,
         },
         {
             label: 'Total Users',
@@ -175,9 +205,8 @@ export function AdminDashboardClient({
                         <Link
                             key={stat.label}
                             href={stat.href}
-                            className={`relative p-4 sm:p-6 rounded-2xl bg-white/5 border transition-all duration-300 hover:bg-white/10 ${
-                                stat.urgent ? 'border-amber-500/50' : 'border-white/10'
-                            }`}
+                            className={`relative p-4 sm:p-6 rounded-2xl bg-white/5 border transition-all duration-300 hover:bg-white/10 ${stat.urgent ? 'border-amber-500/50' : 'border-white/10'
+                                }`}
                         >
                             {stat.urgent && (
                                 <span className="absolute top-2 right-2 sm:top-3 sm:right-3 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-500 animate-pulse" />
@@ -198,23 +227,51 @@ export function AdminDashboardClient({
                 <div className="flex flex-wrap gap-2 sm:gap-3">
                     <Link
                         href="/admin/verifications"
-                        className="px-3 sm:px-4 py-2 rounded-xl bg-[#df2531] text-white text-sm font-medium hover:bg-[#c41f2a] transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-[#df2531] text-white text-sm font-medium hover:bg-[#c41f2a] transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
                         aria-label="Review pending verifications"
                     >
+                        <UserCheck size={18} weight="bold" />
                         Review Pending
                     </Link>
                     <Link
                         href="/admin/payouts"
-                        className="px-3 sm:px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
                         aria-label="Process withdrawal requests"
                     >
+                        <Money size={18} weight="bold" />
                         Process Withdrawals
                     </Link>
                     <Link
+                        href="/admin/disputes"
+                        className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-white text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${pendingDisputes > 0 ? 'bg-amber-500/80 hover:bg-amber-600' : 'bg-white/10 hover:bg-white/20'
+                            }`}
+                        aria-label="Resolve disputes"
+                    >
+                        <Warning size={18} weight="bold" />
+                        Resolve Disputes
+                    </Link>
+                    <Link
+                        href="/admin/talents"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+                        aria-label="Manage talents"
+                    >
+                        <Users size={18} weight="bold" />
+                        Manage Talents
+                    </Link>
+                    <Link
+                        href="/admin/deposits"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+                        aria-label="View deposits"
+                    >
+                        <Money size={18} weight="bold" />
+                        View Deposits
+                    </Link>
+                    <Link
                         href="/admin/analytics"
-                        className="px-3 sm:px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
                         aria-label="View platform analytics and reports"
                     >
+                        <CalendarCheck size={18} weight="bold" />
                         View Reports
                     </Link>
                 </div>

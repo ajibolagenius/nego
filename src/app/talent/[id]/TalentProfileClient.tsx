@@ -16,6 +16,8 @@ import { ReviewCard, ReviewSummary } from '@/components/Reviews'
 import { GiftCoins } from '@/components/GiftCoins'
 import { GiftLeaderboard } from '@/components/GiftLeaderboard'
 import { MediaLightbox } from '@/components/MediaLightbox'
+import { ServicesList } from '@/components/talent/ServicesList'
+import { BookingModal } from '@/components/talent/BookingModal'
 import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useWallet } from '@/hooks/useWallet'
@@ -142,6 +144,11 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
         }
     }
 
+    const { push } = useRouter()
+    const handleLoginRedirect = () => {
+        push('/login?redirect=' + encodeURIComponent(window.location.pathname))
+    }
+
     const isUnlocked = (mediaId: string) => unlockedMedia.has(mediaId)
 
     const handleOpenLightbox = (item: Media) => {
@@ -195,10 +202,32 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
             {currentMedia.length === 0 ? (
                 <div className="text-center py-12 rounded-xl bg-white/5 border border-white/10">
                     {activeTab === 'premium' ? (
-                        <div className="flex flex-col items-center gap-3">
-                            <Crown size={48} weight="duotone" className="text-amber-500/50" aria-hidden="true" />
-                            <p className="text-white/60 font-medium">No premium content available</p>
-                            <p className="text-white/40 text-sm">Premium content will appear here when added</p>
+                        <div className="flex flex-col items-center gap-4 py-8 text-center px-4">
+                            {!userId ? (
+                                <>
+                                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mb-2 border border-amber-500/20">
+                                        <Lock size={32} weight="duotone" className="text-amber-400" aria-hidden="true" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-white font-bold text-lg mb-1">Premium Content Locked</h3>
+                                        <p className="text-white/60 text-sm mb-6 max-w-xs mx-auto">
+                                            Log in or create an account to unlock exclusive photos and videos from {talentName}.
+                                        </p>
+                                        <button
+                                            onClick={handleLoginRedirect}
+                                            className="px-8 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-sm hover:opacity-90 transition-opacity shadow-lg shadow-amber-500/20"
+                                        >
+                                            Log In to Unlock
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <Crown size={48} weight="duotone" className="text-amber-500/50" aria-hidden="true" />
+                                    <p className="text-white/60 font-medium">No premium content available</p>
+                                    <p className="text-white/40 text-sm">Premium content will appear here when added</p>
+                                </>
+                            )}
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-3">
@@ -210,98 +239,98 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
                 </div>
             ) : (
                 <>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {visibleMedia.map((item) => {
-                        const unlocked = isUnlocked(item.id)
-                        const showBlur = item.is_premium && !unlocked
-                        const canOpen = !item.is_premium || unlocked
+                            const unlocked = isUnlocked(item.id)
+                            const showBlur = item.is_premium && !unlocked
+                            const canOpen = !item.is_premium || unlocked
 
-                        return (
-                            <div
-                                key={item.id}
-                                className={`aspect-square rounded-xl overflow-hidden relative group ${canOpen ? 'cursor-pointer' : ''}`}
-                                onClick={() => canOpen && handleOpenLightbox(item)}
-                            >
-                                {isVideo(item.url) ? (
-                                    <video
-                                        src={item.url}
-                                        className={`w-full h-full object-cover transition-all ${showBlur ? 'blur-xl scale-110' : ''}`}
-                                        muted
-                                        playsInline
-                                    />
-                                ) : (
-                                    <Image
-                                        src={item.url}
-                                        alt="Gallery"
-                                        fill
-                                        sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                                        className={`object-cover transition-all ${showBlur ? 'blur-xl scale-110' : ''}`}
-                                    />
-                                )}
+                            return (
+                                <div
+                                    key={item.id}
+                                    className={`aspect-square rounded-xl overflow-hidden relative group ${canOpen ? 'cursor-pointer' : ''}`}
+                                    onClick={() => canOpen && handleOpenLightbox(item)}
+                                >
+                                    {isVideo(item.url) ? (
+                                        <video
+                                            src={item.url}
+                                            className={`w-full h-full object-cover transition-all ${showBlur ? 'blur-xl scale-110' : ''}`}
+                                            muted
+                                            playsInline
+                                        />
+                                    ) : (
+                                        <Image
+                                            src={item.url}
+                                            alt="Gallery"
+                                            fill
+                                            sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                                            className={`object-cover transition-all ${showBlur ? 'blur-xl scale-110' : ''}`}
+                                        />
+                                    )}
 
-                                {/* Video indicator */}
-                                {isVideo(item.url) && !showBlur && (
-                                    <div className="absolute bottom-2 right-2 bg-black/60 rounded-full p-1.5">
-                                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M8 5v14l11-7z" />
-                                        </svg>
-                                    </div>
-                                )}
-
-                                {/* Premium locked overlay */}
-                                {item.is_premium && !unlocked && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-                                        <button
-                                            onClick={(e) => handleUnlock(item, e)}
-                                            disabled={unlocking === item.id}
-                                            className="flex flex-col items-center gap-2.5 p-5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:from-amber-500/30 hover:to-orange-500/30 transition-all disabled:opacity-50"
-                                            aria-label={`Unlock premium content for ${item.unlock_price} coins`}
-                                        >
-                                            {unlocking === item.id ? (
-                                                <>
-                                                    <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
-                                                    <span className="text-white text-xs font-medium">Unlocking...</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Lock size={28} weight="duotone" className="text-amber-400" aria-hidden="true" />
-                                                    <div className="text-center">
-                                                        <span className="text-white text-sm font-semibold block">
-                                                            Unlock for {item.unlock_price} coins
-                                                        </span>
-                                                        {userBalance < item.unlock_price && (
-                                                            <span className="text-red-400 text-xs mt-1 block">
-                                                                Need {item.unlock_price - userBalance} more coins
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
-                                )}
-
-                                {/* Unlocked badge */}
-                                {unlocked && (
-                                    <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-green-500/80 text-white text-[10px] font-medium flex items-center gap-1">
-                                        <CheckCircle size={12} weight="bold" />
-                                        Unlocked
-                                    </div>
-                                )}
-
-                                {/* Hover overlay for clickable items */}
-                                {canOpen && (
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                    {/* Video indicator */}
+                                    {isVideo(item.url) && !showBlur && (
+                                        <div className="absolute bottom-2 right-2 bg-black/60 rounded-full p-1.5">
+                                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M8 5v14l11-7z" />
                                             </svg>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-                        )
-                    })}
+                                    )}
+
+                                    {/* Premium locked overlay */}
+                                    {item.is_premium && !unlocked && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                                            <button
+                                                onClick={(e) => handleUnlock(item, e)}
+                                                disabled={unlocking === item.id}
+                                                className="flex flex-col items-center gap-2.5 p-5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:from-amber-500/30 hover:to-orange-500/30 transition-all disabled:opacity-50"
+                                                aria-label={`Unlock premium content for ${item.unlock_price} coins`}
+                                            >
+                                                {unlocking === item.id ? (
+                                                    <>
+                                                        <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
+                                                        <span className="text-white text-xs font-medium">Unlocking...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Lock size={28} weight="duotone" className="text-amber-400" aria-hidden="true" />
+                                                        <div className="text-center">
+                                                            <span className="text-white text-sm font-semibold block">
+                                                                Unlock for {item.unlock_price} coins
+                                                            </span>
+                                                            {userBalance < item.unlock_price && (
+                                                                <span className="text-red-400 text-xs mt-1 block">
+                                                                    Need {item.unlock_price - userBalance} more coins
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Unlocked badge */}
+                                    {unlocked && (
+                                        <div className="absolute top-2 right-2 px-2 py-1 rounded-full bg-green-500/80 text-white text-[10px] font-medium flex items-center gap-1">
+                                            <CheckCircle size={12} weight="bold" />
+                                            Unlocked
+                                        </div>
+                                    )}
+
+                                    {/* Hover overlay for clickable items */}
+                                    {canOpen && (
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        })}
                     </div>
 
                     {currentMedia.length > baseLimit && (
@@ -1250,51 +1279,13 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                             <p className="text-white/40 text-sm">This talent hasn&apos;t added any services yet. Check back later!</p>
                         </div>
                     ) : (
-                        <div className="space-y-3">
-                            {activeServices.map((service) => {
-                                const isSelected = selectedServices.includes(service.id)
-                                const IconComponent = serviceIcons[service.service_type?.icon || ''] || Calendar
-
-                                return (
-                                    <button
-                                        key={service.id}
-                                        onClick={() => toggleService(service.id)}
-                                        className={`group w-full flex items-center justify-between p-5 rounded-xl border transition-all duration-200 ${isSelected
-                                            ? 'bg-[#df2531]/10 border-[#df2531]/50 shadow-lg shadow-[#df2531]/10'
-                                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
-                                            }`}
-                                        aria-label={`${isSelected ? 'Deselect' : 'Select'} ${service.service_type?.name} service for ${formatPrice(service.price)}`}
-                                        aria-pressed={isSelected}
-                                    >
-                                        <div className="flex items-center gap-4 flex-1 min-w-0">
-                                            <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-all ${isSelected
-                                                ? 'bg-[#df2531] shadow-lg shadow-[#df2531]/30'
-                                                : 'bg-white/10 group-hover:bg-white/20'
-                                                }`}>
-                                                <IconComponent size={24} weight="duotone" className="text-white" aria-hidden="true" />
-                                            </div>
-                                            <div className="text-left flex-1 min-w-0">
-                                                <p className="text-white font-semibold text-base mb-1">{service.service_type?.name}</p>
-                                                {service.service_type?.description && (
-                                                    <p className="text-white/60 text-sm line-clamp-2">{service.service_type.description}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4 shrink-0">
-                                            <div className="text-right">
-                                                <p className="text-white font-bold text-lg">{formatPrice(service.price)}</p>
-                                            </div>
-                                            <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${isSelected
-                                                ? 'bg-[#df2531] border-[#df2531] shadow-lg shadow-[#df2531]/30'
-                                                : 'border-white/30 group-hover:border-white/50'
-                                                }`} aria-hidden="true">
-                                                {isSelected && <Check size={16} weight="bold" className="text-white" />}
-                                            </div>
-                                        </div>
-                                    </button>
-                                )
-                            })}
-                        </div>
+                        <ServicesList
+                            services={activeServices}
+                            selectedServices={selectedServices}
+                            onToggleService={toggleService}
+                            formatPrice={formatPrice}
+                            serviceIcons={serviceIcons}
+                        />
                     )}
                 </div>
 
@@ -1465,251 +1456,32 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
             </div>
 
             {/* Booking Modal */}
-            {showBookingModal && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-                    onClick={() => setShowBookingModal(false)}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="booking-modal-title"
-                >
-                    <div
-                        className="bg-[#0a0a0f] rounded-2xl w-full max-w-lg border border-white/10 overflow-hidden animate-fade-in-up"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-white/10">
-                            <div>
-                                <h2 id="booking-modal-title" className="text-2xl font-bold text-white mb-1">Confirm Your Booking</h2>
-                                <p className="text-white/50 text-sm">Review your selection and schedule your appointment</p>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    setShowBookingModal(false)
-                                    setError('')
-                                    setDateError('')
-                                    setTimeError('')
-                                }}
-                                className="text-white/60 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10"
-                                aria-label="Close booking modal"
-                            >
-                                <X size={24} aria-hidden="true" />
-                            </button>
-                        </div>
-
-                        {/* Modal Body */}
-                        <div className="p-6 space-y-6">
-                            {error && !showErrorBanner && (
-                                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-3" role="alert">
-                                    <Warning size={20} weight="duotone" className="shrink-0 mt-0.5" aria-hidden="true" />
-                                    <span>{error}</span>
-                                </div>
-                            )}
-
-                            {/* Selected Services Summary - Enhanced */}
-                            <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                                    <CalendarCheck size={20} weight="duotone" className="text-[#df2531]" aria-hidden="true" />
-                                    Selected Services
-                                </h3>
-                                <div className="space-y-2 mb-4">
-                                    {activeServices
-                                        .filter(s => selectedServices.includes(s.id))
-                                        .map(s => (
-                                            <div key={s.id} className="flex justify-between items-center text-white py-2 px-3 rounded-lg bg-white/5">
-                                                <span className="font-medium">{s.service_type?.name}</span>
-                                                <span className="font-bold text-[#df2531]">{formatPrice(s.price)}</span>
-                                            </div>
-                                        ))
-                                    }
-                                </div>
-                                <div className="border-t border-white/10 pt-4 flex justify-between items-center">
-                                    <span className="text-white font-semibold text-lg">Total Amount</span>
-                                    <span className="text-white font-bold text-xl">{formatPrice(totalPrice)}</span>
-                                </div>
-                            </div>
-
-                            {/* Date & Time - Enhanced */}
-                            <div>
-                                <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-                                    <Clock size={20} weight="duotone" className="text-[#df2531]" aria-hidden="true" />
-                                    Schedule Your Appointment
-                                </h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label htmlFor="booking-date" className="block text-white/70 text-sm mb-2 font-medium">
-                                            Select Date <span className="text-red-400" aria-label="required">*</span>
-                                        </label>
-                                        <div className="relative">
-                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} weight="duotone" aria-hidden="true" />
-                                            <input
-                                                id="booking-date"
-                                                type="date"
-                                                value={bookingDate}
-                                                onChange={handleDateChange}
-                                                min={new Date().toISOString().split('T')[0]}
-                                                aria-label="Booking date"
-                                                aria-invalid={dateError ? 'true' : 'false'}
-                                                aria-describedby={dateError ? 'date-error' : undefined}
-                                                aria-required="true"
-                                                className={`w-full bg-white/5 border rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none transition-colors ${dateError
-                                                    ? 'border-red-500/50 focus:border-red-500'
-                                                    : 'border-white/10 focus:border-[#df2531]/50'
-                                                    }`}
-                                            />
-                                        </div>
-                                        {dateError && (
-                                            <p id="date-error" className="text-red-400 text-xs mt-1.5 flex items-center gap-1" role="alert">
-                                                <Warning size={14} weight="duotone" aria-hidden="true" />
-                                                {dateError}
-                                            </p>
-                                        )}
-                                        {!dateError && bookingDate && (
-                                            <p className="text-green-400 text-xs mt-1.5 flex items-center gap-1">
-                                                <CheckCircle size={14} weight="duotone" aria-hidden="true" />
-                                                Date selected
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label htmlFor="booking-time" className="block text-white/70 text-sm mb-2 font-medium">
-                                            Select Time <span className="text-red-400" aria-label="required">*</span>
-                                        </label>
-                                        <div className="relative">
-                                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={20} weight="duotone" aria-hidden="true" />
-                                            <input
-                                                id="booking-time"
-                                                type="time"
-                                                value={bookingTime}
-                                                onChange={handleTimeChange}
-                                                aria-label="Booking time"
-                                                aria-invalid={timeError ? 'true' : 'false'}
-                                                aria-describedby={timeError ? 'time-error' : undefined}
-                                                aria-required="true"
-                                                className={`w-full bg-white/5 border rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none transition-colors ${timeError
-                                                    ? 'border-red-500/50 focus:border-red-500'
-                                                    : 'border-white/10 focus:border-[#df2531]/50'
-                                                    }`}
-                                            />
-                                        </div>
-                                        {timeError && (
-                                            <p id="time-error" className="text-red-400 text-xs mt-1.5 flex items-center gap-1" role="alert">
-                                                <Warning size={14} weight="duotone" aria-hidden="true" />
-                                                {timeError}
-                                            </p>
-                                        )}
-                                        {!timeError && bookingDate && bookingTime && (
-                                            <p className="text-green-400 text-xs mt-1.5 flex items-center gap-1">
-                                                <CheckCircle size={14} weight="duotone" aria-hidden="true" />
-                                                Time slot available
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Notes - Enhanced */}
-                            <div>
-                                <label htmlFor="booking-notes" className="block text-white/70 text-sm mb-2 font-medium">
-                                    Special Requests or Notes <span className="text-white/40 text-xs font-normal">(optional)</span>
-                                </label>
-                                <textarea
-                                    id="booking-notes"
-                                    value={bookingNotes}
-                                    onChange={(e) => setBookingNotes(e.target.value)}
-                                    placeholder="Any special requests, dietary preferences, or information that would help make your experience better..."
-                                    rows={4}
-                                    maxLength={500}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 resize-none"
-                                    aria-label="Special requests or notes for the booking"
-                                />
-                                <p className="text-white/40 text-xs mt-1.5 text-right">
-                                    {bookingNotes.length}/500 characters
-                                </p>
-                            </div>
-
-                            {/* Wallet Balance - Enhanced */}
-                            <div className={`p-5 rounded-xl border ${hasInsufficientBalance
-                                ? 'bg-amber-500/10 border-amber-500/20'
-                                : 'bg-[#df2531]/10 border-[#df2531]/20'
-                                }`}>
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-3">
-                                        <Coin size={28} weight="duotone" className={hasInsufficientBalance ? 'text-amber-400' : 'text-[#df2531]'} aria-hidden="true" />
-                                        <div>
-                                            <p className="text-white/50 text-xs mb-0.5 uppercase tracking-wide">Your Wallet Balance</p>
-                                            <p className={`font-bold text-xl ${hasInsufficientBalance ? 'text-amber-400' : 'text-white'}`}>
-                                                {userBalance.toLocaleString()} coins
-                                            </p>
-                                            <p className="text-white/50 text-xs">≈ ₦{(userBalance * 10).toLocaleString()}</p>
-                                        </div>
-                                    </div>
-                                    <Link
-                                        href="/dashboard/wallet"
-                                        className={`px-4 py-2 rounded-lg text-sm font-semibold hover:underline transition-colors ${hasInsufficientBalance
-                                            ? 'text-amber-400 hover:bg-amber-500/20'
-                                            : 'text-[#df2531] hover:bg-[#df2531]/20'
-                                            }`}
-                                        aria-label="Go to wallet to top up coins"
-                                    >
-                                        Top Up
-                                    </Link>
-                                </div>
-                                {hasInsufficientBalance && (
-                                    <div className="pt-3 border-t border-amber-500/20 flex items-center gap-2">
-                                        <Warning size={18} weight="duotone" className="text-amber-400 shrink-0" aria-hidden="true" />
-                                        <p className="text-amber-400 text-sm">
-                                            You need <span className="font-bold">{totalPrice - userBalance}</span> more coins to complete this booking
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Modal Footer */}
-                        <div className="p-6 border-t border-white/10">
-                            <Button
-                                onClick={handleBooking}
-                                disabled={loading || hasInsufficientBalance || !!dateError || !!timeError}
-                                className={`w-full font-bold py-4 rounded-xl text-base transition-all disabled:opacity-50 ${hasInsufficientBalance || dateError || timeError
-                                    ? 'bg-white/10 text-white/50 cursor-not-allowed'
-                                    : 'bg-[#df2531] hover:bg-[#c41f2a] text-white shadow-lg shadow-[#df2531]/20 hover:shadow-[#df2531]/30'
-                                    }`}
-                                aria-label={loading ? 'Processing booking...' : hasInsufficientBalance ? 'Insufficient balance to book' : dateError || timeError ? 'Please fix date and time errors' : `Confirm booking and pay ${totalPrice} coins`}
-                            >
-                                {loading ? (
-                                    <>
-                                        <SpinnerGap size={20} className="animate-spin mr-2" aria-hidden="true" />
-                                        <span className="sr-only">Processing booking...</span>
-                                        Processing Booking...
-                                    </>
-                                ) : hasInsufficientBalance ? (
-                                    <>
-                                        <Warning size={20} weight="duotone" className="mr-2" aria-hidden="true" />
-                                        Insufficient Balance
-                                    </>
-                                ) : dateError || timeError ? (
-                                    <>
-                                        <Warning size={20} weight="duotone" className="mr-2" aria-hidden="true" />
-                                        Fix Date/Time Errors
-                                    </>
-                                ) : (
-                                    <>
-                                        <CheckCircle size={20} weight="duotone" className="mr-2" aria-hidden="true" />
-                                        Confirm & Pay {totalPrice.toLocaleString()} coins
-                                    </>
-                                )}
-                            </Button>
-                            <div className="mt-4 p-3 rounded-lg bg-white/5 border border-white/10">
-                                <p className="text-white/60 text-xs text-center leading-relaxed">
-                                    <Lock size={14} weight="duotone" className="inline mr-1.5 text-white/40" aria-hidden="true" />
-                                    Payment will be held securely in escrow until your service is completed
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <BookingModal
+                isOpen={showBookingModal}
+                onClose={() => setShowBookingModal(false)}
+                services={activeServices}
+                selectedServices={selectedServices}
+                totalPrice={totalPrice}
+                userBalance={userBalance}
+                onSubmit={async (date, time) => {
+                    await handleBooking()
+                }}
+                isLoading={loading}
+                error={error}
+                formatPrice={formatPrice}
+                date={bookingDate}
+                time={bookingTime}
+                setDate={(d) => {
+                    setBookingDate(d)
+                    setDateError('')
+                }}
+                setTime={(t) => {
+                    setBookingTime(t)
+                    setTimeError('')
+                }}
+                notes={bookingNotes}
+                setNotes={setBookingNotes}
+            />
 
             {/* Standalone Media Lightbox - works for both free and premium media */}
             <MediaLightbox
