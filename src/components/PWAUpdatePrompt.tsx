@@ -12,7 +12,8 @@ export function PWAUpdatePrompt() {
 
     useEffect(() => {
         if (updateAvailable) {
-            setShowPrompt(true)
+            const timer = setTimeout(() => setShowPrompt(true), 0)
+            return () => clearTimeout(timer)
         }
     }, [updateAvailable])
 

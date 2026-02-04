@@ -11,22 +11,26 @@ export function useFavorites(userId: string | undefined) {
   // Load favorites from localStorage
   useEffect(() => {
     if (!userId) return
-    
+
     try {
       const stored = localStorage.getItem(`${FAVORITES_KEY_PREFIX}${userId}`)
-      if (stored) {
-        setFavorites(JSON.parse(stored))
-      }
+      const parsed = stored ? JSON.parse(stored) : []
+      const timer = setTimeout(() => {
+        setFavorites(parsed)
+        setIsLoaded(true)
+      }, 0)
+      return () => clearTimeout(timer)
     } catch (error) {
       console.error('Error loading favorites:', error)
+      const timer = setTimeout(() => setIsLoaded(true), 0)
+      return () => clearTimeout(timer)
     }
-    setIsLoaded(true)
   }, [userId])
 
   // Save to localStorage
   const saveFavorites = useCallback((newFavorites: string[]) => {
     if (!userId) return
-    
+
     try {
       localStorage.setItem(`${FAVORITES_KEY_PREFIX}${userId}`, JSON.stringify(newFavorites))
       setFavorites(newFavorites)
@@ -64,7 +68,7 @@ export function useFavorites(userId: string | undefined) {
     const handleUpdate = (event: CustomEvent<string[]>) => {
       setFavorites(event.detail)
     }
-    
+
     window.addEventListener('favoritesUpdated', handleUpdate as EventListener)
     return () => {
       window.removeEventListener('favoritesUpdated', handleUpdate as EventListener)

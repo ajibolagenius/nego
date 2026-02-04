@@ -42,6 +42,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         .single()
 
     // Generate random limit between 8 and 16
+    // eslint-disable-next-line react-hooks/purity
     const randomLimit = Math.floor(Math.random() * 9) + 8 // 8 to 16
 
     // Fetch featured talents with COMPLETE profile data (random selection of talents)
@@ -66,6 +67,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
     // Shuffle and pick random talents
     const shuffledTalents = (featuredTalents || [])
+        // eslint-disable-next-line react-hooks/purity
         .sort(() => Math.random() - 0.5)
         .slice(0, randomLimit)
 

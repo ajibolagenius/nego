@@ -35,13 +35,14 @@ export function usePWA(): UsePWAReturn {
     useEffect(() => {
         const checkInstalled = () => {
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                (window.navigator as any).standalone === true ||
+                (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
                 document.referrer.includes('android-app://')
 
-            setIsInstalled(isStandalone)
+            const timer = setTimeout(() => setIsInstalled(isStandalone), 0)
+            return () => clearTimeout(timer)
         }
 
-        checkInstalled()
+        return checkInstalled()
     }, [])
 
     // Monitor online/offline status
@@ -49,11 +50,12 @@ export function usePWA(): UsePWAReturn {
         const handleOnline = () => setIsOnline(true)
         const handleOffline = () => setIsOnline(false)
 
-        setIsOnline(navigator.onLine)
+        const timer = setTimeout(() => setIsOnline(navigator.onLine), 0)
         window.addEventListener('online', handleOnline)
         window.addEventListener('offline', handleOffline)
 
         return () => {
+            clearTimeout(timer)
             window.removeEventListener('online', handleOnline)
             window.removeEventListener('offline', handleOffline)
         }

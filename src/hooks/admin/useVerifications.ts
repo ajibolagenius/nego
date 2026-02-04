@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
+import type { BookingWithRelations } from '@/types/admin'
 
 interface Verification {
   id: string
@@ -15,7 +16,7 @@ interface Verification {
   status: 'pending' | 'approved' | 'rejected'
   admin_notes: string | null
   created_at: string
-  booking: any | null
+  booking: BookingWithRelations | null
 }
 
 export function useVerifications(initialVerifications: Verification[]) {
@@ -76,7 +77,8 @@ export function useVerifications(initialVerifications: Verification[]) {
             const transformed = updatedVerifications.map(v => ({
               ...v,
               id: v.booking_id,
-            })) as Verification[]
+              booking: Array.isArray(v.booking) ? v.booking[0] : v.booking
+            })) as unknown as Verification[]
             setVerifications(transformed)
           }
         }

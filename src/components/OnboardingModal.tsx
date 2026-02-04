@@ -124,7 +124,8 @@ export function OnboardingModal({ role, isOpen, onClose: _onClose, onComplete }:
 
     useEffect(() => {
         if (isOpen) {
-            setCurrentStep(0)
+            const timer = setTimeout(() => setCurrentStep(0), 0)
+            return () => clearTimeout(timer)
         }
     }, [isOpen])
 

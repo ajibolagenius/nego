@@ -4,27 +4,18 @@ import { useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
+import type { WithdrawalRequestWithTalent, PayoutTransaction } from '@/types/admin'
 
-interface WithdrawalRequest {
-    id: string
-    talent_id: string
-    amount: number
-    bank_name: string
-    account_number: string
-    account_name: string
-    status: string
-    created_at: string
-    talent?: any
-}
+
 
 export function usePayouts(
-    initialWithdrawalRequests: WithdrawalRequest[],
-    initialPayouts: any[]
+    initialWithdrawalRequests: WithdrawalRequestWithTalent[],
+    initialPayouts: PayoutTransaction[]
 ) {
     const router = useRouter()
     const supabase = createClient()
-    const [withdrawalRequests, setWithdrawalRequests] = useState<WithdrawalRequest[]>(initialWithdrawalRequests)
-    const [payouts, setPayouts] = useState<any[]>(initialPayouts)
+    const [withdrawalRequests, setWithdrawalRequests] = useState<WithdrawalRequestWithTalent[]>(initialWithdrawalRequests)
+    const [payouts, setPayouts] = useState<PayoutTransaction[]>(initialPayouts)
     const [processing, setProcessing] = useState<string | null>(null)
     const payoutChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
@@ -53,7 +44,7 @@ export function usePayouts(
                         .order('created_at', { ascending: false })
 
                     if (updatedRequests) {
-                        setWithdrawalRequests(updatedRequests as WithdrawalRequest[])
+                        setWithdrawalRequests(updatedRequests as WithdrawalRequestWithTalent[])
                     }
                 }
             )
@@ -93,7 +84,7 @@ export function usePayouts(
         }
     }, [supabase])
 
-    const approveWithdrawal = async (request: WithdrawalRequest) => {
+    const approveWithdrawal = async (request: WithdrawalRequestWithTalent) => {
         setProcessing(request.id)
         try {
             // Get current wallet balance

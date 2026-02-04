@@ -18,8 +18,8 @@ export function PWAInstallPrompt() {
         // Check if app is already installed
         if (window.matchMedia('(display-mode: standalone)').matches ||
             (window.navigator as any).standalone === true) {
-            setIsInstalled(true)
-            return
+            const timer = setTimeout(() => setIsInstalled(true), 0)
+            return () => clearTimeout(timer)
         }
 
         // Check if prompt was previously dismissed

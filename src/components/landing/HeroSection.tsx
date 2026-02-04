@@ -29,7 +29,8 @@ export function HeroSection() {
     }, [nextSlide])
 
     useEffect(() => {
-        setIsVisible(true)
+        const timer = setTimeout(() => setIsVisible(true), 100)
+        return () => clearTimeout(timer)
     }, [])
 
     const handleMouseMove = (e: React.MouseEvent) => {

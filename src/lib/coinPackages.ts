@@ -87,8 +87,10 @@ export function getCoinPackageById(id: string): CoinPackage | undefined {
   return COIN_PACKAGES.find((pkg) => pkg.id === id)
 }
 
+import { SupabaseClient } from '@supabase/supabase-js'
+
 // Fetch coin packages from database (server-side)
-export async function getCoinPackagesFromDB(supabase: any): Promise<CoinPackage[]> {
+export async function getCoinPackagesFromDB(supabase: SupabaseClient): Promise<CoinPackage[]> {
   try {
     const { data, error } = await supabase
       .from('coin_packages')
@@ -102,20 +104,23 @@ export async function getCoinPackagesFromDB(supabase: any): Promise<CoinPackage[
     }
 
     // Transform database format to CoinPackage format
-    return (data || []).map((pkg: any) => ({
-      id: pkg.id,
-      coins: pkg.coins,
-      price: pkg.price,
-      priceInKobo: pkg.price_in_kobo,
-      displayName: pkg.display_name,
-      description: pkg.description || '',
-      popular: pkg.popular || false,
-      bestValue: pkg.best_value || false,
-      isNew: pkg.is_new || false,
-      isRecommended: pkg.is_recommended || false,
-      is_active: pkg.is_active,
-      display_order: pkg.display_order
-    }))
+    return (data || []).map((row: unknown) => {
+      const pkg = row as Record<string, unknown>
+      return {
+        id: pkg.id as string,
+        coins: pkg.coins as number,
+        price: pkg.price as number,
+        priceInKobo: pkg.price_in_kobo as number,
+        displayName: pkg.display_name as string,
+        description: (pkg.description as string) || '',
+        popular: (pkg.popular as boolean) || false,
+        bestValue: (pkg.best_value as boolean) || false,
+        isNew: (pkg.is_new as boolean) || false,
+        isRecommended: (pkg.is_recommended as boolean) || false,
+        is_active: pkg.is_active as boolean | undefined,
+        display_order: pkg.display_order as number | undefined
+      }
+    })
   } catch (error) {
     console.error('Error in getCoinPackagesFromDB:', error)
     return COIN_PACKAGES // Fallback to hardcoded
@@ -123,7 +128,7 @@ export async function getCoinPackagesFromDB(supabase: any): Promise<CoinPackage[
 }
 
 // Get coin package by ID from database
-export async function getCoinPackageByIdFromDB(supabase: any, id: string): Promise<CoinPackage | undefined> {
+export async function getCoinPackageByIdFromDB(supabase: SupabaseClient, id: string): Promise<CoinPackage | undefined> {
   try {
     const { data, error } = await supabase
       .from('coin_packages')

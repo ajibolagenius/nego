@@ -156,8 +156,9 @@ export async function processSuccessfulTransaction(
         console.log(`[${provider} Payment] Successfully credited ${transaction.coins} coins to user ${transaction.user_id}`)
         return { status: 'success', newBalance }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(`[${provider} Payment] Unhandled error:`, error)
-        return { status: 'failed', error: error.message || 'Unknown processing error' }
+        const errorMessage = error instanceof Error ? error.message : 'Unknown processing error'
+        return { status: 'failed', error: errorMessage }
     }
 }

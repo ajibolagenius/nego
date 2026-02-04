@@ -9,7 +9,9 @@ export default function NotFound() {
     const [isVisible, setIsVisible] = useState(false)
 
     useEffect(() => {
-        setIsVisible(true)
+        // Delay to start animation after mount
+        const timer = setTimeout(() => setIsVisible(true), 100)
+        return () => clearTimeout(timer)
     }, [])
 
     return (

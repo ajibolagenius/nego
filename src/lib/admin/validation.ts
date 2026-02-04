@@ -1,5 +1,6 @@
 import { createApiClient } from '@/lib/supabase/api'
 import { createClient } from '@/lib/supabase/server'
+import type { VerificationWithBooking, WithdrawalRequestWithTalent } from '@/types/admin'
 
 /**
  * Validates that the current user is an admin
@@ -35,7 +36,7 @@ export async function validateAdmin(): Promise<{ isValid: boolean; userId?: stri
  */
 export async function validateVerification(bookingId: string): Promise<{
     isValid: boolean
-    verification?: any
+    verification?: VerificationWithBooking
     error?: string
 }> {
     // Use API client to bypass RLS for admin operations
@@ -65,7 +66,7 @@ export async function validateVerification(bookingId: string): Promise<{
  */
 export async function validateWithdrawalRequest(requestId: string): Promise<{
     isValid: boolean
-    request?: any
+    request?: WithdrawalRequestWithTalent
     error?: string
 }> {
     const supabase = await createClient()

@@ -2,6 +2,8 @@
  * Utility functions for exporting admin data to CSV
  */
 
+import type { VerificationWithBooking, WithdrawalRequestWithTalent, PayoutTransaction } from '@/types/admin'
+
 export interface ExportableData {
     [key: string]: string | number | null | undefined
 }
@@ -49,7 +51,7 @@ export function downloadCSV(csvContent: string, filename: string): void {
 /**
  * Export verifications to CSV
  */
-export function exportVerifications(verifications: any[]): void {
+export function exportVerifications(verifications: VerificationWithBooking[]): void {
     const headers = [
         'Booking ID',
         'Client Name',
@@ -79,7 +81,7 @@ export function exportVerifications(verifications: any[]): void {
 /**
  * Export withdrawal requests to CSV
  */
-export function exportWithdrawalRequests(requests: any[]): void {
+export function exportWithdrawalRequests(requests: WithdrawalRequestWithTalent[]): void {
     const headers = [
         'Request ID',
         'Talent Name',
@@ -113,7 +115,7 @@ export function exportWithdrawalRequests(requests: any[]): void {
 /**
  * Export payout history to CSV
  */
-export function exportPayoutHistory(payouts: any[]): void {
+export function exportPayoutHistory(payouts: PayoutTransaction[]): void {
     const headers = [
         'Transaction ID',
         'User Name',
@@ -140,10 +142,10 @@ export function exportPayoutHistory(payouts: any[]): void {
  * Export analytics data to CSV
  */
 export function exportAnalyticsData(
-    stats: any,
-    userGrowthData: any[],
-    bookingTrendsData: any[],
-    revenueData: any[]
+    stats: Record<string, number>,
+    userGrowthData: Record<string, unknown>[],
+    bookingTrendsData: Record<string, unknown>[],
+    revenueData: Record<string, unknown>[]
 ): void {
     const headers = [
         'Metric',
@@ -168,24 +170,24 @@ export function exportAnalyticsData(
     userGrowthData.forEach((d) => {
         csvData.push({
             Metric: 'User Growth',
-            Value: d.count || 0,
-            Period: d.date
+            Value: (d.count as number) || 0,
+            Period: (d.date as string)
         })
     })
 
     bookingTrendsData.forEach((d) => {
         csvData.push({
             Metric: 'Booking Trends',
-            Value: d.count || 0,
-            Period: d.date
+            Value: (d.count as number) || 0,
+            Period: (d.date as string)
         })
     })
 
     revenueData.forEach((d) => {
         csvData.push({
             Metric: 'Revenue',
-            Value: d.amount || 0,
-            Period: d.date
+            Value: (d.amount as number) || 0,
+            Period: (d.date as string)
         })
     })
 

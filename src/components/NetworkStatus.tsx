@@ -10,7 +10,8 @@ export function NetworkStatus() {
 
     useEffect(() => {
         if (!isOnline) {
-            setShow(true)
+            const timer = setTimeout(() => setShow(true), 0)
+            return () => clearTimeout(timer)
         } else {
             // Hide after a brief delay when back online
             const timer = setTimeout(() => setShow(false), 2000)
@@ -25,8 +26,8 @@ export function NetworkStatus() {
     return (
         <div className={`fixed top-16 left-0 right-0 z-50 transition-all duration-300 ${show ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
             <div className={`mx-4 mt-2 p-3 rounded-xl backdrop-blur-xl border flex items-center gap-3 ${isOnline
-                    ? 'bg-green-500/10 border-green-500/20 text-green-400'
-                    : 'bg-red-500/10 border-red-500/20 text-red-400'
+                ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                : 'bg-red-500/10 border-red-500/20 text-red-400'
                 }`}>
                 {isOnline ? (
                     <>

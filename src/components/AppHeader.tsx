@@ -70,8 +70,11 @@ export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
             checkUser()
         } else if (userRole) {
             // If initialUser is provided, set role from prop
-            setRole(userRole)
-            setIsLoading(false)
+            const timer = setTimeout(() => {
+                setRole(userRole)
+                setIsLoading(false)
+            }, 0)
+            return () => clearTimeout(timer)
         }
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -106,7 +109,8 @@ export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
 
     // Close mobile menu on route change
     useEffect(() => {
-        setIsMenuOpen(false)
+        const timer = setTimeout(() => setIsMenuOpen(false), 0)
+        return () => clearTimeout(timer)
     }, [pathname])
 
     const handleLogout = async () => {

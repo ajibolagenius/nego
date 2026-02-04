@@ -44,13 +44,16 @@ export function PremiumSection() {
     useEffect(() => {
         // For landing page, use mock data
         // Real data will be fetched in authenticated views
-        setPrivateContent(fallbackImages.map((img, i) => ({
-            id: `fallback-${i}`,
-            image_url: img,
-            is_locked: true,
-            unlock_price: 50 + i * 25
-        })))
-        setLoading(false)
+        const timer = setTimeout(() => {
+            setPrivateContent(fallbackImages.map((img, i) => ({
+                id: `fallback-${i}`,
+                image_url: img,
+                is_locked: true,
+                unlock_price: 50 + i * 25
+            })))
+            setLoading(false)
+        }, 0)
+        return () => clearTimeout(timer)
     }, [])
 
     const lockedImages = privateContent.length > 0

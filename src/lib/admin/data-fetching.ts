@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import type { VerificationWithBooking, WithdrawalRequestWithTalent, PayoutTransaction, BookingWithRelations } from '@/types/admin'
+import type { Profile, Wallet } from '@/types/database'
 
 interface FetchOptions {
     retries?: number
@@ -94,15 +95,16 @@ export async function fetchVerifications(options?: FetchOptions): Promise<{
 
             if (error) throw error
 
-            return (data || []).map((v: any) => {
+            return (data || []).map((v: unknown) => {
+                const verification = v as { booking?: unknown[] | unknown; booking_id: string;[key: string]: unknown }
                 // Handle booking as array (from join) or single object
-                const bookingArray = Array.isArray(v.booking) ? v.booking : (v.booking ? [v.booking] : [])
+                const bookingArray = Array.isArray(verification.booking) ? verification.booking : (verification.booking ? [verification.booking] : [])
                 const booking = bookingArray[0] || null
 
                 if (!booking) {
                     return {
-                        ...v,
-                        id: v.booking_id,
+                        ...verification,
+                        id: verification.booking_id,
                         booking: null,
                     } as VerificationWithBooking
                 }
@@ -112,8 +114,8 @@ export async function fetchVerifications(options?: FetchOptions): Promise<{
                 const talentArray = Array.isArray(booking.talent) ? booking.talent : (booking.talent ? [booking.talent] : [])
 
                 return {
-                    ...v,
-                    id: v.booking_id,
+                    ...verification,
+                    id: verification.booking_id,
                     booking: {
                         ...booking,
                         client: clientArray[0] || null,
@@ -204,7 +206,7 @@ export async function fetchPayoutTransactions(options?: FetchOptions): Promise<{
  * Fetch talent wallets with error handling
  */
 export async function fetchTalentWallets(options?: FetchOptions): Promise<{
-    data: Array<{ profile: any; wallet: any }> | null
+    data: Array<{ profile: Partial<Profile>; wallet: Wallet }> | null
     error: Error | null
 }> {
     try {

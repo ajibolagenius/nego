@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 
 interface UsePaginationOptions<T> {
   data: T[]
@@ -58,9 +58,10 @@ export function usePagination<T>({
   const canGoPrevious = currentPage > 1
 
   // Reset to page 1 when data changes significantly
-  useMemo(() => {
+  useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(1)
+      const timer = setTimeout(() => setCurrentPage(1), 0)
+      return () => clearTimeout(timer)
     }
   }, [totalPages, currentPage])
 

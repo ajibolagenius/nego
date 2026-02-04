@@ -80,6 +80,12 @@ export function useWallet({ userId, initialWallet, autoRefresh = true }: UseWall
         await fetchWallet()
     }, [fetchWallet])
 
+    // Keep track of latest wallet state for notification logic
+    const walletRef = useRef(wallet)
+    useEffect(() => {
+        walletRef.current = wallet
+    }, [wallet])
+
     // Real-time subscription for wallet updates
     useEffect(() => {
         if (!autoRefresh || !userId) return
@@ -110,7 +116,8 @@ export function useWallet({ userId, initialWallet, autoRefresh = true }: UseWall
 
                     // Check for low balance and create notification if needed
                     // Only notify if balance is below 100 coins and wasn't already low
-                    if (updatedWallet.balance < 100 && wallet && wallet.balance >= 100) {
+                    const currentWallet = walletRef.current
+                    if (updatedWallet.balance < 100 && currentWallet && currentWallet.balance >= 100) {
                         // Balance just dropped below threshold
                         const { error: notifError } = await getSupabaseForNotifications().from('notifications').insert({
                             user_id: userId,
@@ -159,7 +166,7 @@ export function useWallet({ userId, initialWallet, autoRefresh = true }: UseWall
                 walletChannelRef.current = null
             }
         }
-    }, [userId, autoRefresh, initialWallet, fetchWallet])
+    }, [userId, autoRefresh, initialWallet, fetchWallet, supabase])
 
     return {
         wallet,
