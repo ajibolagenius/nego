@@ -15,7 +15,8 @@ import {
     Users,
     ImageSquare,
     Coins,
-    Warning
+    Warning,
+    Bank
 } from '@phosphor-icons/react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
@@ -30,6 +31,7 @@ const navItems = [
     { href: '/admin/content', label: 'Content Moderation', icon: ImageSquare },
     { href: '/admin/coin-packages', label: 'Coin Packages', icon: Coins },
     { href: '/admin/disputes', label: 'Disputes', icon: Warning },
+    { href: '/admin/deposits', label: 'Deposits', icon: Bank },
     { href: '/admin/payouts', label: 'Payouts', icon: Money },
     { href: '/admin/analytics', label: 'Analytics', icon: ChartLine },
 ]
@@ -83,8 +85,8 @@ export function AdminLayoutClient({ user, children }: AdminLayoutClientProps) {
                                     href={item.href}
                                     onClick={() => setMobileMenuOpen(false)}
                                     className={`flex items-center gap-3 px-4 py-3 transition-colors ${isActive
-                                            ? 'bg-[#df2531]/10 text-[#df2531]'
-                                            : 'text-white/60 hover:bg-white/5 hover:text-white'
+                                        ? 'bg-[#df2531]/10 text-[#df2531]'
+                                        : 'text-white/60 hover:bg-white/5 hover:text-white'
                                         }`}
                                 >
                                     <Icon size={20} weight={isActive ? 'fill' : 'regular'} />
@@ -128,8 +130,8 @@ export function AdminLayoutClient({ user, children }: AdminLayoutClientProps) {
                                         <Link
                                             href={item.href}
                                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${isActive
-                                                    ? 'bg-[#df2531] text-white'
-                                                    : 'text-white/60 hover:bg-white/5 hover:text-white'
+                                                ? 'bg-[#df2531] text-white'
+                                                : 'text-white/60 hover:bg-white/5 hover:text-white'
                                                 }`}
                                         >
                                             <Icon size={20} weight={isActive ? 'fill' : 'regular'} />

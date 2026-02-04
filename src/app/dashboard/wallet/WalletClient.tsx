@@ -25,7 +25,7 @@ interface PaystackResponse {
     transaction: string
 }
 
-type PaymentProvider = 'paystack' | 'segpay' | 'nowpayments'
+type PaymentProvider = 'paystack' | 'segpay' | 'nowpayments' | 'bank_transfer'
 
 interface PaymentMethod {
     id: PaymentProvider
@@ -56,6 +56,13 @@ const PAYMENT_METHODS: PaymentMethod[] = [
         icon: CreditCard,
         description: 'Pay with Card via Paystack',
         color: 'text-green-400'
+    },
+    {
+        id: 'bank_transfer',
+        name: 'Bank Transfer',
+        icon: Bank,
+        description: 'Manual Bank Transfer',
+        color: 'text-purple-400'
     }
 ]
 
@@ -113,6 +120,7 @@ function PaymentModal({
     const [paystackLoaded, setPaystackLoaded] = useState(false)
 
     const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('segpay')
+    const [proofFile, setProofFile] = useState<File | null>(null)
 
     const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || ''
     const isPaystackConfigured = publicKey && publicKey !== 'pk_test_your_paystack_public_key'
@@ -135,7 +143,60 @@ function PaymentModal({
         }
     }, [])
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setProofFile(e.target.files[0])
+        }
+    }
+
     const handlePayment = async () => {
+        if (selectedProvider === 'bank_transfer') {
+            if (!proofFile) {
+                setError('Please upload a proof of payment')
+                return
+            }
+            setIsProcessing(true)
+            setError(null)
+
+            try {
+                // Upload proof
+                const fileExt = proofFile.name.split('.').pop()
+                const fileName = `${userId}/${Date.now()}.${fileExt}`
+
+                const { error: uploadError } = await supabase.storage
+                    .from('payment_proofs')
+                    .upload(fileName, proofFile)
+
+                if (uploadError) throw new Error('Failed to upload proof: ' + uploadError.message)
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('payment_proofs')
+                    .getPublicUrl(fileName)
+
+                // Submit request
+                const response = await fetch('/api/payments/manual', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: pkg.price,
+                        proofUrl: publicUrl,
+                    }),
+                })
+
+                if (!response.ok) {
+                    const data = await response.json()
+                    throw new Error(data.error || 'Failed to submit request')
+                }
+
+                onSuccess()
+            } catch (err: any) {
+                console.error('Manual payment error:', err)
+                setError(err.message || 'Failed to submit request')
+                setIsProcessing(false)
+            }
+            return
+        }
+
         if ((selectedProvider === 'paystack') && (!paystackLoaded || typeof window === 'undefined' || !window.PaystackPop)) {
             setError('Payment system not loaded. Please refresh the page.')
             return
@@ -309,6 +370,34 @@ function PaymentModal({
                             ))}
                         </div>
                     </div>
+
+                    {selectedProvider === 'bank_transfer' && (
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-4">
+                            <div>
+                                <h4 className="text-white font-medium mb-1">Bank Details</h4>
+                                <div className="text-sm text-white/70 space-y-1">
+                                    <p>Bank: <span className="text-white">Zenith Bank</span></p>
+                                    <p>Account Number: <span className="text-white">1234567890</span></p>
+                                    <p>Account Name: <span className="text-white">Nego Empire</span></p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm text-white/70 mb-2">Upload Proof of Payment</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    className="w-full text-sm text-white/70
+                                    file:mr-4 file:py-2 file:px-4
+                                    file:rounded-full file:border-0
+                                    file:text-sm file:font-semibold
+                                    file:bg-[#df2531]/10 file:text-[#df2531]
+                                    hover:file:bg-[#df2531]/20"
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {error && (
@@ -332,13 +421,15 @@ function PaymentModal({
                         onClick={handlePayment}
                         disabled={isProcessing}
                         className="flex-1 bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold"
-                        aria-label={`Pay ${formatNaira(pkg.price)}`}
+                        aria-label={selectedProvider === 'bank_transfer' ? 'Submit Request' : `Pay ${formatNaira(pkg.price)}`}
                     >
                         {isProcessing ? (
                             <div className="flex items-center gap-2">
                                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
                                 <span>Processing...</span>
                             </div>
+                        ) : selectedProvider === 'bank_transfer' ? (
+                            'Submit Request'
                         ) : (
                             `Pay ${formatNaira(pkg.price)}`
                         )}
@@ -371,9 +462,17 @@ function SuccessModal({ coins, onClose }: { coins: number; onClose: () => void }
                     <CheckCircle size={48} weight="duotone" className="text-green-400" aria-hidden="true" />
                 </div>
 
-                <h3 id="success-modal-title" className="text-2xl font-bold text-white mb-2">Payment Successful!</h3>
+                <h3 id="success-modal-title" className="text-2xl font-bold text-white mb-2">
+                    {coins > 0 ? 'Payment Successful!' : 'Request Application Submitted!'}
+                </h3>
                 <p className="text-white/60 mb-6" role="status" aria-live="polite">
-                    <span className="text-[#df2531] font-bold">{coins.toLocaleString()}</span> coins have been added to your wallet.
+                    {coins > 0 ? (
+                        <>
+                            <span className="text-[#df2531] font-bold">{coins.toLocaleString()}</span> coins have been added to your wallet.
+                        </>
+                    ) : (
+                        "Your deposit request is under review. You will be notified once approved."
+                    )}
                 </p>
 
                 <Button onClick={onClose} className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold" aria-label="Close success modal">
