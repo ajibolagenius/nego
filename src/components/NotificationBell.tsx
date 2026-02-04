@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Bell, X, CheckCircle, Clock, XCircle, Money, CalendarCheck, Hourglass, Icon, SpinnerGap, Gift, LockOpen, Warning } from '@phosphor-icons/react'
+import { Bell, CheckCircle, XCircle, Money, CalendarCheck, Hourglass, Icon, SpinnerGap, Gift, LockOpen, Warning } from '@phosphor-icons/react'
 import { createClient } from '@/lib/supabase/client'
 import type { Notification, NotificationType } from '@/types/database'
 

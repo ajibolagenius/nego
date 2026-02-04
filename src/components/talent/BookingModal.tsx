@@ -28,7 +28,7 @@ export function BookingModal({
     services,
     selectedServices,
     totalPrice,
-    userBalance,
+    userBalance: _userBalance,
     onSubmit,
     isLoading,
     error,

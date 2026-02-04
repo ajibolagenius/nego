@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
                     }
 
                     // Create notification for client
-                    const clientData = booking.client as unknown as { display_name: string; id: string } | null
+                    const _clientData = booking.client as unknown as { display_name: string; id: string } | null
                     const talentData = booking.talent as unknown as { display_name: string; id: string } | null
 
                     await supabase.from('notifications').insert({

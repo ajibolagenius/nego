@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { 
-  InstagramLogo, TwitterLogo, FacebookLogo, TiktokLogo,
-  MapPin, Envelope, Phone
+import {
+  InstagramLogo, TwitterLogo, TiktokLogo,
+  MapPin, Envelope
 } from '@phosphor-icons/react'
 
 interface FooterProps {

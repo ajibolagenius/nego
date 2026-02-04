@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCoinPackageByIdFromDB } from '@/lib/coinPackages'
-import crypto from 'crypto'
 
 // Environment variables
 const SEGPAY_URL = process.env.SEGPAY_URL || 'https://secure.segpay.com/billing/poset' // Example URL
@@ -35,7 +34,7 @@ export async function POST(request: NextRequest) {
         const reference = `${provider}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
 
         // Create pending transaction in DB
-        const { data: transaction, error: dbError } = await supabase
+        const { data: _transaction, error: dbError } = await supabase
             .from('transactions')
             .insert({
                 user_id: user.id,

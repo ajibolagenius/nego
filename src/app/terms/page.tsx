@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle, User, ShieldCheck, CreditCard, Calendar, Lock, FileText, Warning, XCircle } from '@phosphor-icons/react/dist/ssr'
+import { ArrowLeft, CheckCircle, User, ShieldCheck, CreditCard, Calendar, FileText, Warning, XCircle } from '@phosphor-icons/react/dist/ssr'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
@@ -191,7 +191,7 @@ export default function TermsPage() {
                         <h2 className="text-2xl font-bold text-white mb-4">12. Contact Us</h2>
                         <p className="text-white/70 leading-relaxed">
                             For questions about these Terms, please contact us at{' '}
-                            <a href="mailto:legal@nego.com" className="text-[#df2531] hover:underline">legal@nego.com</a>
+                            <a href="mailto:legal@negoempire.live" className="text-[#df2531] hover:underline">legal@negoempire.live</a>
                         </p>
                     </section>
                 </div>

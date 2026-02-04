@@ -27,7 +27,7 @@ export function AboutSection() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true) },
+            ([entry]) => { if (entry?.isIntersecting) setIsVisible(true) },
             { threshold: 0.15 }
         )
         if (sectionRef.current) observer.observe(sectionRef.current)
@@ -106,7 +106,7 @@ export function AboutSection() {
                         onMouseMove={handleMouseMove}
                     >
                         <Image
-                            src={aboutImages[0]}
+                            src={aboutImages[0]!}
                             alt="Featured premium selection showcasing our elite talent"
                             fill
                             sizes="(max-width: 768px) 50vw, 33vw"
@@ -138,7 +138,7 @@ export function AboutSection() {
                         onMouseLeave={() => setHoveredIndex(null)}
                     >
                         <Image
-                            src={aboutImages[1]}
+                            src={aboutImages[1]!}
                             alt="Exclusive talent collection"
                             fill
                             sizes="(max-width: 768px) 50vw, 25vw"
@@ -160,7 +160,7 @@ export function AboutSection() {
                         onMouseLeave={() => setHoveredIndex(null)}
                     >
                         <Image
-                            src={aboutImages[2]}
+                            src={aboutImages[2]!}
                             alt="Curated selection of verified talent"
                             fill
                             sizes="(max-width: 768px) 50vw, 25vw"
@@ -181,7 +181,7 @@ export function AboutSection() {
                         onMouseLeave={() => setHoveredIndex(null)}
                     >
                         <Image
-                            src={aboutImages[3]}
+                            src={aboutImages[3]!}
                             alt="Premium verified talent profiles"
                             fill
                             sizes="(max-width: 768px) 50vw, 25vw"
@@ -203,7 +203,7 @@ export function AboutSection() {
                         onMouseLeave={() => setHoveredIndex(null)}
                     >
                         <Image
-                            src={aboutImages[4]}
+                            src={aboutImages[4]!}
                             alt="Sophisticated elegance redefined"
                             fill
                             sizes="(max-width: 768px) 100vw, 50vw"

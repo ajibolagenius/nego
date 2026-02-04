@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Bell, Lock, Envelope, Globe, SignOut, Trash, Warning,
-    CaretRight, ShieldCheck, Eye, EyeSlash, User, SpinnerGap, CheckCircle, X, Check, Circle
+    CaretRight, ShieldCheck, Eye, EyeSlash, SpinnerGap, CheckCircle, X, Check, Circle
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
@@ -44,7 +44,7 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
     const [deleteError, setDeleteError] = useState('')
 
     // Password change state
-    const [currentPassword, setCurrentPassword] = useState('')
+    const [_currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [showNewPassword, setShowNewPassword] = useState(false)
@@ -464,9 +464,8 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300">
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                                            isOnline ? 'bg-green-500/20' : 'bg-white/10'
-                                        }`}>
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isOnline ? 'bg-green-500/20' : 'bg-white/10'
+                                            }`}>
                                             <Circle size={20} weight="fill" className={isOnline ? 'text-green-400 animate-pulse' : 'text-white/60'} aria-hidden="true" />
                                         </div>
                                         <div>
@@ -483,16 +482,14 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
                                         <button
                                             onClick={handleToggleStatus}
                                             disabled={togglingStatus}
-                                            className={`relative w-14 h-7 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 ${
-                                                isOnline ? 'bg-green-500' : 'bg-white/20'
-                                            }`}
+                                            className={`relative w-14 h-7 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 ${isOnline ? 'bg-green-500' : 'bg-white/20'
+                                                }`}
                                             aria-label={isOnline ? 'Switch to offline' : 'Switch to online'}
                                             aria-pressed={isOnline}
                                         >
                                             <span
-                                                className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform shadow-lg ${
-                                                    isOnline ? 'translate-x-7' : 'translate-x-0'
-                                                }`}
+                                                className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-transform shadow-lg ${isOnline ? 'translate-x-7' : 'translate-x-0'
+                                                    }`}
                                                 aria-hidden="true"
                                             />
                                         </button>
@@ -686,66 +683,66 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
                                                         required
                                                         className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors"
                                                     />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowNewPassword(!showNewPassword)}
-                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
-                                                    aria-label={showNewPassword ? 'Hide password' : 'Show password'}
-                                                >
-                                                    {showNewPassword ? <EyeSlash size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
-                                                </button>
-                                            </div>
-
-                                            {/* Password Strength Indicator */}
-                                            {newPassword && (
-                                                <div id="password-strength" className="mt-2 space-y-1.5">
-                                                    <div className="flex items-center gap-2 text-xs">
-                                                        <Check
-                                                            size={14}
-                                                            weight={passwordStrength.minLength ? 'fill' : 'regular'}
-                                                            className={passwordStrength.minLength ? 'text-green-400' : 'text-white/30'}
-                                                            aria-hidden="true"
-                                                        />
-                                                        <span className={passwordStrength.minLength ? 'text-green-400' : 'text-white/40'}>
-                                                            At least 8 characters
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-xs">
-                                                        <Check
-                                                            size={14}
-                                                            weight={passwordStrength.hasUppercase ? 'fill' : 'regular'}
-                                                            className={passwordStrength.hasUppercase ? 'text-green-400' : 'text-white/30'}
-                                                            aria-hidden="true"
-                                                        />
-                                                        <span className={passwordStrength.hasUppercase ? 'text-green-400' : 'text-white/40'}>
-                                                            One uppercase letter
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-xs">
-                                                        <Check
-                                                            size={14}
-                                                            weight={passwordStrength.hasLowercase ? 'fill' : 'regular'}
-                                                            className={passwordStrength.hasLowercase ? 'text-green-400' : 'text-white/30'}
-                                                            aria-hidden="true"
-                                                        />
-                                                        <span className={passwordStrength.hasLowercase ? 'text-green-400' : 'text-white/40'}>
-                                                            One lowercase letter
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-xs">
-                                                        <Check
-                                                            size={14}
-                                                            weight={passwordStrength.hasNumber ? 'fill' : 'regular'}
-                                                            className={passwordStrength.hasNumber ? 'text-green-400' : 'text-white/30'}
-                                                            aria-hidden="true"
-                                                        />
-                                                        <span className={passwordStrength.hasNumber ? 'text-green-400' : 'text-white/40'}>
-                                                            One number
-                                                        </span>
-                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowNewPassword(!showNewPassword)}
+                                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                                                        aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                                                    >
+                                                        {showNewPassword ? <EyeSlash size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+                                                    </button>
                                                 </div>
-                                            )}
-                                        </div>
+
+                                                {/* Password Strength Indicator */}
+                                                {newPassword && (
+                                                    <div id="password-strength" className="mt-2 space-y-1.5">
+                                                        <div className="flex items-center gap-2 text-xs">
+                                                            <Check
+                                                                size={14}
+                                                                weight={passwordStrength.minLength ? 'fill' : 'regular'}
+                                                                className={passwordStrength.minLength ? 'text-green-400' : 'text-white/30'}
+                                                                aria-hidden="true"
+                                                            />
+                                                            <span className={passwordStrength.minLength ? 'text-green-400' : 'text-white/40'}>
+                                                                At least 8 characters
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-xs">
+                                                            <Check
+                                                                size={14}
+                                                                weight={passwordStrength.hasUppercase ? 'fill' : 'regular'}
+                                                                className={passwordStrength.hasUppercase ? 'text-green-400' : 'text-white/30'}
+                                                                aria-hidden="true"
+                                                            />
+                                                            <span className={passwordStrength.hasUppercase ? 'text-green-400' : 'text-white/40'}>
+                                                                One uppercase letter
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-xs">
+                                                            <Check
+                                                                size={14}
+                                                                weight={passwordStrength.hasLowercase ? 'fill' : 'regular'}
+                                                                className={passwordStrength.hasLowercase ? 'text-green-400' : 'text-white/30'}
+                                                                aria-hidden="true"
+                                                            />
+                                                            <span className={passwordStrength.hasLowercase ? 'text-green-400' : 'text-white/40'}>
+                                                                One lowercase letter
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-xs">
+                                                            <Check
+                                                                size={14}
+                                                                weight={passwordStrength.hasNumber ? 'fill' : 'regular'}
+                                                                className={passwordStrength.hasNumber ? 'text-green-400' : 'text-white/30'}
+                                                                aria-hidden="true"
+                                                            />
+                                                            <span className={passwordStrength.hasNumber ? 'text-green-400' : 'text-white/40'}>
+                                                                One number
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
 
                                             <div>
                                                 <label htmlFor="confirm-password" className="text-white/60 text-sm mb-2 block">
@@ -764,29 +761,29 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
                                                         required
                                                         className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 transition-colors"
                                                     />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
-                                                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                                                >
-                                                    {showConfirmPassword ? <EyeSlash size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
-                                                </button>
-                                            </div>
-                                            {confirmPassword && (
-                                                <div id="password-match" className="mt-2 flex items-center gap-2">
-                                                    {newPassword === confirmPassword ? (
-                                                        <>
-                                                            <Check size={14} weight="fill" className="text-green-400" aria-hidden="true" />
-                                                            <span className="text-green-400 text-xs">Passwords match</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <X size={14} className="text-red-400" aria-hidden="true" />
-                                                            <span className="text-red-400 text-xs">Passwords do not match</span>
-                                                        </>
-                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                                                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                                                    >
+                                                        {showConfirmPassword ? <EyeSlash size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+                                                    </button>
                                                 </div>
+                                                {confirmPassword && (
+                                                    <div id="password-match" className="mt-2 flex items-center gap-2">
+                                                        {newPassword === confirmPassword ? (
+                                                            <>
+                                                                <Check size={14} weight="fill" className="text-green-400" aria-hidden="true" />
+                                                                <span className="text-green-400 text-xs">Passwords match</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <X size={14} className="text-red-400" aria-hidden="true" />
+                                                                <span className="text-red-400 text-xs">Passwords do not match</span>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>

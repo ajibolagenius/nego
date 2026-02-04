@@ -34,7 +34,7 @@ export function PremiumSection() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true) },
+            ([entry]) => { if (entry?.isIntersecting) setIsVisible(true) },
             { threshold: 0.2 }
         )
         if (sectionRef.current) observer.observe(sectionRef.current)

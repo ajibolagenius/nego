@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
 // SHA1 hash using Web Crypto API
 async function sha1(message: string): Promise<string> {
@@ -15,7 +14,7 @@ export async function POST(request: NextRequest) {
     // Check authentication using cookies
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    
+
     if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json({ error: 'Configuration error' }, { status: 500 })
     }
@@ -23,7 +22,7 @@ export async function POST(request: NextRequest) {
     // Get auth token from cookie
     const cookieHeader = request.headers.get('cookie') || ''
     const authToken = cookieHeader.split(';').find(c => c.trim().startsWith('sb-'))
-    
+
     if (!authToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -44,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     const timestamp = Math.round(new Date().getTime() / 1000)
-    
+
     // Create signature for deletion
     const paramsToSign = `public_id=${publicId}&timestamp=${timestamp}`
     const signature = await sha1(paramsToSign + apiSecret)

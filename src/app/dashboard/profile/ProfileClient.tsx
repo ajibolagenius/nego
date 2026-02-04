@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
     ArrowLeft, User, PencilSimple, MapPin, Envelope,
     Calendar, Coin, CalendarCheck, CheckCircle,
-    CaretRight, Star, SpinnerGap, X, Warning, Check, CaretDown
+    CaretRight, SpinnerGap, X, Warning, CaretDown
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'

@@ -245,7 +245,7 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
     }
 
     // Send a local notification (for testing and immediate feedback)
-    const sendLocalNotification = useCallback((title: string, body: string, data?: Record<string, unknown>) => {
+    const _sendLocalNotification = useCallback((title: string, body: string, data?: Record<string, unknown>) => {
         if (permission !== 'granted') return
 
         new Notification(title, {

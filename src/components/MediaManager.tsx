@@ -75,7 +75,7 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
                 try {
                     const { error: storageError } = await supabase.storage
                         .from('media')
-                        .remove([pathMatch[1]])
+                        .remove([pathMatch[1]!])
 
                     if (storageError) {
                         console.warn('[MediaManager] Failed to delete from storage:', storageError)

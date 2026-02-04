@@ -165,7 +165,7 @@ export function exportAnalyticsData(
     ]
 
     // Add time series data
-    userGrowthData.forEach((d, i) => {
+    userGrowthData.forEach((d) => {
         csvData.push({
             Metric: 'User Growth',
             Value: d.count || 0,
@@ -173,7 +173,7 @@ export function exportAnalyticsData(
         })
     })
 
-    bookingTrendsData.forEach((d, i) => {
+    bookingTrendsData.forEach((d) => {
         csvData.push({
             Metric: 'Booking Trends',
             Value: d.count || 0,
@@ -181,7 +181,7 @@ export function exportAnalyticsData(
         })
     })
 
-    revenueData.forEach((d, i) => {
+    revenueData.forEach((d) => {
         csvData.push({
             Metric: 'Revenue',
             Value: d.amount || 0,

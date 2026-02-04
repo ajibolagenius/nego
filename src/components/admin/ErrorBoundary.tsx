@@ -1,6 +1,6 @@
 'use client'
 
-import React, { Component, ErrorInfo, ReactNode } from 'react'
+import { Component, ErrorInfo, ReactNode } from 'react'
 import { Warning, ArrowClockwise, House } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 

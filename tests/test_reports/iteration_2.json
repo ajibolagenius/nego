@@ -18,12 +18,16 @@
       {
         "flow": "User Registration",
         "issue": "Registration form works correctly but Supabase returns 500 error. Form validation, role selection, and UI all function properly.",
-        "affected_selectors": ["button:has-text('Create Account')"]
+        "affected_selectors": [
+          "button:has-text('Create Account')"
+        ]
       },
       {
         "flow": "User Login",
         "issue": "Login form works correctly but returns 'Invalid login credentials' because no test user exists (registration is broken).",
-        "affected_selectors": ["button:has-text('Sign In')"]
+        "affected_selectors": [
+          "button:has-text('Sign In')"
+        ]
       }
     ],
     "design_issues": []
@@ -51,7 +55,7 @@
     "frontend": "Partial - UI loads correctly but auth flows blocked"
   },
   "test_credentials": {
-    "email": "testclient@nego.com",
+    "email": "testclient@negoempire.live",
     "password": "TestPass123!",
     "note": "User does not exist - registration is broken"
   },

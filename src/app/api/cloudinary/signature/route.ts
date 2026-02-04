@@ -38,8 +38,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate folder (basic security check)
-    const folderBase = folder.split('/')[0]
-    if (!ALLOWED_FOLDERS.includes(folderBase)) {
+    const folderBase = folder.split('/')[0] ?? ''
+    if (!folderBase || !ALLOWED_FOLDERS.includes(folderBase)) {
       return NextResponse.json(
         { error: 'Invalid folder path' },
         { status: 400 }
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     }
 
     const timestamp = Math.round(new Date().getTime() / 1000)
-    
+
     // Create signature using Web Crypto API
     const paramsToSign = `folder=${folder}&timestamp=${timestamp}`
     const signature = await sha1(paramsToSign + apiSecret)

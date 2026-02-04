@@ -155,7 +155,7 @@ export default function PrivacyPage() {
                         </ul>
                         <p className="text-white/70 leading-relaxed">
                             To exercise these rights, contact us at{' '}
-                            <a href="mailto:privacy@nego.com" className="text-[#df2531] hover:underline">privacy@nego.com</a>
+                            <a href="mailto:privacy@negoempire.live" className="text-[#df2531] hover:underline">privacy@negoempire.live</a>
                         </p>
                     </section>
 
@@ -215,7 +215,7 @@ export default function PrivacyPage() {
                         </div>
                         <p className="text-white/70 leading-relaxed">
                             For privacy-related inquiries, contact our Data Protection Officer at{' '}
-                            <a href="mailto:privacy@nego.com" className="text-[#df2531] hover:underline">privacy@nego.com</a>
+                            <a href="mailto:privacy@negoempire.live" className="text-[#df2531] hover:underline">privacy@negoempire.live</a>
                         </p>
                     </section>
                 </div>

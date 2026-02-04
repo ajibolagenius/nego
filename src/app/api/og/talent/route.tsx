@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
                         // Build binary string character by character (works reliably in edge runtime)
                         let binaryString = ''
                         for (let i = 0; i < uint8Array.length; i++) {
-                            binaryString += String.fromCharCode(uint8Array[i])
+                            binaryString += String.fromCharCode(uint8Array[i]!)
                         }
 
                         const base64 = btoa(binaryString)

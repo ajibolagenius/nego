@@ -21,7 +21,9 @@
     "design_issues": [
       {
         "screen": "Dashboard sidebar",
-        "issues": ["Sidebar links (Favorites, Bookings, Wallet, Profile, Settings) lead to 404 pages - pages not yet implemented"]
+        "issues": [
+          "Sidebar links (Favorites, Bookings, Wallet, Profile, Settings) lead to 404 pages - pages not yet implemented"
+        ]
       }
     ]
   },
@@ -45,7 +47,7 @@
     "frontend": "100% (core features)"
   },
   "test_credentials": {
-    "registered_email": "e2etest_1768159919@nego.com",
+    "registered_email": "e2etest_1768159919@negoempire.live",
     "password": "TestPass123!",
     "note": "User successfully registered and completed full booking flow"
   },

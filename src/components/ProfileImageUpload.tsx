@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import { Camera, Upload, X, SpinnerGap, Check, User, Warning, Info } from '@phosphor-icons/react'
+import { Camera, X, SpinnerGap, Check, User, Warning, Info } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 

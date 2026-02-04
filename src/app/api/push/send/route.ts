@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
                     error instanceof Error &&
                     (error.message.includes('expired') || error.message.includes('Invalid'))
                 ) {
-                    expiredSubscriptions.push(subscriptions[index].endpoint)
+                    expiredSubscriptions.push(subscriptions[index]!.endpoint)
                 }
             }
         })

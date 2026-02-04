@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
     ArrowLeft, Bell, BellRinging, Check, CheckCircle, Trash,
-    CalendarCheck, Coin, ShieldCheck, Gift, ChatCircle, Star,
+    CalendarCheck, Coin, Star,
     CaretRight, Clock, X, MagnifyingGlass, SpinnerGap, Warning
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
@@ -32,11 +32,11 @@ const notificationIcons: Record<string, { icon: typeof Bell; color: string; bg: 
 }
 
 export function NotificationsClient({ user, profile, notifications: initialNotifications }: NotificationsClientProps) {
-    const router = useRouter()
+    const _router = useRouter()
     const supabase = createClient()
 
     const [notificationsList, setNotificationsList] = useState(initialNotifications)
-    const [loading, setLoading] = useState(false)
+    const [_loading, _setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [filterType, setFilterType] = useState<NotificationType | 'all'>('all')
@@ -146,7 +146,7 @@ export function NotificationsClient({ user, profile, notifications: initialNotif
         [notificationsList]
     )
 
-    const filteredUnreadCount = useMemo(
+    const _filteredUnreadCount = useMemo(
         () => filteredNotifications.filter((n) => !n.is_read).length,
         [filteredNotifications]
     )
@@ -409,21 +409,21 @@ export function NotificationsClient({ user, profile, notifications: initialNotif
                     {/* Error Message */}
                     {error && (
                         <div role="alert">
-                        <div className="flex items-center justify-between p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-                            <div className="flex items-center gap-3">
-                                <Warning size={20} className="text-red-400" aria-hidden="true" />
-                                <p className="text-red-400 text-sm">{error}</p>
+                            <div className="flex items-center justify-between p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                                <div className="flex items-center gap-3">
+                                    <Warning size={20} className="text-red-400" aria-hidden="true" />
+                                    <p className="text-red-400 text-sm">{error}</p>
+                                </div>
+                                <button
+                                    onClick={() => setError(null)}
+                                    className="text-red-400/60 hover:text-red-400 transition-colors"
+                                    aria-label="Dismiss error"
+                                >
+                                    <X size={18} aria-hidden="true" />
+                                </button>
                             </div>
-                            <button
-                                onClick={() => setError(null)}
-                                className="text-red-400/60 hover:text-red-400 transition-colors"
-                                aria-label="Dismiss error"
-                            >
-                                <X size={18} aria-hidden="true" />
-                            </button>
                         </div>
-                    </div>
-                )}
+                    )}
                     {notificationsList.length === 0 ? (
                         <div className="text-center py-16 rounded-2xl bg-white/5 border border-white/10" role="status">
                             <Bell size={64} weight="duotone" className="text-white/20 mx-auto mb-4" aria-hidden="true" />
@@ -469,7 +469,7 @@ export function NotificationsClient({ user, profile, notifications: initialNotif
                         <div className="space-y-3" role="list">
                             {filteredNotifications.map((notification) => {
                                 const iconConfig = notificationIcons[notification.type] || notificationIcons.general
-                                const Icon = iconConfig.icon
+                                const Icon = iconConfig?.icon ?? Bell
                                 const link = getNotificationLink(notification)
 
                                 return (
@@ -478,14 +478,14 @@ export function NotificationsClient({ user, profile, notifications: initialNotif
                                         data-testid={`notification-${notification.id}`}
                                         role="listitem"
                                         className={`relative p-4 rounded-xl border transition-all ${notification.is_read
-                                                ? 'bg-white/5 border-white/10'
-                                                : 'bg-[#df2531]/5 border-[#df2531]/20'
+                                            ? 'bg-white/5 border-white/10'
+                                            : 'bg-[#df2531]/5 border-[#df2531]/20'
                                             }`}
                                     >
                                         <div className="flex gap-4">
                                             {/* Icon */}
-                                            <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center ${iconConfig.bg}`} aria-hidden="true">
-                                                <Icon size={24} weight="duotone" className={iconConfig.color} />
+                                            <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center ${iconConfig?.bg ?? 'bg-white/10'}`} aria-hidden="true">
+                                                <Icon size={24} weight="duotone" className={iconConfig?.color ?? 'text-white/60'} />
                                             </div>
 
                                             {/* Content */}

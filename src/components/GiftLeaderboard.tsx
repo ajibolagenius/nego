@@ -92,8 +92,11 @@ export function GiftLeaderboard({ talentId }: GiftLeaderboardProps) {
                             sender: senderData as TopGifter['sender']
                         }
                     }
-                    aggregated[gift.sender_id].total_amount += gift.amount
-                    aggregated[gift.sender_id].gift_count += 1
+                    const entry = aggregated[gift.sender_id]
+                    if (entry) {
+                        entry.total_amount += gift.amount
+                        entry.gift_count += 1
+                    }
                 })
 
                 // Sort by total amount and take top 10
@@ -161,11 +164,10 @@ export function GiftLeaderboard({ talentId }: GiftLeaderboardProps) {
                                 role="tab"
                                 aria-pressed={isSelected}
                                 aria-label={`Filter by ${range === 'week' ? '7 days' : range === 'month' ? '30 days' : 'all time'}`}
-                                className={`px-2 py-1 rounded-lg text-xs font-medium transition-all ${
-                                    isSelected
+                                className={`px-2 py-1 rounded-lg text-xs font-medium transition-all ${isSelected
                                         ? 'bg-amber-500 text-white'
                                         : 'text-white/50 hover:text-white hover:bg-white/10'
-                                }`}
+                                    }`}
                             >
                                 {range === 'week' ? '7D' : range === 'month' ? '30D' : 'All'}
                             </button>

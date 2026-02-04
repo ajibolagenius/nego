@@ -4,7 +4,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-    Image as ImageIcon, Upload, X, Warning, Check, Crown
+    Upload, X, Warning, Crown
 } from '@phosphor-icons/react'
 import { compressImage } from '@/lib/media-utils'
 
@@ -95,7 +95,7 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
             setUploadProgress(30)
 
             // Upload to Supabase Storage
-            const { error: uploadError, data: uploadData } = await supabase.storage
+            const { error: uploadError, data: _uploadData } = await supabase.storage
                 .from('media')
                 .upload(fileName, fileToUpload, {
                     cacheControl: '3600',

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import {
-    MagnifyingGlass, MapPin, Funnel, X, CaretDown,
+    MagnifyingGlass, MapPin, Funnel, CaretDown,
     Heart, Star, Circle, ArrowLeft
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'

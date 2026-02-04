@@ -1,11 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
-import { redirect, notFound } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { TalentProfileClient } from '@/app/talent/[id]/TalentProfileClient'
 import { Metadata } from 'next'
 import { generateTalentOpenGraphMetadata } from '@/lib/og-metadata'
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 
 // Create admin client lazily with service role key for bypassing RLS
 function getAdminClient() {

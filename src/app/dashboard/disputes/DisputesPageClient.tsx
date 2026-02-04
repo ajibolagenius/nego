@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-    Warning, Plus, Eye, X, Calendar, User, ChatCircle, ArrowLeft, CaretRight
+    Warning, Plus, X, Calendar, User, ChatCircle, ArrowLeft, CaretRight
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -22,7 +22,7 @@ export function DisputesPageClient({ userId, disputes, bookings }: DisputesPageC
     const router = useRouter()
     const supabase = createClient()
     const [showForm, setShowForm] = useState(false)
-    const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+    const [_selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [userRole, setUserRole] = useState<'client' | 'talent'>('client')
     const [filter, setFilter] = useState<'all' | 'open' | 'under_review' | 'resolved' | 'closed'>('all')
@@ -36,7 +36,7 @@ export function DisputesPageClient({ userId, disputes, bookings }: DisputesPageC
                 .select('role')
                 .eq('id', userId)
                 .single()
-            
+
             if (profile?.role === 'talent') {
                 setUserRole('talent')
             }
@@ -197,8 +197,8 @@ export function DisputesPageClient({ userId, disputes, bookings }: DisputesPageC
                                         key={option.value}
                                         onClick={() => setFilter(option.value as typeof filter)}
                                         className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${filter === option.value
-                                                ? 'bg-[#df2531] text-white'
-                                                : 'bg-white/5 text-white/60 hover:bg-white/10'
+                                            ? 'bg-[#df2531] text-white'
+                                            : 'bg-white/5 text-white/60 hover:bg-white/10'
                                             }`}
                                     >
                                         {option.label}
@@ -240,26 +240,25 @@ export function DisputesPageClient({ userId, disputes, bookings }: DisputesPageC
                     ) : (
                         <div className="space-y-4">
                             {filteredDisputes.map((dispute) => (
-                                    <Link
-                                        key={dispute.id}
-                                        href={`/dashboard/disputes/${dispute.id}`}
-                                        className="block p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all"
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            {/* Status Icon */}
-                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-                                                dispute.status === 'open' ? 'bg-blue-500/10' :
+                                <Link
+                                    key={dispute.id}
+                                    href={`/dashboard/disputes/${dispute.id}`}
+                                    className="block p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        {/* Status Icon */}
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${dispute.status === 'open' ? 'bg-blue-500/10' :
                                                 dispute.status === 'under_review' ? 'bg-amber-500/10' :
-                                                dispute.status === 'resolved' ? 'bg-green-500/10' :
-                                                'bg-white/10'
+                                                    dispute.status === 'resolved' ? 'bg-green-500/10' :
+                                                        'bg-white/10'
                                             }`}>
-                                                <Warning size={24} weight="duotone" className={
-                                                    dispute.status === 'open' ? 'text-blue-400' :
+                                            <Warning size={24} weight="duotone" className={
+                                                dispute.status === 'open' ? 'text-blue-400' :
                                                     dispute.status === 'under_review' ? 'text-amber-400' :
-                                                    dispute.status === 'resolved' ? 'text-green-400' :
-                                                    'text-white/40'
-                                                } />
-                                            </div>
+                                                        dispute.status === 'resolved' ? 'text-green-400' :
+                                                            'text-white/40'
+                                            } />
+                                        </div>
 
                                         {/* Content */}
                                         <div className="flex-1 min-w-0">

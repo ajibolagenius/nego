@@ -87,7 +87,7 @@ const adminSteps: OnboardingStep[] = [
     },
 ]
 
-export function OnboardingModal({ role, isOpen, onClose, onComplete }: OnboardingModalProps) {
+export function OnboardingModal({ role, isOpen, onClose: _onClose, onComplete }: OnboardingModalProps) {
     const [currentStep, setCurrentStep] = useState(0)
 
     const steps = role === 'admin' ? adminSteps : role === 'talent' ? talentSteps : clientSteps
@@ -156,8 +156,11 @@ export function OnboardingModal({ role, isOpen, onClose, onComplete }: Onboardin
 
     if (!isOpen) return null
 
-    const CurrentIcon = steps[currentStep].icon
-    const progress = ((currentStep + 1) / steps.length) * 100
+    const currentStep$ = steps[currentStep]
+    if (!currentStep$) return null
+
+    const CurrentIcon = currentStep$.icon
+    const _progress = ((currentStep + 1) / steps.length) * 100
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -200,10 +203,10 @@ export function OnboardingModal({ role, isOpen, onClose, onComplete }: Onboardin
                                 <div
                                     key={index}
                                     className={`h-2 rounded-full transition-all duration-500 ${index === currentStep
-                                            ? 'w-10 bg-[#df2531] shadow-lg shadow-[#df2531]/50'
-                                            : index < currentStep
-                                                ? 'w-6 bg-[#df2531]/60'
-                                                : 'w-6 bg-white/10'
+                                        ? 'w-10 bg-[#df2531] shadow-lg shadow-[#df2531]/50'
+                                        : index < currentStep
+                                            ? 'w-6 bg-[#df2531]/60'
+                                            : 'w-6 bg-white/10'
                                         }`}
                                     aria-hidden="true"
                                 />
@@ -224,10 +227,10 @@ export function OnboardingModal({ role, isOpen, onClose, onComplete }: Onboardin
                             </div>
                         </div>
                         <h3 className="text-xl font-bold text-white mb-3">
-                            {steps[currentStep].title}
+                            {currentStep$.title}
                         </h3>
                         <p className="text-white/60 text-sm leading-relaxed">
-                            {steps[currentStep].description}
+                            {currentStep$.description}
                         </p>
                     </div>
                 </div>

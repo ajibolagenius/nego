@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Lock, Eye, EyeSlash, SpinnerGap, CheckCircle, WarningCircle, Check, X } from '@phosphor-icons/react'
@@ -223,10 +223,10 @@ export default function ResetPasswordPage() {
                                             aria-label="New password"
                                             aria-describedby="password-requirements"
                                             className={`w-full bg-white/5 border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none transition-colors ${password && !passwordStrong
-                                                    ? 'border-amber-500/50 focus:border-amber-500'
-                                                    : passwordStrong
-                                                        ? 'border-green-500/50 focus:border-green-500'
-                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                ? 'border-amber-500/50 focus:border-amber-500'
+                                                : passwordStrong
+                                                    ? 'border-green-500/50 focus:border-green-500'
+                                                    : 'border-white/10 focus:border-[#df2531]/50'
                                                 }`}
                                         />
                                         <button
@@ -306,10 +306,10 @@ export default function ResetPasswordPage() {
                                             aria-invalid={passwordsMismatch ? 'true' : 'false'}
                                             aria-describedby={passwordsMismatch ? 'confirm-error' : passwordsMatch ? 'confirm-success' : undefined}
                                             className={`w-full bg-white/5 border rounded-xl pl-12 pr-12 py-3 text-white placeholder:text-white/30 focus:outline-none transition-colors ${passwordsMismatch
-                                                    ? 'border-red-500/50 focus:border-red-500'
-                                                    : passwordsMatch
-                                                        ? 'border-green-500/50 focus:border-green-500'
-                                                        : 'border-white/10 focus:border-[#df2531]/50'
+                                                ? 'border-red-500/50 focus:border-red-500'
+                                                : passwordsMatch
+                                                    ? 'border-green-500/50 focus:border-green-500'
+                                                    : 'border-white/10 focus:border-[#df2531]/50'
                                                 }`}
                                         />
                                         <button

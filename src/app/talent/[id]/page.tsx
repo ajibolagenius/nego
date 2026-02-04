@@ -4,8 +4,6 @@ import { getTalentUrl } from '@/lib/talent-url'
 import { Metadata } from 'next'
 import { generateTalentOpenGraphMetadata } from '@/lib/og-metadata'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
-
 interface PageProps {
     params: Promise<{ id: string }>
 }

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
     ArrowLeft, User, PencilSimple, Plus, Trash, Image as ImageIcon,
-    CurrencyDollar, CalendarCheck, Clock, Eye, EyeSlash, Star,
+    CurrencyDollar, CalendarCheck, Clock, Eye, EyeSlash,
     CaretRight, Coin, CheckCircle, XCircle, Hourglass, X,
     Camera, MapPin, Sparkle, Receipt, ChartLine, Icon, Bank, Money, Gift,
     Warning, SpinnerGap, ForkKnife, Airplane, Lock, Calendar, Moon, Heart, CaretDown
@@ -483,7 +483,7 @@ export function TalentDashboardClient({
         }
     }
 
-    const handleAvatarUploadComplete = (url: string) => {
+    const handleAvatarUploadComplete = (_url: string) => {
         setShowAvatarUpload(false)
         router.refresh()
     }
@@ -547,7 +547,7 @@ export function TalentDashboardClient({
                     table: 'transactions',
                     filter: `user_id=eq.${user.id}`,
                 },
-                async (payload) => {
+                async (_payload) => {
                     // Refetch all transactions (earnings and payouts) when any transaction changes
                     // Use OR filter to include transactions where either amount > 0 OR coins > 0 (or negative for payouts)
                     const { data: updatedTransactions } = await supabase
@@ -1350,7 +1350,8 @@ export function TalentDashboardClient({
                             ) : (
                                 <div className="space-y-3">
                                     {bookingsState.map((booking) => {
-                                        const status = statusColors[booking.status] || statusColors.payment_pending
+                                        const defaultStatus = { icon: Hourglass, bg: 'bg-white/10', text: 'text-white/60', needsAction: false }
+                                        const status = statusColors[booking.status] ?? statusColors.payment_pending ?? defaultStatus
                                         const StatusIcon = status.icon
                                         const needsAction = status.needsAction
 

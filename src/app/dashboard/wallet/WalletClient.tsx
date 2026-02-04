@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Coin, Plus, ArrowUpRight, ArrowDownLeft,
     Clock, CheckCircle, XCircle, Sparkle, ShoppingCart,
-    Gift, CreditCard, Receipt, CaretRight, Warning,
+    Gift, CreditCard, Receipt, CaretRight,
     Wallet as WalletIcon, TrendUp, TrendDown, Bank, Lightning, Crown,
-    MagnifyingGlass, X, SpinnerGap, ArrowsClockwise, Star
+    MagnifyingGlass, X, ArrowsClockwise, Star
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
@@ -1035,7 +1035,8 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                             ) : (
                                 <div className="space-y-2">
                                     {filteredTransactions.map((transaction) => {
-                                        const config = transactionConfig[transaction.type] || transactionConfig.purchase
+                                        const defaultConfig = { icon: Coin, bg: 'bg-white/10', color: 'text-white/60', label: 'Transaction' }
+                                        const config = transactionConfig[transaction.type] ?? transactionConfig.purchase ?? defaultConfig
                                         const Icon = config.icon
                                         const isCredit = transaction.type === 'purchase' || transaction.type === 'refund' ||
                                             (transaction.type === 'gift' && (transaction.coins || transaction.amount) > 0)

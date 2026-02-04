@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Globe, InstagramLogo, DiscordLogo, TwitterLogo, ArrowUp, MapPin, Phone, Envelope } from '@phosphor-icons/react'
+import { Globe, InstagramLogo, TwitterLogo, ArrowUp, MapPin, Phone, Envelope } from '@phosphor-icons/react'
 
 const navLinks = [
     { name: 'Home', href: '#home' },
@@ -18,7 +18,7 @@ const legalLinks = [
 ]
 
 const socials = [
-    { icon: Globe, href: 'https://nego.com', label: 'Visit our website' },
+    { icon: Globe, href: 'https://negoempire.live', label: 'Visit our website' },
     { icon: TwitterLogo, href: 'https://twitter.com/nego', label: 'Follow us on Twitter' },
     { icon: InstagramLogo, href: 'https://instagram.com/nego', label: 'Follow us on Instagram' },
 ]
@@ -29,7 +29,7 @@ export function Footer() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true) },
+            ([entry]) => { if (entry?.isIntersecting) setIsVisible(true) },
             { threshold: 0.1 }
         )
         if (footerRef.current) observer.observe(footerRef.current)

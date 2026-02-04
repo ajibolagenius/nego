@@ -43,9 +43,9 @@ export async function POST(request: NextRequest) {
         const {
             payment_status,
             order_id, // We use this as our reference
-            pay_amount, // Amount user sent
+            pay_amount: _pay_amount, // Amount user sent
             price_amount, // Amount we asked for (fiat)
-            outcome_currency
+            outcome_currency: _outcome_currency
         } = event
 
         // Check if completed

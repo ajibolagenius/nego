@@ -125,7 +125,7 @@ export function TalentSection() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true) },
+            ([entry]) => { if (entry?.isIntersecting) setIsVisible(true) },
             { threshold: 0.1 }
         )
         if (sectionRef.current) observer.observe(sectionRef.current)

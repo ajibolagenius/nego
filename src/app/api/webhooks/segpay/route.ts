@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
         // in a real scenario check `eticketid`, `transid` etc.
         // Assuming we pass our transaction reference in `merchant_ref` or `desc` or `custom_field`
         const reference = data.merchant_ref || data.ref || data.extra_info // Adjust based on direct Segpay config
-        const transactionId = data.transid
+        const _transactionId = data.transid
         const status = data.stage // e.g. 'approved', 'declined'
 
         if (!reference) {

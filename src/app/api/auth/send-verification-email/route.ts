@@ -86,7 +86,7 @@ export async function POST(request: Request) {
         // This is necessary because auth.resend() only works for unconfirmed emails
         // Note: Setting email_confirm to false will automatically clear email_confirmed_at
         console.log('[Send Verification Email] Temporarily unconfirming email to enable resend')
-        const { data: updateData, error: unconfirmError } = await adminSupabase.auth.admin.updateUserById(
+        const { data: _updateData, error: unconfirmError } = await adminSupabase.auth.admin.updateUserById(
             user.id,
             {
                 email_confirm: false
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
             const errorMessage = resendError.message || ''
             if (errorMessage.includes('after') && errorMessage.includes('seconds')) {
                 const secondsMatch = errorMessage.match(/(\d+)\s+seconds?/i)
-                const seconds = secondsMatch ? parseInt(secondsMatch[1]) : 60
+                const seconds = secondsMatch ? parseInt(secondsMatch[1] ?? '60') : 60
                 return NextResponse.json({
                     error: `Please wait ${seconds} seconds before requesting another verification email. This is a security measure to prevent spam.`,
                     rateLimited: true,

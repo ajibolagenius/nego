@@ -4,7 +4,7 @@
     "critical": [
       {
         "endpoint": "Supabase Auth - User Registration",
-        "issue": "Database error saving new user - The handle_new_user() trigger is STILL failing. Tested with testclient3@nego.com and testuser_1768158655@nego.com - both return 500 error from Supabase.",
+        "issue": "Database error saving new user - The handle_new_user() trigger is STILL failing. Tested with testclient3@negoempire.live and testuser_1768158655@negoempire.live - both return 500 error from Supabase.",
         "priority": "CRITICAL",
         "error_message": "Database error saving new user",
         "root_cause": "The trigger function handle_new_user() in Supabase is NOT working. The fix SQL file at /app/frontend/supabase_fix_trigger.sql has NOT been successfully applied to the Supabase database.",
@@ -19,7 +19,9 @@
       {
         "flow": "User Registration",
         "issue": "Registration form works correctly but Supabase returns 500 error due to broken trigger. Form validation, role selection, and UI all function properly.",
-        "affected_selectors": ["button:has-text('Create Account')"]
+        "affected_selectors": [
+          "button:has-text('Create Account')"
+        ]
       }
     ],
     "design_issues": []
@@ -44,7 +46,10 @@
     "frontend": "Partial - Public pages work (homepage, login UI, register UI, collection), auth flows blocked"
   },
   "test_credentials": {
-    "attempted_emails": ["testclient3@nego.com", "testuser_1768158655@nego.com"],
+    "attempted_emails": [
+      "testclient3@negoempire.live",
+      "testuser_1768158655@negoempire.live"
+    ],
     "attempted_password": "TestPass123!",
     "note": "User creation failed due to trigger issue - no users exist in database"
   },

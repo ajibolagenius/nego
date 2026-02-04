@@ -2,9 +2,6 @@
 
 import { useState } from 'react'
 import { CaretUp, CaretDown, MagnifyingGlass, Download } from '@phosphor-icons/react'
-import type { VerificationWithBooking, WithdrawalRequestWithTalent, PayoutTransaction } from '@/types/admin'
-
-type TableData = VerificationWithBooking[] | WithdrawalRequestWithTalent[] | PayoutTransaction[]
 
 interface Column<T> {
     key: string
@@ -32,7 +29,7 @@ export function DataTable<T extends Record<string, unknown>>({
     searchable = false,
     searchPlaceholder = 'Search...',
     exportable = false,
-    exportFilename = 'data',
+    exportFilename: _exportFilename = 'data',
     onExport,
     emptyMessage = 'No data available',
     className = '',
@@ -96,7 +93,9 @@ export function DataTable<T extends Record<string, unknown>>({
     const handleExport = () => {
         if (onExport) {
             if (selectedRows.size > 0) {
-                const selectedData = Array.from(selectedRows).map(index => sortedData[index])
+                const selectedData = Array.from(selectedRows)
+                    .map(index => sortedData[index])
+                    .filter((item): item is T => item !== undefined)
                 onExport(selectedData)
             } else {
                 onExport(sortedData)

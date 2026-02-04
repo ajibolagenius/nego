@@ -14,7 +14,7 @@ interface ReviewCardProps {
     onResponseSubmit?: (reviewId: string, response: string) => void
 }
 
-export function ReviewCard({ review, currentUserId, isTalentOwner, onResponseSubmit }: ReviewCardProps) {
+export function ReviewCard({ review, currentUserId: _currentUserId, isTalentOwner, onResponseSubmit }: ReviewCardProps) {
     const [showResponseForm, setShowResponseForm] = useState(false)
     const [response, setResponse] = useState(review.talent_response || '')
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -487,8 +487,8 @@ export function WriteReviewModal({ bookingId, talentId, clientId, onReviewSubmit
                                     size={40}
                                     weight={(hoverRating || rating) >= star ? 'fill' : 'regular'}
                                     className={`transition-all duration-200 ${(hoverRating || rating) >= star
-                                            ? 'text-amber-400 drop-shadow-lg'
-                                            : 'text-white/20 hover:text-white/40'
+                                        ? 'text-amber-400 drop-shadow-lg'
+                                        : 'text-white/20 hover:text-white/40'
                                         }`}
                                     aria-hidden="true"
                                 />

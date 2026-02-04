@@ -36,7 +36,7 @@
     "frontend": "Partial - Public pages work (100%), auth flows blocked by Supabase config"
   },
   "test_credentials": {
-    "registered_email": "testflow_1768159152@nego.com",
+    "registered_email": "testflow_1768159152@negoempire.live",
     "password": "TestPass123!",
     "note": "User was created successfully but cannot login due to email confirmation requirement"
   },

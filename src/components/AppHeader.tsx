@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import {
     List, X, Coin, CaretDown, User, SignOut, House, Heart,
     CalendarCheck, Wallet, Gear, ChatCircle, MagnifyingGlass,
-    Briefcase, ShieldCheck
+    Briefcase
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
@@ -117,7 +117,6 @@ export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
     }
 
     const isLandingPage = pathname === '/'
-    const isAuthPage = pathname === '/login' || pathname === '/register'
     const isDashboardPage = pathname?.startsWith('/dashboard')
     const isAdminPage = pathname?.startsWith('/admin')
 

@@ -114,7 +114,7 @@ class TestAuthEndpoints:
     
     def test_register_new_user(self):
         """POST /api/auth/register should create new user and return token"""
-        unique_email = f"TEST_user_{int(time.time())}@nego.com"
+        unique_email = f"TEST_user_{int(time.time())}@negoempire.live"
         response = requests.post(
             f"{BASE_URL}/api/auth/register",
             json={
@@ -135,7 +135,7 @@ class TestAuthEndpoints:
         response = requests.post(
             f"{BASE_URL}/api/auth/register",
             json={
-                "email": "test@nego.com",
+                "email": "test@negoempire.live",
                 "name": "Duplicate User",
                 "password": "password123"
             }
@@ -149,7 +149,7 @@ class TestAuthEndpoints:
         response = requests.post(
             f"{BASE_URL}/api/auth/login",
             json={
-                "email": "test@nego.com",
+                "email": "test@negoempire.live",
                 "password": "password123"
             }
         )
@@ -157,14 +157,14 @@ class TestAuthEndpoints:
         data = response.json()
         assert "access_token" in data
         assert "user" in data
-        assert data["user"]["email"] == "test@nego.com"
+        assert data["user"]["email"] == "test@negoempire.live"
     
     def test_login_invalid_credentials(self):
         """POST /api/auth/login with invalid credentials should fail"""
         response = requests.post(
             f"{BASE_URL}/api/auth/login",
             json={
-                "email": "test@nego.com",
+                "email": "test@negoempire.live",
                 "password": "wrongpassword"
             }
         )
@@ -175,7 +175,7 @@ class TestAuthEndpoints:
         response = requests.post(
             f"{BASE_URL}/api/auth/login",
             json={
-                "email": "nonexistent@nego.com",
+                "email": "nonexistent@negoempire.live",
                 "password": "password123"
             }
         )
@@ -187,7 +187,7 @@ class TestAuthEndpoints:
         login_response = requests.post(
             f"{BASE_URL}/api/auth/login",
             json={
-                "email": "test@nego.com",
+                "email": "test@negoempire.live",
                 "password": "password123"
             }
         )
@@ -200,7 +200,7 @@ class TestAuthEndpoints:
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["email"] == "test@nego.com"
+        assert data["email"] == "test@negoempire.live"
         assert "id" in data
         assert "name" in data
     

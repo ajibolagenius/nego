@@ -26,7 +26,7 @@ interface MessagesClientProps {
 export function MessagesClient({ userId, conversations: initialConversations, userRole = 'client' }: MessagesClientProps) {
     const supabase = createClient()
     const searchParams = useSearchParams()
-    const router = useRouter()
+    const _router = useRouter()
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)

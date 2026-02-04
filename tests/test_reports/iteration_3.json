@@ -19,7 +19,9 @@
       {
         "flow": "User Registration",
         "issue": "Registration form works correctly but Supabase returns 500 error due to broken trigger. Form validation, role selection, and UI all function properly.",
-        "affected_selectors": ["button:has-text('Create Account')"]
+        "affected_selectors": [
+          "button:has-text('Create Account')"
+        ]
       }
     ],
     "design_issues": []
@@ -44,14 +46,14 @@
     "frontend": "Partial - Public pages work, auth flows blocked"
   },
   "test_credentials": {
-    "attempted_email": "testclient2@nego.com",
+    "attempted_email": "testclient2@negoempire.live",
     "attempted_password": "TestPass123!",
     "note": "User creation failed due to trigger issue"
   },
   "seed_data_creation": "6 demo talents exist in database (Adaeze, Chidinma, Folake, Grace, Halima, Ify) with UUIDs a1111111-..., a2222222-..., etc.",
   "retest_needed": true,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Supabase database trigger handle_new_user() is STILL broken despite fix file existing. The fix SQL at /app/frontend/supabase_fix_trigger.sql must be executed in Supabase SQL Editor. Once fixed, test full flow: 1) Registration with testclient2@nego.com, 2) Login, 3) Dashboard access, 4) Browse talents at /dashboard/browse, 5) Talent profile at /talent/a1111111-1111-1111-1111-111111111111, 6) Service selection, 7) Booking modal, 8) Booking creation",
+  "context_for_next_testing_agent": "Supabase database trigger handle_new_user() is STILL broken despite fix file existing. The fix SQL at /app/frontend/supabase_fix_trigger.sql must be executed in Supabase SQL Editor. Once fixed, test full flow: 1) Registration with testclient2@negoempire.live, 2) Login, 3) Dashboard access, 4) Browse talents at /dashboard/browse, 5) Talent profile at /talent/a1111111-1111-1111-1111-111111111111, 6) Service selection, 7) Booking modal, 8) Booking creation",
   "verified_working": {
     "homepage": "Loads correctly with NEGO branding and navigation",
     "talent_section": "Shows 6 talents from Supabase database",

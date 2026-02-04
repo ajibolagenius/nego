@@ -23,7 +23,7 @@
     "frontend": "100%"
   },
   "test_credentials": {
-    "email": "test@nego.com",
+    "email": "test@negoempire.live",
     "password": "password123"
   },
   "seed_data_creation": "Database already seeded with 8 talents and 3 private content items via POST /api/seed",

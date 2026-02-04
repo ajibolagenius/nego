@@ -83,7 +83,7 @@ export function generateOpenGraphMetadata(options: OpenGraphMetadataOptions): Me
  */
 export function generateTalentOpenGraphMetadata(
     talentName: string,
-    talentImage?: string | null,
+    _talentImage?: string | null,
     username?: string | null,
     talentId?: string | null
 ): Metadata {

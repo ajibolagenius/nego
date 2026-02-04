@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
     ArrowLeft, Camera, User, Phone, MapPin, ShieldCheck,
     CheckCircle, XCircle, Hourglass, Warning,
-    Sparkle, Lock, Info, VideoCamera, ArrowCounterClockwise, Check, X, SpinnerGap
+    Lock, VideoCamera, ArrowCounterClockwise, Check, X, SpinnerGap
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { MobileBottomNav } from '@/components/MobileBottomNav'

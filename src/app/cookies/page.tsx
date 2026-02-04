@@ -202,7 +202,7 @@ export default function CookiesPage() {
                         <h2 className="text-2xl font-bold text-white mb-4">8. Contact Us</h2>
                         <p className="text-white/70 leading-relaxed">
                             For questions about our cookie practices, contact us at{' '}
-                            <a href="mailto:privacy@nego.com" className="text-[#df2531] hover:underline">privacy@nego.com</a>
+                            <a href="mailto:privacy@negoempire.live" className="text-[#df2531] hover:underline">privacy@negoempire.live</a>
                         </p>
                     </section>
                 </div>

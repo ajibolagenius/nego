@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, MapPin, Star, Heart, Share, Circle,
-    Check, Calendar, Clock, SpinnerGap, X, ShieldCheck,
-    ForkKnife, CalendarCheck, Airplane, Lock, Camera, Coin, Warning, ChatCircle, Crown, Eye,
+    Calendar, Clock, SpinnerGap, X, ShieldCheck,
+    ForkKnife, CalendarCheck, Airplane, Lock, Camera, Warning, ChatCircle, Crown, Eye,
     ShareNetwork, Copy, CheckCircle, Moon, Sparkle
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
@@ -145,7 +145,7 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
         }
     }
 
-    const { push } = useRouter()
+    const { push: _push } = useRouter()
 
 
     const isUnlocked = (mediaId: string) => unlockedMedia.has(mediaId)
@@ -378,9 +378,9 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
     const [copied, setCopied] = useState(false)
     const [startingChat, setStartingChat] = useState(false)
 
-    // Date/time validation states
-    const [dateError, setDateError] = useState('')
-    const [timeError, setTimeError] = useState('')
+    // Date/time validation states (kept for future validation feature)
+    const [_dateError, setDateError] = useState('')
+    const [_timeError, setTimeError] = useState('')
 
     // Lightbox state - standalone for all media
     const [lightboxMedia, setLightboxMedia] = useState<Media | null>(null)
@@ -667,7 +667,7 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
         return null
     }
 
-    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const _handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value
         setBookingDate(value)
         const error = validateBookingDate(value)
@@ -680,7 +680,7 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
         }
     }
 
-    const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const _handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value
         setBookingTime(value)
 
@@ -865,7 +865,8 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
         if (lightboxIndex < allMedia.length - 1) {
             const nextIndex = lightboxIndex + 1
             setLightboxIndex(nextIndex)
-            setLightboxMedia(allMedia[nextIndex])
+            const nextMedia = allMedia[nextIndex]
+            if (nextMedia) setLightboxMedia(nextMedia)
         }
     }
 
@@ -874,7 +875,8 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
             const prevIndex = lightboxIndex - 1
             const allMedia = getAllViewableMedia()
             setLightboxIndex(prevIndex)
-            setLightboxMedia(allMedia[prevIndex])
+            const prevMedia = allMedia[prevIndex]
+            if (prevMedia) setLightboxMedia(prevMedia)
         }
     }
 
@@ -1463,7 +1465,7 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                 selectedServices={selectedServices}
                 totalPrice={totalPrice}
                 userBalance={userBalance}
-                onSubmit={async (date, time) => {
+                onSubmit={async (_date, _time) => {
                     await handleBooking()
                 }}
                 isLoading={loading}
