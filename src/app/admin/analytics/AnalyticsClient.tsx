@@ -270,25 +270,31 @@ function SimplePieChart({ data, size = 120 }: { data: PieDataPoint[], size?: num
         )
     }
 
-    let currentAngle = -90
+    const slices = data.reduce((acc, d) => {
+        const prevAngle = acc.length > 0 ? acc[acc.length - 1]!.endAngle : -90
+        const angle = (d.value / total) * 360
+        acc.push({
+            ...d,
+            startAngle: prevAngle,
+            endAngle: prevAngle + angle,
+            angle
+        })
+        return acc
+    }, [] as Array<PieDataPoint & { startAngle: number, endAngle: number, angle: number }>)
 
     return (
         <div className="flex items-center gap-4">
             <svg width={size} height={size} viewBox="0 0 100 100">
-                {data.map((d, i) => {
-                    const angle = (d.value / total) * 360
-                    const startAngle = currentAngle
-                    currentAngle += angle
-
-                    const startRad = (startAngle * Math.PI) / 180
-                    const endRad = ((startAngle + angle) * Math.PI) / 180
+                {slices.map((d, i) => {
+                    const startRad = (d.startAngle * Math.PI) / 180
+                    const endRad = (d.endAngle * Math.PI) / 180
 
                     const x1 = 50 + 40 * Math.cos(startRad)
                     const y1 = 50 + 40 * Math.sin(startRad)
                     const x2 = 50 + 40 * Math.cos(endRad)
                     const y2 = 50 + 40 * Math.sin(endRad)
 
-                    const largeArc = angle > 180 ? 1 : 0
+                    const largeArc = d.angle > 180 ? 1 : 0
 
                     return (
                         <path

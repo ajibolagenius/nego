@@ -452,7 +452,7 @@ export function WriteReviewModal({ bookingId, talentId, clientId, onReviewSubmit
                 className="bg-[#0a0a0a] border border-white/10 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-fade-in-up"
                 onClick={(e) => e.stopPropagation()}
                 role="document"
-            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+             
             >
                 <div className="flex items-center justify-between mb-6">
                     <h3 id="write-review-title" className="text-xl font-bold text-white">Write a Review</h3>

@@ -37,7 +37,7 @@ export function NetworkStatus() {
                 ) : (
                     <>
                         <WifiSlash size={20} weight="bold" />
-                        <span className="text-sm font-medium">You're offline. Some features may be limited.</span>
+                        <span className="text-sm font-medium">You&apos;re offline. Some features may be limited.</span>
                     </>
                 )}
             </div>

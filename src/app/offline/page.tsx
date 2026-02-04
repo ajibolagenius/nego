@@ -61,7 +61,7 @@ export default function OfflinePage() {
 
                 {/* Title */}
                 <h1 className="text-4xl md:text-5xl font-black text-white mb-4">
-                    You're <span className="text-[#df2531]">Offline</span>
+                    You&apos;re <span className="text-[#df2531]">Offline</span>
                 </h1>
 
                 {/* Description */}

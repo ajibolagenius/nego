@@ -858,10 +858,12 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                             <div className="relative aspect-square max-w-sm mx-auto rounded-2xl overflow-hidden border-2 border-white/20 bg-black">
                                 {selfiePreview ? (
                                     // Show captured photo
-                                    <img
+                                    <Image
                                         src={selfiePreview}
                                         alt="Selfie preview"
-                                        className="w-full h-full object-cover"
+                                        fill
+                                        className="object-cover"
+                                        unoptimized
                                     />
                                 ) : (
                                     // Show webcam
@@ -1210,8 +1212,8 @@ export function VerifyClient({ user, profile, booking, verification }: VerifyCli
                                 {/* Selfie Preview */}
                                 {selfiePreview && (
                                     <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300">
-                                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 shrink-0">
-                                            <img src={selfiePreview} alt="Your selfie" className="w-full h-full object-cover" />
+                                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-white/10 shrink-0 relative">
+                                            <Image src={selfiePreview} alt="Your selfie" fill className="object-cover" unoptimized />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-white font-medium">Selfie Captured</p>

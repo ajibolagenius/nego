@@ -55,10 +55,10 @@ export default function NotFound() {
                         Page Not Found
                     </p>
                     <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4">
-                        This Page Doesn't <span className="text-[#df2531]">Exist</span>
+                        This Page Doesn&apos;t <span className="text-[#df2531]">Exist</span>
                     </h2>
                     <p className="text-white/60 text-base md:text-lg max-w-md mx-auto leading-relaxed">
-                        The page you're looking for may have been moved, deleted, or doesn't exist.
+                        The page you&apos;re looking for may have been moved, deleted, or doesn&apos;t exist.
                     </p>
                 </div>
 

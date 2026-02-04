@@ -88,7 +88,7 @@ export function Tooltip({ content, children, position = 'top', delay = 200 }: To
                 onFocus={showTooltip}
                 onBlur={hideTooltip}
                 className="inline-block"
-            // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+             
             >
                 {children}
             </div>

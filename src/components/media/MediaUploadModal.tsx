@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
-import Image from 'next/image'
 import {
     Upload, X, Warning, Crown
 } from '@phosphor-icons/react'
+import Image from 'next/image'
+import { useState, useRef, useCallback } from 'react'
 import { compressImage } from '@/lib/media-utils'
 import { createClient } from '@/lib/supabase/client'
 
@@ -193,7 +193,7 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
                 data-testid="upload-media-modal"
                 onClick={(e) => e.stopPropagation()}
                 role="document"
-            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+             
             >
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-white/10">

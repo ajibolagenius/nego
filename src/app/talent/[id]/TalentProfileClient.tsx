@@ -64,6 +64,7 @@ interface GallerySectionProps {
 
 function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOpenLightbox, onLoginRequired }: GallerySectionProps) {
     const [activeTab, setActiveTab] = useState<'free' | 'premium'>('free')
+    const { push: _push } = useRouter()
     const [unlocking, setUnlocking] = useState<string | null>(null)
     const [unlockedMedia, setUnlockedMedia] = useState<Set<string>>(new Set())
     const [isMobile, setIsMobile] = useState<boolean>(false)
@@ -145,7 +146,7 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
         }
     }
 
-    const { push: _push } = useRouter()
+
 
 
     const isUnlocked = (mediaId: string) => unlockedMedia.has(mediaId)

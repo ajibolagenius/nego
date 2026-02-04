@@ -129,7 +129,7 @@ export function BookingModal({
                 className="bg-[#0a0a0f] rounded-2xl w-full max-w-lg border border-white/10 overflow-hidden animate-fade-in-up"
                 onClick={(e) => e.stopPropagation()}
                 role="document"
-            // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+             
             >
                 {/* Modal Header */}
                 <div className="flex items-center justify-between p-6 border-b border-white/10">
