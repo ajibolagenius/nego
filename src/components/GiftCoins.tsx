@@ -25,6 +25,7 @@ interface GiftCoinsProps {
     senderId: string
     senderBalance: number
     onSuccess?: () => void
+    onAuthRequired?: () => void
 }
 
 interface GiftError {
@@ -37,7 +38,8 @@ export function GiftCoins({
     talentName,
     senderId,
     senderBalance,
-    onSuccess
+    onSuccess,
+    onAuthRequired
 }: GiftCoinsProps) {
     // Modal state
     const [isOpen, setIsOpen] = useState(false)
@@ -77,9 +79,13 @@ export function GiftCoins({
 
     // Handle modal open
     const openModal = useCallback(() => {
+        if (!senderId) {
+            onAuthRequired?.()
+            return
+        }
         resetForm()
         setIsOpen(true)
-    }, [resetForm])
+    }, [senderId, onAuthRequired, resetForm])
 
     // Handle modal close
     const closeModal = useCallback(() => {
@@ -336,8 +342,8 @@ export function GiftCoins({
                                                         aria-pressed={isSelected}
                                                         aria-label={`Select ${preset} coins`}
                                                         className={`py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 ${isSelected
-                                                                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
-                                                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
+                                                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'
+                                                            : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/10'
                                                             }`}
                                                     >
                                                         {preset >= 1000 ? `${preset / 1000}k` : preset}
@@ -404,8 +410,8 @@ export function GiftCoins({
 
                                     {/* Balance Display / Warning */}
                                     <div className={`p-4 rounded-xl border ${hasInsufficientBalance
-                                            ? 'bg-amber-500/10 border-amber-500/20'
-                                            : 'bg-white/5 border-white/10'
+                                        ? 'bg-amber-500/10 border-amber-500/20'
+                                        : 'bg-white/5 border-white/10'
                                         }`}>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
@@ -454,8 +460,8 @@ export function GiftCoins({
                                     disabled={loading || hasInsufficientBalance || !isAmountValid}
                                     data-testid="send-gift-button"
                                     className={`w-full font-bold py-4 rounded-xl disabled:opacity-50 transition-all ${hasInsufficientBalance || !isAmountValid
-                                            ? 'bg-white/10 text-white/50 cursor-not-allowed'
-                                            : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white'
+                                        ? 'bg-white/10 text-white/50 cursor-not-allowed'
+                                        : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white'
                                         }`}
                                 >
                                     {loading ? (

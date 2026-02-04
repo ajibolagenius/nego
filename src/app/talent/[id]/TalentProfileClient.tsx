@@ -59,9 +59,10 @@ interface GallerySectionProps {
     talentName: string
     onUnlock: (mediaId: string, unlockPrice: number) => Promise<boolean>
     onOpenLightbox: (media: Media) => void
+    onLoginRequired: () => void
 }
 
-function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOpenLightbox }: GallerySectionProps) {
+function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOpenLightbox, onLoginRequired }: GallerySectionProps) {
     const [activeTab, setActiveTab] = useState<'free' | 'premium'>('free')
     const [unlocking, setUnlocking] = useState<string | null>(null)
     const [unlockedMedia, setUnlockedMedia] = useState<Set<string>>(new Set())
@@ -145,9 +146,7 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
     }
 
     const { push } = useRouter()
-    const handleLoginRedirect = () => {
-        push('/login?redirect=' + encodeURIComponent(window.location.pathname))
-    }
+
 
     const isUnlocked = (mediaId: string) => unlockedMedia.has(mediaId)
 
@@ -214,7 +213,7 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
                                             Log in or create an account to unlock exclusive photos and videos from {talentName}.
                                         </p>
                                         <button
-                                            onClick={handleLoginRedirect}
+                                            onClick={onLoginRequired}
                                             className="px-8 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-sm hover:opacity-90 transition-opacity shadow-lg shadow-amber-500/20"
                                         >
                                             Log In to Unlock
@@ -884,6 +883,10 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
         }
     }
 
+    const handleLoginRedirect = () => {
+        router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))
+    }
+
     const toggleService = (serviceId: string) => {
         setSelectedServices(prev =>
             prev.includes(serviceId)
@@ -1043,17 +1046,18 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                             <ArrowLeft size={24} weight="duotone" aria-hidden="true" />
                         </button>
                         <div className="flex items-center gap-3">
-                            {/* Gift Coins Button - Only show for logged in clients */}
-                            {currentUser && currentUser.role === 'client' && (
+                            {/* Gift Coins Button - Visible to all (Login prompt for guests, functional for others) */}
+                            {(!currentUser || currentUser.id !== talent.id) && (
                                 <GiftCoins
                                     talentId={talent.id}
                                     talentName={talent.display_name || 'Talent'}
                                     senderId={userId}
                                     senderBalance={wallet?.balance || 0}
                                     onSuccess={() => router.refresh()}
+                                    onAuthRequired={handleLoginRedirect}
                                 />
                             )}
-                            {/* Message Button - Only show for logged in clients */}
+                            {/* Message Button - Only show for logsged in clients */}
                             {currentUser && currentUser.role === 'client' && (
                                 <button
                                     onClick={handleStartChat}
@@ -1297,6 +1301,7 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                     talentName={talent.display_name || 'this talent'}
                     onUnlock={handleUnlockMedia}
                     onOpenLightbox={handleOpenLightbox}
+                    onLoginRequired={handleLoginRedirect}
                 />
 
                 {/* Gift Leaderboard - Enhanced */}
