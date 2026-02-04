@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
     Bank, CheckCircle, XCircle, Clock, MagnifyingGlass,
-    ArrowUpRight, Copy, Funnel, CalendarBlank, ImageSquare
+    ArrowUpRight, Copy, Funnel, CalendarBlank, ImageSquare,
+    ArrowsClockwise
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import Image from 'next/image'
@@ -168,19 +169,32 @@ export default function DepositsPage() {
                     </p>
                 </div>
 
-                <div className="flex bg-white/5 p-1 rounded-xl">
-                    {(['pending', 'approved', 'rejected', 'all'] as const).map((f) => (
-                        <button
-                            key={f}
-                            onClick={() => setFilter(f)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === f
-                                ? 'bg-[#df2531] text-white shadow-lg'
-                                : 'text-white/60 hover:text-white hover:bg-white/5'
-                                }`}
-                        >
-                            {f.charAt(0).toUpperCase() + f.slice(1)}
-                        </button>
-                    ))}
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => {
+                            setLoading(true)
+                            fetchDeposits()
+                        }}
+                        className="p-2 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-xl transition-colors"
+                        title="Refresh list"
+                    >
+                        <ArrowsClockwise size={20} className={loading ? 'animate-spin' : ''} />
+                    </button>
+
+                    <div className="flex bg-white/5 p-1 rounded-xl">
+                        {(['pending', 'approved', 'rejected', 'all'] as const).map((f) => (
+                            <button
+                                key={f}
+                                onClick={() => setFilter(f)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === f
+                                    ? 'bg-[#df2531] text-white shadow-lg'
+                                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                                    }`}
+                            >
+                                {f.charAt(0).toUpperCase() + f.slice(1)}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
