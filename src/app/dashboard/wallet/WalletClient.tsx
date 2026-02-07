@@ -390,9 +390,9 @@ function PaymentModal({
                             <div>
                                 <h4 className="text-white font-medium mb-1">Bank Details</h4>
                                 <div className="text-sm text-white/70 space-y-1">
-                                    <p>Bank: <span className="text-white">Zenith Bank</span></p>
-                                    <p>Account Number: <span className="text-white">1234567890</span></p>
-                                    <p>Account Name: <span className="text-white">Nego Empire</span></p>
+                                    <p>Bank: <span className="text-white">Moniepoint Microfinance Bank (MFB)</span></p>
+                                    <p>Account Number: <span className="text-white">8118745886</span></p>
+                                    <p>Account Name: <span className="text-white">Nego Entertainment</span></p>
                                 </div>
                             </div>
 
