@@ -160,8 +160,8 @@ export function TalentDashboardClient({
     const [accountName, setAccountName] = useState('')
     const [isWithdrawing, setIsWithdrawing] = useState(false)
 
-    // Minimum service price in coins (₦100,000 = 10,000 coins at 1 coin = ₦10 rate)
-    const MIN_SERVICE_PRICE = 10000
+    // Minimum service price in coins (₦50,000 = 5,000 coins at 1 coin = ₦10 rate)
+    const MIN_SERVICE_PRICE = 5000
 
     const formatPrice = (price: number) => {
         return `${new Intl.NumberFormat('en-NG', {
