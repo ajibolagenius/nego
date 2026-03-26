@@ -8,11 +8,12 @@ import { createClient } from '@/lib/supabase/client'
 
 interface PushNotificationManagerProps {
     userId: string
+    presentation?: 'settings' | 'dashboard-modal'
 }
 
 type PermissionState = 'default' | 'granted' | 'denied' | 'unsupported'
 
-export function PushNotificationManager({ userId }: PushNotificationManagerProps) {
+export function PushNotificationManager({ userId, presentation = 'settings' }: PushNotificationManagerProps) {
     const [permission, setPermission] = useState<PermissionState>('default')
     const [isSubscribed, setIsSubscribed] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -30,6 +31,17 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
         // Check if already subscribed
         checkSubscription()
     }, [])
+
+    // Auto-open centered prompt on dashboard when push is disabled
+    useEffect(() => {
+        if (presentation !== 'dashboard-modal') return
+        if (permission === 'unsupported') return
+        if (permission === 'granted' && isSubscribed) {
+            setShowPrompt(false)
+            return
+        }
+        setShowPrompt(true)
+    }, [presentation, permission, isSubscribed])
 
     // Handle Escape key to close modal and body scroll lock
     useEffect(() => {
@@ -162,7 +174,7 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
             try {
                 new Notification('Notifications Enabled! 🔔', {
                     body: 'You will now receive notifications from Nego',
-                    icon: '/icon-192.png',
+                    icon: '/icon.svg',
                     tag: 'nego-notification-enabled'
                 })
             } catch (notifError) {
@@ -249,6 +261,118 @@ export function PushNotificationManager({ userId }: PushNotificationManagerProps
 
     if (permission === 'unsupported') {
         return null // Don't show anything if not supported
+    }
+
+    // Dashboard-only prompt mode: show centered modal only when disabled
+    if (presentation === 'dashboard-modal') {
+        if (permission === 'granted' && isSubscribed) {
+            return null
+        }
+
+        return (
+            <>
+                {showPrompt && typeof window !== 'undefined' && createPortal(
+                    <div
+                        className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                        onClick={() => !loading && setShowPrompt(false)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Escape' && !loading) setShowPrompt(false)
+                        }}
+                        tabIndex={-1}
+                    >
+                        <div
+                            className="bg-[#0a0a0f] rounded-2xl w-full max-w-sm border border-white/10 p-6 relative"
+                            onClick={(e) => e.stopPropagation()}
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="dashboard-push-notification-modal-title"
+                            aria-describedby="dashboard-push-notification-modal-description"
+                        >
+                            <button
+                                onClick={() => setShowPrompt(false)}
+                                disabled={loading}
+                                className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors disabled:opacity-50"
+                                aria-label="Close notification prompt"
+                            >
+                                <X size={20} aria-hidden="true" />
+                            </button>
+
+                            <div className="text-center mb-6">
+                                <div className="w-16 h-16 rounded-full bg-[#df2531]/20 flex items-center justify-center mx-auto mb-4">
+                                    <BellRinging size={32} weight="fill" className="text-[#df2531]" aria-hidden="true" />
+                                </div>
+                                <h3 id="dashboard-push-notification-modal-title" className="text-xl font-bold text-white mb-2">Enable Push Notifications</h3>
+                                <p id="dashboard-push-notification-modal-description" className="text-white/60 text-sm">
+                                    Turn on push notifications to get instant booking, message, and gift updates.
+                                </p>
+                            </div>
+
+                            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 mb-4">
+                                <div>
+                                    <p className="text-white text-sm font-medium">Push Notifications</p>
+                                    <p className="text-white/50 text-xs">
+                                        This toggle is the same push-notification setting used on your Settings page.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={isSubscribed}
+                                    aria-label="Toggle push notifications"
+                                    onClick={() => {
+                                        if (loading) return
+                                        if (isSubscribed) {
+                                            unsubscribe()
+                                            return
+                                        }
+                                        subscribeToNotifications()
+                                    }}
+                                    disabled={loading || permission === 'denied'}
+                                    className={`relative w-12 h-7 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531]/50 focus:ring-offset-2 focus:ring-offset-black ${isSubscribed ? 'bg-[#df2531]' : 'bg-white/20'} ${loading || permission === 'denied' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                >
+                                    <div
+                                        className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-300 ${isSubscribed ? 'left-6' : 'left-1'}`}
+                                    />
+                                </button>
+                            </div>
+
+                            {permission === 'denied' && (
+                                <p className="text-xs text-red-400 mb-4">
+                                    Notifications are blocked in your browser. Please allow notifications for this site in browser settings.
+                                </p>
+                            )}
+
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPrompt(false)}
+                                    disabled={loading}
+                                    className="flex-1 py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors disabled:opacity-50"
+                                >
+                                    Not Now
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={subscribeToNotifications}
+                                    disabled={loading || permission === 'denied'}
+                                    className="flex-1 py-3 rounded-xl bg-[#df2531] text-white font-medium hover:bg-[#c41f2a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <SpinnerGap size={18} className="animate-spin" aria-hidden="true" />
+                                            Enabling...
+                                        </>
+                                    ) : (
+                                        'Enable'
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>,
+                    document.body
+                )}
+            </>
+        )
     }
 
     if (permission === 'denied') {
@@ -408,7 +532,7 @@ export function usePushNotification() {
 
         new Notification(title, {
             body,
-            icon: '/icon-192.png',
+            icon: '/icon.svg',
             ...options
         })
     }, [])

@@ -69,15 +69,15 @@ export async function sendPushNotification(
         const notificationPayload = JSON.stringify({
             title: payload.title,
             body: payload.body,
-            icon: payload.icon || '/icon-192.png',
-            badge: payload.badge || '/badge-72.png',
+            icon: payload.icon || '/icon.svg',
+            badge: payload.badge || '/badge.svg',
             tag: payload.tag || 'nego-notification',
             data: {
                 ...payload.data,
                 url: payload.url || '/dashboard/notifications',
             },
             actions: payload.actions || [
-                { action: 'open', title: 'Open', icon: '/icon-192.png' },
+                { action: 'open', title: 'Open', icon: '/icon.svg' },
                 { action: 'close', title: 'Close' },
             ],
         })

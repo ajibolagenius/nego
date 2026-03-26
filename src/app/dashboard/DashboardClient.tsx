@@ -13,6 +13,7 @@ import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { NotificationBell } from '@/components/NotificationBell'
 import { OnboardingModal, useOnboarding } from '@/components/OnboardingModal'
+import { PushNotificationManager } from '@/components/PushNotificationManager'
 import { Button } from '@/components/ui/button'
 import { useWallet } from '@/hooks/useWallet'
 import { createClient } from '@/lib/supabase/client'
@@ -294,6 +295,7 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
             )}
 
             <div className={`min-h-screen bg-black flex pt-16 lg:pt-0 pb-20 lg:pb-0 ${(showSuccessBanner || showVerificationBanner || (isTalent && showTalentVerificationBanner && profile?.is_verified !== true)) ? 'pt-16' : ''}`}>
+                <PushNotificationManager userId={user.id} presentation="dashboard-modal" />
                 {/* Sidebar - Fixed on desktop */}
                 <aside className="hidden lg:flex flex-col w-64 bg-white/5 border-r border-white/10 fixed left-0 top-0 h-screen z-30 overflow-y-auto">
                     {/* Logo */}

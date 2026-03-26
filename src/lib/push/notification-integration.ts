@@ -44,14 +44,14 @@ export async function sendPushForNotification(
 
         // Determine notification icon based on type
         const iconMap: Record<string, string> = {
-            booking_request: '/icon-192.png',
-            booking_accepted: '/icon-192.png',
-            booking_rejected: '/icon-192.png',
-            booking_completed: '/icon-192.png',
-            withdrawal_approved: '/icon-192.png',
-            withdrawal_rejected: '/icon-192.png',
-            gift_received: '/icon-192.png',
-            general: '/icon-192.png',
+            booking_request: '/icon.svg',
+            booking_accepted: '/icon.svg',
+            booking_rejected: '/icon.svg',
+            booking_completed: '/icon.svg',
+            withdrawal_approved: '/icon.svg',
+            withdrawal_rejected: '/icon.svg',
+            gift_received: '/icon.svg',
+            general: '/icon.svg',
         }
 
         // Send push to all subscriptions
@@ -68,7 +68,7 @@ export async function sendPushForNotification(
                 await sendPushNotification(subscription, {
                     title: notification.title,
                     body: notification.message,
-                    icon: iconMap[notification.type] || '/icon-192.png',
+                    icon: iconMap[notification.type] || '/icon.svg',
                     tag: `notification-${notification.id}`,
                     data: {
                         notificationId: notification.id,
