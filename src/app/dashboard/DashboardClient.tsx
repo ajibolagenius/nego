@@ -14,6 +14,7 @@ import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { NotificationBell } from '@/components/NotificationBell'
 import { OnboardingModal, useOnboarding } from '@/components/OnboardingModal'
 import { PushNotificationManager } from '@/components/PushNotificationManager'
+import { NotificationProvider } from '@/providers/NotificationProvider'
 import { Button } from '@/components/ui/button'
 import { useWallet } from '@/hooks/useWallet'
 import { createClient } from '@/lib/supabase/client'
@@ -372,7 +373,9 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                             {/* Right side */}
                             <div className="flex items-center gap-2 lg:gap-4 ml-2 lg:ml-6">
                                 {/* Notifications */}
-                                <NotificationBell userId={user.id} />
+                                <NotificationProvider userId={user.id}>
+                                    <NotificationBell userId={user.id} />
+                                </NotificationProvider>
 
                                 {/* Wallet balance */}
                                 <Link
