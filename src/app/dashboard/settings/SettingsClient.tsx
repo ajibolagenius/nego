@@ -28,10 +28,11 @@ interface PasswordStrength {
 
 export function SettingsClient({ user, profile }: SettingsClientProps) {
     const router = useRouter()
+    const emailNotificationsEnabled = profile?.email_notifications_enabled !== false
     const [notifications, setNotifications] = useState({
-        bookings: true,
-        messages: true,
-        promotions: false,
+        bookings: emailNotificationsEnabled,
+        messages: emailNotificationsEnabled,
+        promotions: emailNotificationsEnabled,
     })
     const [privacy, setPrivacy] = useState({
         showOnlineStatus: true,
@@ -100,24 +101,32 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
     // Save notification setting
     const saveNotificationSetting = useCallback(async (key: keyof typeof notifications, value: boolean) => {
         setSavingNotifications(key)
-        const previousValue = notifications[key]
+        const previousNotifications = notifications
 
-        // Optimistic update
-        setNotifications(prev => ({ ...prev, [key]: value }))
+        // We use a single profile flag for email notification consent.
+        const nextNotifications = {
+            bookings: value,
+            messages: value,
+            promotions: value,
+        }
+        setNotifications(nextNotifications)
 
         try {
-            // TODO: Save to database
-            // const supabase = createClient()
-            // await supabase.from('user_settings').update({ [key]: value }).eq('user_id', user.id)
+            const supabase = createClient()
+            const { error } = await supabase
+                .from('profiles')
+                .update({
+                    email_notifications_enabled: value,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', user.id)
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 500))
-
-            showSuccess(`${key === 'bookings' ? 'Booking' : key === 'messages' ? 'Message' : 'Promotion'} notifications ${value ? 'enabled' : 'disabled'}`)
+            if (error) throw error
+            showSuccess(`Email notifications ${value ? 'enabled' : 'disabled'}`)
         } catch (error) {
             // Revert on error
-            setNotifications(prev => ({ ...prev, [key]: previousValue }))
-            showError(`Failed to update ${key} notification setting`)
+            setNotifications(previousNotifications)
+            showError('Failed to update email notification setting')
         } finally {
             setSavingNotifications(null)
         }

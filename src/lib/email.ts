@@ -120,6 +120,29 @@ const emailWrapper = (content: string) => `
 
 // Email templates
 export const emailTemplates = {
+  notification: (name: string, title: string, message: string, url?: string) => ({
+    subject: `Nego: ${title}`,
+    html: emailWrapper(`
+      <h1 style="${styles.heading}">${title}</h1>
+
+      <p style="${styles.text}">
+        Hi ${name || 'there'},
+      </p>
+
+      <div style="${styles.card}">
+        <p style="color: #ffffff; font-size: 15px; margin: 0; line-height: 1.6;">
+          ${message}
+        </p>
+      </div>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}${url || '/dashboard/notifications'}" style="${styles.button}">
+          View Notification →
+        </a>
+      </div>
+    `),
+  }),
+
   // Welcome email for new users
   welcome: (name: string, role: string) => ({
     subject: 'Welcome to Nego! 🎉',

@@ -39,6 +39,7 @@ export interface Profile {
     starting_price: number | null
     admin_notes: string | null
     push_notifications_enabled?: boolean
+    email_notifications_enabled?: boolean
     is_suspended?: boolean
     suspension_reason?: string | null
     suspended_at?: string | null

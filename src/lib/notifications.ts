@@ -1,5 +1,6 @@
 import { createApiClient } from '@/lib/supabase/api'
 import { sendPushNotification } from '@/lib/push/send-push'
+import { emailTemplates, sendEmail } from '@/lib/email'
 import type { NotificationType, UserRole } from '@/types/database'
 
 type JsonPayload = Record<string, unknown>
@@ -30,6 +31,8 @@ interface NotificationResult {
     inserted: number
     pushed: number
     failedPushes: number
+    emailed: number
+    failedEmails: number
     notifications: Array<{ id: string; user_id: string }>
     error?: unknown
 }
@@ -134,6 +137,58 @@ async function sendPushToUsers(userIds: string[], payload: NotificationContent):
     return { pushed, failedPushes }
 }
 
+async function sendEmailToUsers(userIds: string[], payload: NotificationContent): Promise<{ emailed: number; failedEmails: number }> {
+    if (userIds.length === 0) {
+        return { emailed: 0, failedEmails: 0 }
+    }
+
+    const supabase = createApiClient()
+    const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, full_name, email_notifications_enabled')
+        .in('id', userIds)
+
+    const profileById = new Map<string, { display_name?: string | null; full_name?: string | null; email_notifications_enabled?: boolean | null }>(
+        (profiles || []).map((row) => [row.id as string, row as { display_name?: string | null; full_name?: string | null; email_notifications_enabled?: boolean | null }])
+    )
+
+    let emailed = 0
+    let failedEmails = 0
+
+    const results = await Promise.allSettled(
+        userIds.map(async (userId) => {
+            const profile = profileById.get(userId)
+            if (profile?.email_notifications_enabled === false) {
+                return
+            }
+
+            const userResponse = await supabase.auth.admin.getUserById(userId)
+            const email = userResponse.data.user?.email
+            if (!email) {
+                return
+            }
+
+            const name = profile?.display_name || profile?.full_name || 'there'
+            const template = emailTemplates.notification(name, payload.title, payload.message, payload.url)
+            const result = await sendEmail(email, template)
+
+            if (!result.success) {
+                throw new Error('Email delivery failed')
+            }
+        })
+    )
+
+    results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+            emailed += 1
+        } else {
+            failedEmails += 1
+        }
+    })
+
+    return { emailed, failedEmails }
+}
+
 export async function notifyTargets(params: NotifyTargetsParams): Promise<NotificationResult> {
     try {
         const { userIds = [], roles = [], type, title, message, data = {}, url } = params
@@ -146,6 +201,8 @@ export async function notifyTargets(params: NotifyTargetsParams): Promise<Notifi
                 inserted: 0,
                 pushed: 0,
                 failedPushes: 0,
+                emailed: 0,
+                failedEmails: 0,
                 notifications: [],
             }
         }
@@ -171,6 +228,8 @@ export async function notifyTargets(params: NotifyTargetsParams): Promise<Notifi
                 inserted: 0,
                 pushed: 0,
                 failedPushes: 0,
+                emailed: 0,
+                failedEmails: 0,
                 notifications: [],
                 error: insertError,
             }
@@ -184,11 +243,22 @@ export async function notifyTargets(params: NotifyTargetsParams): Promise<Notifi
             url,
         })
 
+        // Email is best-effort; failures should not fail in-app or push delivery.
+        const { emailed, failedEmails } = await sendEmailToUsers(recipients, {
+            type,
+            title,
+            message,
+            data,
+            url,
+        })
+
         return {
             success: true,
             inserted: insertedRows?.length || 0,
             pushed,
             failedPushes,
+            emailed,
+            failedEmails,
             notifications: (insertedRows || []) as Array<{ id: string; user_id: string }>,
         }
     } catch (error) {
@@ -197,6 +267,8 @@ export async function notifyTargets(params: NotifyTargetsParams): Promise<Notifi
             inserted: 0,
             pushed: 0,
             failedPushes: 0,
+            emailed: 0,
+            failedEmails: 0,
             notifications: [],
             error,
         }
