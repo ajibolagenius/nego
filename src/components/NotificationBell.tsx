@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
     Bell,
     Check,
@@ -9,7 +9,6 @@ import {
     Info,
     Clock,
     AlertCircle,
-    MessageCircle,
     DollarSign,
     UserCheck,
     UserX,
