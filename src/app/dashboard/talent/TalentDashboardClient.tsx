@@ -20,6 +20,7 @@ import { useWallet } from '@/hooks/useWallet'
 import { NIGERIAN_LOCATIONS } from '@/lib/nigerian-locations'
 import { createClient } from '@/lib/supabase/client'
 import { getTalentUrl } from '@/lib/talent-url'
+import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import type { Profile, Wallet, ServiceType, Booking } from '@/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -165,10 +166,14 @@ export function TalentDashboardClient({
     const MIN_SERVICE_PRICE = 5000
 
     const formatPrice = (price: number) => {
-        return `${new Intl.NumberFormat('en-NG', {
+        const nairaAmount = price * COIN_TO_NAIRA_RATE;
+        const formattedNaira = new Intl.NumberFormat('en-NG', {
+            style: 'currency',
+            currency: 'NGN',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
-        }).format(price)} coins`
+        }).format(nairaAmount);
+        return `${price.toLocaleString()} coins (${formattedNaira})`;
     }
 
     const formatDate = (dateString: string) => {
@@ -930,7 +935,7 @@ export function TalentDashboardClient({
                                 <span>Available Balance</span>
                             </div>
                             <p className="text-3xl font-bold text-white mb-1">{(wallet?.balance || 0).toLocaleString()}</p>
-                            <p className="text-white/50 text-xs">coins (≈ ₦{((wallet?.balance || 0) * 10).toLocaleString()})</p>
+                            <p className="text-white/50 text-xs">coins (≈ ₦{((wallet?.balance || 0) * COIN_TO_NAIRA_RATE).toLocaleString()})</p>
                         </div>
 
                         <div className="p-5 rounded-2xl bg-gradient-to-br from-green-500/20 to-transparent border border-green-500/30 hover:border-green-500/50 transition-colors">
@@ -939,7 +944,7 @@ export function TalentDashboardClient({
                                 <span>Total Earnings</span>
                             </div>
                             <p className="text-3xl font-bold text-green-400 mb-1">{totalEarnings.toLocaleString()}</p>
-                            <p className="text-white/50 text-xs">coins earned</p>
+                            <p className="text-white/50 text-xs">coins earned (≈ ₦{(totalEarnings * COIN_TO_NAIRA_RATE).toLocaleString()})</p>
                         </div>
 
                         <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/20 to-transparent border border-amber-500/30 hover:border-amber-500/50 transition-colors">
@@ -1061,7 +1066,7 @@ export function TalentDashboardClient({
                                         <p className="text-white/60 text-xs mb-1.5 uppercase tracking-wide">Starting Price</p>
                                         <p className="text-2xl font-bold text-white">
                                             {menu.length > 0
-                                                ? `${Math.min(...menu.map(m => m.price)).toLocaleString()} coins`
+                                                ? `${formatPrice(Math.min(...menu.map(m => m.price)))}`
                                                 : 'Not set'
                                             }
                                         </p>
@@ -1471,7 +1476,7 @@ export function TalentDashboardClient({
                                 <div className="p-5 rounded-2xl bg-gradient-to-br from-green-500/20 to-transparent border border-green-500/30 hover:border-green-500/50 transition-colors">
                                     <p className="text-white/60 text-xs mb-2 uppercase tracking-wide">Total Earnings</p>
                                     <p className="text-3xl font-bold text-white mb-1">{totalEarnings.toLocaleString()}</p>
-                                    <p className="text-green-400 text-xs font-medium">coins earned</p>
+                                    <p className="text-green-400 text-xs font-medium">coins earned (≈ ₦{(totalEarnings * COIN_TO_NAIRA_RATE).toLocaleString()})</p>
                                 </div>
                                 <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-pink-500/30 transition-colors">
                                     <div className="flex items-center gap-2 mb-2">
@@ -1479,7 +1484,7 @@ export function TalentDashboardClient({
                                         <p className="text-white/60 text-xs uppercase tracking-wide">From Gifts</p>
                                     </div>
                                     <p className="text-2xl font-bold text-white">{giftEarnings.toLocaleString()}</p>
-                                    <p className="text-white/40 text-xs mt-1">coins</p>
+                                    <p className="text-white/40 text-xs mt-1">coins (≈ ₦{(giftEarnings * COIN_TO_NAIRA_RATE).toLocaleString()})</p>
                                 </div>
                                 <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-500/30 transition-colors">
                                     <div className="flex items-center gap-2 mb-2">
@@ -1487,7 +1492,7 @@ export function TalentDashboardClient({
                                         <p className="text-white/60 text-xs uppercase tracking-wide">Content Unlocks</p>
                                     </div>
                                     <p className="text-2xl font-bold text-white">{unlockEarnings.toLocaleString()}</p>
-                                    <p className="text-white/40 text-xs mt-1">coins</p>
+                                    <p className="text-white/40 text-xs mt-1">coins (≈ ₦{(unlockEarnings * COIN_TO_NAIRA_RATE).toLocaleString()})</p>
                                 </div>
                                 <div className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-blue-500/30 transition-colors">
                                     <div className="flex items-center gap-2 mb-2">
@@ -1495,7 +1500,7 @@ export function TalentDashboardClient({
                                         <p className="text-white/60 text-xs uppercase tracking-wide">Bookings</p>
                                     </div>
                                     <p className="text-2xl font-bold text-white">{bookingEarnings.toLocaleString()}</p>
-                                    <p className="text-white/40 text-xs mt-1">coins</p>
+                                    <p className="text-white/40 text-xs mt-1">coins (≈ ₦{(bookingEarnings * COIN_TO_NAIRA_RATE).toLocaleString()})</p>
                                 </div>
                             </div>
 
@@ -1534,7 +1539,7 @@ export function TalentDashboardClient({
                                                 </div>
                                                 <div className="text-right shrink-0">
                                                     <p className="text-white font-bold text-green-400 text-lg">+{gift.amount.toLocaleString()}</p>
-                                                    <p className="text-white/50 text-xs mt-0.5">coins</p>
+                                                    <p className="text-white/50 text-xs mt-0.5">coins (≈ ₦{(gift.amount * COIN_TO_NAIRA_RATE).toLocaleString()})</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -1586,7 +1591,7 @@ export function TalentDashboardClient({
                                                 </div>
                                                 <div className="text-right shrink-0">
                                                     <p className="text-white font-bold text-green-400 text-lg">+{tx.amount.toLocaleString()}</p>
-                                                    <p className="text-white/50 text-xs mt-0.5">coins</p>
+                                                    <p className="text-white/50 text-xs mt-0.5">coins (≈ ₦{(tx.amount * COIN_TO_NAIRA_RATE).toLocaleString()})</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -1610,7 +1615,7 @@ export function TalentDashboardClient({
                                     <div>
                                         <p className="text-white/60 text-xs mb-1.5 uppercase tracking-wide">Available Balance</p>
                                         <p className="text-4xl font-bold text-white mb-1">{(wallet?.balance || 0).toLocaleString()}</p>
-                                        <p className="text-white/50 text-sm">coins ≈ ₦{(wallet?.balance || 0).toLocaleString()}</p>
+                                        <p className="text-white/50 text-sm">coins ≈ ₦{((wallet?.balance || 0) * COIN_TO_NAIRA_RATE).toLocaleString()}</p>
                                     </div>
                                     <div className="w-20 h-20 rounded-2xl bg-[#df2531]/20 flex items-center justify-center border border-[#df2531]/30">
                                         <Coin size={40} weight="duotone" className="text-[#df2531]" aria-hidden="true" />
@@ -1646,7 +1651,7 @@ export function TalentDashboardClient({
                                     <li className="flex items-start gap-3">
                                         <CheckCircle size={18} weight="duotone" className="text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
                                         <div>
-                                            <span className="font-semibold">Minimum withdrawal:</span> 10,000 coins (₦10,000)
+                                            <span className="font-semibold">Minimum withdrawal:</span> {10000..toLocaleString()} coins (₦{(10000 * COIN_TO_NAIRA_RATE).toLocaleString()})
                                         </div>
                                     </li>
                                     <li className="flex items-start gap-3">
@@ -1728,7 +1733,7 @@ export function TalentDashboardClient({
                                                             <p className="text-red-400 font-bold text-lg">
                                                                 -{Math.abs(transaction.coins || transaction.amount || 0).toLocaleString()}
                                                             </p>
-                                                            <p className="text-white/50 text-xs">coins</p>
+                                                            <p className="text-white/50 text-xs">coins (≈ ₦{(Math.abs(transaction.coins || transaction.amount || 0) * COIN_TO_NAIRA_RATE).toLocaleString()})</p>
                                                         </div>
                                                     </div>
                                                     {transaction.status === 'completed' && (
@@ -1811,12 +1816,17 @@ export function TalentDashboardClient({
                                     />
                                     <p id="available-balance" className="text-white/50 text-xs mt-2 flex items-center gap-1.5">
                                         <Coin size={14} weight="duotone" aria-hidden="true" />
-                                        Available: <span className="font-semibold text-white">{(wallet?.balance || 0).toLocaleString()} coins</span>
+                                        Available: <span className="font-semibold text-white">{(wallet?.balance || 0).toLocaleString()} coins (≈ ₦{((wallet?.balance || 0) * COIN_TO_NAIRA_RATE).toLocaleString()})</span>
                                     </p>
+                                    {withdrawalAmount && (
+                                        <p className="text-green-400 text-xs mt-2 font-medium">
+                                            You will receive: ₦{(parseInt(withdrawalAmount) * COIN_TO_NAIRA_RATE).toLocaleString()}
+                                        </p>
+                                    )}
                                     {withdrawalAmount && parseInt(withdrawalAmount) < 10000 && (
                                         <p className="text-amber-400 text-xs mt-1.5 flex items-center gap-1.5" role="alert">
                                             <Warning size={14} weight="duotone" aria-hidden="true" />
-                                            Minimum withdrawal is 10,000 coins
+                                            Minimum withdrawal is 10,000 coins (₦{(10000 * COIN_TO_NAIRA_RATE).toLocaleString()})
                                         </p>
                                     )}
                                 </div>

@@ -3,7 +3,7 @@
 import {
     CheckCircle, XCircle, Flag, User, Calendar,
     X, VideoCamera, ShieldCheck, ArrowCounterClockwise,
-    CaretLeft, CaretRight
+    CaretLeft, CaretRight, Trash
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -495,6 +495,43 @@ export function ContentModerationClient({
         }
     }
 
+    const handleDeleteMedia = async () => {
+        if (!selectedMedia) return
+
+        if (!window.confirm('Are you sure you want to permanently delete this media? This action cannot be undone.')) {
+            return
+        }
+
+        setIsProcessing(true)
+        try {
+            const response = await fetch(`/api/admin/media/${selectedMedia.id}`, {
+                method: 'DELETE',
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to delete media')
+            }
+
+            toast.success('Media deleted successfully')
+
+            // Update local state
+            setAllMedia(prev => prev.filter(m => m.id !== selectedMedia.id))
+            setPendingMedia(prev => prev.filter(m => m.id !== selectedMedia.id))
+            setFlaggedMedia(prev => prev.filter(m => m.id !== selectedMedia.id))
+
+            setShowDetailModal(false)
+            setSelectedMedia(null)
+            router.refresh()
+        } catch (error: any) {
+            console.error('Delete error:', error)
+            toast.error(error.message || 'Failed to delete media')
+        } finally {
+            setIsProcessing(false)
+        }
+    }
+
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-NG', {
             month: 'short',
@@ -977,6 +1014,70 @@ export function ContentModerationClient({
                                         }
                                         return null
                                     })()}
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="pt-4 border-t border-white/10 space-y-3">
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedMedia.moderation_status !== 'approved' && (
+                                            <Button
+                                                onClick={() => handleModerate(selectedMedia.id, 'approved')}
+                                                disabled={isProcessing}
+                                                className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                                            >
+                                                <CheckCircle size={18} className="mr-2" />
+                                                Approve
+                                            </Button>
+                                        )}
+                                        {selectedMedia.moderation_status !== 'rejected' && (
+                                            <Button
+                                                onClick={() => handleModerate(selectedMedia.id, 'rejected')}
+                                                disabled={isProcessing}
+                                                variant="outline"
+                                                className="border-red-500/50 text-red-500 hover:bg-red-500/10 flex-1"
+                                            >
+                                                <XCircle size={18} className="mr-2" />
+                                                Reject
+                                            </Button>
+                                        )}
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        {!selectedMedia.flagged ? (
+                                            <Button
+                                                onClick={() => {
+                                                    const reason = window.prompt('Reason for flagging:')
+                                                    if (reason) handleFlag(selectedMedia.id, reason)
+                                                }}
+                                                disabled={isProcessing}
+                                                variant="outline"
+                                                className="border-amber-500/50 text-amber-500 hover:bg-amber-500/10 flex-1"
+                                            >
+                                                <Flag size={18} className="mr-2" />
+                                                Flag Media
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                onClick={() => handleUnflag(selectedMedia.id)}
+                                                disabled={isProcessing}
+                                                variant="outline"
+                                                className="border-blue-500/50 text-blue-500 hover:bg-blue-500/10 flex-1"
+                                            >
+                                                <ArrowCounterClockwise size={18} className="mr-2" />
+                                                Unflag
+                                            </Button>
+                                        )}
+
+                                        <Button
+                                            onClick={handleDeleteMedia}
+                                            disabled={isProcessing}
+                                            variant="outline"
+                                            className="border-red-600 text-red-600 hover:bg-red-600/10 flex-1"
+                                        >
+                                            <Trash size={18} className="mr-2" />
+                                            Delete
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

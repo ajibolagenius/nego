@@ -5,6 +5,7 @@ import {
     CheckCircle, XCircle, Hourglass, CaretRight, Coin,
     MagnifyingGlass, ShieldCheck
 } from '@phosphor-icons/react'
+import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -226,12 +227,14 @@ export function BookingsClient({ user: _user, profile, bookings, isClient }: Boo
 
                                             {/* Price & Arrow */}
                                             <div className="flex items-center gap-3">
-                                                <div className="text-right">
+                                                <div className="text-right flex flex-col items-end">
                                                     <p className="text-white font-bold flex items-center gap-1">
                                                         <Coin size={16} weight="duotone" className="text-[#df2531]" />
-                                                        {booking.total_price}
+                                                        {booking.total_price.toLocaleString()}
                                                     </p>
-                                                    <p className="text-white/40 text-xs">coins</p>
+                                                    <p className="text-white/40 text-[10px] whitespace-nowrap">
+                                                        ₦{(booking.total_price * COIN_TO_NAIRA_RATE).toLocaleString()}
+                                                    </p>
                                                 </div>
                                                 <CaretRight size={20} className="text-white/30" />
                                             </div>

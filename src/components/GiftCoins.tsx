@@ -18,6 +18,7 @@ import Link from 'next/link'
 import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { GIFT_CONSTANTS, isValidUUID, isValidAmount as _isValidAmount } from '@/lib/gift-validation'
+import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 
 interface GiftCoinsProps {
     talentId: string
@@ -309,7 +310,7 @@ export function GiftCoins({
                                     </div>
                                     <h3 className="text-xl font-bold text-white mb-2">Gift Sent!</h3>
                                     <p className="text-white/60">
-                                        You sent {effectiveAmount.toLocaleString()} coins to {talentName}
+                                        You sent {effectiveAmount.toLocaleString()} coins ({(effectiveAmount * COIN_TO_NAIRA_RATE).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })}) to {talentName}
                                     </p>
                                     <span className="sr-only">Gift sent successfully</span>
                                 </div>
@@ -424,7 +425,7 @@ export function GiftCoins({
                                                 <div>
                                                     <p className="text-white/50 text-xs">Your Balance</p>
                                                     <p className={`font-bold ${hasInsufficientBalance ? 'text-amber-400' : 'text-white'}`}>
-                                                        {senderBalance.toLocaleString()} coins
+                                                        {senderBalance.toLocaleString()} coins ({(senderBalance * COIN_TO_NAIRA_RATE).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })})
                                                     </p>
                                                 </div>
                                             </div>
@@ -443,7 +444,7 @@ export function GiftCoins({
                                             <div className="mt-3 pt-3 border-t border-amber-500/20 flex items-center gap-2">
                                                 <Warning size={16} className="text-amber-400" aria-hidden="true" />
                                                 <p className="text-amber-400 text-sm">
-                                                    You need <span className="font-bold">{(effectiveAmount - senderBalance).toLocaleString()}</span> more coins
+                                                    You need <span className="font-bold">{(effectiveAmount - senderBalance).toLocaleString()}</span> more coins (₦{((effectiveAmount - senderBalance) * COIN_TO_NAIRA_RATE).toLocaleString()})
                                                 </p>
                                             </div>
                                         )}
@@ -470,10 +471,15 @@ export function GiftCoins({
                                             <span className="sr-only">Sending gift...</span>
                                         </>
                                     ) : (
-                                        <>
-                                            <Gift size={20} className="mr-2" aria-hidden="true" />
-                                            Send {effectiveAmount > 0 ? effectiveAmount.toLocaleString() : '0'} Coins
-                                        </>
+                                        <div className="flex flex-col items-center">
+                                            <div className="flex items-center gap-2">
+                                                <Gift size={20} aria-hidden="true" />
+                                                <span>Send {effectiveAmount > 0 ? effectiveAmount.toLocaleString() : '0'} Coins</span>
+                                            </div>
+                                            <span className="text-[10px] opacity-70">
+                                                ({(effectiveAmount * COIN_TO_NAIRA_RATE).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })})
+                                            </span>
+                                        </div>
                                     )}
                                 </Button>
                                 <p className="text-white/40 text-xs text-center mt-3">

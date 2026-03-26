@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import type { Wallet } from '@/types/database'
 
 // Note: We use a separate supabase instance for notifications to avoid circular dependencies
@@ -123,7 +124,7 @@ export function useWallet({ userId, initialWallet, autoRefresh = true }: UseWall
                             user_id: userId,
                             type: 'low_balance',
                             title: 'Low Balance Warning ⚠️',
-                            message: `Your balance is low (${updatedWallet.balance.toLocaleString()} coins). Consider topping up to continue enjoying our services.`,
+                            message: `Your balance is low (${updatedWallet.balance.toLocaleString()} coins - ₦${(updatedWallet.balance * COIN_TO_NAIRA_RATE).toLocaleString()}). Consider topping up to continue enjoying our services.`,
                             data: {
                                 current_balance: updatedWallet.balance,
                                 threshold: 100,

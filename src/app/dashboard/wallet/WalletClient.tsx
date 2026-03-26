@@ -13,7 +13,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { Button } from '@/components/ui/button'
 import { useWallet } from '@/hooks/useWallet'
-import { formatNaira, type CoinPackage } from '@/lib/coinPackages'
+import { formatNaira, type CoinPackage, COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, Wallet, Transaction } from '@/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -872,14 +872,17 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                                 <span className="text-white/70 text-xl">coins</span>
                             </div>
                             <p className="text-white/50 text-sm mb-4">
-                                ≈ {formatNaira((wallet?.balance || 0) * 10)} (1 coin = ₦10)
+                                ≈ {formatNaira((wallet?.balance || 0) * COIN_TO_NAIRA_RATE)} (1 coin = ₦{COIN_TO_NAIRA_RATE})
                             </p>
 
                             <div className="flex flex-wrap gap-4">
                                 {(wallet?.escrow_balance || 0) > 0 && (
-                                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10">
-                                        <Clock size={14} className="text-white/70" aria-hidden="true" />
-                                        <span className="text-white/80 text-sm">{wallet?.escrow_balance?.toLocaleString()} in escrow</span>
+                                    <div className="flex flex-col gap-1 px-3 py-1.5 rounded-2xl bg-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <Clock size={14} className="text-white/70" aria-hidden="true" />
+                                            <span className="text-white/80 text-sm font-medium">{wallet?.escrow_balance?.toLocaleString()} in escrow</span>
+                                        </div>
+                                        <span className="text-white/40 text-[10px] pl-5">≈ {formatNaira((wallet?.escrow_balance || 0) * COIN_TO_NAIRA_RATE)}</span>
                                     </div>
                                 )}
                             </div>
@@ -894,7 +897,7 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                                 <span className="text-sm font-medium">Total Received</span>
                             </div>
                             <p className="text-2xl font-bold text-white">{totalReceived.toLocaleString()}</p>
-                            <p className="text-white/40 text-xs">coins total</p>
+                            <p className="text-white/40 text-xs">coins (≈ {formatNaira(totalReceived * COIN_TO_NAIRA_RATE)})</p>
                         </div>
                         <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
                             <div className="flex items-center gap-2 text-red-400 mb-2">
@@ -902,7 +905,7 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                                 <span className="text-sm font-medium">Total Spent</span>
                             </div>
                             <p className="text-2xl font-bold text-white">{totalSpent.toLocaleString()}</p>
-                            <p className="text-white/40 text-xs">coins total</p>
+                            <p className="text-white/40 text-xs">coins (≈ {formatNaira(totalSpent * COIN_TO_NAIRA_RATE)})</p>
                         </div>
                     </div>
 
@@ -1076,7 +1079,10 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
                                                     <p className={`font-bold ${isCredit ? 'text-green-400' : 'text-red-400'}`}>
                                                         {isCredit ? '+' : '-'}{amount.toLocaleString()}
                                                     </p>
-                                                    <p className="text-white/40 text-xs">
+                                                    <p className="text-white/30 text-[10px]">
+                                                        ≈ {formatNaira(amount * COIN_TO_NAIRA_RATE)}
+                                                    </p>
+                                                    <p className="text-white/40 text-[10px] mt-0.5">
                                                         {formatDate(transaction.created_at)}
                                                     </p>
                                                 </div>

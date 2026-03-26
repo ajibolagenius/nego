@@ -8,6 +8,7 @@ import { useState, Fragment } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import type { CoinPackage } from '@/types/database'
 
 interface CoinPackagesClientProps {
@@ -64,7 +65,7 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
         setEditingPackage(pkg)
         setFormData({
             coins: pkg.coins.toString(),
-            price: (pkg.price / 100).toString(), // Convert from kobo to naira for display
+            price: pkg.price.toString(), // Price is stored in Naira
             display_name: pkg.display_name,
             description: pkg.description || '',
             popular: pkg.popular,
@@ -376,7 +377,16 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
                                         <input
                                             type="number"
                                             value={formData.coins}
-                                            onChange={(e) => setFormData({ ...formData, coins: e.target.value })}
+                                            onChange={(e) => {
+                                                const val = e.target.value
+                                                const coins = parseInt(val) || 0
+                                                const price = coins * COIN_TO_NAIRA_RATE
+                                                setFormData({ 
+                                                    ...formData, 
+                                                    coins: val,
+                                                    price: val ? price.toString() : '' 
+                                                })
+                                            }}
                                             placeholder="1000"
                                             min="1"
                                             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50"
@@ -394,6 +404,9 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
                                             step="0.01"
                                             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50"
                                         />
+                                        <p className="text-white/40 text-[10px] mt-1 italic">
+                                            Auto-calculated at 1 coin = ₦{COIN_TO_NAIRA_RATE}
+                                        </p>
                                     </div>
                                 </div>
 

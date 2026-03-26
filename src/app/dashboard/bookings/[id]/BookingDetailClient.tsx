@@ -5,6 +5,7 @@ import {
     SpinnerGap, WarningCircle, CreditCard, ShieldCheck,
     Receipt, Coin, CaretRight, XCircle, User, Star, Hourglass, Wallet as WalletIcon, Hash
 } from '@phosphor-icons/react'
+import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -107,10 +108,12 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
     }, [booking.id, booking.status, booking.talent_id, isTalent])
 
     const formatPrice = (price: number) => {
-        return `${new Intl.NumberFormat('en-NG', {
+        const coins = new Intl.NumberFormat('en-NG', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
-        }).format(price)} coins`
+        }).format(price)
+        const naira = (price * COIN_TO_NAIRA_RATE).toLocaleString()
+        return `${coins} coins (₦${naira})`
     }
 
     const formatDate = (dateString: string) => {
@@ -349,7 +352,7 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
             } else {
                 console.log('[BookingDetail] Escrow released successfully:', result)
                 toast.success('Escrow Released', {
-                    description: `₦${(result.releasedAmount || booking.total_price).toLocaleString()} has been added to your available balance.`
+                    description: `₦${((result.releasedAmount || booking.total_price) * COIN_TO_NAIRA_RATE).toLocaleString()} has been added to your available balance.`
                 })
                 setEscrowReleased(true)
 
@@ -516,7 +519,12 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                                 <Coin size={24} weight="duotone" className="text-[#df2531]" />
                                 <div>
                                     <p className="text-white/50 text-xs">Your Balance</p>
-                                    <p className="text-white font-bold">{wallet?.balance || 0} coins</p>
+                                    <p className="text-white font-bold">
+                                        {wallet?.balance || 0} coins
+                                        <span className="text-white/40 text-xs ml-2 font-normal">
+                                            (₦{((wallet?.balance || 0) * COIN_TO_NAIRA_RATE).toLocaleString()})
+                                        </span>
+                                    </p>
                                 </div>
                             </div>
                             <Link href="/dashboard/wallet" className="text-[#df2531] text-sm hover:underline">

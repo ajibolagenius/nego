@@ -3,7 +3,7 @@
 import {
     House, User, Wallet, CalendarCheck, Heart, Gear, SignOut,
     MagnifyingGlass, Coin, ArrowRight, SpinnerGap, MapPin,
-    Plus, CaretRight, Briefcase, ChatCircle, Gift, Bell, CheckCircle, X, Warning, Envelope
+    Plus, CaretRight, Briefcase, ChatCircle, Gift, Bell, CheckCircle, X, Warning, Envelope, ShieldCheck
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -81,6 +81,10 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
     const [showVerificationBanner, setShowVerificationBanner] = useState(false)
     const [sendingVerificationEmail, setSendingVerificationEmail] = useState(false)
     const [verificationEmailSent, setVerificationEmailSent] = useState(false)
+    const [showTalentVerificationBanner, setShowTalentVerificationBanner] = useState(false)
+
+    const isTalent = profile?.role === 'talent'
+    const userRole = isTalent ? 'talent' : 'client'
 
     // Real-time wallet synchronization
     const { wallet } = useWallet({ userId: user.id, initialWallet })
@@ -100,6 +104,13 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
             setShowVerificationBanner(true)
         }
     }, [needsVerification, showSuccessBanner, showClientVerificationUI])
+
+    // Show talent verification hasten banner
+    useEffect(() => {
+        if (isTalent && profile?.is_verified !== true) {
+            setShowTalentVerificationBanner(true)
+        }
+    }, [isTalent, profile?.is_verified])
 
     const handleSendVerificationEmail = async () => {
         setSendingVerificationEmail(true)
@@ -147,12 +158,9 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
         }
     }
 
-    // Use featuredTalents from props, fallback to empty array
     const talents = featuredTalents.length > 0 ? featuredTalents : []
 
-    const isTalent = profile?.role === 'talent'
     const navItems = isTalent ? talentNavItems : clientNavItems
-    const userRole = isTalent ? 'talent' : 'client'
 
     // Onboarding modal
     const { showOnboarding, completeOnboarding } = useOnboarding(userRole, user.id)
@@ -257,7 +265,35 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                 </div>
             )}
 
-            <div className={`min-h-screen bg-black flex pt-16 lg:pt-0 pb-20 lg:pb-0 ${(showSuccessBanner || showVerificationBanner) && profile?.role === 'client' ? 'pt-16' : ''}`}>
+            {/* Talent Verification Hasten Banner */}
+            {isTalent && showTalentVerificationBanner && profile?.is_verified !== true && (
+                <div className="fixed top-0 left-0 right-0 z-50 bg-[#df2531]/10 border-b border-[#df2531]/20 backdrop-blur-xl">
+                    <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <ShieldCheck size={20} weight="duotone" className="text-[#df2531] shrink-0" />
+                            <p className="text-white text-sm font-medium">
+                                Pro Tip: Uploading media and keeping your profile updated helps us verify your account faster!
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Link href="/dashboard/profile">
+                                <Button size="sm" className="bg-[#df2531] hover:bg-[#c41f2a] text-white text-xs px-3 py-1.5 h-auto rounded-lg">
+                                    Update Profile
+                                </Button>
+                            </Link>
+                            <button
+                                onClick={() => setShowTalentVerificationBanner(false)}
+                                className="text-white/40 hover:text-white transition-colors"
+                                aria-label="Dismiss notification"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className={`min-h-screen bg-black flex pt-16 lg:pt-0 pb-20 lg:pb-0 ${(showSuccessBanner || showVerificationBanner || (isTalent && showTalentVerificationBanner && profile?.is_verified !== true)) ? 'pt-16' : ''}`}>
                 {/* Sidebar - Fixed on desktop */}
                 <aside className="hidden lg:flex flex-col w-64 bg-white/5 border-r border-white/10 fixed left-0 top-0 h-screen z-30 overflow-y-auto">
                     {/* Logo */}

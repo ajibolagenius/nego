@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 export interface AuditLogEntry {
     admin_id: string
     action: string
-    resource_type: 'verification' | 'withdrawal' | 'payout' | 'user' | 'booking'
+    resource_type: 'verification' | 'withdrawal' | 'payout' | 'user' | 'booking' | 'media'
     resource_id: string
     details?: Record<string, unknown>
     ip_address?: string

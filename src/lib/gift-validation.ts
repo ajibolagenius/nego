@@ -4,6 +4,7 @@
  * Centralized validation rules for the gifting system.
  * Used by both frontend and API to ensure consistent validation.
  */
+import { COIN_TO_NAIRA_RATE } from './coinPackages'
 
 // Constants
 export const GIFT_CONSTANTS = {
@@ -105,11 +106,11 @@ export function validateGiftRequest(data: unknown): ValidationResult {
   }
   
   if (amount < GIFT_CONSTANTS.MIN_AMOUNT) {
-    return { valid: false, error: `Minimum gift amount is ${GIFT_CONSTANTS.MIN_AMOUNT} coins`, field: 'amount' }
+    return { valid: false, error: `Minimum gift amount is ${GIFT_CONSTANTS.MIN_AMOUNT} coins (₦${(GIFT_CONSTANTS.MIN_AMOUNT * COIN_TO_NAIRA_RATE).toLocaleString()})`, field: 'amount' }
   }
   
   if (amount > GIFT_CONSTANTS.MAX_AMOUNT) {
-    return { valid: false, error: `Maximum gift amount is ${GIFT_CONSTANTS.MAX_AMOUNT} coins`, field: 'amount' }
+    return { valid: false, error: `Maximum gift amount is ${GIFT_CONSTANTS.MAX_AMOUNT} coins (₦${(GIFT_CONSTANTS.MAX_AMOUNT * COIN_TO_NAIRA_RATE).toLocaleString()})`, field: 'amount' }
   }
 
   // Validate message (optional)

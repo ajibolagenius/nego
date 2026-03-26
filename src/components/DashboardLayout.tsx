@@ -12,6 +12,7 @@ import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { NotificationBell } from '@/components/NotificationBell'
 import { useWallet } from '@/hooks/useWallet'
 import { createClient } from '@/lib/supabase/client'
+import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import type { Profile, Wallet as WalletType } from '@/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -181,7 +182,7 @@ export function DashboardLayout({
                                     <Coin size={18} weight="duotone" className="text-[#df2531]" />
                                     <div className="flex flex-col items-end">
                                         <span className="text-white font-medium text-sm">{wallet?.balance || 0}</span>
-                                        <span className="text-white/50 text-[10px]">₦{((wallet?.balance || 0) * 10).toLocaleString()}</span>
+                                        <span className="text-white/50 text-[10px]">₦{((wallet?.balance || 0) * COIN_TO_NAIRA_RATE).toLocaleString()}</span>
                                     </div>
                                     <Plus size={14} weight="bold" className="text-[#df2531]" />
                                 </Link>

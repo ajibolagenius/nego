@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 
 // Initialize Resend client only when needed to prevent build-time errors
 // const resend = new Resend(process.env.RESEND_API_KEY)
@@ -170,7 +171,7 @@ export const emailTemplates = {
           ${bookingAmount.toLocaleString()} coins
         </p>
         <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0;">
-          ≈ ₦${bookingAmount.toLocaleString()}
+          ≈ ₦${(bookingAmount * COIN_TO_NAIRA_RATE).toLocaleString()}
         </p>
       </div>
 
@@ -268,6 +269,9 @@ export const emailTemplates = {
           ${amount.toLocaleString()} coins
         </p>
         <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0;">
+          ≈ ₦${(amount * COIN_TO_NAIRA_RATE).toLocaleString()}
+        </p>
+        <p style="color: rgba(255,255,255,0.4); font-size: 11px; margin: 4px 0 0 0;">
           Processing within 24-48 hours
         </p>
       </div>
@@ -297,7 +301,7 @@ export const emailTemplates = {
       </h1>
 
       <p style="${styles.text}; text-align: center;">
-        Hi ${talentName}, unfortunately your withdrawal request for <span style="${styles.highlight}">${amount.toLocaleString()} coins</span> could not be processed.
+        Hi ${talentName}, unfortunately your withdrawal request for <span style="${styles.highlight}">${amount.toLocaleString()} coins (₦${(amount * COIN_TO_NAIRA_RATE).toLocaleString()})</span> could not be processed.
       </p>
 
       ${reason ? `

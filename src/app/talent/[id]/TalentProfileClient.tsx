@@ -23,6 +23,7 @@ import { useWallet } from '@/hooks/useWallet'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, ServiceType, TalentMenu, Media, Wallet, Review } from '@/types/database'
 import type { Icon } from '@phosphor-icons/react'
+import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 
 interface TalentWithDetails extends Profile {
     talent_menus: (TalentMenu & { service_type: ServiceType })[]
@@ -284,7 +285,7 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
                                                 onClick={(e) => handleUnlock(item, e)}
                                                 disabled={unlocking === item.id}
                                                 className="flex flex-col items-center gap-2.5 p-5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:from-amber-500/30 hover:to-orange-500/30 transition-all disabled:opacity-50"
-                                                aria-label={`Unlock premium content for ${item.unlock_price} coins`}
+                                                aria-label={`Unlock premium content for ${item.unlock_price} coins (₦${(item.unlock_price * COIN_TO_NAIRA_RATE).toLocaleString()})`}
                                             >
                                                 {unlocking === item.id ? (
                                                     <>
@@ -297,10 +298,13 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
                                                         <div className="text-center">
                                                             <span className="text-white text-sm font-semibold block">
                                                                 Unlock for {item.unlock_price} coins
+                                                                <span className="block text-xs opacity-75">
+                                                                    (₦{(item.unlock_price * COIN_TO_NAIRA_RATE).toLocaleString()})
+                                                                </span>
                                                             </span>
                                                             {userBalance < item.unlock_price && (
                                                                 <span className="text-red-400 text-xs mt-1 block">
-                                                                    Need {item.unlock_price - userBalance} more coins
+                                                                    Need {(item.unlock_price - userBalance).toLocaleString()} more (₦{((item.unlock_price - userBalance) * COIN_TO_NAIRA_RATE).toLocaleString()})
                                                                 </span>
                                                             )}
                                                         </div>
@@ -642,7 +646,7 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
     const [currentBalance, setCurrentBalance] = useState(userBalance)
 
     const formatPrice = (price: number) => {
-        const nairaEquivalent = price * 10
+        const nairaEquivalent = price * COIN_TO_NAIRA_RATE
         return `${new Intl.NumberFormat('en-NG', {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
@@ -1403,15 +1407,15 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                                     </p>
                                     <div className="flex items-center gap-3 flex-wrap">
                                         <div>
-                                            <p className="text-white text-2xl font-bold">{totalPrice}</p>
-                                            <p className="text-white/50 text-xs">coins total</p>
+                                            <p className="text-white text-2xl font-bold">{totalPrice} coins</p>
+                                            <p className="text-white/50 text-xs">{(totalPrice * COIN_TO_NAIRA_RATE).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })} total</p>
                                         </div>
                                         <span className="text-white/20 text-xl" aria-hidden="true">•</span>
                                         <div>
                                             <p className={`text-lg font-semibold ${hasInsufficientBalance ? 'text-amber-400' : 'text-green-400'}`}>
                                                 {userBalance} coins
                                             </p>
-                                            <p className="text-white/50 text-xs">your balance</p>
+                                            <p className="text-white/50 text-xs">{(userBalance * COIN_TO_NAIRA_RATE).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })} balance</p>
                                         </div>
                                     </div>
                                 </div>

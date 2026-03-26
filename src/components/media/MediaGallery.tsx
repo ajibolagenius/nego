@@ -6,6 +6,7 @@ import {
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import { isVideo } from '@/lib/media-utils'
+import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import { TalentMedia, ViewMode } from './types'
 
 interface MediaGalleryProps {
@@ -58,7 +59,7 @@ export function MediaGallery({ items, viewMode, deletingId, onDelete }: MediaGal
                                 </span>
                                 {item.is_premium && (
                                     <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-semibold border border-amber-500/30">
-                                        {item.unlock_price} coins
+                                        {item.unlock_price} coins (₦{(item.unlock_price * COIN_TO_NAIRA_RATE).toLocaleString()})
                                     </span>
                                 )}
                             </div>
@@ -120,7 +121,7 @@ export function MediaGallery({ items, viewMode, deletingId, onDelete }: MediaGal
                     {item.is_premium && (
                         <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold shadow-lg shadow-amber-500/30">
                             <Crown size={14} weight="fill" aria-hidden="true" />
-                            {item.unlock_price} coins
+                            {item.unlock_price} coins (₦{(item.unlock_price * COIN_TO_NAIRA_RATE).toLocaleString()})
                         </div>
                     )}
 
