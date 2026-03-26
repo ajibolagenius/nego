@@ -5,10 +5,10 @@ import { NextResponse } from "next/server";
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const mediaId = params.id;
+    const { id: mediaId } = await params;
     if (!mediaId) {
       return NextResponse.json({ error: "Media ID is required" }, { status: 400 });
     }

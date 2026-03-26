@@ -5,10 +5,10 @@ import { NextResponse } from 'next/server'
 
 export async function DELETE(
     _request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params
+        const { id } = await params
         const admin = await validateAdmin()
 
         if (!admin.isValid || !admin.userId) {
