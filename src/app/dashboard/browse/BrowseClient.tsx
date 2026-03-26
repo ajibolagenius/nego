@@ -7,7 +7,7 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ import { useFavorites } from '@/hooks/useFavorites'
 import { NIGERIAN_LOCATIONS, locationMatches } from '@/lib/nigerian-locations'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile, ServiceType, TalentMenu } from '@/types/database'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 interface TalentWithMenu extends Profile {
     talent_menus: (TalentMenu & { service_type: ServiceType })[]
@@ -38,7 +39,14 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
     const [selectedService, setSelectedService] = useState<string | null>(null)
     const [selectedAvailability, setSelectedAvailability] = useState<'all' | 'online' | 'offline' | 'booked'>('all')
     const [showFilters, setShowFilters] = useState(false)
-    const [sortBy, setSortBy] = useState<'recent' | 'price_low' | 'price_high'>('recent')
+    const [sortBy, setSortBy] = useState<'random' | 'recent' | 'price_low' | 'price_high'>('random')
+    const [visibleCount, setVisibleCount] = useState(20)
+    const loaderRef = useRef<HTMLDivElement>(null)
+
+    // Shuffle talents once on component mount for stable "random" order
+    const shuffledTalents = useMemo(() => {
+        return [...talents].sort(() => Math.random() - 0.5)
+    }, [talents])
 
     const filteredTalents = useMemo(() => {
         let result = [...talents]
@@ -75,10 +83,36 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
             result.sort((a, b) => (a.starting_price || 0) - (b.starting_price || 0))
         } else if (sortBy === 'price_high') {
             result.sort((a, b) => (b.starting_price || 0) - (a.starting_price || 0))
+        } else if (sortBy === 'recent') {
+            result.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
         }
 
         return result
-    }, [talents, searchQuery, selectedLocation, selectedService, selectedAvailability, sortBy])
+    }, [talents, shuffledTalents, searchQuery, selectedLocation, selectedService, selectedAvailability, sortBy])
+
+    // Reset visibility when filters change
+    useEffect(() => {
+        setVisibleCount(20)
+    }, [searchQuery, selectedLocation, selectedService, selectedAvailability, sortBy])
+
+    // Infinite scroll observer
+    useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0]?.isIntersecting) {
+                setVisibleCount(prev => prev + 20)
+            }
+        }, { threshold: 0.1 })
+
+        if (loaderRef.current) {
+            observer.observe(loaderRef.current)
+        }
+
+        return () => observer.disconnect()
+    }, [filteredTalents.length])
+
+    const displayedTalents = useMemo(() => {
+        return filteredTalents.slice(0, visibleCount)
+    }, [filteredTalents, visibleCount])
 
     const formatPrice = (price: number) => {
         return `${new Intl.NumberFormat('en-NG', {
@@ -99,7 +133,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                             </Link>
                             <div className="flex-1">
                                 <h1 className="text-xl font-bold text-white">Browse Talent</h1>
-                                <p className="text-white/50 text-sm">{filteredTalents.length} available</p>
+                                <p className="text-white/50 text-sm">{(filteredTalents || []).length} available</p>
                             </div>
                         </div>
                     </div>
@@ -227,8 +261,9 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                             {/* Sort */}
                             <div className="mt-6 pt-4 border-t border-white/10">
                                 <h3 className="text-white font-semibold mb-3">Sort by</h3>
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap gap-2">
                                     {[
+                                        { value: 'random', label: 'Random Mix' },
                                         { value: 'recent', label: 'Most Recent' },
                                         { value: 'price_low', label: 'Price: Low to High' },
                                         { value: 'price_high', label: 'Price: High to Low' },
@@ -250,17 +285,32 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                     )}
 
                     {/* Results Grid */}
-                    {filteredTalents.length === 0 ? (
+                    {displayedTalents.length === 0 ? (
                         <div className="text-center py-20">
                             <p className="text-white/50 text-lg mb-4">No talents found</p>
                             <p className="text-white/30 text-sm">Try adjusting your filters</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                            {filteredTalents.map((talent) => (
-                                <TalentCard key={talent.id} talent={talent} formatPrice={formatPrice} userId={userId} />
-                            ))}
-                        </div>
+                        <>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                                {displayedTalents.map((talent) => (
+                                    <TalentCard key={talent.id} talent={talent} formatPrice={formatPrice} userId={userId} />
+                                ))}
+                            </div>
+
+                            {/* Infinite Scroll Loader */}
+                            {visibleCount < filteredTalents.length && (
+                                <div ref={loaderRef} className="py-12 flex justify-center">
+                                    <LoadingSpinner size="sm" />
+                                </div>
+                            )}
+
+                            {visibleCount >= filteredTalents.length && filteredTalents.length > 0 && (
+                                <div className="py-12 text-center">
+                                    <p className="text-white/20 text-sm">You've reached the end of the list</p>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
