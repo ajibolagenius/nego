@@ -3,7 +3,6 @@
 import { 
     TrendUp, 
     CalendarCheck, 
-    Money, 
     Receipt, 
     User, 
     ArrowLeft,

@@ -1,6 +1,6 @@
 'use client'
 
-import { UserCheck, Money, Users, CalendarCheck, Warning, TrendUp } from '@phosphor-icons/react'
+import { UserCheck, Money, Users, Warning, TrendUp } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -8,7 +8,6 @@ import { createClient } from '@/lib/supabase/client'
 interface AdminDashboardClientProps {
     initialPendingVerifications: number
     initialTotalUsers: number
-    initialTotalBookings: number
     initialPendingPayouts: number
     initialPendingDisputes: number
     initialTotalRevenue: number
@@ -17,7 +16,6 @@ interface AdminDashboardClientProps {
 export function AdminDashboardClient({
     initialPendingVerifications,
     initialTotalUsers,
-    initialTotalBookings,
     initialPendingPayouts,
     initialPendingDisputes,
     initialTotalRevenue,
@@ -27,7 +25,6 @@ export function AdminDashboardClient({
 
     const [pendingVerifications, setPendingVerifications] = useState(initialPendingVerifications)
     const [totalUsers, setTotalUsers] = useState(initialTotalUsers)
-    const [totalBookings, setTotalBookings] = useState(initialTotalBookings)
     const [pendingPayouts, setPendingPayouts] = useState(initialPendingPayouts)
     const [pendingDisputes, setPendingDisputes] = useState(initialPendingDisputes)
     const [totalRevenue, setTotalRevenue] = useState(initialTotalRevenue)
@@ -81,23 +78,7 @@ export function AdminDashboardClient({
                     }
                 }
             )
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'bookings',
-                },
-                async () => {
-                    // Refetch total bookings count
-                    const { count } = await supabase
-                        .from('bookings')
-                        .select('*', { count: 'exact', head: true })
-                    if (count !== null) {
-                        setTotalBookings(count)
-                    }
-                }
-            )
+
             .on(
                 'postgres_changes',
                 {

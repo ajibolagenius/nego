@@ -20,12 +20,10 @@ export default async function AdminDashboardPage() {
     const [
         { count: pendingVerifications },
         { count: totalUsers },
-        { count: totalBookings },
         { count: pendingPayouts },
     ] = await Promise.all([
         supabase.from('verifications').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('bookings').select('*', { count: 'exact', head: true }),
         supabase.from('withdrawal_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
     ])
 
@@ -47,7 +45,6 @@ export default async function AdminDashboardPage() {
         <AdminDashboardClient
             initialPendingVerifications={pendingVerifications ?? 0}
             initialTotalUsers={totalUsers ?? 0}
-            initialTotalBookings={totalBookings ?? 0}
             initialPendingPayouts={pendingPayouts ?? 0}
             initialPendingDisputes={pendingDisputes ?? 0}
             initialTotalRevenue={totalRevenue}
