@@ -6,7 +6,7 @@ import {
     CaretRight, Coin, CheckCircle, XCircle, Hourglass, X,
     Camera, MapPin, Sparkle, Receipt, ChartLine, Icon, Bank, Money, Gift,
     Warning, SpinnerGap, ForkKnife, Airplane, Lock, Calendar, Moon, Heart, CaretDown,
-    ShieldCheck
+    ShieldCheck, Info
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -1038,6 +1038,27 @@ export function TalentDashboardClient({
                                     </div>
                                 </div>
                             )}
+
+                            {/* Service Fee Notice Banner */}
+                            <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/5 border border-blue-500/20 shadow-lg shadow-blue-500/5 transition-all mb-6">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 shrink-0">
+                                        <Receipt size={24} weight="duotone" className="text-blue-400" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h4 className="text-lg font-bold text-white">Platform Service Fee</h4>
+                                            <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-wider border border-blue-500/30">
+                                                Notice
+                                            </span>
+                                        </div>
+                                        <p className="text-white/70 text-sm leading-relaxed">
+                                            A <span className="text-blue-400 font-semibold">20% service fee</span> is applied to all completed bookings. This covers secure escrow services, payment processing, and platform maintenance to ensure a safe experience for everyone.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Quick Stats - Enhanced */}
                             <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
                                 <div className="flex items-center justify-between mb-5">
@@ -1469,6 +1490,17 @@ export function TalentDashboardClient({
                             <div>
                                 <h3 className="text-2xl font-bold text-white mb-1">Earnings Overview</h3>
                                 <p className="text-white/50 text-sm">Track your income from gifts, content unlocks, and bookings</p>
+                            </div>
+
+                            {/* Service Fee Info Card */}
+                            <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 flex items-start gap-3">
+                                <Info size={20} weight="duotone" className="text-blue-400 shrink-0 mt-0.5" />
+                                <div className="text-sm">
+                                    <p className="text-blue-400 font-semibold mb-1 text-xs uppercase tracking-wide">Platform Commission</p>
+                                    <p className="text-white/70 leading-relaxed">
+                                        All booking earnings shown below are subject to a 20% platform service fee. This fee is automatically deducted when your escrow is released to your available balance.
+                                    </p>
+                                </div>
                             </div>
 
                             {/* Earnings Summary Cards - Enhanced */}

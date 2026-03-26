@@ -802,6 +802,11 @@ export function BookingDetailClient({ booking, wallet: initialWallet, userId }: 
                                         </p>
                                     </div>
                                 )}
+                                {!escrowReleased && (
+                                    <p className="text-white/40 text-[10px] mt-3 text-center italic">
+                                        * A 20% platform service fee applies to this amount.
+                                    </p>
+                                )}
                             </div>
                         )}
 
