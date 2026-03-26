@@ -22,7 +22,7 @@ export async function POST(
         // Fetch the booking to verify ownership
         const { data: booking, error: fetchError } = await supabase
             .from('bookings')
-            .select('id, talent_id, status')
+            .select('id, talent_id, total_price, status')
             .eq('id', id)
             .single()
 
@@ -91,11 +91,21 @@ export async function POST(
             verificationStatus: verification.status
         })
 
+        // Calculate fees
+        const commissionRate = 0.2
+        const platformFee = Math.round(booking.total_price * commissionRate)
+        const netAmount = booking.total_price - platformFee
+
         // Use API client (service role) for update to bypass RLS
         // We've already verified ownership and verification approval above
         const { data: updatedBookings, error: updateError } = await apiClient
             .from('bookings')
-            .update({ status: 'confirmed' })
+            .update({ 
+                status: 'confirmed',
+                platform_fee: platformFee,
+                net_amount: netAmount,
+                commission_rate: commissionRate
+            })
             .eq('id', id)
             .select()
 

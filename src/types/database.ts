@@ -79,6 +79,9 @@ export interface Booking {
     status: BookingStatus
     scheduled_at: string | null
     notes: string | null
+    platform_fee?: number
+    net_amount?: number
+    commission_rate?: number
     created_at: string
     client?: Profile
     talent?: Profile

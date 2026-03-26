@@ -35,6 +35,14 @@ export default async function AdminDashboardPage() {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'open')
 
+    // Fetch total platform revenue
+    const { data: revenueData } = await supabase
+        .from('bookings')
+        .select('platform_fee')
+        .in('status', ['confirmed', 'completed'])
+
+    const totalRevenue = revenueData?.reduce((sum, b) => sum + (b.platform_fee || 0), 0) || 0
+
     return (
         <AdminDashboardClient
             initialPendingVerifications={pendingVerifications ?? 0}
@@ -42,6 +50,7 @@ export default async function AdminDashboardPage() {
             initialTotalBookings={totalBookings ?? 0}
             initialPendingPayouts={pendingPayouts ?? 0}
             initialPendingDisputes={pendingDisputes ?? 0}
+            initialTotalRevenue={totalRevenue}
         />
     )
 }

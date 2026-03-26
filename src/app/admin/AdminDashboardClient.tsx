@@ -1,6 +1,6 @@
 'use client'
 
-import { UserCheck, Money, Users, CalendarCheck, Warning } from '@phosphor-icons/react'
+import { UserCheck, Money, Users, CalendarCheck, Warning, TrendUp } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -11,6 +11,7 @@ interface AdminDashboardClientProps {
     initialTotalBookings: number
     initialPendingPayouts: number
     initialPendingDisputes: number
+    initialTotalRevenue: number
 }
 
 export function AdminDashboardClient({
@@ -19,6 +20,7 @@ export function AdminDashboardClient({
     initialTotalBookings,
     initialPendingPayouts,
     initialPendingDisputes,
+    initialTotalRevenue,
 }: AdminDashboardClientProps) {
     const supabase = createClient()
     const dashboardChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
@@ -28,6 +30,7 @@ export function AdminDashboardClient({
     const [totalBookings, setTotalBookings] = useState(initialTotalBookings)
     const [pendingPayouts, setPendingPayouts] = useState(initialPendingPayouts)
     const [pendingDisputes, setPendingDisputes] = useState(initialPendingDisputes)
+    const [totalRevenue, setTotalRevenue] = useState(initialTotalRevenue)
 
     // Real-time subscription for all dashboard stats
     useEffect(() => {
@@ -133,6 +136,24 @@ export function AdminDashboardClient({
                     }
                 }
             )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'bookings',
+                },
+                async () => {
+                    // Refetch total revenue
+                    const { data: revenueData } = await supabase
+                        .from('bookings')
+                        .select('platform_fee')
+                        .in('status', ['confirmed', 'completed'])
+                    
+                    const total = revenueData?.reduce((sum, b) => sum + (b.platform_fee || 0), 0) || 0
+                    setTotalRevenue(total)
+                }
+            )
             .subscribe((status) => {
                 console.log('[Admin Dashboard] Channel subscription status:', status)
             })
@@ -173,19 +194,19 @@ export function AdminDashboardClient({
             urgent: pendingDisputes > 0,
         },
         {
+            label: 'Platform Revenue',
+            value: `₦${(totalRevenue * 10).toLocaleString()}`,
+            icon: Money,
+            href: '/admin/revenue',
+            color: 'bg-green-500/10 text-green-400',
+            urgent: false,
+        },
+        {
             label: 'Total Users',
             value: totalUsers,
             icon: Users,
             href: '/admin/users',
             color: 'bg-blue-500/10 text-blue-400',
-            urgent: false,
-        },
-        {
-            label: 'Total Bookings',
-            value: totalBookings,
-            icon: CalendarCheck,
-            href: '#',
-            color: 'bg-purple-500/10 text-purple-400',
             urgent: false,
         },
     ]
@@ -267,12 +288,12 @@ export function AdminDashboardClient({
                         View Deposits
                     </Link>
                     <Link
-                        href="/admin/analytics"
+                        href="/admin/revenue"
                         className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
-                        aria-label="View platform analytics and reports"
+                        aria-label="View platform revenue and booking cuts"
                     >
-                        <CalendarCheck size={18} weight="bold" />
-                        View Reports
+                        <TrendUp size={18} weight="bold" />
+                        Platform Revenue
                     </Link>
                 </div>
             </div>

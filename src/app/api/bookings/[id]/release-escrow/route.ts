@@ -35,7 +35,7 @@ export async function POST(
     // Fetch the booking
     const { data: booking, error: fetchError } = await supabase
       .from('bookings')
-      .select('id, talent_id, client_id, total_price, status')
+      .select('id, talent_id, client_id, total_price, status, net_amount, platform_fee')
       .eq('id', id)
       .single()
 
@@ -156,9 +156,11 @@ export async function POST(
       }
     } else {
       // Add to talent's balance
+      // Use net_amount if available, otherwise fallback to total_price (for old bookings)
+      const amountToTransfer = booking.net_amount || booking.total_price
       const { error: addBalanceError } = await apiClient
         .from('wallets')
-        .update({ balance: (talentWallet.balance || 0) + booking.total_price })
+        .update({ balance: (talentWallet.balance || 0) + amountToTransfer })
         .eq('user_id', booking.talent_id)
 
       if (addBalanceError) {
@@ -178,8 +180,8 @@ export async function POST(
     // Create transaction record for talent
     const { error: transactionError } = await apiClient.from('transactions').insert({
       user_id: booking.talent_id,
-      amount: booking.total_price,
-      coins: booking.total_price,
+      amount: booking.net_amount || booking.total_price,
+      coins: booking.net_amount || booking.total_price,
       type: 'booking',
       status: 'completed',
       description: `Earnings from completed booking #${booking.id.slice(0, 8)}`,
@@ -194,7 +196,8 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: 'Escrow released successfully',
-      releasedAmount: booking.total_price
+      releasedAmount: booking.net_amount || booking.total_price,
+      platformFee: booking.platform_fee || 0
     })
   } catch (error) {
     console.error('Error releasing escrow:', error)
