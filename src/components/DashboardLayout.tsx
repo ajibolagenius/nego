@@ -10,6 +10,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { NotificationBell } from '@/components/NotificationBell'
+import { NotificationProvider } from '@/providers/NotificationProvider'
 import { useWallet } from '@/hooks/useWallet'
 import { createClient } from '@/lib/supabase/client'
 import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
@@ -172,7 +173,9 @@ export function DashboardLayout({
                             {/* Right side */}
                             <div className="flex items-center gap-2 sm:gap-4 ml-4">
                                 {/* Notifications */}
-                                <NotificationBell userId={user.id} />
+                                <NotificationProvider userId={user.id}>
+                                    <NotificationBell userId={user.id} />
+                                </NotificationProvider>
 
                                 {/* Wallet balance - Hidden on very small screens */}
                                 <Link

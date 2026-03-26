@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { notifyUser } from '@/lib/notifications'
 
 export async function POST(request: Request) {
     try {
@@ -51,16 +52,16 @@ export async function POST(request: Request) {
             .single()
 
         if (requestData) {
-            // Send Notification
-            await supabase.from('notifications').insert({
-                user_id: requestData.user_id,
-                type: 'purchase_failed', // Reusing similar type
+            await notifyUser({
+                userId: requestData.user_id,
+                type: 'purchase_failed',
                 title: 'Deposit Rejected ❌',
                 message: `Your deposit of ₦${requestData.amount.toLocaleString()} was rejected. Reason: ${reason || 'Admin decision'}.`,
                 data: {
                     request_id: requestId,
                     reason: reason
-                }
+                },
+                url: '/dashboard/wallet',
             })
         }
 

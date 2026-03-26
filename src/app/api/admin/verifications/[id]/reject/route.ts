@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logAdminAction, getClientIP, getUserAgent } from '@/lib/admin/audit-log'
 import { validateAdmin, validateVerification } from '@/lib/admin/validation'
 import { createApiClient } from '@/lib/supabase/api'
-import { createClient } from '@/lib/supabase/server'
+import { notifyUser } from '@/lib/notifications'
 
 export async function POST(
     request: NextRequest,
@@ -50,7 +50,6 @@ export async function POST(
             )
         }
 
-        const supabase = await createClient()
         const apiClient = createApiClient()
 
         // Get booking details for refund and talent notification using API client to bypass RLS
@@ -154,13 +153,13 @@ export async function POST(
                         reference_id: bookingData.id
                     })
 
-                    // Create notification for client
-                    await supabase.from('notifications').insert({
-                        user_id: bookingData.client_id,
+                    await notifyUser({
+                        userId: bookingData.client_id,
                         type: 'booking_cancelled',
                         title: 'Booking Cancelled & Refunded',
                         message: `Your booking has been cancelled due to verification rejection. ${refundAmount.toLocaleString()} coins have been refunded to your wallet.`,
-                        data: { booking_id: bookingData.id, refund_amount: refundAmount }
+                        data: { booking_id: bookingData.id, refund_amount: refundAmount },
+                        url: '/dashboard/bookings',
                     })
                 }
             }
@@ -168,8 +167,8 @@ export async function POST(
 
         // Notify talent about the verification rejection
         if (bookingData.talent_id) {
-            await supabase.from('notifications').insert({
-                user_id: bookingData.talent_id,
+            await notifyUser({
+                userId: bookingData.talent_id,
                 type: 'booking_cancelled',
                 title: 'Booking Cancelled - Verification Rejected',
                 message: `A booking has been cancelled due to client verification rejection. ${adminNotes ? `Reason: ${adminNotes}` : 'The client verification was not approved by admin.'}`,
@@ -177,7 +176,8 @@ export async function POST(
                     booking_id: bookingData.id,
                     admin_notes: adminNotes,
                     cancellation_reason: adminNotes
-                }
+                },
+                url: '/dashboard/bookings',
             })
         }
 

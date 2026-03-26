@@ -6,6 +6,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js'
+import { notifyUser } from '@/lib/notifications'
 
 export interface GiftTransactionParams {
   senderId: string
@@ -165,9 +166,9 @@ export async function executeGiftTransaction(
       ? `${senderName} sent you ${amount} coins with a message: "${message.slice(0, 100)}${message.length > 100 ? '...' : ''}"`
       : `${senderName} sent you ${amount} coins`
 
-    await supabase.from('notifications').insert({
-      user_id: recipientId,
-      type: 'general',
+    await notifyUser({
+      userId: recipientId,
+      type: 'gift_received',
       title: 'You received a gift! 🎁',
       message: notificationMessage,
       data: {
@@ -176,6 +177,7 @@ export async function executeGiftTransaction(
         sender_id: senderId,
         sender_name: senderName,
       },
+      url: '/dashboard/gifts',
     })
   } catch (notifError) {
     console.warn('[Gift] Failed to create notification (non-critical):', notifError)

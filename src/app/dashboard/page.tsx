@@ -41,35 +41,40 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         .eq('user_id', user.id)
         .single()
 
-    // Generate random limit between 8 and 16
-    // eslint-disable-next-line react-hooks/purity
-    const randomLimit = Math.floor(Math.random() * 9) + 8 // 8 to 16
+    const isTalent = profile?.role === 'talent'
+    let shuffledTalents: any[] = []
 
-    // Fetch featured talents with COMPLETE profile data (random selection of talents)
-    const { data: featuredTalents } = await supabase
-        .from('profiles')
-        .select(`
-      *,
-      talent_menus (
-        id,
-        price,
-        is_active,
-        service_type:service_types (
-          id,
-          name,
-          icon,
-          description
-        )
-      )
-    `)
-        .eq('role', 'talent')
-        .limit(50) // Fetch more to randomize from
-
-    // Shuffle and pick random talents
-    const shuffledTalents = (featuredTalents || [])
+    if (!isTalent) {
+        // Generate random limit between 8 and 16
         // eslint-disable-next-line react-hooks/purity
-        .sort(() => Math.random() - 0.5)
-        .slice(0, randomLimit)
+        const randomLimit = Math.floor(Math.random() * 9) + 8 // 8 to 16
+
+        // Fetch featured talents with COMPLETE profile data (random selection of talents)
+        const { data: featuredTalents } = await supabase
+            .from('profiles')
+            .select(`
+        *,
+        talent_menus (
+          id,
+          price,
+          is_active,
+          service_type:service_types (
+            id,
+            name,
+            icon,
+            description
+          )
+        )
+      `)
+            .eq('role', 'talent')
+            .limit(50) // Fetch more to randomize from
+
+        // Shuffle and pick random talents
+        shuffledTalents = (featuredTalents || [])
+            // eslint-disable-next-line react-hooks/purity
+            .sort(() => Math.random() - 0.5)
+            .slice(0, randomLimit)
+    }
 
     // Fetch active bookings count
     const { count: activeBookingsCount } = await supabase
@@ -79,10 +84,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         .in('status', ['pending', 'accepted', 'payment_pending'])
 
     // Fetch favorites count (for clients)
-    const { count: favoritesCount } = await supabase
-        .from('favorites')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
+    let favoritesCount = 0
+    if (!isTalent) {
+        const { count } = await supabase
+            .from('favorites')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+        favoritesCount = count || 0
+    }
 
     return (
         <DashboardClient
@@ -91,7 +100,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             wallet={wallet}
             featuredTalents={shuffledTalents}
             activeBookings={activeBookingsCount || 0}
-            favoritesCount={favoritesCount || 0}
+            favoritesCount={favoritesCount}
             showVerificationSuccess={params.verified === 'true'}
         />
     )

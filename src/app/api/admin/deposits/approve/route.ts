@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
+import { notifyUser } from '@/lib/notifications'
 
 export async function POST(request: Request) {
     try {
@@ -111,16 +112,16 @@ export async function POST(request: Request) {
             console.error('Error creating transaction:', transactionError)
         }
 
-        // 4. Send Notification
-        await adminSupabase.from('notifications').insert({
-            user_id: depositRequest.user_id,
+        await notifyUser({
+            userId: depositRequest.user_id,
             type: 'purchase_success',
             title: 'Deposit Approved ✅',
             message: `Your deposit of ₦${depositRequest.amount.toLocaleString()} has been approved. ${coinsToAdd.toLocaleString()} coins added.`,
             data: {
                 request_id: requestId,
                 amount: coinsToAdd
-            }
+            },
+            url: '/dashboard/wallet',
         })
 
         return NextResponse.json({ success: true, coinsAdded: coinsToAdd })

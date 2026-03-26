@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createApiClient } from '@/lib/supabase/api'
 import { createClient } from '@/lib/supabase/server'
+import { notifyUser } from '@/lib/notifications'
 
 export async function POST(request: NextRequest) {
     try {
@@ -53,8 +54,8 @@ export async function POST(request: NextRequest) {
                 // Create failure notification if insufficient balance
                 if (rpcData.error?.includes('balance') || rpcData.error?.includes('insufficient')) {
                     try {
-                        await supabase.from('notifications').insert({
-                            user_id: userId,
+                        await notifyUser({
+                            userId,
                             type: 'low_balance',
                             title: 'Insufficient Balance ⚠️',
                             message: `You don't have enough coins to unlock this content. ${rpcData.error}`,
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
                                 unlock_price: unlockPrice,
                                 error: rpcData.error,
                             },
+                            url: '/dashboard/wallet',
                         })
                     } catch (notifError) {
                         console.error('[Media Unlock] Failed to create notification:', notifError)
@@ -77,8 +79,8 @@ export async function POST(request: NextRequest) {
 
             // Create success notification
             try {
-                await supabase.from('notifications').insert({
-                    user_id: userId,
+                await notifyUser({
+                    userId,
                     type: 'media_unlocked',
                     title: 'Content Unlocked! 🔓',
                     message: `You successfully unlocked premium content. Your new balance is ${rpcData.new_balance?.toLocaleString() || 0} coins.`,
@@ -87,12 +89,13 @@ export async function POST(request: NextRequest) {
                         unlock_price: unlockPrice,
                         new_balance: rpcData.new_balance,
                     },
+                    url: '/dashboard/notifications',
                 })
 
                 // Check for low balance warning (below 100 coins)
                 if (rpcData.new_balance && rpcData.new_balance < 100) {
-                    await supabase.from('notifications').insert({
-                        user_id: userId,
+                    await notifyUser({
+                        userId,
                         type: 'low_balance',
                         title: 'Low Balance Warning ⚠️',
                         message: `Your balance is low (${rpcData.new_balance.toLocaleString()} coins). Consider topping up to continue enjoying our services.`,
@@ -100,6 +103,7 @@ export async function POST(request: NextRequest) {
                             current_balance: rpcData.new_balance,
                             threshold: 100,
                         },
+                        url: '/dashboard/wallet',
                     })
                 }
             } catch (notifError) {
@@ -134,8 +138,8 @@ export async function POST(request: NextRequest) {
 
         if (userWallet.balance < unlockPrice) {
             // Create low balance notification
-            await supabase.from('notifications').insert({
-                user_id: userId,
+            await notifyUser({
+                userId,
                 type: 'low_balance',
                 title: 'Insufficient Balance ⚠️',
                 message: `You don't have enough coins to unlock this content. You have ${userWallet.balance.toLocaleString()} coins but need ${unlockPrice.toLocaleString()} coins. Please top up your wallet.`,
@@ -144,6 +148,7 @@ export async function POST(request: NextRequest) {
                     required_amount: unlockPrice,
                     shortfall: unlockPrice - userWallet.balance,
                 },
+                url: '/dashboard/wallet',
             })
 
             return NextResponse.json(
@@ -240,9 +245,8 @@ export async function POST(request: NextRequest) {
 
         const newBalance = userWallet.balance - unlockPrice
 
-        // Create success notification for user
-        await supabase.from('notifications').insert({
-            user_id: userId,
+        await notifyUser({
+            userId,
             type: 'media_unlocked',
             title: 'Content Unlocked! 🔓',
             message: `You successfully unlocked premium content for ${unlockPrice} coins. Your new balance is ${newBalance.toLocaleString()} coins.`,
@@ -251,12 +255,13 @@ export async function POST(request: NextRequest) {
                 unlock_price: unlockPrice,
                 new_balance: newBalance,
             },
+            url: '/dashboard/notifications',
         })
 
         // Check for low balance warning (below 100 coins)
         if (newBalance < 100) {
-            await supabase.from('notifications').insert({
-                user_id: userId,
+            await notifyUser({
+                userId,
                 type: 'low_balance',
                 title: 'Low Balance Warning ⚠️',
                 message: `Your balance is low (${newBalance.toLocaleString()} coins). Consider topping up to continue enjoying our services.`,
@@ -264,6 +269,7 @@ export async function POST(request: NextRequest) {
                     current_balance: newBalance,
                     threshold: 100,
                 },
+                url: '/dashboard/wallet',
             })
         }
 

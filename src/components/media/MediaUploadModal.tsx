@@ -16,6 +16,7 @@ interface MediaUploadModalProps {
 }
 
 export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSuccess }: MediaUploadModalProps) {
+    const MAX_MEDIA_PER_CATEGORY = 6
     const supabase = createClient()
     const [uploading, setUploading] = useState(false)
     const [uploadProgress, setUploadProgress] = useState(0)
@@ -66,6 +67,20 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
         setUploadError('')
 
         try {
+            const { count: existingCount, error: countError } = await supabase
+                .from('media')
+                .select('id', { count: 'exact', head: true })
+                .eq('talent_id', talentId)
+                .eq('is_premium', isPremium)
+
+            if (countError) throw countError
+
+            if ((existingCount || 0) >= MAX_MEDIA_PER_CATEGORY) {
+                throw new Error(
+                    `You can only upload up to ${MAX_MEDIA_PER_CATEGORY} ${isPremium ? 'premium' : 'free'} media items.`
+                )
+            }
+
             const isVideo = selectedFile.type.startsWith('video/')
             const isImage = selectedFile.type.startsWith('image/')
 

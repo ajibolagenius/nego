@@ -19,6 +19,7 @@ interface MediaManagerProps {
 }
 
 export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) {
+    const MAX_MEDIA_PER_CATEGORY = 6
     const supabase = createClient()
     const [activeTab, setActiveTab] = useState<MediaTab>('free')
     const [showUploadModal, setShowUploadModal] = useState(false)
@@ -32,6 +33,8 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
 
     const freeMedia = media.filter(m => !m.is_premium)
     const premiumMedia = media.filter(m => m.is_premium)
+    const currentTabCount = activeTab === 'premium' ? premiumMedia.length : freeMedia.length
+    const canUploadCurrentTab = currentTabCount < MAX_MEDIA_PER_CATEGORY
 
     // Apply sorting and filtering
     const currentMedia = useMemo(() => {
@@ -97,6 +100,7 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
     }
 
     const openUploadModal = () => {
+        if (!canUploadCurrentTab) return
         setShowUploadModal(true)
     }
 
@@ -132,9 +136,10 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
 
                     <button
                         onClick={openUploadModal}
+                        disabled={!canUploadCurrentTab}
                         data-testid="upload-media-button"
                         aria-label={`Upload ${activeTab === 'premium' ? 'premium' : 'free'} content`}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#df2531] text-white text-sm font-medium hover:bg-[#df2531]/80 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#df2531] text-white text-sm font-medium hover:bg-[#df2531]/80 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#df2531]"
                     >
                         <Plus size={18} weight="duotone" aria-hidden="true" />
                         Upload {activeTab === 'premium' ? 'Premium' : 'Free'}
@@ -156,6 +161,12 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
                 >
                     <Eye size={18} weight="duotone" aria-hidden="true" />
                     Free <span className="ml-1">({freeMedia.length})</span>
+                    <span className={`ml-2 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${freeMedia.length >= MAX_MEDIA_PER_CATEGORY
+                        ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                        : 'bg-white/10 text-white/70 border-white/20'
+                        }`}>
+                        {freeMedia.length}/{MAX_MEDIA_PER_CATEGORY}
+                    </span>
                 </button>
                 <button
                     onClick={() => setActiveTab('premium')}
@@ -169,6 +180,12 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
                 >
                     <Crown size={18} weight="fill" aria-hidden="true" />
                     Premium <span className="ml-1">({premiumMedia.length})</span>
+                    <span className={`ml-2 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${premiumMedia.length >= MAX_MEDIA_PER_CATEGORY
+                        ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                        : 'bg-white/10 text-white/70 border-white/20'
+                        }`}>
+                        {premiumMedia.length}/{MAX_MEDIA_PER_CATEGORY}
+                    </span>
                 </button>
             </div>
 
@@ -186,6 +203,9 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
                                 <p className="text-amber-400/70 text-xs leading-relaxed">
                                     Premium content is locked and requires payment to unlock. Clients will pay the unlock price you set to view this content.
                                 </p>
+                                <p className="text-amber-400/60 text-xs mt-2">
+                                    Limit: {premiumMedia.length}/{MAX_MEDIA_PER_CATEGORY} premium uploads
+                                </p>
                             </div>
                         </>
                     ) : (
@@ -196,11 +216,20 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
                                 <p className="text-green-400/70 text-xs leading-relaxed">
                                     Free content is visible to everyone on your public profile. Use this to showcase your work and attract clients.
                                 </p>
+                                <p className="text-green-400/60 text-xs mt-2">
+                                    Limit: {freeMedia.length}/{MAX_MEDIA_PER_CATEGORY} free uploads
+                                </p>
                             </div>
                         </>
                     )}
                 </div>
             </div>
+
+            {!canUploadCurrentTab && (
+                <p className="text-xs text-red-400/90">
+                    You have reached the maximum of {MAX_MEDIA_PER_CATEGORY} {activeTab} uploads. Delete one to upload another.
+                </p>
+            )}
 
             {/* Filter Panel */}
             <MediaFilterPanel
@@ -232,6 +261,7 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
                     </p>
                     <Button
                         onClick={openUploadModal}
+                        disabled={!canUploadCurrentTab}
                         className="bg-[#df2531] hover:bg-[#c41f2a] text-white font-semibold px-6 py-3 rounded-xl shadow-lg shadow-[#df2531]/20 hover:shadow-[#df2531]/30 transition-all"
                         aria-label={`Upload your first ${activeTab === 'premium' ? 'premium' : 'free'} content`}
                     >

@@ -10,9 +10,6 @@ import { createClient } from '@/lib/supabase/client'
 import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import type { Wallet } from '@/types/database'
 
-// Note: We use a separate supabase instance for notifications to avoid circular dependencies
-const getSupabaseForNotifications = () => createClient()
-
 interface UseWalletOptions {
     userId: string
     initialWallet?: Wallet | null
@@ -115,24 +112,12 @@ export function useWallet({ userId, initialWallet, autoRefresh = true }: UseWall
                     const updatedWallet = payload.new as Wallet
                     setWallet(updatedWallet)
 
-                    // Check for low balance and create notification if needed
-                    // Only notify if balance is below 100 coins and wasn't already low
+                    // Server-side payment/unlock/gift flows are the single source of notification writes.
                     const currentWallet = walletRef.current
                     if (updatedWallet.balance < 100 && currentWallet && currentWallet.balance >= 100) {
-                        // Balance just dropped below threshold
-                        const { error: notifError } = await getSupabaseForNotifications().from('notifications').insert({
-                            user_id: userId,
-                            type: 'low_balance',
-                            title: 'Low Balance Warning ⚠️',
-                            message: `Your balance is low (${updatedWallet.balance.toLocaleString()} coins - ₦${(updatedWallet.balance * COIN_TO_NAIRA_RATE).toLocaleString()}). Consider topping up to continue enjoying our services.`,
-                            data: {
-                                current_balance: updatedWallet.balance,
-                                threshold: 100,
-                            },
-                        })
-                        if (notifError) {
-                            console.error('[useWallet] Failed to create low balance notification:', notifError)
-                        }
+                        console.info(
+                            `[useWallet] Low balance threshold reached (${updatedWallet.balance.toLocaleString()} coins / ₦${(updatedWallet.balance * COIN_TO_NAIRA_RATE).toLocaleString()})`
+                        )
                     }
                 }
             )

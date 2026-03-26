@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { NotificationBell } from '@/components/NotificationBell'
+import { NotificationProvider } from '@/providers/NotificationProvider'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -221,7 +222,9 @@ export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
                             // Authenticated user buttons
                             <>
                                 {/* Notification Bell */}
-                                <NotificationBell userId={user.id} />
+                                <NotificationProvider userId={user.id}>
+                                    <NotificationBell userId={user.id} />
+                                </NotificationProvider>
 
                                 <Link href="/dashboard/wallet">
                                     <Button

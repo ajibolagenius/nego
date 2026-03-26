@@ -135,15 +135,6 @@ export function usePayouts(
                 throw updateError
             }
 
-            // Create notification
-            await supabase.from('notifications').insert({
-                user_id: request.talent_id,
-                type: 'withdrawal_approved',
-                title: 'Withdrawal Approved!',
-                message: `Your withdrawal request for ${request.amount.toLocaleString()} coins has been approved.`,
-                data: { withdrawal_id: request.id, amount: request.amount }
-            })
-
             toast.success('Withdrawal Approved', {
                 description: `Successfully approved withdrawal of ${request.amount.toLocaleString()} coins.`
             })
@@ -176,13 +167,7 @@ export function usePayouts(
             if (error) throw error
 
             if (request) {
-                await supabase.from('notifications').insert({
-                    user_id: request.talent_id,
-                    type: 'withdrawal_rejected',
-                    title: 'Withdrawal Declined',
-                    message: reason || 'Your withdrawal request has been declined. Please contact support.',
-                    data: { withdrawal_id: requestId }
-                })
+                // Notification dispatch is handled by the server-side admin payout routes.
             }
 
             toast.success('Withdrawal Rejected', {

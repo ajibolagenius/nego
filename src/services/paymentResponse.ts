@@ -1,4 +1,5 @@
 import { createApiClient } from '@/lib/supabase/api'
+import { notifyUser } from '@/lib/notifications'
 
 // Shared logic to process a successful transaction
 // This handles:
@@ -89,13 +90,13 @@ export async function processSuccessfulTransaction(
         if (walletError) {
             console.error(`[${provider} Payment] Wallet not found for user:`, transaction.user_id)
 
-            // Notification: Purchase Failed
-            await supabase.from('notifications').insert({
-                user_id: transaction.user_id,
+            await notifyUser({
+                userId: transaction.user_id,
                 type: 'purchase_failed',
                 title: 'Purchase Failed ❌',
                 message: `Your payment was successful but we couldn't find your wallet. Please contact support. Reference: ${reference}`,
                 data: { transaction_id: transaction.id, reference, error: 'Wallet not found' },
+                url: '/dashboard/wallet',
             })
 
             return { status: 'failed', error: 'Wallet not found' }
@@ -114,21 +115,20 @@ export async function processSuccessfulTransaction(
         if (creditError) {
             console.error(`[${provider} Payment] Failed to credit wallet:`, creditError)
 
-            // Notification: Purchase Failed (Credit Step)
-            await supabase.from('notifications').insert({
-                user_id: transaction.user_id,
+            await notifyUser({
+                userId: transaction.user_id,
                 type: 'purchase_failed',
                 title: 'Purchase Failed ❌',
                 message: `Your payment was received but we couldn't credit your wallet. Please contact support immediately. Reference: ${reference}`,
                 data: { transaction_id: transaction.id, reference, error: 'Wallet credit failed' },
+                url: '/dashboard/wallet',
             })
 
             return { status: 'failed', error: 'Credit failed' }
         }
 
-        // 5. Success Notification
-        await supabase.from('notifications').insert({
-            user_id: transaction.user_id,
+        await notifyUser({
+            userId: transaction.user_id,
             type: 'purchase_success',
             title: 'Purchase Successful! 🎉',
             message: `Your purchase of ${transaction.coins.toLocaleString()} coins was successful via ${provider}. New balance: ${newBalance.toLocaleString()}.`,
@@ -140,16 +140,18 @@ export async function processSuccessfulTransaction(
                 reference: transaction.reference,
                 provider
             },
+            url: '/dashboard/wallet',
         })
 
         // 6. Low Balance Warning
         if (newBalance < 100) {
-            await supabase.from('notifications').insert({
-                user_id: transaction.user_id,
+            await notifyUser({
+                userId: transaction.user_id,
                 type: 'low_balance',
                 title: 'Low Balance Warning ⚠️',
                 message: `Your balance is low (${newBalance.toLocaleString()} coins).`,
                 data: { current_balance: newBalance, threshold: 100 },
+                url: '/dashboard/wallet',
             })
         }
 

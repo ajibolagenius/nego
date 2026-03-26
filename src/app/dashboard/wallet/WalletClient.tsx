@@ -298,23 +298,6 @@ function PaymentModal({
             const errorMessage = err instanceof Error ? err.message : 'Payment failed'
             setError(errorMessage)
             setIsProcessing(false)
-
-            // Create failure notification
-            try {
-                await supabase.from('notifications').insert({
-                    user_id: userId,
-                    type: 'purchase_failed',
-                    title: 'Purchase Failed ❌',
-                    message: `Your purchase attempt failed: ${errorMessage}. Please try again.`,
-                    data: {
-                        package_id: pkg.id,
-                        package_name: pkg.displayName,
-                        error: errorMessage,
-                    },
-                })
-            } catch (notifError) {
-                console.error('[PaymentModal] Failed to create failure notification:', notifError)
-            }
         }
     }
 

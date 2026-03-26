@@ -8,6 +8,7 @@ export type NotificationType =
     | 'booking_request'
     | 'booking_accepted'
     | 'booking_rejected'
+    | 'booking_cancelled'
     | 'booking_completed'
     | 'booking_expired'
     | 'withdrawal_approved'
@@ -37,6 +38,7 @@ export interface Profile {
     status: TalentStatus
     starting_price: number | null
     admin_notes: string | null
+    push_notifications_enabled?: boolean
     is_suspended?: boolean
     suspension_reason?: string | null
     suspended_at?: string | null

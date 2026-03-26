@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logAdminAction, getClientIP, getUserAgent } from '@/lib/admin/audit-log'
 import { validateAdmin, validateWithdrawalRequest } from '@/lib/admin/validation'
 import { createApiClient } from '@/lib/supabase/api'
-import { createClient } from '@/lib/supabase/server'
+import { notifyUser } from '@/lib/notifications'
 
 export async function POST(
   request: NextRequest,
@@ -34,7 +34,6 @@ export async function POST(
 
     const withdrawalRequest = requestCheck.request
 
-    const supabase = await createClient()
     const apiClient = createApiClient()
 
     // Update withdrawal request status using API client to bypass RLS
@@ -54,13 +53,13 @@ export async function POST(
       )
     }
 
-    // Create notification for talent
-    await supabase.from('notifications').insert({
-      user_id: withdrawalRequest.talent_id,
+    await notifyUser({
+      userId: withdrawalRequest.talent_id,
       type: 'withdrawal_rejected',
       title: 'Withdrawal Declined',
       message: reason || 'Your withdrawal request has been declined. Please contact support.',
-      data: { withdrawal_id: requestId }
+      data: { withdrawal_id: requestId },
+      url: '/dashboard/talent?tab=withdrawals',
     })
 
     // Log admin action

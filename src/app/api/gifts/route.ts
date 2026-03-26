@@ -8,6 +8,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { validateGiftRequest, sanitizeGiftRequest } from '@/lib/gift-validation'
+import { notifyUser } from '@/lib/notifications'
 
 // Use Node.js runtime for better Supabase compatibility
 export const runtime = 'nodejs'
@@ -94,8 +95,8 @@ export async function POST(request: NextRequest) {
             if (errorMsg.includes('balance') || errorMsg.includes('insufficient')) {
                 // Create low balance notification
                 try {
-                    await supabase.from('notifications').insert({
-                        user_id: sanitized.senderId,
+                    await notifyUser({
+                        userId: sanitized.senderId,
                         type: 'low_balance',
                         title: 'Insufficient Balance ⚠️',
                         message: `You don't have enough coins to send this gift. Please top up your wallet.`,
@@ -103,6 +104,7 @@ export async function POST(request: NextRequest) {
                             required_amount: sanitized.amount,
                             error: errorMsg,
                         },
+                        url: '/dashboard/wallet',
                     })
                 } catch (notifError) {
                     console.error('[Gift API] Failed to create low balance notification:', notifError)
@@ -129,8 +131,8 @@ export async function POST(request: NextRequest) {
         // Create notifications for both sender and recipient
         try {
             // Notification for sender
-            await supabase.from('notifications').insert({
-                user_id: sanitized.senderId,
+            await notifyUser({
+                userId: sanitized.senderId,
                 type: 'gift_sent',
                 title: 'Gift Sent! 🎁',
                 message: `You sent ${sanitized.amount.toLocaleString()} coins to ${recipientName}. Your new balance is ${resultObj.new_balance?.toLocaleString() || 0} coins.`,
@@ -141,6 +143,7 @@ export async function POST(request: NextRequest) {
                     amount: sanitized.amount,
                     new_balance: resultObj.new_balance,
                 },
+                url: '/dashboard/gifts',
             })
 
             // Notification for recipient (already handled by database trigger)
@@ -148,8 +151,8 @@ export async function POST(request: NextRequest) {
 
             // Check for low balance warning for sender
             if (resultObj.new_balance && resultObj.new_balance < 100) {
-                await supabase.from('notifications').insert({
-                    user_id: sanitized.senderId,
+                await notifyUser({
+                    userId: sanitized.senderId,
                     type: 'low_balance',
                     title: 'Low Balance Warning ⚠️',
                     message: `Your balance is low (${resultObj.new_balance.toLocaleString()} coins). Consider topping up to continue enjoying our services.`,
@@ -157,6 +160,7 @@ export async function POST(request: NextRequest) {
                         current_balance: resultObj.new_balance,
                         threshold: 100,
                     },
+                    url: '/dashboard/wallet',
                 })
             }
         } catch (notifError) {

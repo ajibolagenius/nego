@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createApiClient } from '@/lib/supabase/api'
+import { notifyUser } from '@/lib/notifications'
 
 // This endpoint should be called by a cron job (e.g., Vercel Cron, external service)
 // It expires stale bookings based on configurable timeframes
@@ -128,13 +129,13 @@ export async function POST(request: NextRequest) {
                     // const _clientData = booking.client as unknown as { display_name: string; id: string } | null
                     const talentData = booking.talent as unknown as { display_name: string; id: string } | null
 
-                    await supabase.from('notifications').insert({
-                        user_id: booking.client_id,
+                    await notifyUser({
+                        userId: booking.client_id,
                         type: 'booking_expired',
                         title: 'Booking Expired',
                         message: `Your booking with ${talentData?.display_name || 'the talent'} has expired due to inactivity.`,
                         data: { booking_id: booking.id },
-                        is_read: false
+                        url: `/dashboard/bookings/${booking.id}`,
                     })
 
                     results.notified++

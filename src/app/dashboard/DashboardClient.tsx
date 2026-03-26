@@ -396,142 +396,228 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
 
                     {/* Content - Offset for fixed header on mobile */}
                     <div className="p-4 lg:p-6 pt-24 lg:pt-6">
-                        {/* Welcome */}
-                        <div className="mb-8">
-                            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                                Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! 👋
-                            </h1>
-                            <p className="text-white/50">Discover elite talent and book unforgettable experiences.</p>
-                        </div>
-
-                        {/* Quick Stats */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                            <Link href="/dashboard/wallet" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
-                                <div className="flex items-center justify-between mb-3">
-                                    <Coin size={24} weight="duotone" className="text-[#df2531]" />
+                        {isTalent ? (
+                            <>
+                                <div className="mb-8">
+                                    <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                                        Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! 👋
+                                    </h1>
+                                    <p className="text-white/50">Run your talent business: bookings, media, profile, and earnings in one place.</p>
                                 </div>
-                                <p className="text-white/50 text-xs mb-1">Coin Balance</p>
-                                <p className="text-white text-xl font-bold">{wallet?.balance?.toLocaleString() || 0}</p>
-                                <p className="text-white/40 text-xs mt-0.5">≈ ₦{((wallet?.balance || 0) * 10).toLocaleString()}</p>
-                            </Link>
-                            <Link href="/dashboard/bookings" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
-                                <div className="flex items-center justify-between mb-3">
-                                    <CalendarCheck size={24} weight="duotone" className="text-[#df2531]" />
-                                </div>
-                                <p className="text-white/50 text-xs mb-1">Active Bookings</p>
-                                <p className="text-white text-xl font-bold">{activeBookings}</p>
-                            </Link>
-                            <Link href="/dashboard/favorites" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
-                                <div className="flex items-center justify-between mb-3">
-                                    <Heart size={24} weight="duotone" className="text-[#df2531]" />
-                                </div>
-                                <p className="text-white/50 text-xs mb-1">Favorites</p>
-                                <p className="text-white text-xl font-bold">{favoritesCount}</p>
-                            </Link>
-                            <Link href="/dashboard/profile" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
-                                <div className="flex items-center justify-between mb-3">
-                                    <User size={24} weight="duotone" className="text-[#df2531]" />
-                                </div>
-                                <p className="text-white/50 text-xs mb-1">Profile Status</p>
-                                <p className="text-white text-xl font-bold">{profile?.is_verified ? 'Verified' : 'Pending'}</p>
-                            </Link>
-                        </div>
 
-                        {/* Featured Talents */}
-                        <div className="mb-8">
-                            <div className="flex items-center justify-between mb-6">
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">Featured Talent</h2>
-                                    <p className="text-white/50 text-sm">Top picks for you</p>
-                                </div>
-                                <Link href="/dashboard/browse" className="flex items-center gap-2 text-[#df2531] text-sm hover:underline">
-                                    View All <CaretRight size={14} />
-                                </Link>
-                            </div>
-
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {talents.length > 0 ? talents.map((talent) => (
-                                    <Link
-                                        key={talent.id}
-                                        href={getTalentUrl(talent)}
-                                        className="group bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:border-[#df2531]/30 transition-all duration-300"
-                                    >
-                                        <div className="aspect-[3/4] relative overflow-hidden">
-                                            {talent.avatar_url ? (
-                                                <Image
-                                                    src={talent.avatar_url}
-                                                    alt={talent.display_name || 'Talent'}
-                                                    fill
-                                                    sizes="(max-width: 768px) 50vw, 25vw"
-                                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                                />
-                                            ) : (
-                                                <AvatarPlaceholder size="md" />
-                                            )}
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-
-                                            {/* Status */}
-                                            <div className="absolute top-3 right-3">
-                                                <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${talent.status === 'online'
-                                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                                    : talent.status === 'booked'
-                                                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                                        : 'bg-white/10 text-white/60 border border-white/10'
-                                                    }`}>
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${talent.status === 'online' ? 'bg-green-400' : talent.status === 'booked' ? 'bg-amber-400' : 'bg-white/40'
-                                                        }`} />
-                                                    {talent.status === 'online' ? 'Online' : talent.status === 'booked' ? 'Booked' : 'Offline'}
-                                                </span>
-                                            </div>
-
-                                            {/* Verified Badge */}
-                                            {talent.is_verified && (
-                                                <div className="absolute top-3 left-3">
-                                                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#df2531]/90 text-white text-xs backdrop-blur-sm">
-                                                        <span className="text-[10px]">✓</span>
-                                                        Verified
-                                                    </span>
-                                                </div>
-                                            )}
-
-                                            {/* Info */}
-                                            <div className="absolute bottom-3 left-3 right-3">
-                                                <h3 className="text-white font-medium text-sm mb-1 truncate">
-                                                    {talent.display_name || 'Talent'}
-                                                </h3>
-                                                <div className="flex items-center gap-1.5 text-white/80 text-xs mb-1">
-                                                    <MapPin size={12} weight="fill" aria-hidden="true" />
-                                                    <span>{talent.location || 'Location not specified'}</span>
-                                                </div>
-                                                {getMinPrice(talent) > 0 && (
-                                                    <p className="text-white/60 text-xs">From {formatPrice(getMinPrice(talent))}</p>
-                                                )}
-                                            </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                                    <Link href="/dashboard/wallet" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <Coin size={24} weight="duotone" className="text-[#df2531]" />
                                         </div>
+                                        <p className="text-white/50 text-xs mb-1">Coin Balance</p>
+                                        <p className="text-white text-xl font-bold">{wallet?.balance?.toLocaleString() || 0}</p>
+                                        <p className="text-white/40 text-xs mt-0.5">Available for withdrawal</p>
                                     </Link>
-                                )) : (
-                                    <div className="col-span-full text-center py-8 text-white/50">
-                                        <p>No featured talents available</p>
-                                        <Link href="/dashboard/browse" className="text-[#df2531] hover:underline mt-2 inline-block">
-                                            Browse all talents
+                                    <Link href="/dashboard/bookings" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <CalendarCheck size={24} weight="duotone" className="text-[#df2531]" />
+                                        </div>
+                                        <p className="text-white/50 text-xs mb-1">Active Bookings</p>
+                                        <p className="text-white text-xl font-bold">{activeBookings}</p>
+                                    </Link>
+                                    <Link href="/dashboard/messages" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <ChatCircle size={24} weight="duotone" className="text-[#df2531]" />
+                                        </div>
+                                        <p className="text-white/50 text-xs mb-1">Inbox</p>
+                                        <p className="text-white text-xl font-bold">Open</p>
+                                    </Link>
+                                    <Link href="/dashboard/profile" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <User size={24} weight="duotone" className="text-[#df2531]" />
+                                        </div>
+                                        <p className="text-white/50 text-xs mb-1">Verification</p>
+                                        <p className="text-white text-xl font-bold">{profile?.is_verified ? 'Verified' : 'Pending'}</p>
+                                    </Link>
+                                </div>
+
+                                <div className="grid md:grid-cols-3 gap-4 mb-8">
+                                    <Link href="/dashboard/talent" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
+                                        <div className="flex items-center gap-2 mb-3 text-[#df2531]">
+                                            <Briefcase size={20} weight="duotone" />
+                                            <span className="font-semibold text-sm">Talent Workspace</span>
+                                        </div>
+                                        <p className="text-white text-sm font-medium mb-1">Manage services and pricing</p>
+                                        <p className="text-white/50 text-xs">Update your service list, pricing, and availability.</p>
+                                    </Link>
+                                    <Link href="/dashboard/talent" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
+                                        <div className="flex items-center gap-2 mb-3 text-[#df2531]">
+                                            <House size={20} weight="duotone" />
+                                            <span className="font-semibold text-sm">Media & Profile</span>
+                                        </div>
+                                        <p className="text-white text-sm font-medium mb-1">Showcase your best content</p>
+                                        <p className="text-white/50 text-xs">Upload free/premium media and polish your profile details.</p>
+                                    </Link>
+                                    <Link href="/dashboard/wallet" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
+                                        <div className="flex items-center gap-2 mb-3 text-[#df2531]">
+                                            <Wallet size={20} weight="duotone" />
+                                            <span className="font-semibold text-sm">Earnings & Withdrawals</span>
+                                        </div>
+                                        <p className="text-white text-sm font-medium mb-1">Track your income</p>
+                                        <p className="text-white/50 text-xs">Review transactions and request withdrawals from your wallet.</p>
+                                    </Link>
+                                </div>
+
+                                <div className="bg-gradient-to-r from-[#df2531]/20 to-[#df2531]/5 rounded-2xl p-6 md:p-8 border border-[#df2531]/20">
+                                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white mb-2">Open Full Talent Dashboard</h3>
+                                            <p className="text-white/60 text-sm">Go deeper into services, media, bookings, and performance insights.</p>
+                                        </div>
+                                        <Link href="/dashboard/talent">
+                                            <Button className="bg-[#df2531] hover:bg-[#c41f2a] text-white px-6 py-3 rounded-xl flex items-center gap-2">
+                                                Open Talent Dashboard <ArrowRight size={16} />
+                                            </Button>
                                         </Link>
                                     </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* CTA Banner */}
-                        <div className="bg-gradient-to-r from-[#df2531]/20 to-[#df2531]/5 rounded-2xl p-6 md:p-8 border border-[#df2531]/20">
-                            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                                <div>
-                                    <h3 className="text-xl font-bold text-white mb-2">Get Premium Access</h3>
-                                    <p className="text-white/60 text-sm">Unlock exclusive content and priority bookings</p>
                                 </div>
-                                <Button className="bg-[#df2531] hover:bg-[#c41f2a] text-white px-6 py-3 rounded-xl flex items-center gap-2">
-                                    Upgrade Now <ArrowRight size={16} />
-                                </Button>
-                            </div>
-                        </div>
+                            </>
+                        ) : (
+                            <>
+                                {/* Welcome */}
+                                <div className="mb-8">
+                                    <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                                        Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! 👋
+                                    </h1>
+                                    <p className="text-white/50">Discover elite talent and book unforgettable experiences.</p>
+                                </div>
+
+                                {/* Quick Stats */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                                    <Link href="/dashboard/wallet" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <Coin size={24} weight="duotone" className="text-[#df2531]" />
+                                        </div>
+                                        <p className="text-white/50 text-xs mb-1">Coin Balance</p>
+                                        <p className="text-white text-xl font-bold">{wallet?.balance?.toLocaleString() || 0}</p>
+                                        <p className="text-white/40 text-xs mt-0.5">≈ ₦{((wallet?.balance || 0) * 10).toLocaleString()}</p>
+                                    </Link>
+                                    <Link href="/dashboard/bookings" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <CalendarCheck size={24} weight="duotone" className="text-[#df2531]" />
+                                        </div>
+                                        <p className="text-white/50 text-xs mb-1">Active Bookings</p>
+                                        <p className="text-white text-xl font-bold">{activeBookings}</p>
+                                    </Link>
+                                    <Link href="/dashboard/favorites" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <Heart size={24} weight="duotone" className="text-[#df2531]" />
+                                        </div>
+                                        <p className="text-white/50 text-xs mb-1">Favorites</p>
+                                        <p className="text-white text-xl font-bold">{favoritesCount}</p>
+                                    </Link>
+                                    <Link href="/dashboard/profile" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <User size={24} weight="duotone" className="text-[#df2531]" />
+                                        </div>
+                                        <p className="text-white/50 text-xs mb-1">Profile Status</p>
+                                        <p className="text-white text-xl font-bold">{profile?.is_verified ? 'Verified' : 'Pending'}</p>
+                                    </Link>
+                                </div>
+
+                                {/* Featured Talents */}
+                                <div className="mb-8">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div>
+                                            <h2 className="text-xl font-bold text-white">Featured Talent</h2>
+                                            <p className="text-white/50 text-sm">Top picks for you</p>
+                                        </div>
+                                        <Link href="/dashboard/browse" className="flex items-center gap-2 text-[#df2531] text-sm hover:underline">
+                                            View All <CaretRight size={14} />
+                                        </Link>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        {talents.length > 0 ? talents.map((talent) => (
+                                            <Link
+                                                key={talent.id}
+                                                href={getTalentUrl(talent)}
+                                                className="group bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:border-[#df2531]/30 transition-all duration-300"
+                                            >
+                                                <div className="aspect-[3/4] relative overflow-hidden">
+                                                    {talent.avatar_url ? (
+                                                        <Image
+                                                            src={talent.avatar_url}
+                                                            alt={talent.display_name || 'Talent'}
+                                                            fill
+                                                            sizes="(max-width: 768px) 50vw, 25vw"
+                                                            className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                                        />
+                                                    ) : (
+                                                        <AvatarPlaceholder size="md" />
+                                                    )}
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+
+                                                    {/* Status */}
+                                                    <div className="absolute top-3 right-3">
+                                                        <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${talent.status === 'online'
+                                                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                            : talent.status === 'booked'
+                                                                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                                : 'bg-white/10 text-white/60 border border-white/10'
+                                                            }`}>
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${talent.status === 'online' ? 'bg-green-400' : talent.status === 'booked' ? 'bg-amber-400' : 'bg-white/40'
+                                                                }`} />
+                                                            {talent.status === 'online' ? 'Online' : talent.status === 'booked' ? 'Booked' : 'Offline'}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Verified Badge */}
+                                                    {talent.is_verified && (
+                                                        <div className="absolute top-3 left-3">
+                                                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#df2531]/90 text-white text-xs backdrop-blur-sm">
+                                                                <span className="text-[10px]">✓</span>
+                                                                Verified
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Info */}
+                                                    <div className="absolute bottom-3 left-3 right-3">
+                                                        <h3 className="text-white font-medium text-sm mb-1 truncate">
+                                                            {talent.display_name || 'Talent'}
+                                                        </h3>
+                                                        <div className="flex items-center gap-1.5 text-white/80 text-xs mb-1">
+                                                            <MapPin size={12} weight="fill" aria-hidden="true" />
+                                                            <span>{talent.location || 'Location not specified'}</span>
+                                                        </div>
+                                                        {getMinPrice(talent) > 0 && (
+                                                            <p className="text-white/60 text-xs">From {formatPrice(getMinPrice(talent))}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        )) : (
+                                            <div className="col-span-full text-center py-8 text-white/50">
+                                                <p>No featured talents available</p>
+                                                <Link href="/dashboard/browse" className="text-[#df2531] hover:underline mt-2 inline-block">
+                                                    Browse all talents
+                                                </Link>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* CTA Banner */}
+                                <div className="bg-gradient-to-r from-[#df2531]/20 to-[#df2531]/5 rounded-2xl p-6 md:p-8 border border-[#df2531]/20">
+                                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white mb-2">Get Premium Access</h3>
+                                            <p className="text-white/60 text-sm">Unlock exclusive content and priority bookings</p>
+                                        </div>
+                                        <Button className="bg-[#df2531] hover:bg-[#c41f2a] text-white px-6 py-3 rounded-xl flex items-center gap-2">
+                                            Upgrade Now <ArrowRight size={16} />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </main>
             </div>

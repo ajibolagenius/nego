@@ -21,6 +21,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { AdminMobileNav } from '@/components/AdminMobileNav'
+import { NotificationBell } from '@/components/NotificationBell'
+import { NotificationProvider } from '@/providers/NotificationProvider'
 import { Toaster } from '@/components/ui/sonner'
 import { createClient } from '@/lib/supabase/client'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -98,6 +100,9 @@ export function AdminLayoutClient({ user, children }: AdminLayoutClientProps) {
                     >
                         {mobileMenuOpen ? <X size={24} /> : <List size={24} />}
                     </button>
+                    <NotificationProvider userId={user.id}>
+                        <NotificationBell userId={user.id} />
+                    </NotificationProvider>
                 </div>
 
                 {/* Mobile Menu Dropdown */}
@@ -194,6 +199,11 @@ export function AdminLayoutClient({ user, children }: AdminLayoutClientProps) {
                                 <p className="text-white text-sm font-medium truncate">{user.email}</p>
                                 <p className="text-white/40 text-xs">Administrator</p>
                             </div>
+                        </div>
+                        <div className="px-4 py-2">
+                            <NotificationProvider userId={user.id}>
+                                <NotificationBell userId={user.id} />
+                            </NotificationProvider>
                         </div>
 
                         <button

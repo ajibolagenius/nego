@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logAdminAction, getClientIP, getUserAgent } from '@/lib/admin/audit-log'
 import { validateAdmin, validateWithdrawalRequest, validateWalletBalance } from '@/lib/admin/validation'
 import { createApiClient } from '@/lib/supabase/api'
-import { createClient } from '@/lib/supabase/server'
+import { notifyUser } from '@/lib/notifications'
 
 export async function POST(
   request: NextRequest,
@@ -48,7 +48,6 @@ export async function POST(
     const currentBalance = balanceCheck.currentBalance!
     const newBalance = currentBalance - withdrawalRequest.amount
 
-    const supabase = await createClient()
     const apiClient = createApiClient()
 
     // Deduct from wallet using API client to bypass RLS
@@ -105,13 +104,13 @@ export async function POST(
       // Don't fail the whole operation if transaction record fails, but log it
     }
 
-    // Create notification for talent
-    await supabase.from('notifications').insert({
-      user_id: withdrawalRequest.talent_id,
+    await notifyUser({
+      userId: withdrawalRequest.talent_id,
       type: 'withdrawal_approved',
       title: 'Withdrawal Approved!',
       message: `Your withdrawal request for ${withdrawalRequest.amount.toLocaleString()} coins has been approved.`,
-      data: { withdrawal_id: requestId, amount: withdrawalRequest.amount }
+      data: { withdrawal_id: requestId, amount: withdrawalRequest.amount },
+      url: '/dashboard/talent?tab=withdrawals',
     })
 
     // Log admin action

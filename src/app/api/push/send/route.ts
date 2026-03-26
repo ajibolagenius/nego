@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendPushNotification } from '@/lib/push/send-push'
 import { createClient } from '@/lib/supabase/server'
+import { createApiClient } from '@/lib/supabase/api'
 import type { PushSubscription } from '@/lib/push/send-push'
 
 /**
@@ -9,17 +10,9 @@ import type { PushSubscription } from '@/lib/push/send-push'
  */
 export async function POST(request: NextRequest) {
     try {
-        const supabase = await createClient()
-
-        // Verify user is authenticated and is admin (or allow users to send to themselves)
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-        if (authError || !user) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            )
-        }
+        const internalSecret = process.env.NOTIFICATION_DISPATCH_SECRET
+        const headerSecret = request.headers.get('x-notification-secret')
+        const isInternalRequest = Boolean(internalSecret && headerSecret === internalSecret)
 
         const payload = await request.json()
         const { userId, title, body, icon, badge, tag, data, url } = payload
@@ -31,18 +24,25 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Check if user is admin or sending to themselves
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single()
+        const supabase = createApiClient()
 
-        if (profile?.role !== 'admin' && userId !== user.id) {
-            return NextResponse.json(
-                { error: 'Forbidden' },
-                { status: 403 }
-            )
+        if (!isInternalRequest) {
+            const sessionSupabase = await createClient()
+            const { data: { user }, error: authError } = await sessionSupabase.auth.getUser()
+            if (authError || !user) {
+                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+            }
+
+            // Check if user is admin or sending to themselves
+            const { data: profile } = await sessionSupabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+
+            if (profile?.role !== 'admin' && userId !== user.id) {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+            }
         }
 
         // Get all push subscriptions for the user
