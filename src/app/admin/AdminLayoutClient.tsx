@@ -16,7 +16,7 @@ import {
     Bank
 } from '@phosphor-icons/react'
 import Link from 'next/link'
-import { usePathname , useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { AdminMobileNav } from '@/components/AdminMobileNav'
 import { Toaster } from '@/components/ui/sonner'
