@@ -13,7 +13,8 @@ import {
     Eye,
     X,
     PencilSimple,
-    FloppyDisk
+    FloppyDisk,
+    Trash
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -41,6 +42,7 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
     const [isProcessing, setIsProcessing] = useState(false)
     const [showConfirmVerify, setShowConfirmVerify] = useState(false)
     const [showConfirmUnverify, setShowConfirmUnverify] = useState(false)
+    const [showConfirmDelete, setShowConfirmDelete] = useState(false)
     const [showDetailModal, setShowDetailModal] = useState(false)
     const [adminNotes, setAdminNotes] = useState('')
     const [isEditingNotes, setIsEditingNotes] = useState(false)
@@ -169,6 +171,11 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
         setShowConfirmUnverify(true)
     }
 
+    const handleDelete = (talent: Profile) => {
+        setSelectedTalent(talent)
+        setShowConfirmDelete(true)
+    }
+
     const handleSaveAdminNotes = async () => {
         if (!selectedTalent) return
 
@@ -268,6 +275,38 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
             console.error('Error unverifying talent:', error)
             const errorMessage = error instanceof Error ? error.message : 'Failed to unverify talent. Please try again.'
             toast.error('Unverification Failed', { description: errorMessage })
+        } finally {
+            setIsProcessing(false)
+        }
+    }
+    const confirmDelete = async () => {
+        if (!selectedTalent) return
+
+        setIsProcessing(true)
+        try {
+            const response = await fetch(`/api/admin/users/${selectedTalent.id}`, {
+                method: 'DELETE',
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to delete talent')
+            }
+
+            setShowConfirmDelete(false)
+            setSelectedTalent(null)
+
+            toast.success('Talent Deleted', {
+                description: 'The talent account has been permanently deleted.'
+            })
+
+            await refreshTalents()
+            router.refresh()
+        } catch (error) {
+            console.error('Error deleting talent:', error)
+            const errorMessage = error instanceof Error ? error.message : 'Failed to delete talent. Please try again.'
+            toast.error('Deletion Failed', { description: errorMessage })
         } finally {
             setIsProcessing(false)
         }
@@ -510,6 +549,15 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                                                             Verify
                                                         </Button>
                                                     )}
+                                                    <Button
+                                                        onClick={() => handleDelete(talent)}
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
+                                                    >
+                                                        <Trash size={16} />
+                                                        Delete
+                                                    </Button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -759,6 +807,18 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                                         Verify Talent
                                     </Button>
                                 )}
+                                <Button
+                                    onClick={() => {
+                                        setShowDetailModal(false)
+                                        handleDelete(selectedTalent)
+                                    }}
+                                    disabled={isProcessing}
+                                    variant="outline"
+                                    className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
+                                >
+                                    <Trash size={18} />
+                                    Delete Account
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -792,6 +852,22 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                 title="Unverify Talent"
                 description={`Are you sure you want to remove verification from ${selectedTalent?.display_name || selectedTalent?.username || 'this talent'}? This will mark their account as unverified.`}
                 confirmLabel="Unverify"
+                cancelLabel="Cancel"
+                isLoading={isProcessing}
+                variant="destructive"
+            />
+
+            {/* Confirm Delete Dialog */}
+            <ConfirmDialog
+                isOpen={showConfirmDelete}
+                onClose={() => {
+                    setShowConfirmDelete(false)
+                    setSelectedTalent(null)
+                }}
+                onConfirm={confirmDelete}
+                title="Delete Talent Account"
+                description={`Are you sure you want to delete ${selectedTalent?.display_name || selectedTalent?.username || 'this talent'}? This action is permanent and will remove all their data from the system.`}
+                confirmLabel="Delete Permanently"
                 cancelLabel="Cancel"
                 isLoading={isProcessing}
                 variant="destructive"

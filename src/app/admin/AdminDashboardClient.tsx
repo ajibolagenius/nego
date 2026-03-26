@@ -176,7 +176,7 @@ export function AdminDashboardClient({
             label: 'Total Users',
             value: totalUsers,
             icon: Users,
-            href: '#',
+            href: '/admin/users',
             color: 'bg-blue-500/10 text-blue-400',
             urgent: false,
         },

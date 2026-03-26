@@ -2,13 +2,14 @@
 
 import {
     CheckCircle, XCircle, Clock, ChatCircle, User, Calendar,
-    Eye, X
+    Eye, X, Trash
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState, useMemo, Fragment } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { createClient } from '@/lib/supabase/client'
 import type { Dispute, DisputeMessage, Profile } from '@/types/database'
 
@@ -33,6 +34,7 @@ export function DisputesClient({ initialDisputes }: DisputesClientProps) {
     const [resolutionNotes, setResolutionNotes] = useState('')
     const [newMessage, setNewMessage] = useState('')
     const [messages, setMessages] = useState<DisputeMessageWithSender[]>([])
+    const [showConfirmDelete, setShowConfirmDelete] = useState(false)
 
     const filteredDisputes = useMemo(() => {
         if (filter === 'all') return disputes
@@ -122,6 +124,39 @@ export function DisputesClient({ initialDisputes }: DisputesClientProps) {
         } catch (error) {
             console.error('Send message error:', error)
             toast.error('Failed to send message')
+        } finally {
+            setIsProcessing(false)
+        }
+    }
+
+    const handleDelete = (dispute: Dispute) => {
+        setSelectedDispute(dispute)
+        setShowConfirmDelete(true)
+    }
+
+    const confirmDelete = async () => {
+        if (!selectedDispute) return
+
+        setIsProcessing(true)
+        try {
+            const response = await fetch(`/api/admin/disputes/${selectedDispute.id}`, {
+                method: 'DELETE',
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to delete dispute')
+            }
+
+            setShowConfirmDelete(false)
+            toast.success('Dispute Deleted')
+            _setDisputes(prev => prev.filter(d => d.id !== selectedDispute.id))
+            setSelectedDispute(null)
+            router.refresh()
+        } catch (error) {
+            console.error('Error deleting dispute:', error)
+            toast.error('Deletion Failed', { description: error instanceof Error ? error.message : 'Unknown error' })
         } finally {
             setIsProcessing(false)
         }
@@ -244,14 +279,24 @@ export function DisputesClient({ initialDisputes }: DisputesClientProps) {
                                             )}
                                         </div>
 
-                                        <Button
-                                            onClick={() => handleViewDetails(dispute)}
-                                            variant="outline"
-                                            className="ml-4 border-white/10"
-                                        >
-                                            <Eye size={18} />
-                                            View
-                                        </Button>
+                                        <div className="flex flex-col gap-2">
+                                            <Button
+                                                onClick={() => handleViewDetails(dispute)}
+                                                variant="outline"
+                                                className="border-white/10"
+                                            >
+                                                <Eye size={18} />
+                                                View
+                                            </Button>
+                                            <Button
+                                                onClick={() => handleDelete(dispute)}
+                                                variant="outline"
+                                                className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                            >
+                                                <Trash size={18} />
+                                                Delete
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -459,6 +504,21 @@ export function DisputesClient({ initialDisputes }: DisputesClientProps) {
                     </div>
                 </div>
             )}
+            {/* Confirm Delete Dialog */}
+            <ConfirmDialog
+                isOpen={showConfirmDelete}
+                onClose={() => {
+                    setShowConfirmDelete(false)
+                    setSelectedDispute(null)
+                }}
+                onConfirm={confirmDelete}
+                title="Delete Dispute"
+                description={`Are you sure you want to permanently delete this dispute? This action cannot be undone.`}
+                confirmLabel="Delete Permanently"
+                cancelLabel="Cancel"
+                isLoading={isProcessing}
+                variant="destructive"
+            />
         </Fragment>
     )
 }

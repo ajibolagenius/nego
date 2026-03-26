@@ -5,7 +5,8 @@ import {
     CurrencyDollar, CalendarCheck, Clock, Eye, EyeSlash,
     CaretRight, Coin, CheckCircle, XCircle, Hourglass, X,
     Camera, MapPin, Sparkle, Receipt, ChartLine, Icon, Bank, Money, Gift,
-    Warning, SpinnerGap, ForkKnife, Airplane, Lock, Calendar, Moon, Heart, CaretDown
+    Warning, SpinnerGap, ForkKnife, Airplane, Lock, Calendar, Moon, Heart, CaretDown,
+    ShieldCheck
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -988,6 +989,50 @@ export function TalentDashboardClient({
                     {/* Tab Content */}
                     {activeTab === 'overview' && (
                         <div className="space-y-6" role="tabpanel" id="tabpanel-overview" aria-labelledby="tab-overview">
+                            {/* Verification Nudge Banner */}
+                            {!profile?.is_verified && (
+                                <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 to-[#df2531]/5 border border-amber-500/20 shadow-lg shadow-amber-500/5 transition-all animate-in fade-in slide-in-from-top-4 duration-500">
+                                    <div className="flex items-start gap-4">
+                                        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 shrink-0">
+                                            <ShieldCheck size={24} weight="duotone" className="text-amber-400" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h4 className="text-lg font-bold text-white">Get Verified Faster!</h4>
+                                                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold uppercase tracking-wider border border-amber-500/30">
+                                                    Pro Tip
+                                                </span>
+                                            </div>
+                                            <p className="text-white/70 text-sm leading-relaxed mb-4">
+                                                Accounts with complete profiles, high-quality gallery photos, and active services are verified <span className="text-amber-400 font-semibold">3x faster</span> by our team. Update your details now to accelerate the process.
+                                            </p>
+                                            <div className="flex flex-wrap gap-3">
+                                                <button 
+                                                    onClick={() => setEditingProfile(true)}
+                                                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-all border border-white/10 flex items-center gap-2"
+                                                >
+                                                    <User size={14} weight="duotone" />
+                                                    Complete Profile
+                                                </button>
+                                                <button 
+                                                    onClick={() => setActiveTab('media')}
+                                                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-all border border-white/10 flex items-center gap-2"
+                                                >
+                                                    <ImageIcon size={14} weight="duotone" />
+                                                    Add Gallery Photos
+                                                </button>
+                                                <button 
+                                                    onClick={() => setActiveTab('services')}
+                                                    className="px-4 py-2 rounded-xl bg-[#df2531]/10 hover:bg-[#df2531]/20 text-[#df2531] text-xs font-semibold transition-all border border-[#df2531]/20 flex items-center gap-2"
+                                                >
+                                                    <Plus size={14} weight="duotone" />
+                                                    List Services
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                             {/* Quick Stats - Enhanced */}
                             <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
                                 <div className="flex items-center justify-between mb-5">
