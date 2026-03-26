@@ -442,6 +442,86 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                                     </Link>
                                 </div>
 
+                                {/* Keep part of client-style discovery on talent dashboard */}
+                                <div className="mb-8">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div>
+                                            <h2 className="text-xl font-bold text-white">Featured Talent</h2>
+                                            <p className="text-white/50 text-sm">Explore who is trending on the platform</p>
+                                        </div>
+                                        <Link href="/dashboard/browse" className="flex items-center gap-2 text-[#df2531] text-sm hover:underline">
+                                            View All <CaretRight size={14} />
+                                        </Link>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        {talents.length > 0 ? talents.map((talent) => (
+                                            <Link
+                                                key={talent.id}
+                                                href={getTalentUrl(talent)}
+                                                className="group bg-white/5 rounded-2xl overflow-hidden border border-white/10 hover:border-[#df2531]/30 transition-all duration-300"
+                                            >
+                                                <div className="aspect-[3/4] relative overflow-hidden">
+                                                    {talent.avatar_url ? (
+                                                        <Image
+                                                            src={talent.avatar_url}
+                                                            alt={talent.display_name || 'Talent'}
+                                                            fill
+                                                            sizes="(max-width: 768px) 50vw, 25vw"
+                                                            className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                                        />
+                                                    ) : (
+                                                        <AvatarPlaceholder size="md" />
+                                                    )}
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+
+                                                    <div className="absolute top-3 right-3">
+                                                        <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${talent.status === 'online'
+                                                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                            : talent.status === 'booked'
+                                                                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                                : 'bg-white/10 text-white/60 border border-white/10'
+                                                            }`}>
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${talent.status === 'online' ? 'bg-green-400' : talent.status === 'booked' ? 'bg-amber-400' : 'bg-white/40'
+                                                                }`} />
+                                                            {talent.status === 'online' ? 'Online' : talent.status === 'booked' ? 'Booked' : 'Offline'}
+                                                        </span>
+                                                    </div>
+
+                                                    {talent.is_verified && (
+                                                        <div className="absolute top-3 left-3">
+                                                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#df2531]/90 text-white text-xs backdrop-blur-sm">
+                                                                <span className="text-[10px]">✓</span>
+                                                                Verified
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="absolute bottom-3 left-3 right-3">
+                                                        <h3 className="text-white font-medium text-sm mb-1 truncate">
+                                                            {talent.display_name || 'Talent'}
+                                                        </h3>
+                                                        <div className="flex items-center gap-1.5 text-white/80 text-xs mb-1">
+                                                            <MapPin size={12} weight="fill" aria-hidden="true" />
+                                                            <span>{talent.location || 'Location not specified'}</span>
+                                                        </div>
+                                                        {getMinPrice(talent) > 0 && (
+                                                            <p className="text-white/60 text-xs">From {formatPrice(getMinPrice(talent))}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        )) : (
+                                            <div className="col-span-full text-center py-8 text-white/50">
+                                                <p>No featured talents available</p>
+                                                <Link href="/dashboard/browse" className="text-[#df2531] hover:underline mt-2 inline-block">
+                                                    Browse all talents
+                                                </Link>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
                                 <div className="grid md:grid-cols-3 gap-4 mb-8">
                                     <Link href="/dashboard/talent" className="bg-white/5 rounded-2xl p-5 border border-white/10 hover:border-[#df2531]/30 transition-all">
                                         <div className="flex items-center gap-2 mb-3 text-[#df2531]">
