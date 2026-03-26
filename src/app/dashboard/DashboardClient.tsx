@@ -276,7 +276,7 @@ export function DashboardClient({ user, profile, wallet: initialWallet, featured
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
-                            <Link href="/dashboard/profile">
+                            <Link href="/dashboard/talent">
                                 <Button size="sm" className="bg-[#df2531] hover:bg-[#c41f2a] text-white text-xs px-3 py-1.5 h-auto rounded-lg">
                                     Update Profile
                                 </Button>

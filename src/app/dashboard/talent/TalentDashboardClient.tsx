@@ -6,7 +6,7 @@ import {
     CaretRight, Coin, CheckCircle, XCircle, Hourglass, X,
     Camera, MapPin, Sparkle, Receipt, ChartLine, Icon, Bank, Money, Gift,
     Warning, SpinnerGap, ForkKnife, Airplane, Lock, Calendar, Moon, Heart, CaretDown,
-    ShieldCheck, Info
+    ShieldCheck, Info, Copy
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -673,6 +673,8 @@ export function TalentDashboardClient({
 
                             <Link
                                 href={getTalentUrl({ id: user.id, username: profile?.username, display_name: profile?.display_name })}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="flex items-center gap-2 text-[#df2531] hover:text-[#df2531]/80 transition-colors text-sm"
                             >
                                 <Eye size={18} />
@@ -713,8 +715,36 @@ export function TalentDashboardClient({
                         <div className="flex-1">
                             {/* Success/Error Messages */}
                             {profileSuccess && (
-                                <div className="mb-4 p-3 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 text-sm">
-                                    Profile updated successfully!
+                                <div className="mb-6 p-4 rounded-2xl bg-green-500/10 border border-green-500/20 backdrop-blur-xl">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3">
+                                            <CheckCircle size={20} weight="duotone" className="text-green-400 shrink-0" />
+                                            <div>
+                                                <p className="text-white text-sm font-semibold">Profile updated successfully!</p>
+                                                <p className="text-white/60 text-xs mt-0.5">Share your profile link to get more bookings.</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                                            <div className="flex-1 sm:flex-initial bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 flex items-center gap-2 min-w-0">
+                                                <span className="text-white/40 text-[10px] uppercase font-bold tracking-wider shrink-0">Link:</span>
+                                                <span className="text-white/80 text-xs truncate">
+                                                    {getTalentUrl({ id: user.id, username: profile?.username, display_name: profile?.display_name })}
+                                                </span>
+                                            </div>
+                                            <Button
+                                                onClick={() => {
+                                                    const url = window.location.origin + getTalentUrl({ id: user.id, username: profile?.username, display_name: profile?.display_name });
+                                                    navigator.clipboard.writeText(url);
+                                                    alert('Profile link copied!');
+                                                }}
+                                                size="sm"
+                                                className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1.5 h-auto rounded-lg flex items-center gap-1.5"
+                                            >
+                                                <Copy size={14} />
+                                                Copy
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                             {profileError && (

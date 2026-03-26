@@ -13,7 +13,9 @@ import {
     ImageSquare,
     Coins,
     Warning,
-    Bank
+    Bank,
+    UserList,
+    TrendUp
 } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -23,16 +25,38 @@ import { Toaster } from '@/components/ui/sonner'
 import { createClient } from '@/lib/supabase/client'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
-const navItems = [
-    { href: '/admin', label: 'Dashboard', icon: House },
-    { href: '/admin/verifications', label: 'Verifications', icon: UserCheck },
-    { href: '/admin/talents', label: 'Talents', icon: Users },
-    { href: '/admin/content', label: 'Content Moderation', icon: ImageSquare },
-    { href: '/admin/coin-packages', label: 'Coin Packages', icon: Coins },
-    { href: '/admin/disputes', label: 'Disputes', icon: Warning },
-    { href: '/admin/deposits', label: 'Deposits', icon: Bank },
-    { href: '/admin/payouts', label: 'Payouts', icon: Money },
-    { href: '/admin/analytics', label: 'Analytics', icon: ChartLine },
+const navSections = [
+    {
+        title: 'Overview',
+        items: [
+            { href: '/admin', label: 'Dashboard', icon: House },
+            { href: '/admin/analytics', label: 'Analytics', icon: ChartLine },
+        ]
+    },
+    {
+        title: 'Management',
+        items: [
+            { href: '/admin/verifications', label: 'Verifications', icon: UserCheck },
+            { href: '/admin/talents', label: 'Talents', icon: Users },
+            { href: '/admin/users', label: 'Users', icon: UserList },
+            { href: '/admin/content', label: 'Content Moderation', icon: ImageSquare },
+        ]
+    },
+    {
+        title: 'Financials',
+        items: [
+            { href: '/admin/revenue', label: 'Revenue & Ethics', icon: TrendUp },
+            { href: '/admin/payouts', label: 'Payouts', icon: Money },
+            { href: '/admin/deposits', label: 'Deposits', icon: Bank },
+            { href: '/admin/coin-packages', label: 'Coin Packages', icon: Coins },
+        ]
+    },
+    {
+        title: 'Platform',
+        items: [
+            { href: '/admin/disputes', label: 'Disputes', icon: Warning },
+        ]
+    }
 ]
 
 interface AdminLayoutClientProps {
@@ -44,6 +68,11 @@ export function AdminLayoutClient({ user, children }: AdminLayoutClientProps) {
     const pathname = usePathname()
     const router = useRouter()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+    const isActive = (href: string) => {
+        if (href === '/admin') return pathname === '/admin'
+        return pathname.startsWith(href)
+    }
 
     const handleSignOut = async () => {
         const supabase = createClient()
@@ -73,26 +102,30 @@ export function AdminLayoutClient({ user, children }: AdminLayoutClientProps) {
 
                 {/* Mobile Menu Dropdown */}
                 {mobileMenuOpen && (
-                    <div className="absolute top-full left-0 right-0 bg-black/95 backdrop-blur-xl border-b border-white/10 py-2">
-                        {navItems.map((item) => {
-                            const isActive = pathname === item.href
-                            const Icon = item.icon
-
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className={`flex items-center gap-3 px-4 py-3 transition-colors ${isActive
-                                        ? 'bg-[#df2531]/10 text-[#df2531]'
-                                        : 'text-white/60 hover:bg-white/5 hover:text-white'
-                                        }`}
-                                >
-                                    <Icon size={20} weight={isActive ? 'fill' : 'regular'} />
-                                    <span className="font-medium">{item.label}</span>
-                                </Link>
-                            )
-                        })}
+                    <div className="absolute top-full left-0 right-0 bg-black/95 backdrop-blur-xl border-b border-white/10 py-2 max-h-[80vh] overflow-y-auto">
+                        {navSections.map((section) => (
+                            <div key={section.title} className="py-2">
+                                <div className="px-4 py-1 text-[10px] font-bold text-white/40 uppercase tracking-widest">{section.title}</div>
+                                {section.items.map((item) => {
+                                    const active = isActive(item.href)
+                                    const Icon = item.icon
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className={`flex items-center gap-3 px-4 py-3 transition-colors ${active
+                                                ? 'bg-[#df2531]/10 text-[#df2531]'
+                                                : 'text-white/60 hover:bg-white/5 hover:text-white'
+                                                }`}
+                                        >
+                                            <Icon size={20} weight={active ? 'fill' : 'regular'} />
+                                            <span className="font-medium">{item.label}</span>
+                                        </Link>
+                                    )
+                                })}
+                            </div>
+                        ))}
                         <button
                             onClick={handleSignOut}
                             className="w-full flex items-center gap-3 px-4 py-3 text-white/60 hover:bg-red-500/10 hover:text-red-400 transition-colors"
@@ -118,28 +151,35 @@ export function AdminLayoutClient({ user, children }: AdminLayoutClientProps) {
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 p-4 overflow-y-auto">
-                        <ul className="space-y-2">
-                            {navItems.map((item) => {
-                                const isActive = pathname === item.href
-                                const Icon = item.icon
-
-                                return (
-                                    <li key={item.href}>
-                                        <Link
-                                            href={item.href}
-                                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${isActive
-                                                ? 'bg-[#df2531] text-white'
-                                                : 'text-white/60 hover:bg-white/5 hover:text-white'
-                                                }`}
-                                        >
-                                            <Icon size={20} weight={isActive ? 'fill' : 'regular'} />
-                                            <span className="text-sm font-medium">{item.label}</span>
-                                        </Link>
-                                    </li>
-                                )
-                            })}
-                        </ul>
+                    <nav className="flex-1 p-4 overflow-y-auto space-y-6">
+                        {navSections.map((section) => (
+                            <div key={section.title}>
+                                <h3 className="px-4 mb-2 text-[10px] font-bold text-white/40 uppercase tracking-widest leading-none">
+                                    {section.title}
+                                </h3>
+                                <ul className="space-y-1">
+                                    {section.items.map((item) => {
+                                        const active = isActive(item.href)
+                                        const Icon = item.icon
+ 
+                                        return (
+                                            <li key={item.href}>
+                                                <Link
+                                                    href={item.href}
+                                                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 ${active
+                                                        ? 'bg-[#df2531] text-white shadow-lg shadow-[#df2531]/20'
+                                                        : 'text-white/60 hover:bg-white/5 hover:text-white'
+                                                        }`}
+                                                >
+                                                    <Icon size={18} weight={active ? 'fill' : 'regular'} />
+                                                    <span className="text-sm font-medium">{item.label}</span>
+                                                </Link>
+                                            </li>
+                                        )
+                                    })}
+                                </ul>
+                            </div>
+                        ))}
                     </nav>
 
                     {/* Footer */}
