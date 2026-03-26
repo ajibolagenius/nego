@@ -671,15 +671,29 @@ export function TalentDashboardClient({
                                 </div>
                             </div>
 
-                            <Link
-                                href={getTalentUrl({ id: user.id, username: profile?.username, display_name: profile?.display_name })}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-[#df2531] hover:text-[#df2531]/80 transition-colors text-sm"
-                            >
-                                <Eye size={18} />
-                                <span className="hidden sm:inline">View Public Profile</span>
-                            </Link>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => {
+                                        const url = window.location.origin + getTalentUrl({ id: user.id, username: profile?.username, display_name: profile?.display_name });
+                                        navigator.clipboard.writeText(url);
+                                        alert('Profile link copied!');
+                                    }}
+                                    className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm"
+                                >
+                                    <Copy size={18} />
+                                    <span className="hidden sm:inline">Copy/Share Profile Link</span>
+                                </button>
+                                <div className="w-px h-4 bg-white/10 hidden sm:block" />
+                                <Link
+                                    href={getTalentUrl({ id: user.id, username: profile?.username, display_name: profile?.display_name })}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 text-[#df2531] hover:text-[#df2531]/80 transition-colors text-sm"
+                                >
+                                    <Eye size={18} />
+                                    <span className="hidden sm:inline">View Public Profile</span>
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 </header>
