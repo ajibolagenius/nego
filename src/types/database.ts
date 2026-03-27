@@ -38,6 +38,7 @@ export interface Profile {
     status: TalentStatus
     starting_price: number | null
     admin_notes: string | null
+    gender?: 'male' | 'female' | 'other' | null
     push_notifications_enabled?: boolean
     email_notifications_enabled?: boolean
     is_suspended?: boolean

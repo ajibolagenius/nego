@@ -42,6 +42,7 @@ export default function RegisterPage() {
     const [username, setUsername] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('')
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
@@ -207,9 +208,10 @@ export default function RegisterPage() {
         const emailValidated = validateEmail(email)
         const passwordStrong = isPasswordStrong(passwordRequirements)
         const usernameValidated = role === 'talent' ? await validateUsername(username) : true
+        const genderValidated = role === 'talent' ? !!gender : true
 
-        if (!nameValidated || !emailValidated || !passwordStrong || !usernameValidated) {
-            setError('Please fix the errors in the form before submitting')
+        if (!nameValidated || !emailValidated || !passwordStrong || !usernameValidated || !genderValidated) {
+            setError(role === 'talent' && !genderValidated ? 'Please select your gender' : 'Please fix the errors in the form before submitting')
             setLoading(false)
             return
         }
@@ -226,6 +228,7 @@ export default function RegisterPage() {
                         full_name: name.trim(),
                         role: role,
                         username: role === 'talent' ? username.trim().toLowerCase() : null,
+                        gender: role === 'talent' ? gender : null,
                     },
                 },
             })
@@ -263,6 +266,7 @@ export default function RegisterPage() {
                             displayName: name.trim(),
                             fullName: name.trim(),
                             username: role === 'talent' ? username.trim().toLowerCase() : null,
+                            gender: role === 'talent' ? gender : null,
                         }),
                     })
 
@@ -551,6 +555,30 @@ export default function RegisterPage() {
                                     </div>
                                 )}
 
+                                {/* Gender (for talents only) */}
+                                {role === 'talent' && (
+                                    <div>
+                                        <label className="block text-white/70 text-sm mb-3">
+                                            Gender <span className="text-red-400" aria-label="required">*</span>
+                                        </label>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {(['male', 'female', 'other'] as const).map((g) => (
+                                                <button
+                                                    key={g}
+                                                    type="button"
+                                                    onClick={() => setGender(g)}
+                                                    className={`py-2.5 rounded-xl border text-sm font-medium transition-all ${gender === g
+                                                        ? 'border-[#df2531] bg-[#df2531]/10 text-white'
+                                                        : 'border-white/10 bg-white/5 text-white/50 hover:border-white/20'
+                                                        }`}
+                                                >
+                                                    {g.charAt(0).toUpperCase() + g.slice(1)}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Email */}
                                 <div>
                                     <label htmlFor="register-email" className="block text-white/70 text-sm mb-2">
@@ -687,7 +715,7 @@ export default function RegisterPage() {
                                 {/* Submit button */}
                                 <Button
                                     type="submit"
-                                    disabled={loading || !nameValid || !emailValid || !passwordStrong || (role === 'talent' && !usernameValid) || checkingUsername}
+                                    disabled={loading || !nameValid || !emailValid || !passwordStrong || (role === 'talent' && (!usernameValid || !gender)) || checkingUsername}
                                     className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-3 rounded-xl transition-all duration-300 disabled:opacity-50"
                                     aria-label="Create account"
                                 >

@@ -4,7 +4,7 @@ import { createApiClient } from '@/lib/supabase/api'
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { userId, role, displayName, fullName, username } = body
+        const { userId, role, displayName, fullName, username, gender } = body
 
         // Validate required fields
         if (!userId || !role) {
@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
                     .from('profiles')
                     .update({
                         username: username.trim().toLowerCase(),
+                        gender: gender || null,
                         updated_at: new Date().toISOString()
                     })
                     .eq('id', userId)
@@ -83,6 +84,7 @@ export async function POST(request: NextRequest) {
                 display_name: displayName || fullName || 'User',
                 full_name: fullName || displayName || null,
                 username: role === 'talent' && username ? username.trim().toLowerCase() : null,
+                gender: gender || null,
                 is_verified: false,
                 status: 'offline',
             })

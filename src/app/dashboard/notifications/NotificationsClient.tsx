@@ -343,7 +343,7 @@ export function NotificationsClient({ user, profile, notifications: initialNotif
                                         onClick={() => setShowDeleteConfirm(true)}
                                         disabled={deletingAllRead}
                                         variant="ghost"
-                                        className="text-white/60 hover:text-white/80 text-sm"
+                                        className="text-red-400/60 hover:text-red-400 hover:bg-red-500/10 text-sm transition-all border border-transparent hover:border-red-500/20"
                                         aria-label="Delete all read notifications"
                                     >
                                         <Trash size={18} className="mr-2" aria-hidden="true" />
@@ -528,16 +528,17 @@ export function NotificationsClient({ user, profile, notifications: initialNotif
                                                     <button
                                                         onClick={() => deleteNotification(notification.id)}
                                                         disabled={deletingId === notification.id}
-                                                        className="flex items-center gap-1 text-white/40 text-sm hover:text-red-400 ml-auto transition-colors disabled:opacity-50"
+                                                        title="Delete Notification"
+                                                        className="p-2 rounded-lg text-white/40 hover:text-red-400 hover:bg-red-500/10 ml-auto transition-all disabled:opacity-50"
                                                         aria-label={`Delete ${notification.title}`}
                                                     >
                                                         {deletingId === notification.id ? (
                                                             <>
-                                                                <SpinnerGap size={14} className="animate-spin" aria-hidden="true" />
+                                                                <SpinnerGap size={16} className="animate-spin" aria-hidden="true" />
                                                                 <span className="sr-only">Deleting...</span>
                                                             </>
                                                         ) : (
-                                                            <Trash size={14} aria-hidden="true" />
+                                                            <Trash size={16} aria-hidden="true" />
                                                         )}
                                                     </button>
                                                 </div>

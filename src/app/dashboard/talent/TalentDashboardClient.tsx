@@ -154,6 +154,7 @@ export function TalentDashboardClient({
     const [profileSuccess, setProfileSuccess] = useState(false)
     const [usernameError, setUsernameError] = useState('')
     const [checkingUsername, setCheckingUsername] = useState(false)
+    const [gender, setGender] = useState<'male' | 'female' | 'other' | null>(profile?.gender || null)
 
     // Withdrawal state
     const [showWithdrawalModal, setShowWithdrawalModal] = useState(false)
@@ -435,6 +436,7 @@ export function TalentDashboardClient({
                     display_name: displayName.trim(),
                     username: username.trim().toLowerCase() || null,
                     location: location.trim(),
+                    gender: gender,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', user.id)
@@ -479,6 +481,7 @@ export function TalentDashboardClient({
         setDisplayName(profile?.display_name || '')
         setUsername(profile?.username || '')
         setLocation(profile?.location || '')
+        setGender(profile?.gender || null)
         setProfileError(null)
         setProfileSuccess(false)
         setUsernameError('')
@@ -840,7 +843,25 @@ export function TalentDashboardClient({
                                             <CaretDown className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" size={16} />
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div>
+                                        <label className="block text-white/70 text-sm mb-2">Gender *</label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {(['male', 'female', 'other'] as const).map((g) => (
+                                                <button
+                                                    key={g}
+                                                    type="button"
+                                                    onClick={() => setGender(g)}
+                                                    className={`px-4 py-2 rounded-xl text-sm border transition-all ${gender === g
+                                                            ? 'bg-[#df2531] border-[#df2531] text-white shadow-lg shadow-[#df2531]/20'
+                                                            : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10'
+                                                        }`}
+                                                >
+                                                    {g.charAt(0).toUpperCase() + g.slice(1)}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 pt-2">
                                         <Button
                                             onClick={handleSaveProfile}
                                             disabled={isSaving}
@@ -1402,8 +1423,9 @@ export function TalentDashboardClient({
 
                                                 <button
                                                     onClick={() => handleDeleteService(item.id)}
+                                                    title="Delete Service"
                                                     aria-label={`Delete ${item.service_type?.name} service`}
-                                                    className="p-3 rounded-lg bg-white/5 text-white/40 hover:bg-red-500/10 hover:text-red-400 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
+                                                    className="p-3 rounded-lg bg-red-500/5 text-red-400/60 hover:bg-red-500/20 hover:text-red-400 transition-all border border-red-500/10 hover:border-red-500/30 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
                                                 >
                                                     <Trash size={20} weight="duotone" aria-hidden="true" />
                                                 </button>

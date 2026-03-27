@@ -38,6 +38,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
     const [selectedLocation, setSelectedLocation] = useState('All Locations')
     const [selectedService, setSelectedService] = useState<string | null>(null)
     const [selectedAvailability, setSelectedAvailability] = useState<'all' | 'online' | 'offline' | 'booked'>('all')
+    const [selectedGender, setSelectedGender] = useState<'all' | 'male' | 'female' | 'other'>('all')
     const [showFilters, setShowFilters] = useState(false)
     const [sortBy, setSortBy] = useState<'random' | 'recent' | 'price_low' | 'price_high'>('random')
     const [visibleCount, setVisibleCount] = useState(20)
@@ -49,6 +50,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
         selectedLocation,
         selectedService,
         selectedAvailability,
+        selectedGender,
         sortBy
     })
 
@@ -57,12 +59,14 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
         selectedLocation !== prevFilters.selectedLocation ||
         selectedService !== prevFilters.selectedService ||
         selectedAvailability !== prevFilters.selectedAvailability ||
+        selectedGender !== prevFilters.selectedGender ||
         sortBy !== prevFilters.sortBy) {
         setPrevFilters({
             searchQuery,
             selectedLocation,
             selectedService,
             selectedAvailability,
+            selectedGender,
             sortBy
         })
         setVisibleCount(20)
@@ -98,6 +102,11 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
             result = result.filter(t => t.status === selectedAvailability)
         }
 
+        // Gender filter
+        if (selectedGender !== 'all') {
+            result = result.filter(t => t.gender === selectedGender)
+        }
+
         // Sort
         if (sortBy === 'price_low') {
             result.sort((a, b) => (a.starting_price || 0) - (b.starting_price || 0))
@@ -108,7 +117,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
         }
 
         return result
-    }, [talents, searchQuery, selectedLocation, selectedService, selectedAvailability, sortBy])
+    }, [talents, searchQuery, selectedLocation, selectedService, selectedAvailability, selectedGender, sortBy])
 
 
     // Infinite scroll observer
@@ -194,7 +203,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                         >
                             <Funnel size={18} />
                             Filters
-                            {(selectedService || selectedAvailability !== 'all') && (
+                            {(selectedService || selectedAvailability !== 'all' || selectedGender !== 'all') && (
                                 <span className="w-2 h-2 bg-white rounded-full" />
                             )}
                         </Button>
@@ -237,6 +246,40 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                                                         option.value === 'booked' ? 'text-amber-400' : 'text-white/40'
                                                 } />
                                             )}
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Gender Filter */}
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-white font-semibold">Gender</h3>
+                                    {selectedGender !== 'all' && (
+                                        <button
+                                            onClick={() => setSelectedGender('all')}
+                                            className="text-[#df2531] text-sm hover:underline"
+                                        >
+                                            Clear
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        { value: 'all', label: 'All' },
+                                        { value: 'male', label: 'Male' },
+                                        { value: 'female', label: 'Female' },
+                                        { value: 'other', label: 'Other' },
+                                    ].map(option => (
+                                        <button
+                                            key={option.value}
+                                            onClick={() => setSelectedGender(option.value as typeof selectedGender)}
+                                            className={`px-4 py-2 rounded-full text-sm transition-all ${selectedGender === option.value
+                                                ? 'bg-[#df2531] text-white'
+                                                : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
+                                                }`}
+                                        >
                                             {option.label}
                                         </button>
                                     ))}

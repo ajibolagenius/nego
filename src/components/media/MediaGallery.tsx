@@ -76,8 +76,9 @@ export function MediaGallery({ items, viewMode, deletingId, onDelete }: MediaGal
                         <button
                             onClick={() => onDelete(item)}
                             disabled={deletingId === item.id}
+                            title="Delete Media"
                             aria-label={`Delete ${item.is_premium ? 'premium' : 'free'} ${item.type}`}
-                            className="p-2.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
+                            className="p-3 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all border border-red-500/20 hover:border-red-500/40 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black shadow-lg shadow-red-500/10"
                         >
                             {deletingId === item.id ? (
                                 <SpinnerGap size={18} className="animate-spin" aria-hidden="true" />
@@ -126,17 +127,18 @@ export function MediaGallery({ items, viewMode, deletingId, onDelete }: MediaGal
                     )}
 
                     {/* Hover Overlay */}
-                    <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none group-hover:pointer-events-auto">
                         <button
                             onClick={() => onDelete(item)}
                             disabled={deletingId === item.id}
+                            title="Delete Media"
                             aria-label={`Delete ${item.is_premium ? 'premium' : 'free'} ${item.type}`}
-                            className="p-3 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
+                            className="p-3.5 rounded-full bg-red-600 text-white hover:bg-red-500 transition-all transform scale-90 group-hover:scale-100 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black shadow-xl"
                         >
                             {deletingId === item.id ? (
-                                <SpinnerGap size={20} className="animate-spin" aria-hidden="true" />
+                                <SpinnerGap size={22} className="animate-spin" aria-hidden="true" />
                             ) : (
-                                <Trash size={20} weight="duotone" aria-hidden="true" />
+                                <Trash size={22} weight="fill" aria-hidden="true" />
                             )}
                         </button>
                     </div>
