@@ -6,27 +6,36 @@ import {
     User,
     MagnifyingGlass,
     ArrowClockwise,
-    ShieldCheck,
-    ShieldSlash,
+    Trash,
     Calendar,
     MapPin,
     Eye,
     X,
-    PencilSimple,
-    FloppyDisk,
-    Trash
+    ShieldCheck,
+    ShieldSlash
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
-import { EmptyState } from '@/components/admin/EmptyState'
 import { Pagination } from '@/components/admin/Pagination'
 import { Button } from '@/components/ui/button'
 import { usePagination } from '@/hooks/admin/usePagination'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types/database'
+
+function DetailItem({ label, value, icon, className = "" }: { label: string, value: any, icon?: React.ReactNode, className?: string }) {
+    return (
+        <div className={className}>
+            <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider mb-1">{label}</p>
+            <div className="flex items-center gap-1.5 text-white font-medium">
+                {icon}
+                <span className="truncate">{value}</span>
+            </div>
+        </div>
+    )
+}
 
 interface TalentsClientProps {
     talents: Profile[]
@@ -339,8 +348,10 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                         Refresh
                     </Button>
                 </div>
+            </div>
 
-                {/* Search and Filters */}
+            {/* Search and Filters */}
+            <div className="mb-8">
                 <div className="flex flex-col sm:flex-row gap-4">
                     {/* Search */}
                     <div className="flex-1 relative">
@@ -358,7 +369,7 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                     </div>
 
                     {/* Filter Buttons */}
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <button
                             onClick={() => setFilter('all')}
                             className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${filter === 'all'
@@ -392,60 +403,39 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                 </div>
             </div>
 
-            {/* Talents Table */}
-            {paginatedData.length === 0 ? (
-                <EmptyState
-                    icon={User}
-                    title="No talents found"
-                    description={
-                        searchQuery || filter !== 'all'
-                            ? 'Try adjusting your search or filter criteria'
-                            : 'No talents have registered yet'
-                    }
-                />
-            ) : (
-                <>
-                    <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden">
-                        <div className="overflow-x-auto">
+            {/* Content Container */}
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden">
+                {paginatedData.length === 0 ? (
+                    <div className="p-12 text-center">
+                        <User size={48} className="mx-auto text-white/10 mb-4" />
+                        <p className="text-white/40 italic">No talents found matching your search.</p>
+                    </div>
+                ) : (
+                    <>
+                        {/* Desktop Table View */}
+                        <div className="hidden lg:block overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-white/5 border-b border-white/10">
                                     <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                                            Talent
-                                        </th>
-                                        <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                                            Username
-                                        </th>
-                                        <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                                            Location
-                                        </th>
-                                        <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                                            Status
-                                        </th>
-                                        <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                                            Verified
-                                        </th>
-                                        <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                                            Joined
-                                        </th>
-                                        <th className="px-6 py-4 text-right text-xs font-medium text-white/60 uppercase tracking-wider">
-                                            Actions
-                                        </th>
+                                        <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Talent</th>
+                                        <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Username</th>
+                                        <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Location</th>
+                                        <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Verified</th>
+                                        <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Joined</th>
+                                        <th className="px-6 py-4 text-right text-xs font-medium text-white/60 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/10">
                                     {paginatedData.map((talent) => (
-                                        <tr
-                                            key={talent.id}
-                                            className="hover:bg-white/5 transition-colors"
-                                        >
+                                        <tr key={talent.id} className="hover:bg-white/5 transition-colors group">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center overflow-hidden">
                                                         {talent.avatar_url ? (
                                                             <Image
                                                                 src={talent.avatar_url}
-                                                                alt={talent.display_name || talent.username || 'Talent'}
+                                                                alt={talent.display_name || 'Talent'}
                                                                 width={40}
                                                                 height={40}
                                                                 className="w-full h-full object-cover"
@@ -455,33 +445,23 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                                                         )}
                                                     </div>
                                                     <div>
-                                                        <p className="text-white font-medium">
+                                                        <p className="text-white font-medium group-hover:text-[#df2531] transition-colors">
                                                             {talent.display_name || talent.full_name || 'No name'}
                                                         </p>
                                                         {talent.bio && (
-                                                            <p className="text-white/40 text-sm truncate max-w-xs">
-                                                                {talent.bio}
-                                                            </p>
+                                                            <p className="text-white/40 text-sm truncate max-w-xs">{talent.bio}</p>
                                                         )}
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                {talent.username ? (
-                                                    <span className="text-white/80">@{talent.username}</span>
-                                                ) : (
-                                                    <span className="text-white/40 text-sm">—</span>
-                                                )}
+                                                <span className="text-white/80">@{talent.username || '—'}</span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                {talent.location ? (
-                                                    <div className="flex items-center gap-1 text-white/60">
-                                                        <MapPin size={14} />
-                                                        <span className="text-sm">{talent.location}</span>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-white/40 text-sm">—</span>
-                                                )}
+                                                <div className="flex items-center gap-1 text-white/60">
+                                                    <MapPin size={14} />
+                                                    <span className="text-sm">{talent.location || '—'}</span>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${talent.status === 'online'
@@ -493,8 +473,7 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                                                     <span className={`w-1.5 h-1.5 rounded-full ${talent.status === 'online' ? 'bg-green-400' :
                                                             talent.status === 'booked' ? 'bg-amber-400' : 'bg-white/40'
                                                         }`} />
-                                                    {talent.status === 'online' ? 'Online' :
-                                                        talent.status === 'booked' ? 'Booked' : talent.status || 'Offline'}
+                                                    {talent.status || 'Offline'}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
@@ -510,53 +489,17 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-1 text-white/60">
-                                                    <Calendar size={14} />
-                                                    <span className="text-sm">{formatDate(talent.created_at)}</span>
-                                                </div>
+                                            <td className="px-6 py-4 text-white/60 text-sm">
+                                                {formatDate(talent.created_at)}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center justify-end gap-2">
-                                                    <Button
-                                                        onClick={() => handleViewDetails(talent)}
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="bg-white/5 border-white/10 text-white hover:bg-white/10"
-                                                    >
-                                                        <Eye size={16} />
-                                                        View
+                                                    <Button onClick={() => handleViewDetails(talent)} variant="outline" size="sm" className="bg-white/5 border-white/10 text-white hover:bg-white/10 px-2 lg:px-3">
+                                                        <Eye size={16} className="lg:mr-2" />
+                                                        <span className="hidden lg:inline">View</span>
                                                     </Button>
-                                                    {talent.is_verified ? (
-                                                        <Button
-                                                            onClick={() => handleUnverify(talent)}
-                                                            disabled={isProcessing}
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
-                                                        >
-                                                            <ShieldSlash size={16} />
-                                                            Unverify
-                                                        </Button>
-                                                    ) : (
-                                                        <Button
-                                                            onClick={() => handleVerify(talent)}
-                                                            disabled={isProcessing}
-                                                            size="sm"
-                                                            className="bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30"
-                                                        >
-                                                            <ShieldCheck size={16} />
-                                                            Verify
-                                                        </Button>
-                                                    )}
-                                                    <Button
-                                                        onClick={() => handleDelete(talent)}
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
-                                                    >
+                                                    <Button onClick={() => handleDelete(talent)} variant="outline" size="sm" className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 px-2 lg:px-3">
                                                         <Trash size={16} />
-                                                        Delete
                                                     </Button>
                                                 </div>
                                             </td>
@@ -565,22 +508,84 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                                 </tbody>
                             </table>
                         </div>
-                    </div>
 
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="mt-6">
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={goToPage}
-                                itemsPerPage={20}
-                                onItemsPerPageChange={setItemsPerPage}
-                                totalItems={filteredTalents.length}
-                            />
+                        {/* Mobile/Tablet List View */}
+                        <div className="lg:hidden divide-y divide-white/10">
+                            {paginatedData.map((talent) => (
+                                <div key={talent.id} className="p-4 hover:bg-white/5 transition-colors">
+                                    <div className="flex items-start justify-between gap-4 mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                                                {talent.avatar_url ? (
+                                                    <Image
+                                                        src={talent.avatar_url}
+                                                        alt={talent.display_name || 'Talent'}
+                                                        width={48}
+                                                        height={48}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <User size={24} className="text-white/40" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-white">{talent.display_name || talent.full_name || 'No name'}</p>
+                                                <p className="text-xs text-[#df2531]">@{talent.username || '—'}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-2">
+                                            {talent.is_verified ? (
+                                                <CheckCircle size={18} weight="fill" className="text-green-400" />
+                                            ) : (
+                                                <XCircle size={18} weight="fill" className="text-amber-400" />
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-4 mb-4 text-[13px]">
+                                        <div>
+                                            <p className="text-white/40 uppercase font-bold text-[10px] mb-0.5">Location</p>
+                                            <div className="flex items-center gap-1 text-white/80">
+                                                <MapPin size={12} />
+                                                <p className="truncate">{talent.location || '—'}</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-white/40 uppercase font-bold text-[10px] mb-0.5">Status</p>
+                                            <p className={`capitalize ${talent.status === 'online' ? 'text-green-400' : 'text-white/60'}`}>
+                                                {talent.status || 'Offline'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <Button onClick={() => handleViewDetails(talent)} variant="outline" className="flex-1 bg-white/5 border-white/10 text-white hover:bg-white/10 h-10">
+                                            <Eye size={18} className="mr-2" />
+                                            Details
+                                        </Button>
+                                        <Button onClick={() => handleDelete(talent)} variant="outline" className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 w-12 h-10 p-0">
+                                            <Trash size={18} />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    )}
-                </>
+                    </>
+                )}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="mt-6 flex justify-center sm:justify-end">
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={goToPage}
+                        itemsPerPage={20}
+                        onItemsPerPageChange={setItemsPerPage}
+                        totalItems={filteredTalents.length}
+                    />
+                </div>
             )}
 
             {/* Talent Detail Modal */}
@@ -589,7 +594,6 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                     className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
                     role="dialog"
                     aria-modal="true"
-                    aria-labelledby="talent-modal-title"
                     onClick={(e) => {
                         if (e.target === e.currentTarget) {
                             setShowDetailModal(false)
@@ -598,143 +602,63 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                     }}
                 >
                     <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-auto">
-                        {/* Modal Header */}
                         <div className="flex items-center justify-between p-6 border-b border-white/10 sticky top-0 bg-[#111] z-10">
-                            <h3 id="talent-modal-title" className="text-xl font-bold text-white">
-                                Talent Profile Details
-                            </h3>
-                            <button
-                                onClick={() => {
-                                    setShowDetailModal(false)
-                                    setIsEditingNotes(false)
-                                }}
-                                className="text-white/60 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
-                                aria-label="Close modal"
-                            >
+                            <h3 className="text-xl font-bold text-white">Talent Profile Details</h3>
+                            <button onClick={() => { setShowDetailModal(false); setIsEditingNotes(false); }} className="text-white/60 hover:text-white transition-colors p-1">
                                 <X size={24} />
                             </button>
                         </div>
 
-                        {/* Modal Content */}
                         <div className="p-6 space-y-6">
-                            {/* Profile Header */}
-                            <div className="flex items-start gap-4">
-                                <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+                                <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center overflow-hidden shrink-0 border-2 border-white/5">
                                     {selectedTalent.avatar_url ? (
-                                        <Image
-                                            src={selectedTalent.avatar_url}
-                                            alt={selectedTalent.display_name || selectedTalent.username || 'Talent'}
-                                            width={80}
-                                            height={80}
-                                            className="w-full h-full object-cover"
-                                        />
+                                        <Image src={selectedTalent.avatar_url} alt="" width={96} height={96} className="w-full h-full object-cover" />
                                     ) : (
-                                        <User size={40} className="text-white/40" />
+                                        <User size={48} className="text-white/40" />
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="text-xl font-bold text-white mb-1">
-                                        {selectedTalent.display_name || selectedTalent.full_name || 'No name'}
-                                    </h4>
-                                    {selectedTalent.username && (
-                                        <p className="text-white/60 mb-2">@{selectedTalent.username}</p>
-                                    )}
-                                    <div className="flex items-center gap-4 flex-wrap">
+                                    <h4 className="text-2xl font-bold text-white mb-1">{selectedTalent.display_name || selectedTalent.full_name || 'No name'}</h4>
+                                    <p className="text-[#df2531] font-medium mb-3">@{selectedTalent.username || '—'}</p>
+                                    <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
                                         {selectedTalent.is_verified ? (
-                                            <div className="flex items-center gap-2 text-green-400">
-                                                <CheckCircle size={18} weight="fill" />
-                                                <span className="text-sm font-medium">Verified</span>
-                                            </div>
+                                            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 text-xs font-bold">
+                                                <CheckCircle size={14} weight="fill" /> VERIFIED
+                                            </span>
                                         ) : (
-                                            <div className="flex items-center gap-2 text-amber-400">
-                                                <XCircle size={18} weight="fill" />
-                                                <span className="text-sm font-medium">Unverified</span>
-                                            </div>
+                                            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold">
+                                                <XCircle size={14} weight="fill" /> UNVERIFIED
+                                            </span>
                                         )}
-                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${selectedTalent.status === 'online'
-                                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                                : selectedTalent.status === 'booked'
-                                                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                                    : 'bg-white/10 text-white/60 border border-white/10'
-                                            }`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${selectedTalent.status === 'online' ? 'bg-green-400' :
-                                                    selectedTalent.status === 'booked' ? 'bg-amber-400' : 'bg-white/40'
-                                                }`} />
-                                            {selectedTalent.status === 'online' ? 'Online' :
-                                                selectedTalent.status === 'booked' ? 'Booked' : selectedTalent.status || 'Offline'}
+                                        <span className={`px-3 py-1 rounded-full border text-xs font-bold ${selectedTalent.status === 'online' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-white/5 text-white/40 border-white/10'}`}>
+                                            {selectedTalent.status?.toUpperCase() || 'OFFLINE'}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Profile Details */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-white/40 text-xs mb-1">Full Name</p>
-                                    <p className="text-white">
-                                        {selectedTalent.full_name || selectedTalent.display_name || '—'}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-white/40 text-xs mb-1">Username</p>
-                                    <p className="text-white">{selectedTalent.username || '—'}</p>
-                                </div>
-                                <div>
-                                    <p className="text-white/40 text-xs mb-1">Location</p>
-                                    <div className="flex items-center gap-1 text-white">
-                                        {selectedTalent.location ? (
-                                            <>
-                                                <MapPin size={14} />
-                                                <span>{selectedTalent.location}</span>
-                                            </>
-                                        ) : (
-                                            <span>—</span>
-                                        )}
-                                    </div>
-                                </div>
-                                <div>
-                                    <p className="text-white/40 text-xs mb-1">Starting Price</p>
-                                    <p className="text-white">
-                                        {selectedTalent.starting_price
-                                            ? `${selectedTalent.starting_price.toLocaleString()} coins`
-                                            : '—'}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-white/40 text-xs mb-1">Joined</p>
-                                    <div className="flex items-center gap-1 text-white">
-                                        <Calendar size={14} />
-                                        <span>{formatDate(selectedTalent.created_at)}</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p className="text-white/40 text-xs mb-1">Last Updated</p>
-                                    <p className="text-white">{formatDate(selectedTalent.updated_at)}</p>
-                                </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white/5 p-6 rounded-2xl border border-white/5">
+                                <DetailItem label="Full Name" value={selectedTalent.full_name || '—'} />
+                                <DetailItem label="Username" value={selectedTalent.username ? `@${selectedTalent.username}` : '—'} />
+                                <DetailItem label="Location" value={selectedTalent.location || '—'} icon={<MapPin size={14} />} />
+                                <DetailItem label="Gender" value={selectedTalent.gender || '—'} className="capitalize" />
+                                <DetailItem label="Joined" value={formatDate(selectedTalent.created_at)} icon={<Calendar size={14} />} />
+                                <DetailItem label="Starting Price" value={selectedTalent.starting_price ? `${selectedTalent.starting_price.toLocaleString()} coins` : '—'} />
                             </div>
 
-                            {/* Bio */}
                             {selectedTalent.bio && (
                                 <div>
-                                    <p className="text-white/40 text-xs mb-2">Bio</p>
-                                    <p className="text-white/80 bg-white/5 rounded-lg p-4">{selectedTalent.bio}</p>
+                                    <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider mb-2">About / Bio</p>
+                                    <p className="text-white/80 text-sm leading-relaxed bg-white/5 p-4 rounded-xl border border-white/5 italic">"{selectedTalent.bio}"</p>
                                 </div>
                             )}
 
-                            {/* Admin Notes */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <p className="text-white/40 text-xs">Admin Notes</p>
+                                    <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider">Admin Internal Notes</p>
                                     {!isEditingNotes && (
-                                        <Button
-                                            onClick={() => setIsEditingNotes(true)}
-                                            variant="outline"
-                                            size="sm"
-                                            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
-                                        >
-                                            <PencilSimple size={14} />
-                                            Edit Notes
-                                        </Button>
+                                        <button onClick={() => setIsEditingNotes(true)} className="text-[#df2531] text-xs font-bold hover:underline">EDIT</button>
                                     )}
                                 </div>
                                 {isEditingNotes ? (
@@ -742,82 +666,35 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                                         <textarea
                                             value={adminNotes}
                                             onChange={(e) => setAdminNotes(e.target.value)}
-                                            placeholder="Add admin notes about this talent..."
-                                            className="w-full h-32 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#df2531]/50 resize-none"
+                                            className="w-full h-24 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:border-[#df2531]/50 text-sm resize-none"
+                                            placeholder="Add internal notes..."
                                         />
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                onClick={handleSaveAdminNotes}
-                                                disabled={isSavingNotes}
-                                                size="sm"
-                                                className="bg-[#df2531] hover:bg-[#c41f2a] text-white"
-                                            >
-                                                <FloppyDisk size={14} />
-                                                {isSavingNotes ? 'Saving...' : 'Save Notes'}
-                                            </Button>
-                                            <Button
-                                                onClick={() => {
-                                                    setIsEditingNotes(false)
-                                                    setAdminNotes(selectedTalent.admin_notes || '')
-                                                }}
-                                                variant="outline"
-                                                size="sm"
-                                                className="bg-white/5 border-white/10 text-white hover:bg-white/10"
-                                            >
-                                                Cancel
-                                            </Button>
+                                        <div className="flex gap-2">
+                                            <Button onClick={handleSaveAdminNotes} disabled={isSavingNotes} size="sm" className="bg-[#df2531] hover:bg-[#c41f2a] text-white">Save</Button>
+                                            <Button onClick={() => { setIsEditingNotes(false); setAdminNotes(selectedTalent.admin_notes || ''); }} variant="ghost" size="sm" className="text-white/60 hover:text-white">Cancel</Button>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="bg-white/5 rounded-lg p-4 min-h-[60px]">
-                                        {selectedTalent.admin_notes ? (
-                                            <p className="text-white/80 whitespace-pre-wrap">{selectedTalent.admin_notes}</p>
-                                        ) : (
-                                            <p className="text-white/40 italic">No admin notes yet</p>
-                                        )}
+                                    <div className="bg-white/5 rounded-xl p-4 min-h-[50px] border border-white/5">
+                                        <p className={`text-sm ${selectedTalent.admin_notes ? 'text-white/80' : 'text-white/20 italic'}`}>
+                                            {selectedTalent.admin_notes || 'No internal notes added yet...'}
+                                        </p>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Actions */}
-                            <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
                                 {selectedTalent.is_verified ? (
-                                    <Button
-                                        onClick={() => {
-                                            setShowDetailModal(false)
-                                            handleUnverify(selectedTalent)
-                                        }}
-                                        disabled={isProcessing}
-                                        variant="outline"
-                                        className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
-                                    >
-                                        <ShieldSlash size={18} />
-                                        Unverify Talent
+                                    <Button onClick={() => { setShowDetailModal(false); handleUnverify(selectedTalent); }} disabled={isProcessing} variant="outline" className="flex-1 bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20">
+                                        <ShieldSlash size={18} className="mr-2" /> Unverify
                                     </Button>
                                 ) : (
-                                    <Button
-                                        onClick={() => {
-                                            setShowDetailModal(false)
-                                            handleVerify(selectedTalent)
-                                        }}
-                                        disabled={isProcessing}
-                                        className="bg-green-500/20 border border-green-500/30 text-green-400 hover:bg-green-500/30"
-                                    >
-                                        <ShieldCheck size={18} />
-                                        Verify Talent
+                                    <Button onClick={() => { setShowDetailModal(false); handleVerify(selectedTalent); }} disabled={isProcessing} className="flex-1 bg-green-600 hover:bg-green-700 text-white">
+                                        <ShieldCheck size={18} className="mr-2" /> Verify Talent
                                     </Button>
                                 )}
-                                <Button
-                                    onClick={() => {
-                                        setShowDetailModal(false)
-                                        handleDelete(selectedTalent)
-                                    }}
-                                    disabled={isProcessing}
-                                    variant="outline"
-                                    className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
-                                >
-                                    <Trash size={18} />
-                                    Delete Account
+                                <Button onClick={() => { setShowDetailModal(false); handleDelete(selectedTalent); }} disabled={isProcessing} variant="outline" className="flex-1 bg-red-500/10 border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white">
+                                    <Trash size={18} className="mr-2" /> Delete Account
                                 </Button>
                             </div>
                         </div>
@@ -825,53 +702,40 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                 </div>
             )}
 
-            {/* Confirm Verify Dialog */}
+            {/* Dialogs */}
             <ConfirmDialog
                 isOpen={showConfirmVerify}
-                onClose={() => {
-                    setShowConfirmVerify(false)
-                    setSelectedTalent(null)
-                }}
+                onClose={() => setShowConfirmVerify(false)}
                 onConfirm={confirmVerify}
                 title="Verify Talent"
-                description={`Are you sure you want to verify ${selectedTalent?.display_name || selectedTalent?.username || 'this talent'}? This will mark their account as verified.`}
-                confirmLabel="Verify"
-                cancelLabel="Cancel"
-                isLoading={isProcessing}
+                description={`Are you sure you want to verify ${selectedTalent?.display_name}? This will give them a verification badge.`}
+                confirmLabel="Verify User"
                 variant="default"
+                isLoading={isProcessing}
             />
 
-            {/* Confirm Unverify Dialog */}
             <ConfirmDialog
                 isOpen={showConfirmUnverify}
-                onClose={() => {
-                    setShowConfirmUnverify(false)
-                    setSelectedTalent(null)
-                }}
+                onClose={() => setShowConfirmUnverify(false)}
                 onConfirm={confirmUnverify}
                 title="Unverify Talent"
-                description={`Are you sure you want to remove verification from ${selectedTalent?.display_name || selectedTalent?.username || 'this talent'}? This will mark their account as unverified.`}
-                confirmLabel="Unverify"
-                cancelLabel="Cancel"
-                isLoading={isProcessing}
+                description={`Are you sure you want to remove verification from ${selectedTalent?.display_name}?`}
+                confirmLabel="Remove Verification"
                 variant="destructive"
+                isLoading={isProcessing}
             />
 
-            {/* Confirm Delete Dialog */}
             <ConfirmDialog
                 isOpen={showConfirmDelete}
-                onClose={() => {
-                    setShowConfirmDelete(false)
-                    setSelectedTalent(null)
-                }}
+                onClose={() => setShowConfirmDelete(false)}
                 onConfirm={confirmDelete}
                 title="Delete Talent Account"
-                description={`Are you sure you want to delete ${selectedTalent?.display_name || selectedTalent?.username || 'this talent'}? This action is permanent and will remove all their data from the system.`}
+                description={`CRITICAL: Are you sure you want to permanently delete ${selectedTalent?.display_name}'s account? This action CANNOT be undone.`}
                 confirmLabel="Delete Permanently"
-                cancelLabel="Cancel"
-                isLoading={isProcessing}
                 variant="destructive"
+                isLoading={isProcessing}
             />
         </div>
     )
 }
+

@@ -117,7 +117,8 @@ export function RevenueClient({ initialBookings }: RevenueClientProps) {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-white/5">
@@ -190,6 +191,71 @@ export function RevenueClient({ initialBookings }: RevenueClientProps) {
                             ))}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile List View */}
+                <div className="md:hidden divide-y divide-white/5">
+                    {filteredBookings.map((booking) => (
+                        <div key={booking.id} className="p-4 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0">
+                                        {booking.talent?.avatar_url ? (
+                                            <Image
+                                                src={booking.talent.avatar_url}
+                                                alt=""
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                                                <User size={20} className="text-white/20" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-white">
+                                            {booking.talent?.display_name || 'Unknown Talent'}
+                                        </p>
+                                        <p className="text-xs text-white/40">Booking: #{booking.id.slice(0, 8)}</p>
+                                    </div>
+                                </div>
+                                <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                    booking.status === 'completed' 
+                                        ? 'bg-green-500/10 text-green-400' 
+                                        : 'bg-amber-500/10 text-amber-400'
+                                }`}>
+                                    {booking.status}
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 pt-2">
+                                <div>
+                                    <p className="text-[10px] text-white/40 uppercase font-bold tracking-wider mb-1">Client</p>
+                                    <div className="flex items-center gap-2">
+                                        <User size={14} className="text-blue-400" />
+                                        <span className="text-sm text-white/60 line-clamp-1">{booking.client?.display_name || 'Unknown'}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-white/40 uppercase font-bold tracking-wider mb-1">Total Price</p>
+                                    <p className="text-sm font-medium text-white">{booking.total_price.toLocaleString()} coins</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-white/40 uppercase font-bold tracking-wider mb-1">Platform Fee</p>
+                                    <p className="text-sm font-medium text-green-400">
+                                        +{(booking.platform_fee || Math.round(booking.total_price * 0.2)).toLocaleString()}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-white/40 uppercase font-bold tracking-wider mb-1">Net to Talent</p>
+                                    <p className="text-sm font-medium text-white/60">
+                                        {(booking.net_amount || Math.round(booking.total_price * 0.8)).toLocaleString()}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
 
                 {filteredBookings.length === 0 && (

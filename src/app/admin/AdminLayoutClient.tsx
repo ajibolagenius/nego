@@ -146,13 +146,16 @@ export function AdminLayoutClient({ user, children }: AdminLayoutClientProps) {
                 {/* Desktop Sidebar */}
                 <aside className="hidden lg:flex flex-col w-64 bg-white/5 border-r border-white/10 fixed left-0 top-0 bottom-0">
                     {/* Logo */}
-                    <div className="p-6 border-b border-white/10">
+                    <div className="p-6 border-b border-white/10 flex items-center justify-between">
                         <Link href="/admin" className="flex items-center">
                             <span className="text-2xl logo-font">
                                 <span className="text-white">NEGO</span>
                                 <span className="text-[#df2531]">.</span>
                             </span>
                         </Link>
+                        <NotificationProvider userId={user.id}>
+                            <NotificationBell userId={user.id} />
+                        </NotificationProvider>
                     </div>
 
                     {/* Navigation */}
@@ -199,11 +202,6 @@ export function AdminLayoutClient({ user, children }: AdminLayoutClientProps) {
                                 <p className="text-white text-sm font-medium truncate">{user.email}</p>
                                 <p className="text-white/40 text-xs">Administrator</p>
                             </div>
-                        </div>
-                        <div className="px-4 py-2">
-                            <NotificationProvider userId={user.id}>
-                                <NotificationBell userId={user.id} />
-                            </NotificationProvider>
                         </div>
 
                         <button

@@ -3,11 +3,16 @@
 import {
     Download,
     Info,
-    ArrowUp,
+    TrendUp,
+    Users,
+    UserCircle,
+    Money,
     Clock,
+    UserList,
+    UsersThree,
+    ArrowUp,
     Briefcase,
-    XCircle,
-    TrendUp
+    XCircle
 } from '@phosphor-icons/react'
 import React, { useState, useRef } from 'react'
 import { toast } from 'sonner'
@@ -367,36 +372,128 @@ export function AnalyticsClient({
                 </div>
 
                 <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-                    <p className="text-white/60 text-sm mb-2">Profile Views</p>
+                    <p className="text-white/60 text-sm mb-2">Platform Engagement</p>
                     <p className="text-2xl font-bold text-white">{stats.totalProfileViews?.toLocaleString() || "0"}</p>
-                    <p className="text-white/40 text-xs mt-2">Measured platform engagement</p>
+                    <p className="text-white/40 text-xs mt-2">Total profile views reached</p>
                 </div>
             </div>
 
-            {/* Operational Metrics Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Clock size={16} className="text-blue-400" />
-                        <span className="text-blue-400 text-xs font-medium">Avg Verification Time</span>
+            {/* User Distribution Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                            <Users size={20} className="text-blue-400" />
+                        </div>
+                        <div>
+                            <p className="text-white/60 text-sm">Total Users</p>
+                            <p className="text-xl font-bold text-white">{stats.totalUsers.toLocaleString()}</p>
+                        </div>
                     </div>
-                    <p className="text-white font-bold text-xl">{stats.avgVerificationTime.toFixed(1)}h</p>
+                    <div className="w-full bg-white/5 rounded-full h-1 mt-4">
+                        <div className="bg-blue-400 h-1 rounded-full" style={{ width: '100%' }}></div>
+                    </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/10">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Info size={16} className="text-orange-400" />
-                        <span className="text-orange-400 text-xs font-medium">Moderation Backlog</span>
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                            <UserList size={20} className="text-purple-400" />
+                        </div>
+                        <div>
+                            <p className="text-white/60 text-sm">Clients</p>
+                            <p className="text-xl font-bold text-white">{stats.totalClients.toLocaleString()}</p>
+                        </div>
                     </div>
-                    <p className="text-white font-bold text-xl">{stats.pendingModeration} pending</p>
+                    <div className="w-full bg-white/5 rounded-full h-1 mt-4">
+                        <div 
+                            className="bg-purple-400 h-1 rounded-full" 
+                            style={{ width: `${(stats.totalClients / stats.totalUsers) * 100}%` }}
+                        ></div>
+                    </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/10">
-                    <div className="flex items-center gap-2 mb-1">
-                        <XCircle size={16} className="text-red-400" />
-                        <span className="text-red-400 text-xs font-medium">Cancellation Rate</span>
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-pink-500/10 flex items-center justify-center">
+                            <UsersThree size={20} className="text-pink-400" />
+                        </div>
+                        <div>
+                            <p className="text-white/60 text-sm">Talents</p>
+                            <p className="text-xl font-bold text-white">{stats.totalTalents.toLocaleString()}</p>
+                        </div>
                     </div>
-                    <p className="text-white font-bold text-xl">{stats.cancellationRate?.toFixed(1)}%</p>
+                    <div className="w-full bg-white/5 rounded-full h-1 mt-4">
+                        <div 
+                            className="bg-pink-400 h-1 rounded-full" 
+                            style={{ width: `${(stats.totalTalents / stats.totalUsers) * 100}%` }}
+                        ></div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Operational & Behavioral Metrics Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                            <Clock size={20} className="text-blue-400" />
+                        </div>
+                        <p className="text-white/60 text-sm">Avg Verification</p>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{stats.avgVerificationTime.toFixed(1)}h</p>
+                    <p className="text-white/40 text-[10px] mt-1 italic">Submission to approval</p>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                            <Info size={20} className="text-orange-400" />
+                        </div>
+                        <p className="text-white/60 text-sm">Moderation</p>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{stats.pendingModeration}</p>
+                    <p className="text-white/40 text-[10px] mt-1 italic">Pending media review</p>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                            <TrendUp size={20} className="text-amber-400" />
+                        </div>
+                        <p className="text-white/60 text-sm">Peak Booking</p>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{stats.peakHour}:00</p>
+                    <p className="text-white/40 text-[10px] mt-1 italic">Most active hour (24h)</p>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+                            <UserCircle size={20} className="text-green-400" />
+                        </div>
+                        <p className="text-white/60 text-sm">Retention</p>
+                    </div>
+                    <p className="text-2xl font-bold text-white">{stats.retentionRate?.toFixed(1)}%</p>
+                    <p className="text-white/40 text-[10px] mt-1 italic">Repeat client rate</p>
+                </div>
+            </div>
+
+            {/* Existing Rows for cancellation, etc. - Merged above */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-6 rounded-2xl bg-red-500/5 border border-red-500/10 flex items-center justify-between">
+                    <div>
+                        <p className="text-red-400/60 text-sm uppercase tracking-wider font-bold">Cancellation Rate</p>
+                        <p className="text-3xl font-bold text-white mt-1">{stats.cancellationRate?.toFixed(1)}%</p>
+                    </div>
+                    <XCircle size={40} className="text-red-400/20" />
+                </div>
+                <div className="p-6 rounded-2xl bg-purple-500/5 border border-purple-500/10 flex items-center justify-between">
+                    <div>
+                        <p className="text-purple-400/60 text-sm uppercase tracking-wider font-bold">Avg Booking Value</p>
+                        <p className="text-3xl font-bold text-white mt-1">₦{Math.round(stats.averageBookingValue || 0).toLocaleString()}</p>
+                    </div>
+                    <Money size={40} className="text-purple-400/20" />
                 </div>
             </div>
 

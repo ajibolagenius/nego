@@ -129,6 +129,36 @@ export default async function AnalyticsPage() {
     const cancellationRate = recentBookings.length > 0
         ? (cancelledBookings / recentBookings.length) * 100
         : 0
+    
+    // 7. Peak Booking Hour
+    const hourCounts: Record<number, number> = {}
+    allBookings?.forEach((b: any) => {
+        const hour = new Date(b.created_at).getHours()
+        hourCounts[hour] = (hourCounts[hour] || 0) + 1
+    })
+    
+    let peakHour = 0
+    const hours = Object.entries(hourCounts)
+    if (hours.length > 0) {
+        const sortedHours = hours.sort((a, b) => b[1] - a[1])
+        const topHour = sortedHours[0]
+        if (topHour) {
+            peakHour = parseInt(topHour[0])
+        }
+    }
+
+    // 8. Retention Rate (Clients with >1 booking)
+    const clientBookingCounts: Record<string, number> = {}
+    allBookings?.forEach((b: any) => {
+        if (b.client_id) {
+            clientBookingCounts[b.client_id] = (clientBookingCounts[b.client_id] || 0) + 1
+        }
+    })
+    const totalClientsWithBookings = Object.keys(clientBookingCounts).length
+    const repeatClients = Object.values(clientBookingCounts).filter(count => count > 1).length
+    const retentionRate = totalClientsWithBookings > 0
+        ? (repeatClients / totalClientsWithBookings) * 100
+        : 0
 
     // Charts processing
     const userGrowthData = processTimeSeriesData(recentUsers || [], 'created_at', 30)
@@ -138,11 +168,13 @@ export default async function AnalyticsPage() {
     // 6. Top Talents (Revenue + Views)
     // For revenue, we ideally need to aggregate booking totals per talent.
     const talentRevenue: Record<string, number> = {}
-    completedBookingsWithPrice.forEach((b: any) => {
-        if (b.talent_id) {
-            talentRevenue[b.talent_id] = (talentRevenue[b.talent_id] || 0) + (b.total_price || 0)
-        }
-    })
+    if (allBookings) {
+        completedBookingsWithPrice.forEach((b: any) => {
+            if (b.talent_id) {
+                talentRevenue[b.talent_id] = (talentRevenue[b.talent_id] || 0) + (b.total_price || 0)
+            }
+        })
+    }
 
     // Get the actual talent names for the top 5
     const topTalentIds = Object.entries(talentRevenue)
@@ -180,6 +212,8 @@ export default async function AnalyticsPage() {
         weeklyBookings,
         weeklyRevenue,
         averageBookingValue,
+        retentionRate,
+        peakHour,
         cancellationRate,
         totalProfileViews,
     }

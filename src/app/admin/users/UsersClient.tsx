@@ -216,7 +216,8 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
             ) : (
                 <>
                     <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden">
-                        <div className="overflow-x-auto">
+                        {/* Desktop Table View */}
+                        <div className="hidden lg:block overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-white/5 border-b border-white/10">
                                     <tr>
@@ -300,7 +301,7 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                                         className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
                                                     >
                                                         <Trash size={16} />
-                                                        Delete
+                                                        <span className="hidden lg:inline ml-2">Delete</span>
                                                     </Button>
                                                 </div>
                                             </td>
@@ -308,6 +309,71 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+
+                        {/* Mobile List View */}
+                        <div className="lg:hidden divide-y divide-white/10">
+                            {paginatedData.map((user) => (
+                                <div key={user.id} className="p-4 hover:bg-white/5 transition-colors">
+                                    <div className="flex items-start justify-between gap-4 mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                                                {user.avatar_url ? (
+                                                    <Image
+                                                        src={user.avatar_url}
+                                                        alt={user.display_name || user.username || 'User'}
+                                                        width={48}
+                                                        height={48}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <User size={24} className="text-white/40" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-white">{user.display_name || user.full_name || 'No name'}</p>
+                                                <p className="text-xs text-[#df2531]">@{user.username || 'n/a'}</p>
+                                            </div>
+                                        </div>
+                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${user.role === 'admin'
+                                                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                                                : user.role === 'talent'
+                                                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                                    : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                            }`}>
+                                            {user.role}
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4 mb-4 text-[13px]">
+                                        <div>
+                                            <p className="text-white/40 uppercase font-bold text-[10px] mb-0.5 tracking-wider">Joined</p>
+                                            <div className="flex items-center gap-1.5 text-white/80">
+                                                <Calendar size={12} className="text-[#df2531]" />
+                                                <p>{formatDate(user.created_at)}</p>
+                                            </div>
+                                        </div>
+                                        {user.location && (
+                                            <div>
+                                                <p className="text-white/40 uppercase font-bold text-[10px] mb-0.5 tracking-wider">Location</p>
+                                                <div className="flex items-center gap-1.5 text-white/80">
+                                                    <MapPin size={12} className="text-[#df2531]" />
+                                                    <p className="truncate">{user.location}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <Button
+                                        onClick={() => handleDelete(user)}
+                                        variant="outline"
+                                        className="w-full bg-red-500/5 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all h-10"
+                                    >
+                                        <Trash size={16} className="mr-2" />
+                                        Delete User Account
+                                    </Button>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
