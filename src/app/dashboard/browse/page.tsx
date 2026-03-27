@@ -39,6 +39,8 @@ export default async function BrowsePage() {
       )
     `)
         .eq('role', 'talent')
+        .not('avatar_url', 'is', null)
+        .neq('avatar_url', '')
         .order('created_at', { ascending: false })
 
     // Fetch service types for filter

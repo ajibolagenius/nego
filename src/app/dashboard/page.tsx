@@ -67,6 +67,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         )
       `)
             .eq('role', 'talent')
+            .not('avatar_url', 'is', null)
+            .neq('avatar_url', '')
             .limit(50) // Fetch more to randomize from
 
         // Shuffle and pick random talents

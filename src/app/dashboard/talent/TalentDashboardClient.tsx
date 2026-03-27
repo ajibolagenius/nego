@@ -34,6 +34,7 @@ const serviceIcons: Record<string, Icon> = {
     'moon': Moon,
     'heart': Heart,
     'sparkle': Sparkle,
+    'pamper': Sparkle,
 }
 
 interface TalentMenu {
@@ -164,6 +165,8 @@ export function TalentDashboardClient({
 
     // Minimum service price in coins (₦50,000 = 5,000 coins at 1 coin = ₦10 rate)
     const MIN_SERVICE_PRICE = 5000
+    // Maximum service price in coins (₦1,000,000 = 100,000 coins at 1 coin = ₦10 rate)
+    const MAX_SERVICE_PRICE = 100000
 
     const formatPrice = (price: number) => {
         const nairaAmount = price * COIN_TO_NAIRA_RATE;
@@ -190,6 +193,11 @@ export function TalentDashboardClient({
         if (isNaN(numPrice) || numPrice < MIN_SERVICE_PRICE) {
             const nairaEquivalent = MIN_SERVICE_PRICE * 10
             setPriceError(`Minimum price is ${MIN_SERVICE_PRICE.toLocaleString()} coins (₦${nairaEquivalent.toLocaleString()})`)
+            return false
+        }
+        if (numPrice > MAX_SERVICE_PRICE) {
+            const nairaEquivalent = MAX_SERVICE_PRICE * 10
+            setPriceError(`Maximum price is ${MAX_SERVICE_PRICE.toLocaleString()} coins (₦${nairaEquivalent.toLocaleString()})`)
             return false
         }
         setPriceError('')
