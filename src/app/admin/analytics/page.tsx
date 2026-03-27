@@ -1,4 +1,3 @@
-import { cache, CACHE_KEYS } from '@/lib/admin/cache'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 import { createApiClient } from '@/lib/supabase/api'
 import { AnalyticsClient } from './AnalyticsClient'
@@ -17,13 +16,6 @@ export default async function AnalyticsPage() {
     // Use API client (service role) to bypass RLS for admin operations
     const supabase = createApiClient()
 
-    // Check cache first (5 minute TTL)
-    const cacheKey = CACHE_KEYS.ANALYTICS_STATS
-    // const _cachedStats = cache.get(cacheKey) // TODO: Use cached data if available
-
-    // For now, we'll still fetch fresh data but cache the results
-    // In a real implementation, you might want to return cached data if available
-
     // Get current date info
     const now = new Date()
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
@@ -38,108 +30,141 @@ export default async function AnalyticsPage() {
         { count: pendingBookings },
         { count: completedBookings },
         { data: recentUsers },
-        { data: recentBookings },
+        { data: allBookings }, // Get all for service distribution
         { data: transactions },
-        { data: _withdrawals },
+        { data: wallets },
+        { count: pendingModeration },
+        { data: verifications },
+        { data: disputes },
+        profileViewsRes,
     ] = await Promise.all([
-        // Total users
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        // Total clients
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'client'),
-        // Total talents
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'talent'),
-        // Total bookings
         supabase.from('bookings').select('*', { count: 'exact', head: true }),
-        // Pending bookings
         supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        // Completed bookings
         supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
-        // Recent user signups (last 30 days)
-        supabase.from('profiles').select('id, role, created_at').gte('created_at', thirtyDaysAgo.toISOString()).order('created_at', { ascending: true }),
-        // Recent bookings (last 30 days) with client_id for retention calculation
-        supabase.from('bookings').select('id, client_id, status, total_price, created_at').gte('created_at', thirtyDaysAgo.toISOString()).order('created_at', { ascending: true }),
-        // Transactions (last 30 days)
+        supabase.from('profiles').select('id, role, location, created_at').gte('created_at', thirtyDaysAgo.toISOString()).order('created_at', { ascending: true }),
+        supabase.from('bookings').select('id, client_id, status, total_price, services_snapshot, created_at'),
         supabase.from('transactions').select('id, type, amount, coins, status, created_at').gte('created_at', thirtyDaysAgo.toISOString()).order('created_at', { ascending: true }),
-        // Withdrawals (last 30 days)
-        supabase.from('withdrawal_requests').select('id, amount, status, created_at').gte('created_at', thirtyDaysAgo.toISOString()).order('created_at', { ascending: true }),
+        supabase.from('wallets').select('escrow_balance'),
+        supabase.from('media').select('*', { count: 'exact', head: true }).eq('moderation_status', 'pending'),
+        supabase.from('verifications').select('created_at, updated_at, status'),
+        supabase.from('disputes').select('status, dispute_type'),
+        supabase.from('profile_views').select('*', { count: 'exact', head: true }),
     ])
 
-    // Calculate weekly stats
-    const weeklyUsers = recentUsers?.filter(u => new Date(u.created_at) >= sevenDaysAgo).length || 0
-    const weeklyBookings = recentBookings?.filter(b => new Date(b.created_at) >= sevenDaysAgo).length || 0
+    const totalProfileViews = profileViewsRes.count || 0
+    const recentBookings = allBookings?.filter((b: any) => new Date(b.created_at) >= thirtyDaysAgo) || []
 
-    // Calculate revenue from purchase transactions
-    const totalRevenue = transactions?.filter(t => t.type === 'purchase' && t.status === 'completed')
-        .reduce((sum, t) => sum + (t.amount || 0), 0) || 0
+    // 1. Financial Metrics
+    const totalEscrow = wallets?.reduce((sum: number, w: any) => sum + (w.escrow_balance || 0), 0) || 0
+    const totalRevenue = transactions?.filter((t: any) => t.type === 'purchase' && t.status === 'completed')
+        .reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0
 
-    const weeklyRevenue = transactions?.filter(t =>
+    // 2. Service Category Popularity
+    const serviceCounts: Record<string, number> = {}
+    allBookings?.forEach((b: any) => {
+        if (b.services_snapshot && Array.isArray(b.services_snapshot)) {
+            b.services_snapshot.forEach((s: any) => {
+                const name = s.service_type?.name || 'Unknown'
+                serviceCounts[name] = (serviceCounts[name] || 0) + 1
+            })
+        }
+    })
+    const servicePopularityData = Object.entries(serviceCounts)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5)
+
+    // 3. Location Data
+    const locationCounts: Record<string, number> = {}
+    recentUsers?.forEach((u: any) => {
+        if (u.location) {
+            locationCounts[u.location] = (locationCounts[u.location] || 0) + 1
+        }
+    })
+    const locationData = Object.entries(locationCounts)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5)
+
+    // 4. Operational Metrics (Velocity)
+    const approvedVerifications = verifications?.filter((v: any) => v.status === 'approved' && v.updated_at) || []
+    const avgVerificationTime = approvedVerifications.length > 0
+        ? approvedVerifications.reduce((sum: number, v: any) => {
+            const start = new Date(v.created_at).getTime()
+            const end = new Date(v.updated_at).getTime()
+            return sum + (end - start)
+        }, 0) / approvedVerifications.length / (1000 * 60 * 60) // in hours
+        : 0
+
+    // 5. Dispute Breakdown
+    const disputeCounts: Record<string, number> = {}
+    disputes?.forEach((d: any) => {
+        const type = d.dispute_type || 'other'
+        disputeCounts[type] = (disputeCounts[type] || 0) + 1
+    })
+    const disputeDistribution = Object.entries(disputeCounts).map(([name, value], i) => ({
+        name,
+        value,
+        color: ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6'][i % 4]
+    }))
+
+    // Existing Weekly Stats
+    const weeklyUsers = recentUsers?.filter((u: any) => new Date(u.created_at) >= sevenDaysAgo).length || 0
+    const weeklyBookings = recentBookings?.filter((b: any) => new Date(b.created_at) >= sevenDaysAgo).length || 0
+    const weeklyRevenue = transactions?.filter((t: any) =>
         t.type === 'purchase' &&
         t.status === 'completed' &&
         new Date(t.created_at) >= sevenDaysAgo
-    ).reduce((sum, t) => sum + (t.amount || 0), 0) || 0
+    ).reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0
 
-    // Calculate additional metrics
-    const completedBookingsWithPrice = recentBookings?.filter(b => b.status === 'completed' && b.total_price) || []
+    const completedBookingsWithPrice = recentBookings?.filter((b: any) => b.status === 'completed' && b.total_price) || []
     const averageBookingValue = completedBookingsWithPrice.length > 0
-        ? completedBookingsWithPrice.reduce((sum, b) => sum + (b.total_price || 0), 0) / completedBookingsWithPrice.length
+        ? completedBookingsWithPrice.reduce((sum: number, b: any) => sum + (b.total_price || 0), 0) / completedBookingsWithPrice.length
         : 0
 
-    // Calculate peak booking times (by hour of day)
-    const bookingHours = recentBookings?.map(b => {
-        const date = new Date(b.created_at)
-        return date.getHours()
-    }) || []
-
-    const hourCounts: { [key: number]: number } = {}
-    bookingHours.forEach(hour => {
-        hourCounts[hour] = (hourCounts[hour] || 0) + 1
-    })
-
-    const peakHourEntry = Object.keys(hourCounts).length > 0
-        ? Object.entries(hourCounts).reduce((a, b) =>
-            (hourCounts[Number(a[0])] ?? 0) > (hourCounts[Number(b[0])] ?? 0) ? a : b
-        )
-        : undefined
-    const peakHour = peakHourEntry?.[0]
-
-    // Calculate client retention (users who made multiple bookings)
-    const clientBookingCounts: { [key: string]: number } = {}
-    recentBookings?.forEach(b => {
-        if (b.client_id) {
-            clientBookingCounts[b.client_id] = (clientBookingCounts[b.client_id] || 0) + 1
-        }
-    })
-    const clientsWithMultipleBookings = Object.values(clientBookingCounts).filter(count => count > 1).length
-    const totalClientsWithBookings = Object.keys(clientBookingCounts).length
-    const retentionRate = totalClientsWithBookings > 0
-        ? (clientsWithMultipleBookings / totalClientsWithBookings) * 100
-        : 0
-
-    // Calculate booking cancellation rate
-    const cancelledBookings = recentBookings?.filter(b => b.status === 'cancelled').length || 0
-    const cancellationRate = recentBookings && recentBookings.length > 0
+    const cancelledBookings = recentBookings?.filter((b: any) => b.status === 'cancelled').length || 0
+    const cancellationRate = recentBookings.length > 0
         ? (cancelledBookings / recentBookings.length) * 100
         : 0
 
-    // Process data for charts
+    // Charts processing
     const userGrowthData = processTimeSeriesData(recentUsers || [], 'created_at', 30)
     const bookingTrendsData = processTimeSeriesData(recentBookings || [], 'created_at', 30)
     const revenueData = processRevenueData(transactions || [], 30)
 
-    // Booking status distribution
-    const bookingStatusData = [
-        { name: 'Pending', value: pendingBookings || 0, color: '#f59e0b' },
-        { name: 'Completed', value: completedBookings || 0, color: '#22c55e' },
-        { name: 'Other', value: Math.max(0, (totalBookings || 0) - (pendingBookings || 0) - (completedBookings || 0)), color: '#6b7280' },
-    ].filter(d => d.value > 0)
+    // 6. Top Talents (Revenue + Views)
+    // For revenue, we ideally need to aggregate booking totals per talent.
+    const talentRevenue: Record<string, number> = {}
+    completedBookingsWithPrice.forEach((b: any) => {
+        if (b.talent_id) {
+            talentRevenue[b.talent_id] = (talentRevenue[b.talent_id] || 0) + (b.total_price || 0)
+        }
+    })
 
-    // User role distribution
-    const userRoleData = [
-        { name: 'Clients', value: totalClients || 0, color: '#3b82f6' },
-        { name: 'Talents', value: totalTalents || 0, color: '#df2531' },
-    ].filter(d => d.value > 0)
+    // Get the actual talent names for the top 5
+    const topTalentIds = Object.entries(talentRevenue)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(t => t[0])
 
-    // Cache the results (5 minutes TTL)
+    const { data: topTalents } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .in('id', topTalentIds)
+
+    const topTalentsData = topTalentIds.map(id => {
+        const talent = topTalents?.find(t => t.id === id)
+        return {
+            id,
+            name: talent?.display_name || 'Unknown',
+            avatar: talent?.avatar_url,
+            revenue: talentRevenue[id] || 0
+        }
+    })
+
     const statsData = {
         totalUsers: totalUsers || 0,
         totalClients: totalClients || 0,
@@ -148,16 +173,16 @@ export default async function AnalyticsPage() {
         pendingBookings: pendingBookings || 0,
         completedBookings: completedBookings || 0,
         totalRevenue,
+        totalEscrow,
+        pendingModeration: pendingModeration || 0,
+        avgVerificationTime,
         weeklyUsers,
         weeklyBookings,
         weeklyRevenue,
         averageBookingValue,
-        peakHour: Number(peakHour),
-        retentionRate,
         cancellationRate,
+        totalProfileViews,
     }
-
-    cache.set(cacheKey, statsData, 5 * 60 * 1000) // 5 minutes
 
     return (
         <AnalyticsClient
@@ -165,8 +190,10 @@ export default async function AnalyticsPage() {
             userGrowthData={userGrowthData}
             bookingTrendsData={bookingTrendsData}
             revenueData={revenueData}
-            bookingStatusData={bookingStatusData}
-            userRoleData={userRoleData}
+            servicePopularityData={servicePopularityData}
+            locationData={locationData}
+            disputeDistribution={disputeDistribution}
+            topTalents={topTalentsData}
         />
     )
 }

@@ -1,26 +1,17 @@
 'use client'
 
 import {
-    Users,
-    UserCircle,
-    Briefcase,
-    CalendarCheck,
-    Money,
-    TrendUp,
-    ChartLine,
-    ChartBar,
-    ChartPie,
-    ArrowUp,
-    Coin,
-    Clock,
     Download,
     Info,
-    XCircle
+    ArrowUp,
+    Clock,
+    Briefcase,
+    XCircle,
+    TrendUp
 } from '@phosphor-icons/react'
-import { useState, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { toast } from 'sonner'
 import { Tooltip } from '@/components/admin/Tooltip'
-import { exportChartAsPNG, exportChartAsSVG } from '@/lib/admin/chart-export'
 import { exportAnalyticsData } from '@/lib/admin/export-utils'
 
 interface StatsData {
@@ -31,6 +22,9 @@ interface StatsData {
     pendingBookings: number
     completedBookings: number
     totalRevenue: number
+    totalEscrow: number
+    pendingModeration: number
+    avgVerificationTime: number
     weeklyUsers: number
     weeklyBookings: number
     weeklyRevenue: number
@@ -38,18 +32,20 @@ interface StatsData {
     peakHour?: number
     retentionRate?: number
     cancellationRate?: number
+    totalProfileViews?: number
 }
 
 interface ChartDataPoint {
     date: string
     count?: number
     amount?: number
+    value?: number
 }
 
 interface PieDataPoint {
     name: string
     value: number
-    color: string
+    color?: string
 }
 
 interface AnalyticsClientProps {
@@ -57,8 +53,15 @@ interface AnalyticsClientProps {
     userGrowthData: ChartDataPoint[]
     bookingTrendsData: ChartDataPoint[]
     revenueData: ChartDataPoint[]
-    bookingStatusData: PieDataPoint[]
-    userRoleData: PieDataPoint[]
+    servicePopularityData: PieDataPoint[]
+    locationData: PieDataPoint[]
+    disputeDistribution: PieDataPoint[]
+    topTalents: {
+        id: string
+        name: string
+        avatar?: string | null
+        revenue: number
+    }[]
 }
 
 // Simple line chart component with tooltips
@@ -209,56 +212,6 @@ function SimpleLineChart({
     )
 }
 
-// Simple bar chart component with enhanced tooltips
-function SimpleBarChart({ data, color, height = 200 }: {
-    data: ChartDataPoint[]
-    color: string
-    height?: number
-}) {
-    const values = data.map(d => d.amount || d.count || 0)
-    const maxValue = Math.max(...values, 1)
-
-    // Show only last 14 days for bar chart
-    const recentData = data.slice(-14)
-
-    return (
-        <div className="relative" style={{ height }}>
-            <div className="absolute inset-0 flex items-end justify-between gap-1 px-1 pb-5">
-                {recentData.map((d, i) => {
-                    const value = d.amount || d.count || 0
-                    const heightPercent = (value / maxValue) * 100
-
-                    return (
-                        <div
-                            key={i}
-                            className="flex-1 rounded-t transition-all duration-300 hover:opacity-80 hover:scale-105 group relative cursor-pointer"
-                            style={{
-                                height: `${Math.max(heightPercent, 2)}%`,
-                                backgroundColor: color,
-                            }}
-                            role="button"
-                            tabIndex={0}
-                            aria-label={`${d.date}: ${value.toLocaleString()}`}
-                        >
-                            {/* Enhanced Tooltip */}
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-black/95 backdrop-blur-sm border border-white/20 rounded-lg text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                                <p className="font-medium">{d.date}</p>
-                                <p className="text-white/80">{value.toLocaleString()}</p>
-                            </div>
-                        </div>
-                    )
-                })}
-            </div>
-
-            {/* X-axis labels */}
-            <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-white/40 px-1">
-                <span>{recentData[0]?.date}</span>
-                <span>{recentData[recentData.length - 1]?.date}</span>
-            </div>
-        </div>
-    )
-}
-
 // Simple pie/donut chart component
 function SimplePieChart({ data, size = 120 }: { data: PieDataPoint[], size?: number }) {
     const total = data.reduce((sum, d) => sum + d.value, 0)
@@ -330,15 +283,13 @@ export function AnalyticsClient({
     userGrowthData,
     bookingTrendsData,
     revenueData,
-    bookingStatusData,
-    userRoleData,
+    servicePopularityData,
+    locationData,
+    disputeDistribution,
+    topTalents,
 }: AnalyticsClientProps) {
-    const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom'>('month')
     const [hoveredDataPoint, setHoveredDataPoint] = useState<{ x: number; y: number; value: number; label: string } | null>(null)
-    const [showCustomRange, setShowCustomRange] = useState(false)
-    const [customStartDate, setCustomStartDate] = useState('')
-    const [customEndDate, setCustomEndDate] = useState('')
-
+    
     // Refs for chart export
     const revenueChartRef = useRef<SVGSVGElement>(null)
 
@@ -354,33 +305,6 @@ export function AnalyticsClient({
         })
     }
 
-    const handleExportChart = async (chartRef: React.RefObject<SVGSVGElement | null>, chartName: string, format: 'png' | 'svg') => {
-        if (!chartRef.current) {
-            toast.error('Chart not available', {
-                description: 'Unable to export chart. Please try again.'
-            })
-            return
-        }
-
-        try {
-            if (format === 'png') {
-                await exportChartAsPNG(chartRef.current, chartName)
-                toast.success('Chart Exported', {
-                    description: `${chartName} has been exported as PNG.`
-                })
-            } else {
-                exportChartAsSVG(chartRef.current, chartName)
-                toast.success('Chart Exported', {
-                    description: `${chartName} has been exported as SVG.`
-                })
-            }
-        } catch (error) {
-            toast.error('Export Failed', {
-                description: 'Failed to export chart. Please try again.'
-            })
-        }
-    }
-
     // Format currency
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-NG', {
@@ -392,407 +316,213 @@ export function AnalyticsClient({
     }
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-8 animate-in fade-in duration-500">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">Analytics</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">Platform Analytics</h1>
                     <div className="flex items-center gap-2">
-                        <p className="text-white/60 text-sm sm:text-base">Track platform performance, user growth, and revenue trends</p>
-                        <Tooltip content="Analytics data is cached for 5 minutes. Use custom date range to analyze specific periods.">
+                        <p className="text-white/60 text-sm">Real-time insights across finance, demand, and operations</p>
+                        <Tooltip content="Data aggregated from profiles, bookings, wallets, and transactions.">
                             <Info size={16} className="text-white/40 hover:text-white/60 cursor-help" />
                         </Tooltip>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Export Button */}
                     <button
                         onClick={handleExport}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black"
-                        aria-label="Export analytics data to CSV"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"
                     >
-                        <Download size={18} aria-hidden="true" />
+                        <Download size={18} />
                         <span className="text-sm font-medium">Export CSV</span>
                     </button>
-
-                    {/* Time Range Selector */}
-                    <div className="flex flex-wrap gap-2">
-                        <button
-                            onClick={() => {
-                                setTimeRange('today')
-                                setShowCustomRange(false)
-                            }}
-                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${timeRange === 'today'
-                                ? 'bg-[#df2531] text-white'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-                                }`}
-                            aria-label="View today's analytics"
-                            aria-pressed={timeRange === 'today'}
-                        >
-                            Today
-                        </button>
-                        <button
-                            onClick={() => {
-                                setTimeRange('week')
-                                setShowCustomRange(false)
-                            }}
-                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${timeRange === 'week'
-                                ? 'bg-[#df2531] text-white'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-                                }`}
-                            aria-label="View this week's analytics"
-                            aria-pressed={timeRange === 'week'}
-                        >
-                            This Week
-                        </button>
-                        <button
-                            onClick={() => {
-                                setTimeRange('month')
-                                setShowCustomRange(false)
-                            }}
-                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${timeRange === 'month'
-                                ? 'bg-[#df2531] text-white'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-                                }`}
-                            aria-label="View this month's analytics"
-                            aria-pressed={timeRange === 'month'}
-                        >
-                            This Month
-                        </button>
-                        <button
-                            onClick={() => {
-                                setTimeRange('quarter')
-                                setShowCustomRange(false)
-                            }}
-                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${timeRange === 'quarter'
-                                ? 'bg-[#df2531] text-white'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-                                }`}
-                            aria-label="View this quarter's analytics"
-                            aria-pressed={timeRange === 'quarter'}
-                        >
-                            This Quarter
-                        </button>
-                        <button
-                            onClick={() => {
-                                setTimeRange('year')
-                                setShowCustomRange(false)
-                            }}
-                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${timeRange === 'year'
-                                ? 'bg-[#df2531] text-white'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-                                }`}
-                            aria-label="View this year's analytics"
-                            aria-pressed={timeRange === 'year'}
-                        >
-                            This Year
-                        </button>
-                        <button
-                            onClick={() => {
-                                setTimeRange('custom')
-                                setShowCustomRange(true)
-                            }}
-                            className={`px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#df2531] focus:ring-offset-2 focus:ring-offset-black ${timeRange === 'custom'
-                                ? 'bg-[#df2531] text-white'
-                                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-                                }`}
-                            aria-label="View custom date range analytics"
-                            aria-pressed={timeRange === 'custom'}
-                        >
-                            Custom
-                        </button>
-                    </div>
-
-                    {/* Custom Date Range Picker */}
-                    {showCustomRange && (
-                        <div className="mt-2 p-3 rounded-xl bg-white/5 border border-white/10 flex flex-col sm:flex-row gap-2">
-                            <div className="flex-1">
-                                <label className="block text-white/60 text-xs mb-1">Start Date</label>
-                                <input
-                                    type="date"
-                                    value={customStartDate}
-                                    onChange={(e) => setCustomStartDate(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#df2531]"
-                                />
-                            </div>
-                            <div className="flex-1">
-                                <label className="block text-white/60 text-xs mb-1">End Date</label>
-                                <input
-                                    type="date"
-                                    value={customEndDate}
-                                    onChange={(e) => setCustomEndDate(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#df2531]"
-                                />
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
 
             {/* Key Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-                {/* Total Users */}
-                <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                            <Users size={18} className="text-blue-400 sm:w-5 sm:h-5" />
-                        </div>
-                        <p className="text-white/60 text-xs sm:text-sm">Total Users</p>
-                    </div>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">{stats.totalUsers.toLocaleString()}</p>
-                    <div className="flex items-center gap-1 mt-1 sm:mt-2">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <p className="text-white/60 text-sm mb-2">Total Revenue</p>
+                    <p className="text-2xl font-bold text-white">{formatCurrency(stats.totalRevenue)}</p>
+                    <div className="flex items-center gap-1 mt-2">
                         <ArrowUp size={12} className="text-green-400" />
-                        <span className="text-green-400 text-xs">+{stats.weeklyUsers} this week</span>
+                        <span className="text-green-400 text-xs">+{formatCurrency(stats.weeklyRevenue)} this week</span>
                     </div>
                 </div>
 
-                {/* Total Bookings */}
-                <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                            <CalendarCheck size={18} className="text-purple-400 sm:w-5 sm:h-5" />
-                        </div>
-                        <p className="text-white/60 text-xs sm:text-sm">Total Bookings</p>
-                    </div>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">{stats.totalBookings.toLocaleString()}</p>
-                    <div className="flex items-center gap-1 mt-1 sm:mt-2">
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <p className="text-white/60 text-sm mb-2">Escrow Balance</p>
+                    <p className="text-2xl font-bold text-white">{formatCurrency(stats.totalEscrow)}</p>
+                    <p className="text-white/40 text-xs mt-2">Secured platform funds</p>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <p className="text-white/60 text-sm mb-2">Total Bookings</p>
+                    <p className="text-2xl font-bold text-white">{stats.totalBookings.toLocaleString()}</p>
+                    <div className="flex items-center gap-1 mt-2">
                         <ArrowUp size={12} className="text-green-400" />
                         <span className="text-green-400 text-xs">+{stats.weeklyBookings} this week</span>
                     </div>
                 </div>
 
-                {/* Revenue */}
-                <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
-                            <Money size={18} className="text-green-400 sm:w-5 sm:h-5" />
-                        </div>
-                        <p className="text-white/60 text-xs sm:text-sm">Total Revenue</p>
-                    </div>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white truncate">{formatCurrency(stats.totalRevenue)}</p>
-                    <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                        <ArrowUp size={12} className="text-green-400" />
-                        <span className="text-green-400 text-xs truncate">+{formatCurrency(stats.weeklyRevenue)} this week</span>
-                    </div>
-                </div>
-
-                {/* Conversion Rate */}
-                <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#df2531]/10 flex items-center justify-center">
-                            <TrendUp size={18} className="text-[#df2531] sm:w-5 sm:h-5" />
-                        </div>
-                        <p className="text-white/60 text-xs sm:text-sm">Completion Rate</p>
-                    </div>
-                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
-                        {stats.totalBookings > 0
-                            ? Math.round((stats.completedBookings / stats.totalBookings) * 100)
-                            : 0}%
-                    </p>
-                    <p className="text-white/40 text-xs mt-1 sm:mt-2">
-                        {stats.completedBookings} of {stats.totalBookings} completed
-                    </p>
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <p className="text-white/60 text-sm mb-2">Profile Views</p>
+                    <p className="text-2xl font-bold text-white">{stats.totalProfileViews?.toLocaleString() || "0"}</p>
+                    <p className="text-white/40 text-xs mt-2">Measured platform engagement</p>
                 </div>
             </div>
 
-            {/* Additional Metrics Row */}
-            {(stats.averageBookingValue !== undefined || stats.peakHour !== undefined || stats.retentionRate !== undefined || stats.cancellationRate !== undefined) && (
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-                    {stats.averageBookingValue !== undefined && (
-                        <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
-                            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                                    <Money size={18} className="text-purple-400 sm:w-5 sm:h-5" />
-                                </div>
-                                <p className="text-white/60 text-xs sm:text-sm">Avg Booking Value</p>
-                            </div>
-                            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
-                                {Math.round(stats.averageBookingValue).toLocaleString()}
-                            </p>
-                            <p className="text-white/40 text-xs mt-1 sm:mt-2">coins per booking</p>
-                        </div>
-                    )}
-
-                    {stats.peakHour !== undefined && (
-                        <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
-                            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                                    <Clock size={18} className="text-amber-400 sm:w-5 sm:h-5" />
-                                </div>
-                                <p className="text-white/60 text-xs sm:text-sm">Peak Booking Hour</p>
-                            </div>
-                            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
-                                {stats.peakHour}:00
-                            </p>
-                            <p className="text-white/40 text-xs mt-1 sm:mt-2">Most active time</p>
-                        </div>
-                    )}
-
-                    {stats.retentionRate !== undefined && (
-                        <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
-                            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
-                                    <UserCircle size={18} className="text-green-400 sm:w-5 sm:h-5" />
-                                </div>
-                                <p className="text-white/60 text-xs sm:text-sm">Client Retention</p>
-                            </div>
-                            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
-                                {stats.retentionRate.toFixed(1)}%
-                            </p>
-                            <p className="text-white/40 text-xs mt-1 sm:mt-2">Repeat customers</p>
-                        </div>
-                    )}
-
-                    {stats.cancellationRate !== undefined && (
-                        <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
-                            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-                                    <XCircle size={18} className="text-red-400 sm:w-5 sm:h-5" />
-                                </div>
-                                <p className="text-white/60 text-xs sm:text-sm">Cancellation Rate</p>
-                            </div>
-                            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
-                                {stats.cancellationRate.toFixed(1)}%
-                            </p>
-                            <p className="text-white/40 text-xs mt-1 sm:mt-2">Of total bookings</p>
-                        </div>
-                    )}
+            {/* Operational Metrics Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Clock size={16} className="text-blue-400" />
+                        <span className="text-blue-400 text-xs font-medium">Avg Verification Time</span>
+                    </div>
+                    <p className="text-white font-bold text-xl">{stats.avgVerificationTime.toFixed(1)}h</p>
                 </div>
-            )}
 
-            {/* Charts Row 1 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-                {/* User Growth Chart */}
-                <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
-                    <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/10">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Info size={16} className="text-orange-400" />
+                        <span className="text-orange-400 text-xs font-medium">Moderation Backlog</span>
+                    </div>
+                    <p className="text-white font-bold text-xl">{stats.pendingModeration} pending</p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/10">
+                    <div className="flex items-center gap-2 mb-1">
+                        <XCircle size={16} className="text-red-400" />
+                        <span className="text-red-400 text-xs font-medium">Cancellation Rate</span>
+                    </div>
+                    <p className="text-white font-bold text-xl">{stats.cancellationRate?.toFixed(1)}%</p>
+                </div>
+            </div>
+
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Revenue/Growth Main Chart */}
+                <div className="lg:col-span-2 p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-base sm:text-lg font-bold text-white">User Growth</h3>
-                            <p className="text-white/50 text-xs sm:text-sm">New signups over time</p>
+                            <h3 className="text-lg font-bold text-white">Market Growth</h3>
+                            <p className="text-white/50 text-sm">Revenue and User signups</p>
                         </div>
-                        <ChartLine size={20} className="text-blue-400 sm:w-6 sm:h-6" />
+                        <TrendUp size={24} className="text-primary" />
                     </div>
                     <SimpleLineChart
-                        data={userGrowthData}
-                        dataKey="count"
-                        color="#3b82f6"
-                        height={180}
+                        data={revenueData}
+                        dataKey="amount"
+                        color="#df2531"
+                        height={250}
                         hoveredPoint={hoveredDataPoint}
                         onHover={setHoveredDataPoint}
+                        chartRef={revenueChartRef}
                     />
                 </div>
 
-                {/* Booking Trends Chart */}
-                <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
-                    <div className="flex items-center justify-between mb-4 sm:mb-6">
-                        <div>
-                            <h3 className="text-base sm:text-lg font-bold text-white">Booking Trends</h3>
-                            <p className="text-white/50 text-xs sm:text-sm">Daily bookings</p>
-                        </div>
-                        <ChartBar size={20} className="text-purple-400 sm:w-6 sm:h-6" />
-                    </div>
-                    <SimpleBarChart data={bookingTrendsData} color="#a855f7" height={180} />
-                </div>
-            </div>
-
-            {/* Charts Row 2 */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                {/* Revenue Chart */}
-                <div className="lg:col-span-2 p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
-                    <div className="flex items-center justify-between mb-4 sm:mb-6">
-                        <div>
-                            <h3 className="text-base sm:text-lg font-bold text-white">Revenue Over Time</h3>
-                            <p className="text-white/50 text-xs sm:text-sm">Daily revenue from coin purchases</p>
-                        </div>
-                        <Coin size={20} className="text-green-400 sm:w-6 sm:h-6" />
-                    </div>
-                    <div className="relative">
-                        <SimpleLineChart
-                            data={revenueData}
-                            dataKey="amount"
-                            color="#22c55e"
-                            height={200}
-                            hoveredPoint={hoveredDataPoint}
-                            onHover={setHoveredDataPoint}
-                            chartRef={revenueChartRef}
+                {/* Service Categories */}
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <h3 className="text-lg font-bold text-white mb-6">Service Popularity</h3>
+                    <div className="flex flex-col items-center gap-6">
+                        <SimplePieChart 
+                            data={servicePopularityData.map((d, i) => ({ 
+                                ...d, 
+                                color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][i % 5] 
+                            }))} 
+                            size={160} 
                         />
-                        <div className="absolute top-0 right-0 flex gap-1">
-                            <button
-                                onClick={() => handleExportChart(revenueChartRef, 'revenue', 'png')}
-                                className="p-1.5 rounded-lg bg-black/50 hover:bg-black/70 text-white/60 hover:text-white transition-colors text-xs"
-                                aria-label="Export revenue chart as PNG"
-                                title="Export as PNG"
-                            >
-                                PNG
-                            </button>
-                            <button
-                                onClick={() => handleExportChart(revenueChartRef, 'revenue', 'svg')}
-                                className="p-1.5 rounded-lg bg-black/50 hover:bg-black/70 text-white/60 hover:text-white transition-colors text-xs"
-                                aria-label="Export revenue chart as SVG"
-                                title="Export as SVG"
-                            >
-                                SVG
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Distribution Charts */}
-                <div className="p-4 sm:p-6 rounded-2xl bg-white/5 border border-white/10">
-                    <div className="flex items-center justify-between mb-4 sm:mb-6">
-                        <div>
-                            <h3 className="text-base sm:text-lg font-bold text-white">Distribution</h3>
-                            <p className="text-white/50 text-xs sm:text-sm">Users & Bookings</p>
-                        </div>
-                        <ChartPie size={20} className="text-[#df2531] sm:w-6 sm:h-6" />
-                    </div>
-
-                    <div className="space-y-6">
-                        <div>
-                            <p className="text-white/60 text-xs mb-3">User Roles</p>
-                            <SimplePieChart data={userRoleData} size={100} />
-                        </div>
-
-                        <div>
-                            <p className="text-white/60 text-xs mb-3">Booking Status</p>
-                            <SimplePieChart data={bookingStatusData} size={100} />
-                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Quick Stats Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-6">
-                <div className="p-3 sm:p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                    <div className="flex items-center gap-2 mb-1">
-                        <UserCircle size={16} className="text-blue-400" />
-                        <span className="text-blue-400 text-xs font-medium">Clients</span>
+            {/* Bottom Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Demand Heatmap List */}
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <h3 className="text-lg font-bold text-white mb-6">Location Distribution</h3>
+                    <div className="space-y-4">
+                        {locationData.length > 0 ? locationData.map((loc) => (
+                            <div key={loc.name} className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-white/80">{loc.name}</span>
+                                    <span className="text-white/40">{loc.value} users</span>
+                                </div>
+                                <div className="w-full bg-white/5 rounded-full h-1.5">
+                                    <div
+                                        className="bg-primary h-1.5 rounded-full transition-all duration-500"
+                                        style={{ width: `${(loc.value / (locationData[0]?.value || 1)) * 100}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        )) : (
+                            <p className="text-center py-8 text-white/40 italic">Not enough location data</p>
+                        )}
                     </div>
-                    <p className="text-white font-bold text-lg sm:text-xl">{stats.totalClients}</p>
                 </div>
 
-                <div className="p-3 sm:p-4 rounded-xl bg-[#df2531]/10 border border-[#df2531]/20">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Briefcase size={16} className="text-[#df2531]" />
-                        <span className="text-[#df2531] text-xs font-medium">Talents</span>
+                {/* Leaderboard */}
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-bold text-white">Top Revenue Talents</h3>
+                        <Briefcase size={20} className="text-primary" />
                     </div>
-                    <p className="text-white font-bold text-lg sm:text-xl">{stats.totalTalents}</p>
+                    <div className="space-y-4">
+                        {topTalents.map((talent, i) => (
+                            <div key={talent.id} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/5 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-white/20 font-bold w-4">{i + 1}</span>
+                                    <div className="w-10 h-10 rounded-full bg-white/10 overflow-hidden ring-1 ring-white/20">
+                                        {talent.avatar ? (
+                                            <img src={talent.avatar} alt={talent.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-primary text-xs font-bold">
+                                                {talent.name.substring(0, 2).toUpperCase()}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold text-white">{talent.name}</p>
+                                        <p className="text-[10px] text-white/40 uppercase tracking-wider">Verified Talent</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm font-bold text-green-400">{formatCurrency(talent.revenue)}</p>
+                                    <p className="text-[10px] text-white/30">Total Generated</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
+            </div>
 
-                <div className="p-3 sm:p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                    <div className="flex items-center gap-2 mb-1">
-                        <CalendarCheck size={16} className="text-amber-400" />
-                        <span className="text-amber-400 text-xs font-medium">Pending</span>
+            {/* Governance Section */}
+            <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <h3 className="text-lg font-bold text-white">Governance & Disputes</h3>
+                        <p className="text-sm text-white/50">Marketplace friction analysis</p>
                     </div>
-                    <p className="text-white font-bold text-lg sm:text-xl">{stats.pendingBookings}</p>
+                    <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                        <XCircle size={20} className="text-red-400" />
+                    </div>
                 </div>
-
-                <div className="p-3 sm:p-4 rounded-xl bg-green-500/10 border border-green-500/20">
-                    <div className="flex items-center gap-2 mb-1">
-                        <CalendarCheck size={16} className="text-green-400" />
-                        <span className="text-green-400 text-xs font-medium">Completed</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div className="flex justify-center md:justify-start">
+                        <SimplePieChart 
+                            data={disputeDistribution} 
+                            size={180} 
+                        />
                     </div>
-                    <p className="text-white font-bold text-lg sm:text-xl">{stats.completedBookings}</p>
+                    <div className="grid grid-cols-2 gap-4">
+                        {disputeDistribution.map((item) => (
+                            <div key={item.name} className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                                <p className="text-white/40 text-[10px] uppercase font-bold tracking-widest mb-1">{item.name}</p>
+                                <p className="text-2xl font-bold text-white">{item.value}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>

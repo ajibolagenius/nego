@@ -249,6 +249,31 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
         wallet = walletResult.data
     }
 
+    // Track profile view and update activity status (async/background)
+    if (talent.id) {
+        const supabaseAdmin = getAdminClient()
+        if (supabaseAdmin) {
+            // Record view
+            supabaseAdmin.from('profile_views').insert({
+                talent_id: talent.id,
+                viewer_id: user?.id || null,
+                viewer_role: user ? (currentUserProfile?.role || 'client') : 'anonymous'
+            }).then(({ error }) => {
+                if (error) console.error('[TalentProfile] Error tracking view:', error)
+            })
+
+            // Update viewer activity
+            if (user?.id) {
+                supabaseAdmin.from('profiles')
+                    .update({ last_active_at: new Date().toISOString() })
+                    .eq('id', user.id)
+                    .then(({ error }) => {
+                        if (error) console.error('[TalentProfile] Error updating activity:', error)
+                    })
+            }
+        }
+    }
+
     return (
         <TalentProfileClient
             talent={{
