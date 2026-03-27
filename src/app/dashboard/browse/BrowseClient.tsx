@@ -43,10 +43,30 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
     const [visibleCount, setVisibleCount] = useState(20)
     const loaderRef = useRef<HTMLDivElement>(null)
 
-    // Shuffle talents once on component mount for stable "random" order
-    const shuffledTalents = useMemo(() => {
-        return [...talents].sort(() => Math.random() - 0.5)
-    }, [talents])
+    // Track previous filters for reset-on-change logic
+    const [prevFilters, setPrevFilters] = useState({
+        searchQuery,
+        selectedLocation,
+        selectedService,
+        selectedAvailability,
+        sortBy
+    })
+
+    // Reset visibility when filters change - Adjust state during render
+    if (searchQuery !== prevFilters.searchQuery ||
+        selectedLocation !== prevFilters.selectedLocation ||
+        selectedService !== prevFilters.selectedService ||
+        selectedAvailability !== prevFilters.selectedAvailability ||
+        sortBy !== prevFilters.sortBy) {
+        setPrevFilters({
+            searchQuery,
+            selectedLocation,
+            selectedService,
+            selectedAvailability,
+            sortBy
+        })
+        setVisibleCount(20)
+    }
 
     const filteredTalents = useMemo(() => {
         let result = [...talents]
@@ -88,12 +108,8 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
         }
 
         return result
-    }, [talents, shuffledTalents, searchQuery, selectedLocation, selectedService, selectedAvailability, sortBy])
+    }, [talents, searchQuery, selectedLocation, selectedService, selectedAvailability, sortBy])
 
-    // Reset visibility when filters change
-    useEffect(() => {
-        setVisibleCount(20)
-    }, [searchQuery, selectedLocation, selectedService, selectedAvailability, sortBy])
 
     // Infinite scroll observer
     useEffect(() => {
@@ -307,7 +323,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
 
                             {visibleCount >= filteredTalents.length && filteredTalents.length > 0 && (
                                 <div className="py-12 text-center">
-                                    <p className="text-white/20 text-sm">You've reached the end of the list</p>
+                                    <p className="text-white/20 text-sm">You&apos;ve reached the end of the list</p>
                                 </div>
                             )}
                         </>

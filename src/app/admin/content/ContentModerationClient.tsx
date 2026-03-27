@@ -524,9 +524,10 @@ export function ContentModerationClient({
             setShowDetailModal(false)
             setSelectedMedia(null)
             router.refresh()
-        } catch (error: any) {
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error)
             console.error('Delete error:', error)
-            toast.error(error.message || 'Failed to delete media')
+            toast.error(message || 'Failed to delete media')
         } finally {
             setIsProcessing(false)
         }

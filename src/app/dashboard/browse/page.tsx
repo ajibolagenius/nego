@@ -13,6 +13,8 @@ export const metadata = generateOpenGraphMetadata({
     pageType: 'dashboard',
 })
 
+import { shuffleArray } from '@/lib/utils/shuffle'
+
 export default async function BrowsePage() {
     const supabase = await createClient()
 
@@ -39,8 +41,6 @@ export default async function BrowsePage() {
       )
     `)
         .eq('role', 'talent')
-        .not('avatar_url', 'is', null)
-        .neq('avatar_url', '')
         .order('created_at', { ascending: false })
 
     // Fetch service types for filter
@@ -49,5 +49,15 @@ export default async function BrowsePage() {
         .select('*')
         .eq('is_active', true)
 
-    return <BrowseClient talents={talents || []} serviceTypes={serviceTypes || []} userId={user.id} />
+    // Two-tier sorting: Talents with profile pictures first, then others.
+    // Randomized within each group for a fresh experience.
+    const withAvatar = talents?.filter(t => t.avatar_url && t.avatar_url.trim() !== '') || []
+    const withoutAvatar = talents?.filter(t => !t.avatar_url || t.avatar_url.trim() === '') || []
+
+    const shuffledTalents = [
+        ...shuffleArray(withAvatar),
+        ...shuffleArray(withoutAvatar)
+    ]
+
+    return <BrowseClient talents={shuffledTalents} serviceTypes={serviceTypes || []} userId={user.id} />
 }

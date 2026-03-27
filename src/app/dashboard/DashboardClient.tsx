@@ -23,7 +23,7 @@ import type { Profile, Wallet as WalletType } from '@/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 // Use full Profile type with talent_menus for featured talents
-interface TalentWithMenu extends Profile {
+export interface TalentWithMenu extends Profile {
     talent_menus?: Array<{
         id: string
         price: number

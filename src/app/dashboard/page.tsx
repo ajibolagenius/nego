@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 import { createClient } from '@/lib/supabase/server'
-import { DashboardClient } from './DashboardClient'
+import { DashboardClient, type TalentWithMenu } from './DashboardClient'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 
@@ -42,7 +42,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         .single()
 
     const isTalent = profile?.role === 'talent'
-    let shuffledTalents: any[] = []
+    let shuffledTalents: TalentWithMenu[] = []
 
     if (!isTalent) {
         // Generate random limit between 8 and 16
