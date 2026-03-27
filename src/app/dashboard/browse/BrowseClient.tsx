@@ -11,11 +11,11 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useFavorites } from '@/hooks/useFavorites'
 import { NIGERIAN_LOCATIONS, locationMatches } from '@/lib/nigerian-locations'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile, ServiceType, TalentMenu } from '@/types/database'
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 interface TalentWithMenu extends Profile {
     talent_menus: (TalentMenu & { service_type: ServiceType })[]
@@ -193,6 +193,21 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                             <CaretDown className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" size={16} />
                         </div>
 
+                        {/* Gender Dropdown */}
+                        <div className="relative">
+                            <select
+                                value={selectedGender}
+                                onChange={(e) => setSelectedGender(e.target.value as typeof selectedGender)}
+                                className="appearance-none bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-10 text-white focus:outline-none focus:border-[#df2531]/50 transition-colors cursor-pointer min-w-[120px]"
+                            >
+                                <option value="all" className="bg-black">All Genders</option>
+                                <option value="male" className="bg-black">Male</option>
+                                <option value="female" className="bg-black">Female</option>
+                                <option value="other" className="bg-black">Other</option>
+                            </select>
+                            <CaretDown className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" size={16} />
+                        </div>
+
                         {/* Filter Button */}
                         <Button
                             onClick={() => setShowFilters(!showFilters)}
@@ -252,39 +267,6 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                                 </div>
                             </div>
 
-                            {/* Gender Filter */}
-                            <div className="mb-6">
-                                <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-white font-semibold">Gender</h3>
-                                    {selectedGender !== 'all' && (
-                                        <button
-                                            onClick={() => setSelectedGender('all')}
-                                            className="text-[#df2531] text-sm hover:underline"
-                                        >
-                                            Clear
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {[
-                                        { value: 'all', label: 'All' },
-                                        { value: 'male', label: 'Male' },
-                                        { value: 'female', label: 'Female' },
-                                        { value: 'other', label: 'Other' },
-                                    ].map(option => (
-                                        <button
-                                            key={option.value}
-                                            onClick={() => setSelectedGender(option.value as typeof selectedGender)}
-                                            className={`px-4 py-2 rounded-full text-sm transition-all ${selectedGender === option.value
-                                                ? 'bg-[#df2531] text-white'
-                                                : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
-                                                }`}
-                                        >
-                                            {option.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
 
                             {/* Service Filter */}
                             <div className="mb-6">
