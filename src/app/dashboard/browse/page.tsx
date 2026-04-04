@@ -1,6 +1,6 @@
-import { redirect } from 'next/navigation'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import { BrowseClient } from './BrowseClient'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
@@ -13,9 +13,14 @@ export const metadata = generateOpenGraphMetadata({
     pageType: 'dashboard',
 })
 
-import { shuffleArray } from '@/lib/utils/shuffle'
 
-export default async function BrowsePage() {
+
+export default async function BrowsePage({
+    searchParams
+}: {
+    searchParams: Promise<{ [key: string]: string | undefined }>
+}) {
+    const params = await searchParams
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -24,24 +29,87 @@ export default async function BrowsePage() {
         redirect('/login')
     }
 
-    // Fetch talents
-    const { data: talents } = await supabase
+    // Parse filters from searchParams
+    const q = params.q || ''
+    const location = params.location && params.location !== 'All Locations' ? params.location : null
+    const gender = params.gender && params.gender !== 'all' ? params.gender : null
+    const status = params.status && params.status !== 'all' ? params.status : null
+    const serviceId = params.service || null
+    const sortBy = params.sort || 'random'
+    const page = parseInt(params.page || '1')
+    const limit = 20
+    const offset = (page - 1) * limit
+
+    // Base query
+    let query = supabase
         .from('profiles')
         .select(`
-      *,
-      talent_menus (
-        id,
-        price,
-        is_active,
-        service_type:service_types (
-          id,
-          name,
-          icon
-        )
-      )
-    `)
+            id,
+            display_name,
+            avatar_url,
+            location,
+            bio,
+            status,
+            is_verified,
+            starting_price,
+            created_at,
+            username,
+            role,
+            full_name,
+            updated_at,
+            gender,
+            talent_menus:talent_menus${serviceId ? '!inner' : ''} (
+                id,
+                talent_id,
+                service_type_id,
+                price,
+                is_active,
+                service_type:service_types (
+                    id,
+                    name,
+                    icon
+                )
+            )
+        `, { count: 'exact' })
         .eq('role', 'talent')
-        .order('created_at', { ascending: false })
+
+    // Apply filters
+    if (q) {
+        query = query.or(`display_name.ilike.%${q}%,username.ilike.%${q}%,location.ilike.%${q}%,bio.ilike.%${q}%`)
+    }
+    if (location) {
+        query = query.eq('location', location)
+    }
+    if (gender) {
+        query = query.eq('gender', gender)
+    }
+    if (status) {
+        query = query.eq('status', status)
+    }
+    if (serviceId) {
+        query = query.eq('talent_menus.service_type_id', serviceId)
+        query = query.eq('talent_menus.is_active', true)
+    }
+
+    // Apply sorting
+    if (sortBy === 'recent') {
+        query = query.order('created_at', { ascending: false })
+    } else if (sortBy === 'price_low') {
+        query = query.order('starting_price', { ascending: true, nullsFirst: false })
+    } else if (sortBy === 'price_high') {
+        query = query.order('starting_price', { ascending: false, nullsFirst: false })
+    } else {
+        // Default: randomize within tiers (avatar first) or just recent
+        query = query.order('created_at', { ascending: false })
+    }
+
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1)
+
+    const { data: talents, count } = await query
+
+    // Safe type casting for complex Supabase join
+    const typedTalents = (talents || []) as unknown as any[]
 
     // Fetch service types for filter
     const { data: serviceTypes } = await supabase
@@ -49,15 +117,13 @@ export default async function BrowsePage() {
         .select('*')
         .eq('is_active', true)
 
-    // Two-tier sorting: Talents with profile pictures first, then others.
-    // Randomized within each group for a fresh experience.
-    const withAvatar = talents?.filter(t => t.avatar_url && t.avatar_url.trim() !== '') || []
-    const withoutAvatar = talents?.filter(t => !t.avatar_url || t.avatar_url.trim() === '') || []
-
-    const shuffledTalents = [
-        ...shuffleArray(withAvatar),
-        ...shuffleArray(withoutAvatar)
-    ]
-
-    return <BrowseClient talents={shuffledTalents} serviceTypes={serviceTypes || []} userId={user.id} />
+    return (
+        <BrowseClient
+            talents={typedTalents}
+            serviceTypes={serviceTypes || []}
+            userId={user.id}
+            totalCount={count || 0}
+            currentPage={page}
+        />
+    )
 }

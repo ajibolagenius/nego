@@ -6,14 +6,14 @@ import {
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
 import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useFavorites } from '@/hooks/useFavorites'
-import { NIGERIAN_LOCATIONS, locationMatches } from '@/lib/nigerian-locations'
+import { NIGERIAN_LOCATIONS } from '@/lib/nigerian-locations'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile, ServiceType, TalentMenu } from '@/types/database'
 
@@ -25,106 +25,82 @@ interface BrowseClientProps {
     talents: TalentWithMenu[]
     serviceTypes: ServiceType[]
     userId: string
+    totalCount: number
+    currentPage: number
 }
 
 // All locations including "All Locations" option
 const locations = ['All Locations', ...NIGERIAN_LOCATIONS]
 
-export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProps) {
+export function BrowseClient({ talents: initialTalents, serviceTypes, userId, totalCount, currentPage }: BrowseClientProps) {
+    const router = useRouter()
     const searchParams = useSearchParams()
-    const initialQuery = searchParams.get('q') || ''
 
-    const [searchQuery, setSearchQuery] = useState(initialQuery)
-    const [selectedLocation, setSelectedLocation] = useState('All Locations')
-    const [selectedService, setSelectedService] = useState<string | null>(null)
-    const [selectedAvailability, setSelectedAvailability] = useState<'all' | 'online' | 'offline' | 'booked'>('all')
-    const [selectedGender, setSelectedGender] = useState<'all' | 'male' | 'female' | 'other'>('all')
+    // Internal state for UI responsiveness
+    const [talents, setTalents] = useState<TalentWithMenu[]>(initialTalents)
+    const [isPending, setIsPending] = useState(false)
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
+    const [selectedLocation, setSelectedLocation] = useState(searchParams.get('location') || 'All Locations')
+    const [selectedService, setSelectedService] = useState<string | null>(searchParams.get('service'))
+    const [selectedAvailability, setSelectedAvailability] = useState(searchParams.get('status') || 'all')
+    const [selectedGender, setSelectedGender] = useState(searchParams.get('gender') || 'all')
     const [showFilters, setShowFilters] = useState(false)
-    const [sortBy, setSortBy] = useState<'random' | 'recent' | 'price_low' | 'price_high'>('random')
-    const [visibleCount, setVisibleCount] = useState(20)
+    const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'recent')
     const loaderRef = useRef<HTMLDivElement>(null)
 
-    // Track previous filters for reset-on-change logic
-    const [prevFilters, setPrevFilters] = useState({
-        searchQuery,
-        selectedLocation,
-        selectedService,
-        selectedAvailability,
-        selectedGender,
-        sortBy
-    })
+    // Update accumulated talents when props change
+    useEffect(() => {
+        if (currentPage === 1) {
+            setTalents(initialTalents)
+        } else {
+            // Append new page results, but filter out duplicates just in case
+            setTalents(prev => {
+                const existingIds = new Set(prev.map(t => t.id))
+                const uniqueNew = initialTalents.filter(t => !existingIds.has(t.id))
+                return [...prev, ...uniqueNew]
+            })
+        }
+        setIsPending(false)
+    }, [initialTalents, currentPage])
 
-    // Reset visibility when filters change - Adjust state during render
-    if (searchQuery !== prevFilters.searchQuery ||
-        selectedLocation !== prevFilters.selectedLocation ||
-        selectedService !== prevFilters.selectedService ||
-        selectedAvailability !== prevFilters.selectedAvailability ||
-        selectedGender !== prevFilters.selectedGender ||
-        sortBy !== prevFilters.sortBy) {
-        setPrevFilters({
-            searchQuery,
-            selectedLocation,
-            selectedService,
-            selectedAvailability,
-            selectedGender,
-            sortBy
+    // Utility to update URL with new filters
+    const updateFilters = (updates: Record<string, string | null | undefined>) => {
+        const params = new URLSearchParams(searchParams.toString())
+        
+        // Reset to page 1 on filter change
+        params.set('page', '1')
+
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === null || value === undefined || value === 'all' || value === 'All Locations') {
+                params.delete(key)
+            } else {
+                params.set(key, value)
+            }
         })
-        setVisibleCount(20)
+
+        setIsPending(true)
+        router.push(`/dashboard/browse?${params.toString()}`, { scroll: false })
     }
 
-    const filteredTalents = useMemo(() => {
-        let result = [...talents]
-
-        // Search filter
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase()
-            result = result.filter(t =>
-                t.display_name?.toLowerCase().includes(query) ||
-                t.location?.toLowerCase().includes(query) ||
-                t.bio?.toLowerCase().includes(query)
-            )
-        }
-
-        // Location filter - handle variations using shared helper function
-        if (selectedLocation !== 'All Locations') {
-            result = result.filter(t => locationMatches(t.location, selectedLocation))
-        }
-
-        // Service filter
-        if (selectedService) {
-            result = result.filter(t =>
-                t.talent_menus?.some(m => m.service_type?.id === selectedService && m.is_active)
-            )
-        }
-
-        // Availability filter
-        if (selectedAvailability !== 'all') {
-            result = result.filter(t => t.status === selectedAvailability)
-        }
-
-        // Gender filter
-        if (selectedGender !== 'all') {
-            result = result.filter(t => t.gender === selectedGender)
-        }
-
-        // Sort
-        if (sortBy === 'price_low') {
-            result.sort((a, b) => (a.starting_price || 0) - (b.starting_price || 0))
-        } else if (sortBy === 'price_high') {
-            result.sort((a, b) => (b.starting_price || 0) - (a.starting_price || 0))
-        } else if (sortBy === 'recent') {
-            result.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
-        }
-
-        return result
-    }, [talents, searchQuery, selectedLocation, selectedService, selectedAvailability, selectedGender, sortBy])
-
+    // Debounced search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchQuery !== (searchParams.get('q') || '')) {
+                updateFilters({ q: searchQuery })
+            }
+        }, 500)
+        return () => clearTimeout(timer)
+    }, [searchQuery])
 
     // Infinite scroll observer
     useEffect(() => {
         const observer = new IntersectionObserver((entries) => {
-            if (entries[0]?.isIntersecting) {
-                setVisibleCount(prev => prev + 20)
+            if (entries[0]?.isIntersecting && talents.length < totalCount && !isPending) {
+                const params = new URLSearchParams(searchParams.toString())
+                const nextPage = currentPage + 1
+                params.set('page', nextPage.toString())
+                router.push(`/dashboard/browse?${params.toString()}`, { scroll: false })
+                setIsPending(true)
             }
         }, { threshold: 0.1 })
 
@@ -133,11 +109,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
         }
 
         return () => observer.disconnect()
-    }, [filteredTalents.length])
-
-    const displayedTalents = useMemo(() => {
-        return filteredTalents.slice(0, visibleCount)
-    }, [filteredTalents, visibleCount])
+    }, [talents.length, totalCount, isPending, currentPage, searchParams, router])
 
     const formatPrice = (price: number) => {
         return `${new Intl.NumberFormat('en-NG', {
@@ -158,7 +130,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                             </Link>
                             <div className="flex-1">
                                 <h1 className="text-xl font-bold text-white">Browse Talent</h1>
-                                <p className="text-white/50 text-sm">{(filteredTalents || []).length} available</p>
+                                <p className="text-white/50 text-sm">{totalCount} available</p>
                             </div>
                         </div>
                     </div>
@@ -183,7 +155,11 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                         <div className="relative">
                             <select
                                 value={selectedLocation}
-                                onChange={(e) => setSelectedLocation(e.target.value)}
+                                onChange={(e) => {
+                                    const val = e.target.value
+                                    setSelectedLocation(val)
+                                    updateFilters({ location: val })
+                                }}
                                 className="appearance-none bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-10 text-white focus:outline-none focus:border-[#df2531]/50 transition-colors cursor-pointer min-w-[160px]"
                             >
                                 {locations.map(loc => (
@@ -197,7 +173,11 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                         <div className="relative">
                             <select
                                 value={selectedGender}
-                                onChange={(e) => setSelectedGender(e.target.value as typeof selectedGender)}
+                                onChange={(e) => {
+                                    const val = e.target.value
+                                    setSelectedGender(val)
+                                    updateFilters({ gender: val })
+                                }}
                                 className="appearance-none bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-10 text-white focus:outline-none focus:border-[#df2531]/50 transition-colors cursor-pointer min-w-[120px]"
                             >
                                 <option value="all" className="bg-black">All Genders</option>
@@ -233,7 +213,10 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                                     <h3 className="text-white font-semibold">Availability</h3>
                                     {selectedAvailability !== 'all' && (
                                         <button
-                                            onClick={() => setSelectedAvailability('all')}
+                                            onClick={() => {
+                                                setSelectedAvailability('all')
+                                                updateFilters({ status: 'all' })
+                                            }}
                                             className="text-[#df2531] text-sm hover:underline"
                                         >
                                             Clear
@@ -249,7 +232,11 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                                     ].map(option => (
                                         <button
                                             key={option.value}
-                                            onClick={() => setSelectedAvailability(option.value as typeof selectedAvailability)}
+                                            onClick={() => {
+                                                const val = option.value
+                                                setSelectedAvailability(val)
+                                                updateFilters({ status: val })
+                                            }}
                                             className={`px-4 py-2 rounded-full text-sm transition-all flex items-center gap-1.5 ${selectedAvailability === option.value
                                                 ? 'bg-[#df2531] text-white'
                                                 : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
@@ -274,7 +261,10 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                                     <h3 className="text-white font-semibold">Filter by Service</h3>
                                     {selectedService && (
                                         <button
-                                            onClick={() => setSelectedService(null)}
+                                            onClick={() => {
+                                                setSelectedService(null)
+                                                updateFilters({ service: null })
+                                            }}
                                             className="text-[#df2531] text-sm hover:underline"
                                         >
                                             Clear
@@ -285,9 +275,11 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                                     {serviceTypes.map(service => (
                                         <button
                                             key={service.id}
-                                            onClick={() => setSelectedService(
-                                                selectedService === service.id ? null : service.id
-                                            )}
+                                            onClick={() => {
+                                                const val = selectedService === service.id ? null : service.id
+                                                setSelectedService(val)
+                                                updateFilters({ service: val })
+                                            }}
                                             className={`px-4 py-2 rounded-full text-sm transition-all ${selectedService === service.id
                                                 ? 'bg-[#df2531] text-white'
                                                 : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10'
@@ -311,7 +303,11 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                                     ].map(option => (
                                         <button
                                             key={option.value}
-                                            onClick={() => setSortBy(option.value as typeof sortBy)}
+                                            onClick={() => {
+                                                const val = option.value
+                                                setSortBy(val)
+                                                updateFilters({ sort: val })
+                                            }}
                                             className={`px-4 py-2 rounded-full text-sm transition-all ${sortBy === option.value
                                                 ? 'bg-white/10 text-white border border-white/20'
                                                 : 'text-white/50 hover:text-white'
@@ -326,7 +322,7 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                     )}
 
                     {/* Results Grid */}
-                    {displayedTalents.length === 0 ? (
+                    {talents.length === 0 ? (
                         <div className="text-center py-20">
                             <p className="text-white/50 text-lg mb-4">No talents found</p>
                             <p className="text-white/30 text-sm">Try adjusting your filters</p>
@@ -334,19 +330,19 @@ export function BrowseClient({ talents, serviceTypes, userId }: BrowseClientProp
                     ) : (
                         <>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                                {displayedTalents.map((talent) => (
+                                {talents.map((talent) => (
                                     <TalentCard key={talent.id} talent={talent} formatPrice={formatPrice} userId={userId} />
                                 ))}
                             </div>
 
                             {/* Infinite Scroll Loader */}
-                            {visibleCount < filteredTalents.length && (
+                            {talents.length < totalCount && (
                                 <div ref={loaderRef} className="py-12 flex justify-center">
                                     <LoadingSpinner size="sm" />
                                 </div>
                             )}
 
-                            {visibleCount >= filteredTalents.length && filteredTalents.length > 0 && (
+                            {talents.length >= totalCount && talents.length > 0 && (
                                 <div className="py-12 text-center">
                                     <p className="text-white/20 text-sm">You&apos;ve reached the end of the list</p>
                                 </div>
@@ -379,7 +375,7 @@ function TalentCard({ talent, formatPrice, userId }: { talent: TalentWithMenu; f
                         src={talent.avatar_url}
                         alt={talent.display_name || 'Talent'}
                         fill
-                        sizes="(max-width: 768px) 50vw, 33vw"
+                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                 ) : (

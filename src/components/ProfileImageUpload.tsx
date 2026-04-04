@@ -14,7 +14,7 @@ interface ProfileImageUploadProps {
 }
 
 // Image compression helper
-const compressImage = (file: File, maxWidth: number = 800, quality: number = 0.8): Promise<File> => {
+const compressImage = (file: File, maxWidth: number = 400, quality: number = 0.75): Promise<File> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader()
 
@@ -177,7 +177,7 @@ export function ProfileImageUpload({
 
             // Compress image
             setUploadProgress(10)
-            const compressedFile = await compressImage(selectedFile, 800, 0.8)
+            const compressedFile = await compressImage(selectedFile, 400, 0.75)
             setUploadProgress(30)
 
             // Generate unique filename
@@ -208,7 +208,7 @@ export function ProfileImageUpload({
             const { error: avatarsError } = await supabase.storage
                 .from('avatars')
                 .upload(fileName, compressedFile, {
-                    cacheControl: '3600',
+                    cacheControl: '31536000, public, immutable',
                     upsert: true
                 })
 
@@ -218,7 +218,7 @@ export function ProfileImageUpload({
                 const { error: profilesError } = await supabase.storage
                     .from('profiles')
                     .upload(fileName, compressedFile, {
-                        cacheControl: '3600',
+                        cacheControl: '31536000, public, immutable',
                         upsert: true
                     })
 

@@ -92,7 +92,7 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
             if (isImage) {
                 setUploadProgress(10)
                 try {
-                    fileToUpload = await compressImage(selectedFile, 1920, 0.85)
+                    fileToUpload = await compressImage(selectedFile, 1200, 0.75)
                     setUploadProgress(20)
                     fileName = `${talentId}/${Date.now()}_${selectedFile.name.replace(/\.[^/.]+$/, '')}.jpg`
                     contentType = 'image/jpeg'
@@ -113,7 +113,7 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
             const { error: uploadError } = await supabase.storage
                 .from('media')
                 .upload(fileName, fileToUpload, {
-                    cacheControl: '3600',
+                    cacheControl: '31536000, public, immutable',
                     upsert: false,
                     contentType: contentType,
                 })
@@ -126,7 +126,7 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
                     const { error: retryError } = await supabase.storage
                         .from('media')
                         .upload(fileName, fileToUpload, {
-                            cacheControl: '3600',
+                            cacheControl: '31536000, public, immutable',
                             upsert: false,
                             contentType: contentType,
                         })

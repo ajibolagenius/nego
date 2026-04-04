@@ -6,7 +6,7 @@
  * @param quality The quality of the JPEG compression (0-1)
  * @returns A promise that resolves to the compressed File
  */
-export const compressImage = async (file: File, maxWidth: number = 1920, quality: number = 0.85): Promise<File> => {
+export const compressImage = async (file: File, maxWidth: number = 1200, quality: number = 0.75): Promise<File> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = (e) => {

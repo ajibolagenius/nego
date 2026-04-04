@@ -28,8 +28,15 @@ export function MediaGallery({ items, viewMode, deletingId, onDelete }: MediaGal
                     >
                         {/* Thumbnail */}
                         <div className="w-20 h-20 rounded-lg overflow-hidden bg-white/10 flex-shrink-0 relative">
-                            {isVideo(item.url) ? (
-                                <video src={item.url} className="w-full h-full object-cover" muted aria-label="Video thumbnail" />
+                             {isVideo(item.url) ? (
+                                <video 
+                                    src={item.url} 
+                                    className="w-full h-full object-cover" 
+                                    muted 
+                                    playsInline
+                                    preload="metadata"
+                                    aria-label="Video thumbnail" 
+                                />
                             ) : (
                                 <Image
                                     src={item.url}
@@ -106,6 +113,8 @@ export function MediaGallery({ items, viewMode, deletingId, onDelete }: MediaGal
                             src={item.url}
                             className="w-full h-full object-cover"
                             muted
+                            playsInline
+                            preload="metadata"
                             aria-label={`${item.is_premium ? 'Premium' : 'Free'} video`}
                         />
                     ) : (
