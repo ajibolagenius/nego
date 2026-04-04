@@ -15,6 +15,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useFavorites } from '@/hooks/useFavorites'
 import { NIGERIAN_LOCATIONS } from '@/lib/nigerian-locations'
 import { getTalentUrl } from '@/lib/talent-url'
+import supabaseLoader from '@/lib/supabase/loader'
 import type { Profile, ServiceType, TalentMenu } from '@/types/database'
 
 interface TalentWithMenu extends Profile {
@@ -330,8 +331,8 @@ export function BrowseClient({ talents: initialTalents, serviceTypes, userId, to
                     ) : (
                         <>
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                                {talents.map((talent) => (
-                                    <TalentCard key={talent.id} talent={talent} formatPrice={formatPrice} userId={userId} />
+                                {talents.map((talent, index) => (
+                                    <TalentCard key={talent.id} talent={talent} formatPrice={formatPrice} userId={userId} index={index} />
                                 ))}
                             </div>
 
@@ -356,7 +357,7 @@ export function BrowseClient({ talents: initialTalents, serviceTypes, userId, to
     )
 }
 
-function TalentCard({ talent, formatPrice, userId }: { talent: TalentWithMenu; formatPrice: (p: number) => string; userId: string }) {
+function TalentCard({ talent, formatPrice, userId, index }: { talent: TalentWithMenu; formatPrice: (p: number) => string; userId: string; index: number }) {
     const { isFavorite, toggleFavorite } = useFavorites(userId)
     const liked = isFavorite(talent.id)
 
@@ -372,11 +373,13 @@ function TalentCard({ talent, formatPrice, userId }: { talent: TalentWithMenu; f
             <div className="aspect-[3/4] relative overflow-hidden">
                 {talent.avatar_url ? (
                     <Image
+                        loader={supabaseLoader}
                         src={talent.avatar_url}
                         alt={talent.display_name || 'Talent'}
                         fill
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        priority={index < 4}
                     />
                 ) : (
                     <AvatarPlaceholder size="md" />
