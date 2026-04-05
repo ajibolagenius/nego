@@ -1,6 +1,7 @@
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 import { createApiClient } from '@/lib/supabase/api'
 import { AnalyticsClient } from './AnalyticsClient'
+import type { Booking, Profile, Transaction, Verification, Wallet } from '@/types/database'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 
@@ -30,11 +31,11 @@ export default async function AnalyticsPage() {
         { count: pendingBookings },
         { count: completedBookings },
         { data: recentUsers },
-        { data: allBookings }, // Get all for service distribution
-        { data: transactions },
-        { data: wallets },
+        { data: allBookingsData }, // Rename to avoid confusion if needed, but and type below
+        { data: transactionsData },
+        { data: walletsData },
         { count: pendingModeration },
-        { data: verifications },
+        { data: verificationsData },
         { data: disputes },
         profileViewsRes,
     ] = await Promise.all([
@@ -54,17 +55,23 @@ export default async function AnalyticsPage() {
         supabase.from('profile_views').select('*', { count: 'exact', head: true }),
     ])
 
+    const allBookings = allBookingsData as (Booking & { services_snapshot: any[] })[] | null
+    const transactions = transactionsData as Transaction[] | null
+    const wallets = walletsData as Wallet[] | null
+    const verifications = verificationsData as Verification[] | null
+    const recentUsersList = recentUsers as Partial<Profile>[] | null
+
     const totalProfileViews = profileViewsRes.count || 0
-    const recentBookings = allBookings?.filter((b: any) => new Date(b.created_at) >= thirtyDaysAgo) || []
+    const recentBookings = allBookings?.filter((b) => new Date(b.created_at) >= thirtyDaysAgo) || []
 
     // 1. Financial Metrics
-    const totalEscrow = wallets?.reduce((sum: number, w: any) => sum + (w.escrow_balance || 0), 0) || 0
-    const totalRevenue = transactions?.filter((t: any) => t.type === 'purchase' && t.status === 'completed')
-        .reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0
+    const totalEscrow = wallets?.reduce((sum: number, w) => sum + (w.escrow_balance || 0), 0) || 0
+    const totalRevenue = transactions?.filter((t) => t.type === 'purchase' && t.status === 'completed')
+        .reduce((sum: number, t) => sum + (t.amount || 0), 0) || 0
 
     // 2. Service Category Popularity
     const serviceCounts: Record<string, number> = {}
-    allBookings?.forEach((b: any) => {
+    allBookings?.forEach((b) => {
         if (b.services_snapshot && Array.isArray(b.services_snapshot)) {
             b.services_snapshot.forEach((s: any) => {
                 const name = s.service_type?.name || 'Unknown'
@@ -79,7 +86,7 @@ export default async function AnalyticsPage() {
 
     // 3. Location Data
     const locationCounts: Record<string, number> = {}
-    recentUsers?.forEach((u: any) => {
+    recentUsersList?.forEach((u) => {
         if (u.location) {
             locationCounts[u.location] = (locationCounts[u.location] || 0) + 1
         }
@@ -90,11 +97,11 @@ export default async function AnalyticsPage() {
         .slice(0, 5)
 
     // 4. Operational Metrics (Velocity)
-    const approvedVerifications = verifications?.filter((v: any) => v.status === 'approved' && v.updated_at) || []
+    const approvedVerifications = verifications?.filter((v) => v.status === 'approved' && v.updated_at) || []
     const avgVerificationTime = approvedVerifications.length > 0
-        ? approvedVerifications.reduce((sum: number, v: any) => {
+        ? approvedVerifications.reduce((sum: number, v) => {
             const start = new Date(v.created_at).getTime()
-            const end = new Date(v.updated_at).getTime()
+            const end = new Date(v.updated_at!).getTime() // updated_at is checked in filter
             return sum + (end - start)
         }, 0) / approvedVerifications.length / (1000 * 60 * 60) // in hours
         : 0
@@ -149,7 +156,7 @@ export default async function AnalyticsPage() {
 
     // 8. Retention Rate (Clients with >1 booking)
     const clientBookingCounts: Record<string, number> = {}
-    allBookings?.forEach((b: any) => {
+    allBookings?.forEach((b) => {
         if (b.client_id) {
             clientBookingCounts[b.client_id] = (clientBookingCounts[b.client_id] || 0) + 1
         }
@@ -161,7 +168,7 @@ export default async function AnalyticsPage() {
         : 0
 
     // Charts processing
-    const userGrowthData = processTimeSeriesData(recentUsers || [], 'created_at', 30)
+    const userGrowthData = processTimeSeriesData(recentUsersList || [], 'created_at', 30)
     const bookingTrendsData = processTimeSeriesData(recentBookings || [], 'created_at', 30)
     const revenueData = processRevenueData(transactions || [], 30)
 
@@ -169,7 +176,7 @@ export default async function AnalyticsPage() {
     // For revenue, we ideally need to aggregate booking totals per talent.
     const talentRevenue: Record<string, number> = {}
     if (allBookings) {
-        completedBookingsWithPrice.forEach((b: any) => {
+        completedBookingsWithPrice.forEach((b) => {
             if (b.talent_id) {
                 talentRevenue[b.talent_id] = (talentRevenue[b.talent_id] || 0) + (b.total_price || 0)
             }
@@ -233,7 +240,7 @@ export default async function AnalyticsPage() {
 }
 
 // Helper function to process time series data
-function processTimeSeriesData(data: Array<{ created_at: string;[key: string]: unknown }>, dateField: string, days: number) {
+function processTimeSeriesData(data: Array<any>, dateField: string, days: number) {
     const result: { date: string; count: number }[] = []
     const now = new Date()
 
@@ -245,7 +252,7 @@ function processTimeSeriesData(data: Array<{ created_at: string;[key: string]: u
             if (typeof dateValue !== 'string' && !(dateValue instanceof Date)) {
                 return false
             }
-            const itemDate = new Date(dateValue as string | Date).toISOString().split('T')[0]
+            const itemDate = new Date(dateValue as string).toISOString().split('T')[0]
             return itemDate === dateStr
         }).length
 

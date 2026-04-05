@@ -101,6 +101,7 @@ export interface Verification {
     admin_notes: string | null
     status: VerificationStatus
     created_at: string
+    updated_at?: string
 }
 
 export interface Media {

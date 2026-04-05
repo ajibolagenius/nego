@@ -25,7 +25,7 @@ import { usePagination } from '@/hooks/admin/usePagination'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types/database'
 
-function DetailItem({ label, value, icon, className = "" }: { label: string, value: any, icon?: React.ReactNode, className?: string }) {
+function DetailItem({ label, value, icon, className = "" }: { label: string, value: string | number | React.ReactNode, icon?: React.ReactNode, className?: string }) {
     return (
         <div className={className}>
             <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider mb-1">{label}</p>
@@ -650,7 +650,7 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                             {selectedTalent.bio && (
                                 <div>
                                     <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider mb-2">About / Bio</p>
-                                    <p className="text-white/80 text-sm leading-relaxed bg-white/5 p-4 rounded-xl border border-white/5 italic">"{selectedTalent.bio}"</p>
+                                    <p className="text-white/80 text-sm leading-relaxed bg-white/5 p-4 rounded-xl border border-white/5 italic">&quot;{selectedTalent.bio}&quot;</p>
                                 </div>
                             )}
 

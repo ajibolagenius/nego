@@ -51,17 +51,19 @@ export function BrowseClient({ talents: initialTalents, serviceTypes, userId, to
 
     // Update accumulated talents when props change
     useEffect(() => {
+        setIsPending(false)
         if (currentPage === 1) {
             setTalents(initialTalents)
         } else {
             // Append new page results, but filter out duplicates just in case
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setTalents(prev => {
                 const existingIds = new Set(prev.map(t => t.id))
                 const uniqueNew = initialTalents.filter(t => !existingIds.has(t.id))
+                if (uniqueNew.length === 0) return prev
                 return [...prev, ...uniqueNew]
             })
         }
-        setIsPending(false)
     }, [initialTalents, currentPage])
 
     // Utility to update URL with new filters
