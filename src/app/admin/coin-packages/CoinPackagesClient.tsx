@@ -7,8 +7,8 @@ import { useRouter } from 'next/navigation'
 import { useState, Fragment } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
 import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
+import { createClient } from '@/lib/supabase/client'
 import type { CoinPackage } from '@/types/database'
 
 interface CoinPackagesClientProps {

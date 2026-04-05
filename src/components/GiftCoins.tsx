@@ -17,8 +17,8 @@ import { Gift, Coin, X, SpinnerGap, Check, Warning } from '@phosphor-icons/react
 import Link from 'next/link'
 import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { GIFT_CONSTANTS, isValidUUID, isValidAmount as _isValidAmount } from '@/lib/gift-validation'
 import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
+import { GIFT_CONSTANTS, isValidUUID, isValidAmount as _isValidAmount } from '@/lib/gift-validation'
 
 interface GiftCoinsProps {
     talentId: string

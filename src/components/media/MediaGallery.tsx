@@ -5,8 +5,8 @@ import {
     Image as ImageIcon, Trash, SpinnerGap, Crown, VideoCamera
 } from '@phosphor-icons/react'
 import Image from 'next/image'
-import { isVideo } from '@/lib/media-utils'
 import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
+import { isVideo } from '@/lib/media-utils'
 import { TalentMedia, ViewMode } from './types'
 
 interface MediaGalleryProps {

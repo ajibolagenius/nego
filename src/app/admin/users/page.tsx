@@ -1,6 +1,6 @@
+import { UsersClient } from '@/app/admin/users/UsersClient'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 import { createApiClient } from '@/lib/supabase/api'
-import { UsersClient } from '@/app/admin/users/UsersClient'
 import type { Profile } from '@/types/database'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'

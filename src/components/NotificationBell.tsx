@@ -1,6 +1,5 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
 import {
     Bell,
     Check,
@@ -15,10 +14,11 @@ import {
     Calendar,
     CheckCheck,
 } from 'lucide-react'
+import Link from 'next/link'
+import { useState, useEffect, useRef } from 'react'
+import { cn } from '@/lib/utils'
 import { useNotifications } from '@/providers/NotificationProvider'
 import type { Notification, NotificationType } from '@/types/database'
-import Link from 'next/link'
-import { cn } from '@/lib/utils'
 
 type Icon = typeof Bell
 

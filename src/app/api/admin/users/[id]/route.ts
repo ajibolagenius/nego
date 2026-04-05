@@ -1,7 +1,7 @@
-import { createApiClient } from "@/lib/supabase/api";
-import { validateAdmin } from "@/lib/admin/validation";
-import { logAdminAction } from "@/lib/admin/audit-log";
 import { NextResponse } from "next/server";
+import { logAdminAction } from "@/lib/admin/audit-log";
+import { validateAdmin } from "@/lib/admin/validation";
+import { createApiClient } from "@/lib/supabase/api";
 
 export async function DELETE(
   _request: Request,

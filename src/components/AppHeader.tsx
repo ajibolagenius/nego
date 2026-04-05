@@ -9,9 +9,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { NotificationBell } from '@/components/NotificationBell'
-import { NotificationProvider } from '@/providers/NotificationProvider'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { NotificationProvider } from '@/providers/NotificationProvider'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface AppHeaderProps {

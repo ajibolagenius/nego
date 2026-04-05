@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createApiClient } from '@/lib/supabase/api'
 import { notifyUser } from '@/lib/notifications'
+import { createApiClient } from '@/lib/supabase/api'
 
 // This endpoint should be called by a cron job (e.g., Vercel Cron, external service)
 // It expires stale bookings based on configurable timeframes

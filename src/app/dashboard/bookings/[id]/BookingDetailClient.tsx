@@ -5,7 +5,6 @@ import {
     SpinnerGap, WarningCircle, CreditCard, ShieldCheck,
     Receipt, Coin, CaretRight, XCircle, User, Star, Hourglass, Wallet as WalletIcon, Hash
 } from '@phosphor-icons/react'
-import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -15,6 +14,7 @@ import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { WriteReviewModal } from '@/components/Reviews'
 import { Button } from '@/components/ui/button'
 import { useWallet } from '@/hooks/useWallet'
+import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import { createClient } from '@/lib/supabase/client'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile, Wallet, BookingStatus, Review } from '@/types/database'

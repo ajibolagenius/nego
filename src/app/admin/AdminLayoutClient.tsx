@@ -22,9 +22,9 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { AdminMobileNav } from '@/components/AdminMobileNav'
 import { NotificationBell } from '@/components/NotificationBell'
-import { NotificationProvider } from '@/providers/NotificationProvider'
 import { Toaster } from '@/components/ui/sonner'
 import { createClient } from '@/lib/supabase/client'
+import { NotificationProvider } from '@/providers/NotificationProvider'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 const navSections = [

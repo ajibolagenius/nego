@@ -14,8 +14,8 @@ import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useFavorites } from '@/hooks/useFavorites'
 import { NIGERIAN_LOCATIONS } from '@/lib/nigerian-locations'
-import { getTalentUrl } from '@/lib/talent-url'
 import supabaseLoader from '@/lib/supabase/loader'
+import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile, ServiceType, TalentMenu } from '@/types/database'
 
 interface TalentWithMenu extends Profile {

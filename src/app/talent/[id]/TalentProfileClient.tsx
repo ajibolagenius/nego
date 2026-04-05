@@ -20,10 +20,10 @@ import { ServicesList } from '@/components/talent/ServicesList'
 import { Button } from '@/components/ui/button'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useWallet } from '@/hooks/useWallet'
+import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, ServiceType, TalentMenu, Media, Wallet, Review } from '@/types/database'
 import type { Icon } from '@phosphor-icons/react'
-import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 
 interface TalentWithDetails extends Profile {
     talent_menus: (TalentMenu & { service_type: ServiceType })[]

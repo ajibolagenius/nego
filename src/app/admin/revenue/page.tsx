@@ -1,7 +1,7 @@
-import { createApiClient } from '@/lib/supabase/api'
-import { RevenueClient } from './RevenueClient'
 import { redirect } from 'next/navigation'
+import { createApiClient } from '@/lib/supabase/api'
 import { createClient } from '@/lib/supabase/server'
+import { RevenueClient } from './RevenueClient'
 
 export const dynamic = 'force-dynamic'
 

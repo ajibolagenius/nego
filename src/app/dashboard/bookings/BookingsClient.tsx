@@ -5,11 +5,11 @@ import {
     CheckCircle, XCircle, Hourglass, CaretRight, Coin,
     MagnifyingGlass, ShieldCheck
 } from '@phosphor-icons/react'
-import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import type { Profile, Booking } from '@/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 

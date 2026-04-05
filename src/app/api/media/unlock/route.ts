@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { notifyUser } from '@/lib/notifications'
 import { createApiClient } from '@/lib/supabase/api'
 import { createClient } from '@/lib/supabase/server'
-import { notifyUser } from '@/lib/notifications'
 
 export async function POST(request: NextRequest) {
     try {

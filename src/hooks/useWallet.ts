@@ -6,8 +6,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
+import { createClient } from '@/lib/supabase/client'
 import type { Wallet } from '@/types/database'
 
 interface UseWalletOptions {

@@ -1,5 +1,5 @@
-import { createApiClient } from '@/lib/supabase/api'
 import { notifyUser } from '@/lib/notifications'
+import { createApiClient } from '@/lib/supabase/api'
 
 // Shared logic to process a successful transaction
 // This handles:

@@ -8,10 +8,10 @@ import {
     ArrowLeft,
     HandCoins
 } from '@phosphor-icons/react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { Booking, Profile } from '@/types/database'
-import Image from 'next/image'
 
 interface RevenueBooking extends Booking {
     talent: Profile
