@@ -205,10 +205,8 @@ export interface Review {
     booking?: Booking
 }
 
-// API Response types
 export interface TalentWithMenu extends Profile {
-    menu: TalentMenu[]
-    media: Media[]
+    talent_menus: (TalentMenu & { service_type: ServiceType })[]
 }
 
 export interface TalentWithReviews extends Profile {

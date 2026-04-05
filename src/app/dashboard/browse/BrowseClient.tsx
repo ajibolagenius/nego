@@ -7,7 +7,7 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useTransition } from 'react'
 import { AvatarPlaceholder } from '@/components/AvatarPlaceholder'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { Button } from '@/components/ui/button'
@@ -16,11 +16,7 @@ import { useFavorites } from '@/hooks/useFavorites'
 import { NIGERIAN_LOCATIONS } from '@/lib/nigerian-locations'
 import supabaseLoader from '@/lib/supabase/loader'
 import { getTalentUrl } from '@/lib/talent-url'
-import type { Profile, ServiceType, TalentMenu } from '@/types/database'
-
-interface TalentWithMenu extends Profile {
-    talent_menus: (TalentMenu & { service_type: ServiceType })[]
-}
+import type { ServiceType, TalentWithMenu } from '@/types/database'
 
 interface BrowseClientProps {
     talents: TalentWithMenu[]
@@ -37,9 +33,28 @@ export function BrowseClient({ talents: initialTalents, serviceTypes, userId, to
     const router = useRouter()
     const searchParams = useSearchParams()
 
+    // Transition state for loading more
+    const [isPendingTrans, startTransition] = useTransition()
+    
     // Internal state for UI responsiveness
     const [talents, setTalents] = useState<TalentWithMenu[]>(initialTalents)
-    const [isPending, setIsPending] = useState(false)
+    const [prevInitialTalents, setPrevInitialTalents] = useState<TalentWithMenu[]>(initialTalents)
+
+    // Adjusting state when props change (React 18 idiomatic pattern to avoid useEffect cascading renders)
+    if (prevInitialTalents !== initialTalents) {
+        setPrevInitialTalents(initialTalents)
+        if (currentPage === 1) {
+            setTalents(initialTalents)
+        } else {
+            // Append new page results, but filter out duplicates just in case
+            const existingIds = new Set(talents.map(t => t.id))
+            const uniqueNew = initialTalents.filter(t => !existingIds.has(t.id))
+            if (uniqueNew.length > 0) {
+                setTalents([...talents, ...uniqueNew])
+            }
+        }
+    }
+
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
     const [selectedLocation, setSelectedLocation] = useState(searchParams.get('location') || 'All Locations')
     const [selectedService, setSelectedService] = useState<string | null>(searchParams.get('service'))
@@ -49,22 +64,8 @@ export function BrowseClient({ talents: initialTalents, serviceTypes, userId, to
     const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'recent')
     const loaderRef = useRef<HTMLDivElement>(null)
 
-    // Update accumulated talents when props change
-    useEffect(() => {
-        setIsPending(false)
-        if (currentPage === 1) {
-            setTalents(initialTalents)
-        } else {
-            // Append new page results, but filter out duplicates just in case
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setTalents(prev => {
-                const existingIds = new Set(prev.map(t => t.id))
-                const uniqueNew = initialTalents.filter(t => !existingIds.has(t.id))
-                if (uniqueNew.length === 0) return prev
-                return [...prev, ...uniqueNew]
-            })
-        }
-    }, [initialTalents, currentPage])
+    // The useEffect syncing logic has been moved to the render phase above to follow React 18 best practices
+    // and resolve cascading render lint errors.
 
     // Utility to update URL with new filters
     const updateFilters = (updates: Record<string, string | null | undefined>) => {
@@ -81,8 +82,9 @@ export function BrowseClient({ talents: initialTalents, serviceTypes, userId, to
             }
         })
 
-        setIsPending(true)
-        router.push(`/dashboard/browse?${params.toString()}`, { scroll: false })
+        startTransition(() => {
+            router.push(`/dashboard/browse?${params.toString()}`, { scroll: false })
+        })
     }
 
     // Debounced search
@@ -98,12 +100,14 @@ export function BrowseClient({ talents: initialTalents, serviceTypes, userId, to
     // Infinite scroll observer
     useEffect(() => {
         const observer = new IntersectionObserver((entries) => {
-            if (entries[0]?.isIntersecting && talents.length < totalCount && !isPending) {
+            if (entries[0]?.isIntersecting && talents.length < totalCount && !isPendingTrans) {
                 const params = new URLSearchParams(searchParams.toString())
                 const nextPage = currentPage + 1
                 params.set('page', nextPage.toString())
-                router.push(`/dashboard/browse?${params.toString()}`, { scroll: false })
-                setIsPending(true)
+                
+                startTransition(() => {
+                    router.push(`/dashboard/browse?${params.toString()}`, { scroll: false })
+                })
             }
         }, { threshold: 0.1 })
 
@@ -112,7 +116,7 @@ export function BrowseClient({ talents: initialTalents, serviceTypes, userId, to
         }
 
         return () => observer.disconnect()
-    }, [talents.length, totalCount, isPending, currentPage, searchParams, router])
+    }, [talents.length, totalCount, isPendingTrans, currentPage, searchParams, router])
 
     const formatPrice = (price: number) => {
         return `${new Intl.NumberFormat('en-NG', {

@@ -308,10 +308,17 @@ export default function DepositsPage() {
                 <div
                     className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
                     onClick={() => setReviewModalOpen(false)}
+                    onKeyDown={(e) => { if (e.key === 'Escape') setReviewModalOpen(false); }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Close modal"
                 >
                     <div
                         className="bg-[#0a0a0f] border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl"
                         onClick={e => e.stopPropagation()}
+                        onKeyDown={e => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
                     >
                         <div className="p-6 border-b border-white/10 flex justify-between items-center">
                             <h2 className="text-xl font-bold text-white">Review Deposit Request</h2>
@@ -408,6 +415,10 @@ export default function DepositsPage() {
                 <div
                     className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-md p-4"
                     onClick={() => setLightboxImage(null)}
+                    onKeyDown={(e) => { if (e.key === 'Escape') setLightboxImage(null); }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Close lightbox"
                 >
                     <button
                         onClick={() => setLightboxImage(null)}
@@ -415,7 +426,7 @@ export default function DepositsPage() {
                     >
                         <XCircle size={40} weight="fill" />
                     </button>
-                    <div className="relative w-full h-full max-w-5xl max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                    <div className="relative w-full h-full max-w-5xl max-h-[90vh]" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="presentation">
                         <Image
                             src={lightboxImage}
                             alt="Proof of payment full size"

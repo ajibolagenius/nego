@@ -361,8 +361,9 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-white font-medium mb-2">Display Name *</label>
+                                    <label htmlFor="package-name" className="block text-white font-medium mb-2">Display Name *</label>
                                     <input
+                                        id="package-name"
                                         type="text"
                                         value={formData.display_name}
                                         onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
@@ -373,8 +374,9 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-white font-medium mb-2">Coins *</label>
+                                        <label htmlFor="package-coins" className="block text-white font-medium mb-2">Coins *</label>
                                         <input
+                                            id="package-coins"
                                             type="number"
                                             value={formData.coins}
                                             onChange={(e) => {
@@ -394,8 +396,9 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
                                     </div>
 
                                     <div>
-                                        <label className="block text-white font-medium mb-2">Price (₦) *</label>
+                                        <label htmlFor="package-price" className="block text-white font-medium mb-2">Price (₦) *</label>
                                         <input
+                                            id="package-price"
                                             type="number"
                                             value={formData.price}
                                             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
@@ -411,8 +414,9 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
                                 </div>
 
                                 <div>
-                                    <label className="block text-white font-medium mb-2">Description</label>
+                                    <label htmlFor="package-description" className="block text-white font-medium mb-2">Description</label>
                                     <textarea
+                                        id="package-description"
                                         value={formData.description}
                                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                         placeholder="Package description..."
@@ -423,8 +427,9 @@ export function CoinPackagesClient({ initialPackages }: CoinPackagesClientProps)
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-white font-medium mb-2">Display Order</label>
+                                        <label htmlFor="package-order" className="block text-white font-medium mb-2">Display Order</label>
                                         <input
+                                            id="package-order"
                                             type="number"
                                             value={formData.display_order}
                                             onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}

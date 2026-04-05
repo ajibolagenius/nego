@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 import { createClient } from '@/lib/supabase/server'
+import { TalentWithMenu } from '@/types/database'
 import { BrowseClient } from './BrowseClient'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
@@ -108,8 +109,7 @@ export default async function BrowsePage({
 
     const { data: talents, count } = await query
 
-    // Safe type casting for complex Supabase join
-    const typedTalents = (talents || []) as unknown as any[]
+    const resultTalents = talents as unknown as TalentWithMenu[]
 
     // Fetch service types for filter
     const { data: serviceTypes } = await supabase
@@ -119,7 +119,7 @@ export default async function BrowsePage({
 
     return (
         <BrowseClient
-            talents={typedTalents}
+            talents={resultTalents}
             serviceTypes={serviceTypes || []}
             userId={user.id}
             totalCount={count || 0}

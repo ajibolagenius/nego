@@ -1,7 +1,7 @@
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 import { createApiClient } from '@/lib/supabase/api'
 import { AnalyticsClient } from './AnalyticsClient'
-import type { Booking, Profile, Transaction, Verification, Wallet } from '@/types/database'
+import type { Booking, Dispute, Profile, Transaction, Verification, Wallet } from '@/types/database'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 
@@ -55,11 +55,12 @@ export default async function AnalyticsPage() {
         supabase.from('profile_views').select('*', { count: 'exact', head: true }),
     ])
 
-    const allBookings = allBookingsData as (Booking & { services_snapshot: any[] })[] | null
+    const allBookings = allBookingsData as Booking[] | null
     const transactions = transactionsData as Transaction[] | null
     const wallets = walletsData as Wallet[] | null
     const verifications = verificationsData as Verification[] | null
     const recentUsersList = recentUsers as Partial<Profile>[] | null
+    const allDisputes = disputes as Dispute[] | null
 
     const totalProfileViews = profileViewsRes.count || 0
     const recentBookings = allBookings?.filter((b) => new Date(b.created_at) >= thirtyDaysAgo) || []
@@ -73,7 +74,7 @@ export default async function AnalyticsPage() {
     const serviceCounts: Record<string, number> = {}
     allBookings?.forEach((b) => {
         if (b.services_snapshot && Array.isArray(b.services_snapshot)) {
-            b.services_snapshot.forEach((s: any) => {
+            b.services_snapshot.forEach((s) => {
                 const name = s.service_type?.name || 'Unknown'
                 serviceCounts[name] = (serviceCounts[name] || 0) + 1
             })
@@ -108,7 +109,7 @@ export default async function AnalyticsPage() {
 
     // 5. Dispute Breakdown
     const disputeCounts: Record<string, number> = {}
-    disputes?.forEach((d: any) => {
+    allDisputes?.forEach((d) => {
         const type = d.dispute_type || 'other'
         disputeCounts[type] = (disputeCounts[type] || 0) + 1
     })
@@ -119,27 +120,27 @@ export default async function AnalyticsPage() {
     }))
 
     // Existing Weekly Stats
-    const weeklyUsers = recentUsers?.filter((u: any) => new Date(u.created_at) >= sevenDaysAgo).length || 0
-    const weeklyBookings = recentBookings?.filter((b: any) => new Date(b.created_at) >= sevenDaysAgo).length || 0
-    const weeklyRevenue = transactions?.filter((t: any) =>
+    const weeklyUsers = recentUsers?.filter((u) => new Date(u.created_at) >= sevenDaysAgo).length || 0
+    const weeklyBookings = recentBookings?.filter((b) => new Date(b.created_at) >= sevenDaysAgo).length || 0
+    const weeklyRevenue = transactions?.filter((t) =>
         t.type === 'purchase' &&
         t.status === 'completed' &&
         new Date(t.created_at) >= sevenDaysAgo
-    ).reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0
+    ).reduce((sum: number, t) => sum + (t.amount || 0), 0) || 0
 
-    const completedBookingsWithPrice = recentBookings?.filter((b: any) => b.status === 'completed' && b.total_price) || []
+    const completedBookingsWithPrice = recentBookings?.filter((b) => b.status === 'completed' && b.total_price) || []
     const averageBookingValue = completedBookingsWithPrice.length > 0
-        ? completedBookingsWithPrice.reduce((sum: number, b: any) => sum + (b.total_price || 0), 0) / completedBookingsWithPrice.length
+        ? completedBookingsWithPrice.reduce((sum: number, b) => sum + (b.total_price || 0), 0) / completedBookingsWithPrice.length
         : 0
 
-    const cancelledBookings = recentBookings?.filter((b: any) => b.status === 'cancelled').length || 0
+    const cancelledBookings = recentBookings?.filter((b) => b.status === 'cancelled').length || 0
     const cancellationRate = recentBookings.length > 0
         ? (cancelledBookings / recentBookings.length) * 100
         : 0
     
     // 7. Peak Booking Hour
     const hourCounts: Record<number, number> = {}
-    allBookings?.forEach((b: any) => {
+    allBookings?.forEach((b) => {
         const hour = new Date(b.created_at).getHours()
         hourCounts[hour] = (hourCounts[hour] || 0) + 1
     })
@@ -168,9 +169,9 @@ export default async function AnalyticsPage() {
         : 0
 
     // Charts processing
-    const userGrowthData = processTimeSeriesData(recentUsersList || [], 'created_at', 30)
-    const bookingTrendsData = processTimeSeriesData(recentBookings || [], 'created_at', 30)
-    const revenueData = processRevenueData(transactions || [], 30)
+    const userGrowthData = processTimeSeriesData((recentUsersList || []) as { created_at: string }[], 'created_at', 30)
+    const bookingTrendsData = processTimeSeriesData((recentBookings || []) as { created_at: string }[], 'created_at', 30)
+    const revenueData = processRevenueData((transactions || []) as { created_at: string; type: string; status: string; amount: number | null }[], 30)
 
     // 6. Top Talents (Revenue + Views)
     // For revenue, we ideally need to aggregate booking totals per talent.
@@ -240,7 +241,7 @@ export default async function AnalyticsPage() {
 }
 
 // Helper function to process time series data
-function processTimeSeriesData(data: Array<any>, dateField: string, days: number) {
+function processTimeSeriesData(data: Array<{ created_at?: string | null }>, dateField: string, days: number) {
     const result: { date: string; count: number }[] = []
     const now = new Date()
 
@@ -248,7 +249,7 @@ function processTimeSeriesData(data: Array<any>, dateField: string, days: number
         const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
         const dateStr = date.toISOString().split('T')[0]
         const count = data.filter(item => {
-            const dateValue = item[dateField]
+            const dateValue = (item as Record<string, unknown>)[dateField]
             if (typeof dateValue !== 'string' && !(dateValue instanceof Date)) {
                 return false
             }
@@ -266,7 +267,8 @@ function processTimeSeriesData(data: Array<any>, dateField: string, days: number
 }
 
 // Helper function to process revenue data
-function processRevenueData(transactions: Array<{ created_at: string; type: string; status: string; amount: number | null }>, days: number) {
+// Helper function to process revenue data
+function processRevenueData(transactions: Array<{ created_at?: string | null; type?: string | null; status?: string | null; amount?: number | null }>, days: number) {
     const result: { date: string; amount: number }[] = []
     const now = new Date()
 
@@ -276,6 +278,7 @@ function processRevenueData(transactions: Array<{ created_at: string; type: stri
 
         const amount = transactions
             .filter(t => {
+                if (!t.created_at) return false
                 const itemDate = new Date(t.created_at).toISOString().split('T')[0]
                 return itemDate === dateStr && t.type === 'purchase' && t.status === 'completed'
             })
