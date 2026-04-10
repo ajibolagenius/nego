@@ -4,6 +4,7 @@ import { unstable_cache } from 'next/cache'
 import { notFound } from 'next/navigation'
 import { TalentProfileClient } from '@/app/talent/[id]/TalentProfileClient'
 import { generateTalentOpenGraphMetadata } from '@/lib/og-metadata'
+import { generateSlug } from '@/lib/talent-url'
 import { createApiClient } from '@/lib/supabase/api'
 import { createClient } from '@/lib/supabase/server'
 
@@ -27,26 +28,60 @@ function getAdminClient() {
 const getCachedTalentProfile = unstable_cache(
     async (slug: string) => {
         const supabase = createApiClient()
-        
-        // Priority: username > slug column > id
-        const { data: talent, error } = await supabase
-            .from('profiles')
-            .select(`
+
+        const talentProfileQuery = `
                 *,
                 talent_menus (
                     *,
                     service_type:service_types(*)
                 )
-            `)
+            `
+
+        // Priority: username > persisted slug column > id
+        const { data: talent, error } = await supabase
+            .from('profiles')
+            .select(talentProfileQuery)
             .eq('role', 'talent')
             .or(`username.eq."${slug}",slug.eq."${slug}",id.eq."${slug}"`)
             .maybeSingle()
 
-        if (error || !talent) {
+        if (talent) {
+            return talent
+        }
+
+        if (error) {
             return null
         }
 
-        return talent
+        const { data: candidates, error: candidatesError } = await supabase
+            .from('profiles')
+            .select('id, display_name')
+            .eq('role', 'talent')
+
+        if (candidatesError || !candidates) {
+            return null
+        }
+
+        const matchedCandidate = candidates.find((candidate) => {
+            return candidate.display_name ? generateSlug(candidate.display_name) === slug : false
+        })
+
+        if (!matchedCandidate) {
+            return null
+        }
+
+        const { data: fallbackTalent, error: fallbackError } = await supabase
+            .from('profiles')
+            .select(talentProfileQuery)
+            .eq('role', 'talent')
+            .eq('id', matchedCandidate.id)
+            .maybeSingle()
+
+        if (fallbackError || !fallbackTalent) {
+            return null
+        }
+
+        return fallbackTalent
     },
     ['talent-profile'],
     { revalidate: 3600, tags: ['talents'] }

@@ -6,7 +6,7 @@
 // - If no username: /t/display-name-slug (fallback)
 // - If neither: /talent/{uuid} (legacy fallback)
 //
-// The /t/[slug] route checks username first, then display_name slug, so both methods work.
+// The /t/[slug] route checks username first, then a persisted slug, then display_name slug.
 
 export function getTalentUrl(talent: {
     id: string
