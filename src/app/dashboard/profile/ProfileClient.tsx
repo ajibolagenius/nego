@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { useWallet } from '@/hooks/useWallet'
 import { NIGERIAN_LOCATIONS } from '@/lib/nigerian-locations'
 import { createClient } from '@/lib/supabase/client'
+import { syncTalentVerification } from '@/lib/talent-verification-client'
 import type { Profile, Wallet } from '@/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -140,6 +141,24 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
 
     const userRole = profile?.role === 'talent' ? 'talent' : 'client'
 
+    useEffect(() => {
+        if (userRole !== 'talent' || profile?.is_verified) {
+            return
+        }
+
+        let cancelled = false
+
+        void syncTalentVerification().then((result) => {
+            if (!cancelled && result?.updated) {
+                router.refresh()
+            }
+        })
+
+        return () => {
+            cancelled = true
+        }
+    }, [profile?.is_verified, router, userRole])
+
     // Check if client needs verification (based on is_verified in profiles table, not Supabase email confirmation)
     // Show banner if is_verified is false, null, or undefined (treat null/undefined as unverified)
     const needsVerification = userRole === 'client' && profile?.is_verified !== true
@@ -248,6 +267,10 @@ export function ProfileClient({ user, profile, wallet: initialWallet, bookingCou
                 .eq('id', user.id)
 
             if (updateError) throw updateError
+
+            if (userRole === 'talent') {
+                await syncTalentVerification()
+            }
 
             setSuccess(true)
             setIsEditing(false)

@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { useState, useRef, useCallback } from 'react'
 import { compressImage } from '@/lib/media-utils'
 import { createClient } from '@/lib/supabase/client'
+import { syncTalentVerification } from '@/lib/talent-verification-client'
 
 interface MediaUploadModalProps {
     talentId: string,
@@ -163,6 +164,7 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
             if (insertErr) throw insertErr
 
             setUploadProgress(100)
+            await syncTalentVerification()
 
             // Reset and close modal
             setSelectedFile(null)

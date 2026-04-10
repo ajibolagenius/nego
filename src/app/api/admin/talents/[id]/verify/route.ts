@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logAdminAction, getClientIP, getUserAgent } from '@/lib/admin/audit-log'
 import { validateAdmin } from '@/lib/admin/validation'
 import { createApiClient } from '@/lib/supabase/api'
+import { stripAutoVerificationLock } from '@/lib/talent-verification'
 
 export async function POST(
     request: NextRequest,
@@ -29,7 +30,7 @@ export async function POST(
         // Check if talent exists and is actually a talent
         const { data: talent, error: talentError } = await apiClient
             .from('profiles')
-            .select('id, role, display_name, username, is_verified')
+            .select('id, role, display_name, username, is_verified, admin_notes')
             .eq('id', talentId)
             .single()
 
@@ -62,7 +63,9 @@ export async function POST(
 
         // If admin notes provided, update them
         if (adminNotes !== undefined) {
-            updateData.admin_notes = adminNotes || null
+            updateData.admin_notes = stripAutoVerificationLock(adminNotes || null)
+        } else if (talent.admin_notes) {
+            updateData.admin_notes = stripAutoVerificationLock(talent.admin_notes)
         }
 
         const { error: updateError } = await apiClient

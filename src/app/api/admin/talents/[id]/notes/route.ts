@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logAdminAction, getClientIP, getUserAgent } from '@/lib/admin/audit-log'
 import { validateAdmin } from '@/lib/admin/validation'
 import { createApiClient } from '@/lib/supabase/api'
+import { addAutoVerificationLock, hasAutoVerificationLock } from '@/lib/talent-verification'
 
 export async function POST(
     request: NextRequest,
@@ -46,11 +47,15 @@ export async function POST(
             )
         }
 
+        const nextAdminNotes = hasAutoVerificationLock(talent.admin_notes)
+            ? addAutoVerificationLock(adminNotes || null)
+            : adminNotes || null
+
         // Update admin notes
         const { error: updateError } = await apiClient
             .from('profiles')
             .update({
-                admin_notes: adminNotes || null,
+                admin_notes: nextAdminNotes,
                 updated_at: new Date().toISOString()
             })
             .eq('id', talentId)
@@ -73,7 +78,7 @@ export async function POST(
                 talent_id: talentId,
                 talent_name: talent.display_name || talent.username || 'Unknown',
                 previous_notes: talent.admin_notes || null,
-                new_notes: adminNotes || null
+                new_notes: nextAdminNotes
             },
             ip_address: getClientIP(request.headers),
             user_agent: getUserAgent(request.headers),

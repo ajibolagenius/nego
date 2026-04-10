@@ -21,6 +21,7 @@ import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import { NIGERIAN_LOCATIONS } from '@/lib/nigerian-locations'
 import { createClient } from '@/lib/supabase/client'
 import { getTalentUrl } from '@/lib/talent-url'
+import { syncTalentVerification } from '@/lib/talent-verification-client'
 import type { Profile, Wallet, ServiceType, Booking } from '@/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -226,6 +227,7 @@ export function TalentDashboardClient({
 
             if (error) throw error
 
+            await syncTalentVerification()
             setIsAddingService(false)
             setNewServiceId('')
             setNewServicePrice('')
@@ -299,6 +301,7 @@ export function TalentDashboardClient({
                 .eq('id', serviceId)
 
             if (error) throw error
+            await syncTalentVerification()
             router.refresh()
         } catch (error) {
             console.error('Error deleting service:', error)
@@ -314,6 +317,7 @@ export function TalentDashboardClient({
                 .eq('id', serviceId)
 
             if (error) throw error
+            await syncTalentVerification()
             router.refresh()
         } catch (error) {
             console.error('Error updating availability:', error)
@@ -330,6 +334,7 @@ export function TalentDashboardClient({
                 .eq('id', user.id)
 
             if (error) throw error
+            await syncTalentVerification()
             setEditingBio(false)
             setProfileSuccess(true)
             router.refresh()
@@ -442,6 +447,7 @@ export function TalentDashboardClient({
                 .eq('id', user.id)
 
             if (error) throw error
+            await syncTalentVerification()
             setEditingProfile(false)
             setProfileSuccess(true)
             router.refresh()
@@ -511,6 +517,24 @@ export function TalentDashboardClient({
     )
 
     // Real-time subscriptions for earnings data
+    useEffect(() => {
+        if (profile?.is_verified) {
+            return
+        }
+
+        let cancelled = false
+
+        void syncTalentVerification().then((result) => {
+            if (!cancelled && result?.updated) {
+                router.refresh()
+            }
+        })
+
+        return () => {
+            cancelled = true
+        }
+    }, [profile?.is_verified, router])
+
     useEffect(() => {
         // Cleanup existing channels
         if (bookingsChannelRef.current) {
@@ -1082,7 +1106,7 @@ export function TalentDashboardClient({
                                                 </span>
                                             </div>
                                             <p className="text-white/70 text-sm leading-relaxed mb-4">
-                                                Accounts with complete profiles, high-quality gallery photos, and active services are verified <span className="text-amber-400 font-semibold">3x faster</span> by our team. Update your details now to accelerate the process.
+                                                Add your profile photo, bio, location, at least one active service, and at least one gallery item to unlock your <span className="text-amber-400 font-semibold">verified badge automatically</span>.
                                             </p>
                                             <div className="flex flex-wrap gap-3">
                                                 <button 

@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useState, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { syncTalentVerification } from '@/lib/talent-verification-client'
 
 interface ProfileImageUploadProps {
     userId: string
@@ -253,6 +254,7 @@ export function ProfileImageUpload({
 
             setUploadProgress(100)
 
+            await syncTalentVerification()
             onUploadComplete(urlData.publicUrl)
 
             setShowModal(false)

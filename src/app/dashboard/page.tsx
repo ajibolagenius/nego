@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerProfile } from '@/lib/supabase/server'
 import { DashboardClient, type TalentWithMenu } from './DashboardClient'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
@@ -18,23 +18,15 @@ interface DashboardPageProps {
 }
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-    const supabase = await createClient()
     const params = await searchParams
-
-    const { data: { user } } = await supabase.auth.getUser()
+    const { profile, user } = await getServerProfile()
 
     if (!user) {
         redirect('/login')
     }
 
-    // Fetch user profile
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
     // Fetch wallet
+    const supabase = await createClient()
     const { data: wallet } = await supabase
         .from('wallets')
         .select('*')
@@ -42,6 +34,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         .single()
 
     const isTalent = profile?.role === 'talent'
+    const actualRole = profile?.role || 'client'
     let shuffledTalents: TalentWithMenu[] = []
 
     if (!isTalent) {
@@ -82,7 +75,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     const { count: activeBookingsCount } = await supabase
         .from('bookings')
         .select('*', { count: 'exact', head: true })
-        .eq(profile?.role === 'talent' ? 'talent_id' : 'client_id', user.id)
+        .eq(actualRole === 'talent' ? 'talent_id' : 'client_id', user.id)
         .in('status', ['pending', 'accepted', 'payment_pending'])
 
     // Fetch favorites count (for clients)

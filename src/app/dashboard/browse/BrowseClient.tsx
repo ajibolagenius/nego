@@ -22,6 +22,7 @@ interface BrowseClientProps {
     talents: TalentWithMenu[]
     serviceTypes: ServiceType[]
     userId: string
+    userRole?: 'client' | 'talent' | 'admin'
     totalCount: number
     currentPage: number
 }
@@ -29,7 +30,7 @@ interface BrowseClientProps {
 // All locations including "All Locations" option
 const locations = ['All Locations', ...NIGERIAN_LOCATIONS]
 
-export function BrowseClient({ talents: initialTalents, serviceTypes, userId, totalCount, currentPage }: BrowseClientProps) {
+export function BrowseClient({ talents: initialTalents, serviceTypes, userId, userRole, totalCount, currentPage }: BrowseClientProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
 
@@ -358,7 +359,7 @@ export function BrowseClient({ talents: initialTalents, serviceTypes, userId, to
                     )}
                 </div>
             </div>
-            <MobileBottomNav />
+            <MobileBottomNav userRole={userRole} />
         </>
     )
 }

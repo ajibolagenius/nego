@@ -56,11 +56,34 @@ export const viewport: Viewport = {
     ],
 }
 
-export default function RootLayout({
+import { cookies } from "next/headers"
+import { createClient } from "@/lib/supabase/server"
+import { ROLE_PREVIEW_COOKIE, PreviewRole } from "@/lib/admin/role-preview"
+import { RolePreviewSwitcher } from "@/components/admin/RolePreviewSwitcher"
+
+export default async function RootLayout({
     children,
 }: Readonly<{
     children: React.ReactNode
 }>) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // Fetch profile if user is logged in
+    let profile = null
+    if (user) {
+        const { data } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+        profile = data
+    }
+
+    const isAdmin = profile?.role === 'admin'
+    const cookieStore = await cookies()
+    const previewRole = cookieStore.get(ROLE_PREVIEW_COOKIE)?.value as PreviewRole || 'admin'
+
     return (
         <html lang="en" data-scroll-behavior="smooth" className={fontVariables}>
             <head>
@@ -74,6 +97,7 @@ export default function RootLayout({
                 <NetworkStatus />
                 <AppHeader />
                 {children}
+                {isAdmin && <RolePreviewSwitcher currentRole={previewRole} />}
                 <PWAInstallPrompt />
                 <PWAUpdatePrompt />
             </body>

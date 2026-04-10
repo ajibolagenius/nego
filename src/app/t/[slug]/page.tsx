@@ -6,7 +6,7 @@ import { TalentProfileClient } from '@/app/talent/[id]/TalentProfileClient'
 import { generateTalentOpenGraphMetadata } from '@/lib/og-metadata'
 import { generateSlug } from '@/lib/talent-url'
 import { createApiClient } from '@/lib/supabase/api'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerProfile } from '@/lib/supabase/server'
 
 // Create admin client lazily with service role key for bypassing RLS
 function getAdminClient() {
@@ -116,8 +116,8 @@ export default async function TalentProfileBySlugPage({ params }: { params: Prom
     const { slug } = await params
     const supabase = await createClient()
 
-    // Auth check (fast)
-    const { data: { user } } = await supabase.auth.getUser()
+    // Get session and profile (with override)
+    const { profile: currentUserProfile, user } = await getServerProfile()
 
     // Get cached talent profile (includes menus)
     const talent = await getCachedTalentProfile(slug)
@@ -139,24 +139,20 @@ export default async function TalentProfileBySlugPage({ params }: { params: Prom
         supabase.from('reviews').select(`*, client:profiles!reviews_client_id_fkey(id, display_name, avatar_url)`).eq('talent_id', talent.id).order('created_at', { ascending: false }),
 
         // 3. Fetch current user context
-        user ? Promise.all([
-            supabase.from('profiles').select('*').eq('id', user.id).single(),
-            supabase.from('wallets').select('*').eq('user_id', user.id).single()
-        ]) : Promise.resolve([null, null])
+        user ? (async () => {
+            const { data: wallet } = await supabase.from('wallets').select('*').eq('user_id', user.id).single()
+            return wallet
+        })() : Promise.resolve(null)
     ])
 
     const media = mediaResult.data
     const allReviews = reviewsResult.data
-    const [profileResult, walletResult] = userContextResult as any
-    const currentUserProfile = profileResult?.data || null
-    const wallet = walletResult?.data || null
-
-    // Calculate statistics
+    const wallet = userContextResult as any
     let averageRating = 0
     let reviewCount = 0
     if (allReviews && allReviews.length > 0) {
         reviewCount = allReviews.length
-        averageRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+        averageRating = allReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviewCount
     }
 
     // Map talent_menus to expected structure
@@ -180,7 +176,7 @@ export default async function TalentProfileBySlugPage({ params }: { params: Prom
                 talent_id: talent.id,
                 viewer_id: user?.id || null,
                 viewer_role: user ? (currentUserProfile?.role || 'client') : 'anonymous'
-            }).then(({ error }) => {
+            }).then(({ error }: { error: any }) => {
                 if (error) console.error('[TalentProfile] Error tracking view:', error)
             })
 
@@ -189,7 +185,7 @@ export default async function TalentProfileBySlugPage({ params }: { params: Prom
                 supabaseAdmin.from('profiles')
                     .update({ last_active_at: new Date().toISOString() })
                     .eq('id', user.id)
-                    .then(({ error }) => {
+                    .then(({ error }: { error: any }) => {
                         if (error) console.error('[TalentProfile] Error updating activity:', error)
                     })
             }

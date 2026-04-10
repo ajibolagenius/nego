@@ -2,7 +2,7 @@ import { unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
 import { createApiClient } from '@/lib/supabase/api'
-import { createClient } from '@/lib/supabase/server'
+import { getServerProfile } from '@/lib/supabase/server'
 import { ServiceType, TalentWithMenu } from '@/types/database'
 import { BrowseClient } from './BrowseClient'
 
@@ -137,9 +137,7 @@ export default async function BrowsePage({
     searchParams: Promise<{ [key: string]: string | undefined }>
 }) {
     const params = await searchParams
-    const supabase = await createClient()
-
-    const { data: { user } } = await supabase.auth.getUser()
+    const { profile, user } = await getServerProfile()
 
     if (!user) {
         redirect('/login')
@@ -165,6 +163,7 @@ export default async function BrowsePage({
             talents={talents}
             serviceTypes={serviceTypes}
             userId={user.id}
+            userRole={profile?.role || 'client'}
             totalCount={totalCount}
             currentPage={page}
         />

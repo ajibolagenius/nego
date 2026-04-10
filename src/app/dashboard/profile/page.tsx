@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { generateOpenGraphMetadata } from '@/lib/og-metadata'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerProfile } from '@/lib/supabase/server'
 import { ProfileClient } from './ProfileClient'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
@@ -14,22 +14,14 @@ export const metadata = generateOpenGraphMetadata({
 })
 
 export default async function ProfilePage() {
-    const supabase = await createClient()
-
-    const { data: { user } } = await supabase.auth.getUser()
+    const { profile, user } = await getServerProfile()
 
     if (!user) {
         redirect('/login')
     }
 
-    // Fetch user profile
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
     // Fetch wallet
+    const supabase = await createClient()
     const { data: wallet } = await supabase
         .from('wallets')
         .select('*')
