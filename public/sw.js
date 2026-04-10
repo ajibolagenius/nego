@@ -1,7 +1,7 @@
 // Comprehensive PWA Service Worker for Nego
-// Version: 2.1.0 - Fixed Supabase API request handling
+// Version: 2.2.0 - Avoid cross-origin interception and noisy fetch failures
 
-const CACHE_VERSION = 'nego-pwa-v2.1.0';
+const CACHE_VERSION = 'nego-pwa-v2.2.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
@@ -21,13 +21,6 @@ const STATIC_ASSETS = [
 // API routes that should be cached
 const CACHEABLE_API_ROUTES = [
     '/api/push/vapid-key',
-];
-
-// Image domains to cache
-const CACHEABLE_IMAGE_DOMAINS = [
-    'rmaqeotgpfvdtnvcfpox.supabase.co',
-    'res.cloudinary.com',
-    'customer-assets.emergentagent.com',
 ];
 
 // Install event - cache static assets
@@ -106,6 +99,12 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Let the browser handle all cross-origin requests directly.
+    // This avoids opaque-response caching issues and noisy remote image failures.
+    if (url.origin !== self.location.origin) {
+        return;
+    }
+
     // Skip Supabase REST API calls FIRST - these should always go directly to network
     // Supabase handles caching and we don't want service worker interference
     // This must be checked before any other logic to ensure Supabase requests bypass the service worker
@@ -165,9 +164,7 @@ self.addEventListener('fetch', (event) => {
 
     // Images - Cache first, fallback to network
     // Exclude Supabase storage API calls (they're handled above)
-    if ((request.destination === 'image' ||
-        CACHEABLE_IMAGE_DOMAINS.some(domain => url.hostname.includes(domain))) &&
-        !url.pathname.startsWith('/storage/v1/')) {
+    if (request.destination === 'image' && !url.pathname.startsWith('/storage/v1/')) {
         event.respondWith(cacheFirstStrategy(request, IMAGE_CACHE));
         return;
     }

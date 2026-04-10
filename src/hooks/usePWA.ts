@@ -5,7 +5,6 @@
  * - Check if app is installed
  * - Check online/offline status
  * - Service worker update detection
- * - Install prompt handling
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -14,22 +13,13 @@ interface UsePWAReturn {
     isInstalled: boolean
     isOnline: boolean
     updateAvailable: boolean
-    installPrompt: BeforeInstallPromptEvent | null
-    canInstall: boolean
     checkForUpdates: () => Promise<void>
-    promptInstall: () => Promise<boolean>
-}
-
-interface BeforeInstallPromptEvent extends Event {
-    prompt: () => Promise<void>
-    userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
 export function usePWA(): UsePWAReturn {
     const [isInstalled, setIsInstalled] = useState(false)
     const [isOnline, setIsOnline] = useState(true)
     const [updateAvailable, setUpdateAvailable] = useState(false)
-    const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
 
     // Check if app is installed
     useEffect(() => {
@@ -58,20 +48,6 @@ export function usePWA(): UsePWAReturn {
             clearTimeout(timer)
             window.removeEventListener('online', handleOnline)
             window.removeEventListener('offline', handleOffline)
-        }
-    }, [])
-
-    // Listen for install prompt
-    useEffect(() => {
-        const handleBeforeInstallPrompt = (e: Event) => {
-            e.preventDefault()
-            setInstallPrompt(e as BeforeInstallPromptEvent)
-        }
-
-        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-
-        return () => {
-            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
         }
     }, [])
 
@@ -116,36 +92,10 @@ export function usePWA(): UsePWAReturn {
         }
     }, [])
 
-    // Prompt user to install
-    const promptInstall = useCallback(async (): Promise<boolean> => {
-        if (!installPrompt) {
-            return false
-        }
-
-        try {
-            installPrompt.prompt()
-            const { outcome } = await installPrompt.userChoice
-
-            if (outcome === 'accepted') {
-                setIsInstalled(true)
-                setInstallPrompt(null)
-                return true
-            }
-
-            return false
-        } catch (error) {
-            console.error('[usePWA] Error prompting install:', error)
-            return false
-        }
-    }, [installPrompt])
-
     return {
         isInstalled,
         isOnline,
         updateAvailable,
-        installPrompt,
-        canInstall: !!installPrompt && !isInstalled,
         checkForUpdates,
-        promptInstall,
     }
 }

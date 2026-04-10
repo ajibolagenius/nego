@@ -39,7 +39,6 @@ export default function imageLoader({ src, width, quality }: ImageLoaderProps) {
       return url.toString()
     }
 
-    url.hash = `img-width=${width}&img-quality=${imageQuality}`
     return url.toString()
   } catch {
     return src
