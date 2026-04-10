@@ -73,7 +73,7 @@ function LoginFormContent() {
                     throw new Error('Invalid email or password. Please check your credentials and try again.')
                 } else if (error.message.includes('Email not confirmed')) {
                     throw new Error('Please confirm your email address before signing in. Check your inbox for the confirmation link.')
-                } else if (error.message.includes('rate limit') || error.message.includes('too many requests')) {
+                } else if (error.status === 429 || error.message.toLowerCase().includes('rate limit') || error.message.toLowerCase().includes('too many requests')) {
                     throw new Error('Too many login attempts. Please wait a few minutes and try again.')
                 }
                 throw error

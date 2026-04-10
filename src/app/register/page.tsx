@@ -3,7 +3,7 @@
 import { Eye, EyeSlash, Envelope, Lock, User, SpinnerGap, GoogleLogo, UserCircle, Briefcase, Check, X } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 
@@ -181,10 +181,20 @@ export default function RegisterPage() {
         // Only allow lowercase, numbers, hyphens, and underscores
         const sanitized = value.toLowerCase().replace(/[^a-z0-9_-]/g, '')
         setUsername(sanitized)
-        if (role === 'talent') {
-            validateUsername(sanitized)
-        }
     }
+
+    // Debounce username validation
+    useEffect(() => {
+        if (role === 'talent' && username) {
+            const timer = setTimeout(() => {
+                validateUsername(username)
+            }, 500)
+            return () => clearTimeout(timer)
+        } else {
+            setUsernameError('')
+            setUsernameValid(true)
+        }
+    }, [username, role, validateUsername])
 
     const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value
@@ -248,6 +258,12 @@ export default function RegisterPage() {
                     console.error('[Register] Database error:', error)
                     throw new Error('Registration failed. Please try again or contact support if the issue persists.')
                 }
+                
+                // Specifically handle Rate Limiting (429)
+                if (error.status === 429 || error.message.toLowerCase().includes('too many requests')) {
+                    throw new Error('Too many registration attempts. Please wait a few minutes before trying again.')
+                }
+                
                 throw error
             }
 
