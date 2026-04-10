@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sendEmail, emailTemplates } from '@/lib/email'
 import { createApiClient } from '@/lib/supabase/api'
 
+interface AdminDigestRecipient {
+    id: string
+    email: string | null
+}
+
 // Weekly Admin Digest - Call via cron job every week
 export async function POST(request: NextRequest) {
     try {
@@ -47,8 +52,8 @@ export async function POST(request: NextRequest) {
             supabase.from('transactions').select('amount').eq('type', 'purchase').eq('status', 'completed'),
             // Weekly purchase transactions
             supabase.from('transactions').select('amount').eq('type', 'purchase').eq('status', 'completed').gte('created_at', oneWeekAgo.toISOString()),
-            // Admin profiles to get their emails
-            supabase.from('profiles').select('id').eq('role', 'admin'),
+            // Admin recipients from profiles to avoid per-admin auth lookups
+            supabase.from('profiles').select('id, email').eq('role', 'admin'),
         ])
 
         // Calculate revenue
@@ -74,28 +79,42 @@ export async function POST(request: NextRequest) {
         }
 
         if (adminProfiles && adminProfiles.length > 0) {
-            for (const admin of adminProfiles) {
-                try {
-                    // Get admin's email from auth
-                    const { data: userData } = await supabase.auth.admin.getUserById(admin.id)
-                    const adminEmail = userData?.user?.email
+            const template = emailTemplates.adminDigest(digestData)
+            const uniqueRecipients = new Map<string, AdminDigestRecipient>()
 
-                    if (adminEmail) {
-                        const template = emailTemplates.adminDigest(digestData)
-                        const result = await sendEmail(adminEmail, template)
-
-                        if (result.success) {
-                            results.sent++
-                        } else {
-                            results.failed++
-                            results.errors.push(`Failed to send to ${admin.id}`)
-                        }
-                    }
-                } catch (err) {
+            for (const admin of adminProfiles as AdminDigestRecipient[]) {
+                if (!admin.email) {
                     results.failed++
-                    results.errors.push(`Error for admin ${admin.id}: ${err}`)
+                    results.errors.push(`Admin ${admin.id} is missing an email address`)
+                    continue
+                }
+
+                if (!uniqueRecipients.has(admin.email)) {
+                    uniqueRecipients.set(admin.email, admin)
                 }
             }
+
+            const settledResults = await Promise.allSettled(
+                Array.from(uniqueRecipients.values()).map(async (admin) => {
+                    const result = await sendEmail(admin.email!, template)
+
+                    if (!result.success) {
+                        throw new Error(`Failed to send to ${admin.email}`)
+                    }
+
+                    return admin.email
+                })
+            )
+
+            settledResults.forEach((result) => {
+                if (result.status === 'fulfilled') {
+                    results.sent++
+                    return
+                }
+
+                results.failed++
+                results.errors.push(result.reason instanceof Error ? result.reason.message : String(result.reason))
+            })
         }
 
         // If no admins found, try to send to a default admin email if configured

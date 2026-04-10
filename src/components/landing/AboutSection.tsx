@@ -109,6 +109,7 @@ export function AboutSection() {
                             src={aboutImages[0]!}
                             alt="Featured premium selection showcasing our elite talent"
                             fill
+                            unoptimized
                             sizes="(max-width: 768px) 50vw, 33vw"
                             className="object-cover transition-transform duration-700 group-hover:scale-110"
                         />
@@ -141,6 +142,7 @@ export function AboutSection() {
                             src={aboutImages[1]!}
                             alt="Exclusive talent collection"
                             fill
+                            unoptimized
                             sizes="(max-width: 768px) 50vw, 25vw"
                             className="object-cover transition-transform duration-700 group-hover:scale-110"
                         />
@@ -163,6 +165,7 @@ export function AboutSection() {
                             src={aboutImages[2]!}
                             alt="Curated selection of verified talent"
                             fill
+                            unoptimized
                             sizes="(max-width: 768px) 50vw, 25vw"
                             className="object-cover transition-transform duration-700 group-hover:scale-110"
                         />
@@ -184,6 +187,7 @@ export function AboutSection() {
                             src={aboutImages[3]!}
                             alt="Premium verified talent profiles"
                             fill
+                            unoptimized
                             sizes="(max-width: 768px) 50vw, 25vw"
                             className="object-cover transition-transform duration-700 group-hover:scale-110"
                         />
@@ -206,6 +210,7 @@ export function AboutSection() {
                             src={aboutImages[4]!}
                             alt="Sophisticated elegance redefined"
                             fill
+                            unoptimized
                             sizes="(max-width: 768px) 100vw, 50vw"
                             className="object-cover transition-transform duration-700 group-hover:scale-105"
                         />

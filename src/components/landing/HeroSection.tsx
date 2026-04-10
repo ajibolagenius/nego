@@ -59,6 +59,7 @@ export function HeroSection() {
                             alt={`Hero slide ${index + 1} of ${totalSlides}`}
                             fill
                             priority={index === 0}
+                            unoptimized
                             sizes="100vw"
                             className={`object-cover transition-transform duration-[8000ms] ease-out ${index === currentSlide ? 'scale-110' : 'scale-100'
                                 }`}

@@ -1,22 +1,47 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const PROTECTED_PATHS = ['/dashboard', '/portal', '/wallet', '/bookings', '/admin']
+const AUTH_PATHS = ['/login', '/register']
+
+export function isProtectedPath(pathname: string) {
+  return PROTECTED_PATHS.some(path => pathname.startsWith(path))
+}
+
+export function isAuthPath(pathname: string) {
+  return AUTH_PATHS.some(path => pathname.startsWith(path))
+}
+
+export function shouldHandleSession(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  return (
+    request.nextUrl.searchParams.has('code') ||
+    isProtectedPath(pathname) ||
+    isAuthPath(pathname)
+  )
+}
+
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  const pathname = request.nextUrl.pathname
+  const isProtectedRoute = isProtectedPath(pathname)
+  const isAuthRoute = isAuthPath(pathname)
 
   // Handle auth code in URL (from OAuth or email links)
   const code = request.nextUrl.searchParams.get('code')
-  if (code && !request.nextUrl.pathname.startsWith('/auth/callback')) {
+  if (code && !pathname.startsWith('/auth/callback')) {
     // Redirect to auth callback to handle the code
     const url = request.nextUrl.clone()
     url.pathname = '/auth/callback'
     if (!url.searchParams.has('next')) {
-      url.searchParams.set('next', request.nextUrl.pathname)
+      url.searchParams.set('next', pathname)
     }
     return NextResponse.redirect(url)
   }
+
+  let supabaseResponse = NextResponse.next({
+    request,
+  })
 
   // Check for environment variables
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -53,25 +78,13 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes - redirect to login if not authenticated
-  const protectedPaths = ['/dashboard', '/portal', '/wallet', '/bookings', '/admin']
-  const isProtectedPath = protectedPaths.some(path =>
-    request.nextUrl.pathname.startsWith(path)
-  )
-
-  if (isProtectedPath && !user) {
+  if (isProtectedRoute && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // Redirect logged-in users away from auth pages
-  const authPaths = ['/login', '/register']
-  const isAuthPath = authPaths.some(path =>
-    request.nextUrl.pathname.startsWith(path)
-  )
-
-  if (isAuthPath && user) {
+  if (isAuthRoute && user) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
