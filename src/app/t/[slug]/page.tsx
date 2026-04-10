@@ -1,8 +1,10 @@
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { Metadata } from 'next'
+import { unstable_cache } from 'next/cache'
 import { notFound } from 'next/navigation'
 import { TalentProfileClient } from '@/app/talent/[id]/TalentProfileClient'
 import { generateTalentOpenGraphMetadata } from '@/lib/og-metadata'
+import { createApiClient } from '@/lib/supabase/api'
 import { createClient } from '@/lib/supabase/server'
 
 // Create admin client lazily with service role key for bypassing RLS
@@ -20,206 +22,92 @@ function getAdminClient() {
     })
 }
 
-interface PageProps {
-    params: Promise<{ slug: string }>
-}
+// Cache talent profile data for 1 hour
+// This includes basic profile and their service menus
+const getCachedTalentProfile = unstable_cache(
+    async (slug: string) => {
+        const supabase = createApiClient()
+        
+        // Priority: username > slug column > id
+        const { data: talent, error } = await supabase
+            .from('profiles')
+            .select(`
+                *,
+                talent_menus (
+                    *,
+                    service_type:service_types(*)
+                )
+            `)
+            .eq('role', 'talent')
+            .or(`username.eq."${slug}",slug.eq."${slug}",id.eq."${slug}"`)
+            .maybeSingle()
 
-// Helper to generate slug from display_name
-function generateSlug(displayName: string): string {
-    return displayName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '')
-}
+        if (error || !talent) {
+            return null
+        }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+        return talent
+    },
+    ['talent-profile'],
+    { revalidate: 3600, tags: ['talents'] }
+)
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params
-    const supabase = await createClient()
-
-    // Try to find talent by username first
-    const { data: talent } = await supabase
-        .from('profiles')
-        .select('id, display_name, username, avatar_url')
-        .eq('role', 'talent')
-        .or(`username.eq.${slug}`)
-        .single()
+    const talent = await getCachedTalentProfile(slug)
 
     if (!talent) {
         return generateTalentOpenGraphMetadata('Talent Profile', undefined, slug)
     }
 
-    // Prefer username if available, otherwise use ID for OG image generation
     return generateTalentOpenGraphMetadata(
         talent.display_name || 'Talent Profile',
-        undefined, // Don't pass image URL, let the OG route fetch it
-        talent.username || null, // Pass null if no username, so OG route uses ID
+        undefined,
+        talent.username || null,
         talent.id
     )
 }
 
-export default async function TalentProfileBySlugPage({ params }: PageProps) {
+export default async function TalentProfileBySlugPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
     const supabase = await createClient()
 
-    // Check if user is authenticated (optional - allows public viewing)
+    // Auth check (fast)
     const { data: { user } } = await supabase.auth.getUser()
 
-    // First try exact username match (without media)
-    let { data: talent } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'talent')
-        .eq('username', slug)
-        .single()
-
-    // If not found by username, try matching by generated slug from display_name
-    if (!talent) {
-        const { data: allTalents } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('role', 'talent')
-
-        talent = allTalents?.find(t => {
-            const generatedSlug = t.display_name ? generateSlug(t.display_name) : null
-            return generatedSlug === slug || t.username === slug
-        }) || null
-    }
-
-    // If still not found, check if it's a UUID and try to find by ID
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!talent && uuidRegex.test(slug)) {
-        // Try to find talent by UUID
-        const { data: talentById } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', slug)
-            .eq('role', 'talent')
-            .single()
-
-        talent = talentById
-    }
+    // Get cached talent profile (includes menus)
+    const talent = await getCachedTalentProfile(slug)
 
     if (!talent) {
         notFound()
     }
 
-    // Fetch talent_menus separately to ensure proper data structure
-    // Use same query structure as dashboard for consistency
-    const { data: talentMenus, error: menusError } = await supabase
-        .from('talent_menus')
-        .select(`
-            *,
-            service_type:service_types(*)
-        `)
-        .eq('talent_id', talent.id)
-        .order('created_at', { ascending: true })
+    // Fetch remaining data in parallel
+    const [mediaResult, reviewsResult, userContextResult] = await Promise.all([
+        // 1. Fetch media (respecting RLS or using admin if authenticated)
+        user ? (async () => {
+            const supabaseAdmin = getAdminClient()
+            if (!supabaseAdmin) return supabase.from('media').select('id, talent_id, url, type, is_premium, unlock_price, created_at').eq('talent_id', talent.id).or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending').order('created_at', { ascending: false })
+            return supabaseAdmin.from('media').select('id, talent_id, url, type, is_premium, unlock_price, created_at').eq('talent_id', talent.id).or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending').order('created_at', { ascending: false })
+        })() : supabase.from('media').select('id, talent_id, url, type, is_premium, unlock_price, created_at').eq('talent_id', talent.id).or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending').order('created_at', { ascending: false }),
 
-    if (menusError) {
-        console.error('[TalentProfile] Error fetching talent_menus:', menusError)
-    }
+        // 2. Fetch reviews
+        supabase.from('reviews').select(`*, client:profiles!reviews_client_id_fkey(id, display_name, avatar_url)`).eq('talent_id', talent.id).order('created_at', { ascending: false }),
 
-    // Fetch media - use admin client only for authenticated users to bypass RLS
-    // For non-authenticated users, regular client will only return free media (due to RLS)
-    // This allows public viewing of free media while protecting premium content
-    let media = null
+        // 3. Fetch current user context
+        user ? Promise.all([
+            supabase.from('profiles').select('*').eq('id', user.id).single(),
+            supabase.from('wallets').select('*').eq('user_id', user.id).single()
+        ]) : Promise.resolve([null, null])
+    ])
 
-    if (user) {
-        // Authenticated users - use admin client to see all media (including premium)
-        // The client will filter based on unlocked status
-        const supabaseAdmin = getAdminClient()
-        if (supabaseAdmin) {
-            const { data: mediaData } = await supabaseAdmin
-                .from('media')
-                .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
-                .eq('talent_id', talent.id)
-                .or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending')
-                .order('created_at', { ascending: false })
-            media = mediaData
-        } else {
-            // Fallback to regular client if admin client unavailable
-            const { data: mediaData } = await supabase
-                .from('media')
-                .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
-                .eq('talent_id', talent.id)
-                .or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending')
-                .order('created_at', { ascending: false })
-            media = mediaData
-        }
-    } else {
-        // Non-authenticated users - RLS will only return free media
-        // Hide rejected media from public view
-        const { data: mediaData } = await supabase
-            .from('media')
-            .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
-            .eq('talent_id', talent.id)
-            .or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending')
-            .order('created_at', { ascending: false })
-        media = mediaData
-    }
+    const media = mediaResult.data
+    const allReviews = reviewsResult.data
+    const [profileResult, walletResult] = userContextResult as any
+    const currentUserProfile = profileResult?.data || null
+    const wallet = walletResult?.data || null
 
-    // Attach media and services to talent object with proper structure
-    // Map talent_menus to match expected structure (same as dashboard)
-    // Define the structure of the raw menu item from Supabase join
-    interface RawTalentMenu {
-        id: string
-        talent_id: string
-        service_type_id: string
-        price: number
-        is_active: boolean
-        created_at: string
-        service_type: {
-            id: string
-            name: string
-            description: string | null
-        }
-    }
-
-    const mappedMenus = (talentMenus || []).map((m: RawTalentMenu) => {
-        // service_types(*) returns an object, not an array
-        const serviceType = m.service_type
-        return {
-            id: m.id,
-            talent_id: m.talent_id || talent.id,
-            service_type_id: m.service_type_id,
-            price: m.price,
-            is_active: m.is_active,
-            created_at: m.created_at,
-            service_type: serviceType
-        }
-    })
-
-    const talentWithMedia = {
-        ...talent,
-        media: media || [],
-        talent_menus: mappedMenus
-    }
-
-    // Debug logging (remove in production)
-    if (process.env.NODE_ENV === 'development') {
-        console.log('[TalentProfile] Talent data:', {
-            id: talent.id,
-            display_name: talent.display_name,
-            username: talent.username,
-            bio: talent.bio,
-            location: talent.location,
-            avatar_url: talent.avatar_url,
-            mediaCount: media?.length || 0,
-            menusCount: mappedMenus.length,
-            activeMenusCount: mappedMenus.filter(m => m.is_active).length
-        })
-    }
-
-    // Fetch all reviews for this talent to calculate accurate statistics
-    const { data: allReviews } = await supabase
-        .from('reviews')
-        .select(`
-      *,
-      client:profiles!reviews_client_id_fkey(id, display_name, avatar_url)
-    `)
-        .eq('talent_id', talent.id)
-        .order('created_at', { ascending: false })
-
-    // Calculate average rating and count from all reviews
+    // Calculate statistics
     let averageRating = 0
     let reviewCount = 0
     if (allReviews && allReviews.length > 0) {
@@ -227,26 +115,16 @@ export default async function TalentProfileBySlugPage({ params }: PageProps) {
         averageRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
     }
 
-    // Fetch current user's profile and wallet (only if authenticated)
-    let currentUserProfile = null
-    let wallet = null
+    // Map talent_menus to expected structure
+    const mappedMenus = (talent.talent_menus || []).map((m: any) => ({
+        ...m,
+        service_type: m.service_type
+    }))
 
-    if (user) {
-        const [profileResult, walletResult] = await Promise.all([
-            supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single(),
-            supabase
-                .from('wallets')
-                .select('*')
-                .eq('user_id', user.id)
-                .single()
-        ])
-
-        currentUserProfile = profileResult.data
-        wallet = walletResult.data
+    const talentWithMedia = {
+        ...talent,
+        media: media || [],
+        talent_menus: mappedMenus
     }
 
     // Track profile view and update activity status (async/background)

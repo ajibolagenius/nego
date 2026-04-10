@@ -41,64 +41,59 @@ export async function POST(request: NextRequest) {
             errors: [] as string[],
         }
 
-        // Process each status type
-        for (const [status, maxAge] of Object.entries(EXPIRATION_RULES)) {
+        // Process each status type in parallel
+        await Promise.all(Object.entries(EXPIRATION_RULES).map(async ([status, maxAge]) => {
             const cutoffTime = new Date(now.getTime() - maxAge).toISOString()
 
             // Find stale bookings
             const { data: staleBookings, error: fetchError } = await supabase
                 .from('bookings')
                 .select(`
-          id,
-          client_id,
-          talent_id,
-          total_price,
-          status,
-          created_at,
-          client:profiles!bookings_client_id_fkey(display_name, id),
-          talent:profiles!bookings_talent_id_fkey(display_name, id)
-        `)
+                    id,
+                    client_id,
+                    talent_id,
+                    total_price,
+                    status,
+                    created_at,
+                    client:profiles!bookings_client_id_fkey(display_name, id),
+                    talent:profiles!bookings_talent_id_fkey(display_name, id)
+                `)
                 .eq('status', status)
                 .lt('created_at', cutoffTime)
 
             if (fetchError) {
                 results.errors.push(`Error fetching ${status} bookings: ${fetchError.message}`)
-                continue
+                return
             }
 
-            if (!staleBookings || staleBookings.length === 0) continue
+            if (!staleBookings || staleBookings.length === 0) return
 
-            // Process each stale booking
-            for (const booking of staleBookings) {
-                try {
-                    // Update booking status to expired
-                    const { error: updateError } = await supabase
-                        .from('bookings')
-                        .update({
-                            status: 'expired',
-                            updated_at: now.toISOString()
-                        })
-                        .eq('id', booking.id)
+            // Process stale bookings in parallel to reduce Fluid CPU wall-clock time
+            const processingResults = await Promise.allSettled(
+                staleBookings.map(async (booking) => {
+                    try {
+                        // Update booking status to expired
+                        const { error: updateError } = await supabase
+                            .from('bookings')
+                            .update({
+                                status: 'expired',
+                                updated_at: now.toISOString()
+                            })
+                            .eq('id', booking.id)
 
-                    if (updateError) {
-                        results.errors.push(`Failed to expire booking ${booking.id}: ${updateError.message}`)
-                        continue
-                    }
+                        if (updateError) {
+                            throw new Error(`Failed to expire booking ${booking.id}: ${updateError.message}`)
+                        }
 
-                    results.expired++
+                        // If booking was payment_pending and coins were held in escrow, refund them
+                        if (status === 'payment_pending' && booking.total_price > 0) {
+                            const { data: walletData, error: walletError } = await supabase
+                                .from('wallets')
+                                .select('balance, escrow_balance')
+                                .eq('user_id', booking.client_id)
+                                .single()
 
-                    // If booking was payment_pending and coins were held in escrow, refund them
-                    if (status === 'payment_pending' && booking.total_price > 0) {
-                        // Check if coins were deducted (they might have been in escrow)
-                        const { data: walletData, error: walletError } = await supabase
-                            .from('wallets')
-                            .select('balance, escrow_balance')
-                            .eq('user_id', booking.client_id)
-                            .single()
-
-                        if (!walletError && walletData) {
-                            // Refund from escrow if applicable
-                            if (walletData.escrow_balance >= booking.total_price) {
+                            if (!walletError && walletData && walletData.escrow_balance >= booking.total_price) {
                                 const { error: refundError } = await supabase
                                     .from('wallets')
                                     .update({
@@ -108,10 +103,8 @@ export async function POST(request: NextRequest) {
                                     .eq('user_id', booking.client_id)
 
                                 if (!refundError) {
-                                    results.refunded++
-
-                                    // Create refund transaction
-                                    await supabase.from('transactions').insert({
+                                    // Create refund transaction (fire and forget)
+                                    supabase.from('transactions').insert({
                                         user_id: booking.client_id,
                                         amount: 0,
                                         coins: booking.total_price,
@@ -119,32 +112,48 @@ export async function POST(request: NextRequest) {
                                         status: 'completed',
                                         description: `Refund for expired booking #${booking.id.slice(0, 8)}`,
                                         reference_id: booking.id
-                                    })
+                                    }).then(() => {})
+                                    
+                                    return { expired: true, refunded: true }
                                 }
                             }
                         }
+
+                        // Create notification for client
+                        const talentData = booking.talent as unknown as { display_name: string; id: string } | null
+                        await notifyUser({
+                            userId: booking.client_id,
+                            type: 'booking_expired',
+                            title: 'Booking Expired',
+                            message: `Your booking with ${talentData?.display_name || 'the talent'} has expired due to inactivity.`,
+                            data: { booking_id: booking.id },
+                            url: `/dashboard/bookings/${booking.id}`,
+                        })
+
+                        return { expired: true, refunded: false, notified: true }
+                    } catch (err) {
+                        return { error: err instanceof Error ? err.message : String(err) }
                     }
+                })
+            )
 
-                    // Create notification for client
-                    // const _clientData = booking.client as unknown as { display_name: string; id: string } | null
-                    const talentData = booking.talent as unknown as { display_name: string; id: string } | null
-
-                    await notifyUser({
-                        userId: booking.client_id,
-                        type: 'booking_expired',
-                        title: 'Booking Expired',
-                        message: `Your booking with ${talentData?.display_name || 'the talent'} has expired due to inactivity.`,
-                        data: { booking_id: booking.id },
-                        url: `/dashboard/bookings/${booking.id}`,
-                    })
-
-                    results.notified++
-
-                } catch (err) {
-                    results.errors.push(`Error processing booking ${booking.id}: ${err}`)
+            // Collect results
+            processingResults.forEach((res) => {
+                if (res.status === 'fulfilled') {
+                    const val = res.value as any
+                    if (val.error) {
+                        results.errors.push(val.error)
+                    } else {
+                        if (val.expired) results.expired++
+                        if (val.refunded) results.refunded++
+                        if (val.notified) results.notified++
+                    }
+                } else {
+                    results.errors.push(String(res.reason))
                 }
-            }
-        }
+            })
+
+        }))
 
         return NextResponse.json({
             success: true,
