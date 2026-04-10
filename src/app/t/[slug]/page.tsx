@@ -37,12 +37,18 @@ const getCachedTalentProfile = unstable_cache(
                 )
             `
 
+        // Validate if slug is a UUID to prevent Postgres type mismatch errors when querying the id column
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
+        const orFilter = isUuid 
+            ? `username.eq."${slug}",slug.eq."${slug}",id.eq."${slug}"`
+            : `username.eq."${slug}",slug.eq."${slug}"`
+
         // Priority: username > persisted slug column > id
         const { data: talent, error } = await supabase
             .from('profiles')
             .select(talentProfileQuery)
             .eq('role', 'talent')
-            .or(`username.eq."${slug}",slug.eq."${slug}",id.eq."${slug}"`)
+            .or(orFilter)
             .maybeSingle()
 
         if (talent) {
