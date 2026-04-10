@@ -25,11 +25,10 @@ function getAdminClient() {
 
 // Cache talent profile data for 1 hour
 // This includes basic profile and their service menus
-const getCachedTalentProfile = unstable_cache(
-    async (slug: string) => {
-        const supabase = createApiClient()
+async function getTalentProfile(slug: string) {
+    const supabase = createApiClient()
 
-        const talentProfileQuery = `
+    const talentProfileQuery = `
                 *,
                 talent_menus (
                     *,
@@ -37,61 +36,65 @@ const getCachedTalentProfile = unstable_cache(
                 )
             `
 
-        // Validate if slug is a UUID to prevent Postgres type mismatch errors when querying the id column
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
-        const orFilter = isUuid 
-            ? `username.eq."${slug}",slug.eq."${slug}",id.eq."${slug}"`
-            : `username.eq."${slug}",slug.eq."${slug}"`
+    // Validate if slug is a UUID to prevent Postgres type mismatch errors when querying the id column
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
+    const orFilter = isUuid
+        ? `username.eq."${slug}",slug.eq."${slug}",id.eq."${slug}"`
+        : `username.eq."${slug}",slug.eq."${slug}"`
 
-        // Priority: username > persisted slug column > id
-        const { data: talent, error } = await supabase
-            .from('profiles')
-            .select(talentProfileQuery)
-            .eq('role', 'talent')
-            .or(orFilter)
-            .maybeSingle()
+    // Priority: username > persisted slug column > id
+    const { data: talent, error } = await supabase
+        .from('profiles')
+        .select(talentProfileQuery)
+        .eq('role', 'talent')
+        .or(orFilter)
+        .maybeSingle()
 
-        if (talent) {
-            return talent
-        }
+    if (talent) {
+        return talent
+    }
 
-        if (error) {
-            return null
-        }
+    if (error) {
+        console.error(`[TalentProfile] Database error for slug "${slug}":`, error)
+        return null
+    }
 
-        const { data: candidates, error: candidatesError } = await supabase
-            .from('profiles')
-            .select('id, display_name')
-            .eq('role', 'talent')
+    const { data: candidates, error: candidatesError } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .eq('role', 'talent')
 
-        if (candidatesError || !candidates) {
-            return null
-        }
+    if (candidatesError || !candidates) {
+        return null
+    }
 
-        const matchedCandidate = candidates.find((candidate) => {
-            return candidate.display_name ? generateSlug(candidate.display_name) === slug : false
-        })
+    const matchedCandidate = candidates.find((candidate) => {
+        return candidate.display_name ? generateSlug(candidate.display_name) === slug : false
+    })
 
-        if (!matchedCandidate) {
-            return null
-        }
+    if (!matchedCandidate) {
+        return null
+    }
 
-        const { data: fallbackTalent, error: fallbackError } = await supabase
-            .from('profiles')
-            .select(talentProfileQuery)
-            .eq('role', 'talent')
-            .eq('id', matchedCandidate.id)
-            .maybeSingle()
+    const { data: fallbackTalent, error: fallbackError } = await supabase
+        .from('profiles')
+        .select(talentProfileQuery)
+        .eq('role', 'talent')
+        .eq('id', matchedCandidate.id)
+        .maybeSingle()
 
-        if (fallbackError || !fallbackTalent) {
-            return null
-        }
+    if (fallbackError || !fallbackTalent) {
+        return null
+    }
 
-        return fallbackTalent
-    },
-    ['talent-profile'],
+    return fallbackTalent
+}
+
+const getCachedTalentProfile = (slug: string) => unstable_cache(
+    async () => getTalentProfile(slug),
+    ['talent-profile', slug],
     { revalidate: 3600, tags: ['talents'] }
-)
+)()
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params
