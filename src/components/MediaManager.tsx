@@ -19,7 +19,7 @@ interface MediaManagerProps {
 }
 
 export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) {
-    const MAX_MEDIA_PER_CATEGORY = 6
+    const MAX_MEDIA_PER_CATEGORY = 3
     const supabase = createClient()
     const [activeTab, setActiveTab] = useState<MediaTab>('free')
     const [showUploadModal, setShowUploadModal] = useState(false)

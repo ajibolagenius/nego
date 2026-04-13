@@ -17,7 +17,7 @@ interface MediaUploadModalProps {
 }
 
 export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSuccess }: MediaUploadModalProps) {
-    const MAX_MEDIA_PER_CATEGORY = 6
+    const MAX_MEDIA_PER_CATEGORY = 3
     const supabase = createClient()
     const [uploading, setUploading] = useState(false)
     const [uploadProgress, setUploadProgress] = useState(0)
@@ -42,8 +42,8 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
             return
         }
 
-        // Validate file size (max 50MB for Supabase Storage)
-        const maxSize = 50 * 1024 * 1024 // 50MB
+        // Validate file size (max 25MB for Supabase Storage)
+        const maxSize = 25 * 1024 * 1024 // 25MB
         if (file.size > maxSize) {
             setUploadError(`File size must be less than ${(maxSize / 1024 / 1024).toFixed(0)}MB`)
             return
@@ -93,10 +93,10 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
             if (isImage) {
                 setUploadProgress(10)
                 try {
-                    fileToUpload = await compressImage(selectedFile, 1200, 0.75)
+                    fileToUpload = await compressImage(selectedFile, 1080, 0.75)
                     setUploadProgress(20)
-                    fileName = `${talentId}/${Date.now()}_${selectedFile.name.replace(/\.[^/.]+$/, '')}.jpg`
-                    contentType = 'image/jpeg'
+                    fileName = `${talentId}/${Date.now()}_${selectedFile.name.replace(/\.[^/.]+$/, '')}.webp`
+                    contentType = 'image/webp'
                 } catch (compressError) {
                     console.warn('[MediaManager] Compression failed, uploading original:', compressError)
                     // Continue with original file if compression fails

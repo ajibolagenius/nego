@@ -6,7 +6,7 @@
  * @param quality The quality of the JPEG compression (0-1)
  * @returns A promise that resolves to the compressed File
  */
-export const compressImage = async (file: File, maxWidth: number = 1200, quality: number = 0.75): Promise<File> => {
+export const compressImage = async (file: File, maxWidth: number = 1080, quality: number = 0.75): Promise<File> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = (e) => {
@@ -38,13 +38,13 @@ export const compressImage = async (file: File, maxWidth: number = 1200, quality
                             reject(new Error('Failed to compress image'))
                             return
                         }
-                        const compressedFile = new File([blob], file.name, {
-                            type: 'image/jpeg',
+                        const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, '') + '.webp', {
+                            type: 'image/webp',
                             lastModified: Date.now(),
                         })
                         resolve(compressedFile)
                     },
-                    'image/jpeg',
+                    'image/webp',
                     quality
                 )
             }
