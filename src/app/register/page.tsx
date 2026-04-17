@@ -3,7 +3,7 @@
 import { Eye, EyeSlash, Envelope, Lock, User, SpinnerGap, GoogleLogo, UserCircle, Briefcase, Check, X } from '@phosphor-icons/react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 
@@ -45,7 +45,7 @@ export default function RegisterPage() {
     const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('')
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
-    const [error, setError] = useState('')
+    const [error, setError] = useState<string | ReactNode>('')
 
     // Validation states
     const [nameError, setNameError] = useState('')
@@ -318,7 +318,26 @@ export default function RegisterPage() {
             }
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : 'An error occurred while creating your account. Please try again.'
-            setError(errorMessage)
+            
+            if (errorMessage.includes('Too many registration attempts')) {
+                const adminLink = role === 'talent' 
+                    ? 'https://forms.gle/mL529dqZpqebthLB7'
+                    : 'https://forms.gle/AcY6RA2jTMDtU3ci9'
+                
+                setError(
+                    <div className="flex flex-col gap-1">
+                        <span>{errorMessage}</span>
+                        <span className="text-red-300 mt-1">
+                            Alternatively, we can register you on your behalf. Please fill out{' '}
+                            <a href={adminLink} target="_blank" rel="noopener noreferrer" className="text-white underline hover:text-[#df2531] transition-colors">
+                                this form
+                            </a>.
+                        </span>
+                    </div>
+                )
+            } else {
+                setError(errorMessage)
+            }
         } finally {
             setLoading(false)
         }
@@ -349,7 +368,25 @@ export default function RegisterPage() {
         })
 
         if (error) {
-            setError(error.message)
+            if (error.status === 429 || error.message.toLowerCase().includes('too many requests')) {
+                const adminLink = role === 'talent' 
+                    ? 'https://forms.gle/mL529dqZpqebthLB7'
+                    : 'https://forms.gle/AcY6RA2jTMDtU3ci9'
+                
+                setError(
+                    <div className="flex flex-col gap-1">
+                        <span>Too many registration attempts. Please wait a few minutes before trying again.</span>
+                        <span className="text-red-300 mt-1">
+                            Alternatively, we can register you on your behalf. Please fill out{' '}
+                            <a href={adminLink} target="_blank" rel="noopener noreferrer" className="text-white underline hover:text-[#df2531] transition-colors">
+                                this form
+                            </a>.
+                        </span>
+                    </div>
+                )
+            } else {
+                setError(error.message)
+            }
         }
     }
 
@@ -457,7 +494,7 @@ export default function RegisterPage() {
                             {error && (
                                 <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-3" role="alert">
                                     <X size={20} className="shrink-0 mt-0.5" aria-hidden="true" />
-                                    <span>{error}</span>
+                                    <div className="flex-1">{error}</div>
                                 </div>
                             )}
 
