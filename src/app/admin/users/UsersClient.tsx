@@ -13,14 +13,14 @@ import {
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { EmptyState } from '@/components/admin/EmptyState'
 import { Pagination } from '@/components/admin/Pagination'
 import { Button } from '@/components/ui/button'
 import { usePagination } from '@/hooks/admin/usePagination'
-import { createClient } from '@/lib/supabase/client'
+// removed unused createClient import
 import type { Profile } from '@/types/database'
 
 interface WalletData {
@@ -51,7 +51,6 @@ function DetailItem({ label, value, icon, className = "" }: { label: string, val
 
 export function UsersClient({ users: initialUsers }: UsersClientProps) {
     const router = useRouter()
-    const supabase = createClient()
     const [users, setUsers] = useState<ProfileWithWallet[]>(initialUsers)
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedUser, setSelectedUser] = useState<ProfileWithWallet | null>(null)
@@ -59,69 +58,62 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
     const [isProcessing, setIsProcessing] = useState(false)
     const [showConfirmDelete, setShowConfirmDelete] = useState(false)
     const [isRefreshing, setIsRefreshing] = useState(false)
+    const [sortBy, setSortBy] = useState<'newest' | 'name' | 'coins'>('newest')
 
     const refreshUsers = useCallback(async () => {
         setIsRefreshing(true)
         try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select(`
-                    id,
-                    role,
-                    username,
-                    full_name,
-                    display_name,
-                    avatar_url,
-                    email,
-                    location,
-                    bio,
-                    is_verified,
-                    status,
-                    status,
-                    created_at,
-                    updated_at,
-                    wallets (
-                        balance,
-                        escrow_balance
-                    )
-                `)
-                .eq('role', 'client')
-                .order('created_at', { ascending: false })
-                .limit(2000)
-
-            if (error) throw error
-
-            if (data) {
-                setUsers(data as unknown as ProfileWithWallet[])
-            }
+            router.refresh()
+            // Wait a small amount of time to let the server component re-fetch
+            await new Promise(resolve => setTimeout(resolve, 800))
         } catch (error) {
             console.error('[UsersClient] Error refreshing users:', error)
             toast.error('Failed to refresh users')
         } finally {
             setIsRefreshing(false)
         }
-    }, [supabase])
+    }, [router])
 
     // Filter and search users
-    const filteredUsers = users.filter((user) => {
+    const filteredUsers = useMemo(() => {
+        let result = users.filter((user) => {
+            // Search filter
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase()
+                const searchFields = [
+                    user.display_name,
+                    user.full_name,
+                    user.username,
+                    user.email,
+                    user.location,
+                    user.role
+                ].filter(Boolean).join(' ').toLowerCase()
 
-        // Search filter
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase()
-            const searchFields = [
-                user.display_name,
-                user.full_name,
-                user.username,
-                user.email,
-                user.location,
-                user.role
-            ].filter(Boolean).join(' ').toLowerCase()
+                if (!searchFields.includes(query)) return false
+            }
 
-            if (!searchFields.includes(query)) return false
+            return true
+        })
+
+        // Apply sorting
+        if (sortBy === 'name') {
+            result.sort((a, b) => {
+                const nameA = (a.display_name || a.full_name || '').toLowerCase()
+                const nameB = (b.display_name || b.full_name || '').toLowerCase()
+                return nameA.localeCompare(nameB)
+            })
+        } else if (sortBy === 'coins') {
+            result.sort((a, b) => {
+                const coinsA = a.wallets?.[0]?.balance ?? 0
+                const coinsB = b.wallets?.[0]?.balance ?? 0
+                return coinsB - coinsA
+            })
+        } else if (sortBy === 'newest') {
+            result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         }
 
-        return true
-    })
+        return result
+    }, [users, searchQuery, sortBy])
 
     const {
         currentPage,
@@ -219,8 +211,19 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                     </div>
 
                     <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value as 'newest' | 'name' | 'coins')}
+                            className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-medium text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 cursor-pointer appearance-none shrink-0"
+                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center', backgroundSize: '1rem', paddingRight: '2.5rem' }}
+                        >
+                            <option value="newest" className="bg-[#111] text-white">Sort: Newest</option>
+                            <option value="name" className="bg-[#111] text-white">Sort: Name</option>
+                            <option value="coins" className="bg-[#111] text-white">Sort: Coins</option>
+                        </select>
+                        
                         <button
-                            className="px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap bg-[#df2531] text-white cursor-default"
+                            className="px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap bg-[#df2531] text-white cursor-default shrink-0"
                         >
                             Clients ({users.length})
                         </button>

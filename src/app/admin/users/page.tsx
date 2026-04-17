@@ -46,7 +46,19 @@ export default async function UsersPage() {
         console.error('[UsersPage] Error fetching users:', error)
     }
 
-    const usersList = (users || []) as unknown as (Profile & { wallets?: { balance: number; escrow_balance: number }[] })[]
+    // Fetch auth users to ensure we get emails even from Google auth provider
+    const { data: authData } = await supabase.auth.admin.listUsers({ perPage: 2000 })
+    const authUsers = authData.users || []
+
+    const usersList = (users || []).map((user: unknown) => {
+        const u = user as Profile & { wallets?: { balance: number; escrow_balance: number }[], email?: string | null }
+        const authUser = authUsers.find(a => a.id === u.id)
+        
+        return {
+            ...u,
+            email: authUser?.email || u.email
+        } as Profile & { wallets?: { balance: number; escrow_balance: number }[], email?: string | null }
+    })
 
     return <UsersClient users={usersList} />
 }
