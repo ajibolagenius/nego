@@ -46,6 +46,7 @@ export function ContentModerationClient({
     const [isProcessing, setIsProcessing] = useState(false)
     const [moderationNotes, setModerationNotes] = useState('')
     const [undoActions, setUndoActions] = useState<Map<string, UndoAction>>(new Map())
+    const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set())
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 24 // 4 columns x 6 rows for optimal grid display
 
@@ -533,6 +534,62 @@ export function ContentModerationClient({
         }
     }
 
+    const handleBulkDelete = async () => {
+        if (selectedMediaIds.size === 0) return
+
+        if (!window.confirm(`Are you sure you want to permanently delete ${selectedMediaIds.size} selected media items? This action cannot be undone.`)) {
+            return
+        }
+
+        setIsProcessing(true)
+        try {
+            const deletePromises = Array.from(selectedMediaIds).map(async (id) => {
+                const response = await fetch(`/api/admin/media/${id}`, {
+                    method: 'DELETE',
+                })
+                const data = await response.json()
+                if (!response.ok) {
+                    throw new Error(data.error || `Failed to delete media ${id}`)
+                }
+            })
+
+            await Promise.all(deletePromises)
+
+            toast.success(`Successfully deleted ${selectedMediaIds.size} media items`)
+
+            // Update local state by removing deleted media
+            setAllMedia(prev => prev.filter(m => !selectedMediaIds.has(m.id)))
+            setPendingMedia(prev => prev.filter(m => !selectedMediaIds.has(m.id)))
+            setFlaggedMedia(prev => prev.filter(m => !selectedMediaIds.has(m.id)))
+            
+            setSelectedMediaIds(new Set())
+            router.refresh()
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error)
+            console.error('Bulk delete error:', error)
+            toast.error(message || 'Failed to delete some media items')
+        } finally {
+            setIsProcessing(false)
+        }
+    }
+
+    const handleToggleSelectAll = () => {
+        if (paginatedMedia.length === 0) return
+
+        const allOnPageSelected = paginatedMedia.every(m => selectedMediaIds.has(m.id))
+        const newSet = new Set(selectedMediaIds)
+
+        if (allOnPageSelected) {
+            // Deselect all on current page
+            paginatedMedia.forEach(m => newSet.delete(m.id))
+        } else {
+            // Select all on current page
+            paginatedMedia.forEach(m => newSet.add(m.id))
+        }
+
+        setSelectedMediaIds(newSet)
+    }
+
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-NG', {
             month: 'short',
@@ -582,6 +639,47 @@ export function ContentModerationClient({
                         ))}
                 </div>
 
+                {/* Bulk Actions Bar */}
+                <div className="mb-6 flex items-center justify-between bg-white/5 py-3 px-5 rounded-xl border border-white/10">
+                    <div className="flex items-center gap-3 text-sm text-white/70">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={paginatedMedia.length > 0 && paginatedMedia.every(m => selectedMediaIds.has(m.id))}
+                                ref={el => {
+                                    if (el) el.indeterminate = paginatedMedia.length > 0 && paginatedMedia.some(m => selectedMediaIds.has(m.id)) && !paginatedMedia.every(m => selectedMediaIds.has(m.id))
+                                }}
+                                onChange={handleToggleSelectAll}
+                                className="w-5 h-5 rounded border-white/30 bg-black/50 text-[#df2531] focus:ring-[#df2531] cursor-pointer"
+                            />
+                            <span className="font-medium">Select All on Page</span>
+                        </label>
+                        {selectedMediaIds.size > 0 && (
+                            <span className="font-medium text-white bg-[#df2531]/20 px-2 py-0.5 rounded-full">{selectedMediaIds.size} selected</span>
+                        )}
+                    </div>
+                    {selectedMediaIds.size > 0 && (
+                        <div className="flex gap-2">
+                            <Button
+                                onClick={() => setSelectedMediaIds(new Set())}
+                                variant="outline"
+                                className="h-9 border-white/10 text-white/60 hover:bg-white/10 hover:text-white"
+                                disabled={isProcessing}
+                            >
+                                Clear
+                            </Button>
+                            <Button
+                                onClick={handleBulkDelete}
+                                disabled={isProcessing}
+                                className="h-9 bg-red-600 hover:bg-red-700 text-white"
+                            >
+                                <Trash size={16} className="mr-2" />
+                                Delete Selected
+                            </Button>
+                        </div>
+                    )}
+                </div>
+
                 {/* Media Grid */}
                 {filteredMedia.length === 0 ? (
                     <div className="text-center py-20">
@@ -613,6 +711,19 @@ export function ContentModerationClient({
                                                 <VideoCamera size={48} className="text-white/40" />
                                             </div>
                                         )}
+                                        <div className="absolute top-2 left-2 z-10 p-1" onClick={(e) => e.stopPropagation()}>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedMediaIds.has(media.id)}
+                                                onChange={(e) => {
+                                                    const newSet = new Set(selectedMediaIds)
+                                                    if (e.target.checked) newSet.add(media.id)
+                                                    else newSet.delete(media.id)
+                                                    setSelectedMediaIds(newSet)
+                                                }}
+                                                className="w-5 h-5 rounded border-white/30 bg-black/50 text-[#df2531] focus:ring-[#df2531] cursor-pointer"
+                                            />
+                                        </div>
                                         <div className="absolute top-2 right-2 flex gap-2">
                                             {media.flagged && (
                                                 <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full border border-red-500/30">

@@ -477,11 +477,6 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
-                                <a href={`/t/${selectedUser.username}`} target="_blank" rel="noopener noreferrer" className="flex-1">
-                                    <Button disabled={isProcessing} className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white">
-                                        <Eye size={18} className="mr-2" /> Visit Profile
-                                    </Button>
-                                </a>
                                 <Button onClick={() => { setShowDetailModal(false); handleDelete(selectedUser); }} disabled={isProcessing} variant="outline" className="flex-1 bg-red-500/10 border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white">
                                     <Trash size={18} className="mr-2" /> Delete Account
                                 </Button>
