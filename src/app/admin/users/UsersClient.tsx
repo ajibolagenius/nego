@@ -49,6 +49,12 @@ function DetailItem({ label, value, icon, className = "" }: { label: string, val
     )
 }
 
+const getWalletBalance = (user: ProfileWithWallet): number => {
+    if (!user.wallets) return 0;
+    if (Array.isArray(user.wallets)) return user.wallets[0]?.balance || 0;
+    return (user.wallets as any).balance || 0;
+}
+
 export function UsersClient({ users: initialUsers }: UsersClientProps) {
     const router = useRouter()
     const [users, setUsers] = useState<ProfileWithWallet[]>(initialUsers)
@@ -104,8 +110,8 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
             })
         } else if (sortBy === 'coins') {
             result.sort((a, b) => {
-                const coinsA = a.wallets?.[0]?.balance ?? 0
-                const coinsB = b.wallets?.[0]?.balance ?? 0
+                const coinsA = getWalletBalance(a)
+                const coinsB = getWalletBalance(b)
                 return coinsB - coinsA
             })
         } else if (sortBy === 'newest') {
@@ -300,7 +306,7 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                             <td className="px-6 py-4">
                                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
                                                     <Coins size={14} />
-                                                    {user.wallets?.[0]?.balance?.toLocaleString() || '0'} Coins
+                                                    {getWalletBalance(user).toLocaleString()} Coins
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
@@ -358,7 +364,7 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                         </div>
                                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
                                             <Coins size={10} />
-                                            {user.wallets?.[0]?.balance?.toLocaleString() || '0'} Coins
+                                            {getWalletBalance(user).toLocaleString()} Coins
                                         </span>
                                     </div>
 
@@ -476,7 +482,7 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                 <DetailItem label="Username" value={selectedUser.username ? `@${selectedUser.username}` : '—'} />
                                 <DetailItem label="Location" value={selectedUser.location || '—'} icon={<MapPin size={14} />} />
                                 <DetailItem label="Joined" value={formatDate(selectedUser.created_at)} icon={<Calendar size={14} />} />
-                                <DetailItem label="Coin Balance" value={`${selectedUser.wallets?.[0]?.balance?.toLocaleString() || '0'} Coins`} icon={<Coins size={14} />} className="col-span-1 sm:col-span-2 bg-[#df2531]/10 border border-[#df2531]/20 p-4 rounded-xl" />
+                                <DetailItem label="Coin Balance" value={`${getWalletBalance(selectedUser).toLocaleString()} Coins`} icon={<Coins size={14} />} className="col-span-1 sm:col-span-2 bg-[#df2531]/10 border border-[#df2531]/20 p-4 rounded-xl" />
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
