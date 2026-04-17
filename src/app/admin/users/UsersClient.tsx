@@ -458,7 +458,7 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h4 className="text-2xl font-bold text-white mb-1">{selectedUser.display_name || selectedUser.full_name || 'No name'}</h4>
-                                    <p className="text-[#df2531] font-medium mb-3">@{selectedUser.username || 'n/a'}</p>
+                                    <p className="text-[#df2531] font-medium mb-3">{selectedUser.email || 'No email provided'}</p>
                                     <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
                                         <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 text-xs font-bold">
                                             ACTIVE
