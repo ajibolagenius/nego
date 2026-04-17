@@ -12,7 +12,8 @@ import {
     Eye,
     X,
     ShieldCheck,
-    ShieldSlash
+    ShieldSlash,
+    Coins
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -37,17 +38,24 @@ function DetailItem({ label, value, icon, className = "" }: { label: string, val
     )
 }
 
+interface WalletData {
+    balance: number
+    escrow_balance: number
+}
+
+type ProfileWithWallet = Profile & { wallets?: WalletData[] }
+
 interface TalentsClientProps {
-    talents: Profile[]
+    talents: ProfileWithWallet[]
 }
 
 export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
     const router = useRouter()
     const supabase = createClient()
-    const [talents, setTalents] = useState<Profile[]>(initialTalents)
+    const [talents, setTalents] = useState<ProfileWithWallet[]>(initialTalents)
     const [filter, setFilter] = useState<'all' | 'verified' | 'unverified'>('all')
     const [searchQuery, setSearchQuery] = useState('')
-    const [selectedTalent, setSelectedTalent] = useState<Profile | null>(null)
+    const [selectedTalent, setSelectedTalent] = useState<ProfileWithWallet | null>(null)
     const [isProcessing, setIsProcessing] = useState(false)
     const [showConfirmVerify, setShowConfirmVerify] = useState(false)
     const [showConfirmUnverify, setShowConfirmUnverify] = useState(false)
@@ -111,7 +119,11 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                     starting_price,
                     admin_notes,
                     created_at,
-                    updated_at
+                    updated_at,
+                    wallets (
+                        balance,
+                        escrow_balance
+                    )
                 `)
                 .eq('role', 'talent')
                 .order('created_at', { ascending: false })
@@ -120,7 +132,7 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
             if (error) throw error
 
             if (data) {
-                setTalents(data as Profile[])
+                setTalents(data as unknown as ProfileWithWallet[])
             }
         } catch (error) {
             console.error('[TalentsClient] Error refreshing talents:', error)
@@ -163,24 +175,24 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
         setItemsPerPage
     } = usePagination({ data: filteredTalents, itemsPerPage: 20 })
 
-    const handleViewDetails = (talent: Profile) => {
+    const handleViewDetails = (talent: ProfileWithWallet) => {
         setSelectedTalent(talent)
         setAdminNotes(talent.admin_notes || '')
         setIsEditingNotes(false)
         setShowDetailModal(true)
     }
 
-    const handleVerify = async (talent: Profile) => {
+    const handleVerify = async (talent: ProfileWithWallet) => {
         setSelectedTalent(talent)
         setShowConfirmVerify(true)
     }
 
-    const handleUnverify = async (talent: Profile) => {
+    const handleUnverify = async (talent: ProfileWithWallet) => {
         setSelectedTalent(talent)
         setShowConfirmUnverify(true)
     }
 
-    const handleDelete = (talent: Profile) => {
+    const handleDelete = (talent: ProfileWithWallet) => {
         setSelectedTalent(talent)
         setShowConfirmDelete(true)
     }
@@ -645,6 +657,7 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                                 <DetailItem label="Gender" value={selectedTalent.gender || '—'} className="capitalize" />
                                 <DetailItem label="Joined" value={formatDate(selectedTalent.created_at)} icon={<Calendar size={14} />} />
                                 <DetailItem label="Starting Price" value={selectedTalent.starting_price ? `${selectedTalent.starting_price.toLocaleString()} coins` : '—'} />
+                                <DetailItem label="Coin Balance" value={`${selectedTalent.wallets?.[0]?.balance?.toLocaleString() || '0'} Coins`} icon={<Coins size={14} />} className="col-span-1 sm:col-span-2 bg-[#df2531]/10 border border-[#df2531]/20 p-4 rounded-xl" />
                             </div>
 
                             {selectedTalent.bio && (

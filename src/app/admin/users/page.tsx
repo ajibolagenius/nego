@@ -31,8 +31,13 @@ export default async function UsersPage() {
             is_verified,
             status,
             created_at,
-            updated_at
+            updated_at,
+            wallets (
+                balance,
+                escrow_balance
+            )
         `)
+        .eq('role', 'client')
         .order('created_at', { ascending: false })
         .limit(2000)
 
@@ -40,7 +45,7 @@ export default async function UsersPage() {
         console.error('[UsersPage] Error fetching users:', error)
     }
 
-    const usersList: Profile[] = (users || []) as Profile[]
+    const usersList = (users || []) as unknown as (Profile & { wallets?: { balance: number; escrow_balance: number }[] })[]
 
     return <UsersClient users={usersList} />
 }

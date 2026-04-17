@@ -34,7 +34,11 @@ export default async function TalentsPage() {
             starting_price,
             admin_notes,
             created_at,
-            updated_at
+            updated_at,
+            wallets (
+                balance,
+                escrow_balance
+            )
         `)
         .eq('role', 'talent')
         .order('created_at', { ascending: false })
@@ -45,7 +49,7 @@ export default async function TalentsPage() {
         console.error('[TalentsPage] Error fetching talents:', error)
     }
 
-    const talentsList: Profile[] = (talents || []) as Profile[]
+    const talentsList = (talents || []) as unknown as (Profile & { wallets?: { balance: number; escrow_balance: number }[] })[]
 
     console.log('[TalentsPage] Loaded talents:', talentsList.length)
 

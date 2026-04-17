@@ -7,8 +7,9 @@ import {
     Trash,
     Calendar,
     MapPin,
-    IdentificationBadge,
-    Trophy
+    Eye,
+    X,
+    Coins
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -22,17 +23,36 @@ import { usePagination } from '@/hooks/admin/usePagination'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types/database'
 
+interface WalletData {
+    balance: number
+    escrow_balance: number
+}
+
+type ProfileWithWallet = Profile & { wallets?: WalletData[] }
+
 interface UsersClientProps {
-    users: Profile[]
+    users: ProfileWithWallet[]
+}
+
+function DetailItem({ label, value, icon, className = "" }: { label: string, value: string | number | React.ReactNode, icon?: React.ReactNode, className?: string }) {
+    return (
+        <div className={className}>
+            <p className="text-white/40 text-[10px] uppercase font-bold tracking-wider mb-1">{label}</p>
+            <div className="flex items-center gap-1.5 text-white font-medium">
+                {icon}
+                <span className="truncate">{value}</span>
+            </div>
+        </div>
+    )
 }
 
 export function UsersClient({ users: initialUsers }: UsersClientProps) {
     const router = useRouter()
     const supabase = createClient()
-    const [users, setUsers] = useState<Profile[]>(initialUsers)
-    const [roleFilter, setRoleFilter] = useState<'all' | 'client' | 'talent' | 'admin'>('all')
+    const [users, setUsers] = useState<ProfileWithWallet[]>(initialUsers)
     const [searchQuery, setSearchQuery] = useState('')
-    const [selectedUser, setSelectedUser] = useState<Profile | null>(null)
+    const [selectedUser, setSelectedUser] = useState<ProfileWithWallet | null>(null)
+    const [showDetailModal, setShowDetailModal] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [showConfirmDelete, setShowConfirmDelete] = useState(false)
     const [isRefreshing, setIsRefreshing] = useState(false)
@@ -53,16 +73,22 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                     bio,
                     is_verified,
                     status,
+                    status,
                     created_at,
-                    updated_at
+                    updated_at,
+                    wallets (
+                        balance,
+                        escrow_balance
+                    )
                 `)
+                .eq('role', 'client')
                 .order('created_at', { ascending: false })
                 .limit(2000)
 
             if (error) throw error
 
             if (data) {
-                setUsers(data as Profile[])
+                setUsers(data as unknown as ProfileWithWallet[])
             }
         } catch (error) {
             console.error('[UsersClient] Error refreshing users:', error)
@@ -74,8 +100,6 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
 
     // Filter and search users
     const filteredUsers = users.filter((user) => {
-        // Role filter
-        if (roleFilter !== 'all' && user.role !== roleFilter) return false
 
         // Search filter
         if (searchQuery) {
@@ -102,7 +126,12 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
         setItemsPerPage
     } = usePagination({ data: filteredUsers, itemsPerPage: 20 })
 
-    const handleDelete = (user: Profile) => {
+    const handleViewDetails = (user: ProfileWithWallet) => {
+        setSelectedUser(user)
+        setShowDetailModal(true)
+    }
+
+    const handleDelete = (user: ProfileWithWallet) => {
         setSelectedUser(user)
         setShowConfirmDelete(true)
     }
@@ -153,8 +182,8 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
             <div className="mb-8">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">User Management</h1>
-                        <p className="text-white/60">Manage all registered accounts (Clients, Talents, Admins)</p>
+                        <h1 className="text-3xl font-bold text-white mb-2">Client Management</h1>
+                        <p className="text-white/60">Manage all registered clients profiles</p>
                     </div>
                     <Button
                         onClick={refreshUsers}
@@ -184,20 +213,12 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                         />
                     </div>
 
-                    {/* Role Filter Buttons */}
                     <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
-                        {(['all', 'client', 'talent', 'admin'] as const).map((role) => (
-                            <button
-                                key={role}
-                                onClick={() => setRoleFilter(role)}
-                                className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap capitalize ${roleFilter === role
-                                        ? 'bg-[#df2531] text-white'
-                                        : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-                                    }`}
-                            >
-                                {role} ({role === 'all' ? users.length : users.filter(u => u.role === role).length})
-                            </button>
-                        ))}
+                        <button
+                            className="px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap bg-[#df2531] text-white cursor-default"
+                        >
+                            Clients ({users.length})
+                        </button>
                     </div>
                 </div>
             </div>
@@ -208,9 +229,9 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                     icon={User}
                     title="No users found"
                     description={
-                        searchQuery || roleFilter !== 'all'
-                            ? 'Try adjusting your search or filter criteria'
-                            : 'No users have registered yet'
+                        searchQuery
+                            ? 'Try adjusting your search criteria'
+                            : 'No clients have registered yet'
                     }
                 />
             ) : (
@@ -222,10 +243,10 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                 <thead className="bg-white/5 border-b border-white/10">
                                     <tr>
                                         <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                                            User
+                                            Client
                                         </th>
                                         <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                                            Role
+                                            Balance
                                         </th>
                                         <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
                                             Username
@@ -272,15 +293,9 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium capitalize ${user.role === 'admin'
-                                                        ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                                                        : user.role === 'talent'
-                                                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                                                            : 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                                    }`}>
-                                                    {user.role === 'admin' && <IdentificationBadge size={14} />}
-                                                    {user.role === 'talent' && <Trophy size={14} />}
-                                                    {user.role}
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                                                    <Coins size={14} />
+                                                    {user.wallets?.[0]?.balance?.toLocaleString() || '0'} Coins
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
@@ -294,14 +309,18 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center justify-end gap-2">
+                                                    <Button onClick={() => handleViewDetails(user)} variant="outline" size="sm" className="bg-white/5 border-white/10 text-white hover:bg-white/10 px-2 lg:px-3">
+                                                        <Eye size={16} className="lg:mr-2" />
+                                                        <span className="hidden lg:inline">Profile</span>
+                                                    </Button>
                                                     <Button
                                                         onClick={() => handleDelete(user)}
                                                         variant="outline"
                                                         size="sm"
-                                                        className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
+                                                        className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 px-2 lg:px-3"
                                                     >
                                                         <Trash size={16} />
-                                                        <span className="hidden lg:inline ml-2">Delete</span>
+                                                        <span className="hidden lg:inline">Delete</span>
                                                     </Button>
                                                 </div>
                                             </td>
@@ -335,13 +354,9 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                                 <p className="text-xs text-[#df2531]">@{user.username || 'n/a'}</p>
                                             </div>
                                         </div>
-                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${user.role === 'admin'
-                                                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                                                : user.role === 'talent'
-                                                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                                                    : 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                            }`}>
-                                            {user.role}
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                                            <Coins size={10} />
+                                            {user.wallets?.[0]?.balance?.toLocaleString() || '0'} Coins
                                         </span>
                                     </div>
 
@@ -364,14 +379,19 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                         )}
                                     </div>
 
-                                    <Button
-                                        onClick={() => handleDelete(user)}
-                                        variant="outline"
-                                        className="w-full bg-red-500/5 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all h-10"
-                                    >
-                                        <Trash size={16} className="mr-2" />
-                                        Delete User Account
-                                    </Button>
+                                    <div className="flex items-center gap-2">
+                                        <Button onClick={() => handleViewDetails(user)} variant="outline" className="flex-1 bg-white/5 border-white/10 text-white hover:bg-white/10 h-10">
+                                            <Eye size={18} className="mr-2" />
+                                            Visit Profile
+                                        </Button>
+                                        <Button
+                                            onClick={() => handleDelete(user)}
+                                            variant="outline"
+                                            className="w-12 h-10 p-0 bg-red-500/5 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all"
+                                        >
+                                            <Trash size={18} />
+                                        </Button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -408,6 +428,63 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                 isLoading={isProcessing}
                 variant="destructive"
             />
+            {/* Client Detail Modal */}
+            {showDetailModal && selectedUser && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                    role="dialog"
+                    aria-modal="true"
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                            setShowDetailModal(false)
+                        }
+                    }}
+                >
+                    <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+                        <div className="flex items-center justify-between p-6 border-b border-white/10 sticky top-0 bg-[#111] z-10">
+                            <h3 className="text-xl font-bold text-white">Client Profile Details</h3>
+                            <button onClick={() => setShowDetailModal(false)} className="text-white/60 hover:text-white transition-colors p-1">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+                                <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center overflow-hidden shrink-0 border-2 border-white/5">
+                                    {selectedUser.avatar_url ? (
+                                        <Image src={selectedUser.avatar_url} alt="" width={96} height={96} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <User size={48} className="text-white/40" />
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-2xl font-bold text-white mb-1">{selectedUser.display_name || selectedUser.full_name || 'No name'}</h4>
+                                    <p className="text-[#df2531] font-medium mb-3">@{selectedUser.username || 'n/a'}</p>
+                                    <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
+                                        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 text-xs font-bold">
+                                            ACTIVE
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white/5 p-6 rounded-2xl border border-white/5">
+                                <DetailItem label="Full Name" value={selectedUser.full_name || '—'} />
+                                <DetailItem label="Username" value={selectedUser.username ? `@${selectedUser.username}` : '—'} />
+                                <DetailItem label="Location" value={selectedUser.location || '—'} icon={<MapPin size={14} />} />
+                                <DetailItem label="Joined" value={formatDate(selectedUser.created_at)} icon={<Calendar size={14} />} />
+                                <DetailItem label="Coin Balance" value={`${selectedUser.wallets?.[0]?.balance?.toLocaleString() || '0'} Coins`} icon={<Coins size={14} />} className="col-span-1 sm:col-span-2 bg-[#df2531]/10 border border-[#df2531]/20 p-4 rounded-xl" />
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
+                                <Button onClick={() => { setShowDetailModal(false); handleDelete(selectedUser); }} disabled={isProcessing} variant="outline" className="flex-1 bg-red-500/10 border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white">
+                                    <Trash size={18} className="mr-2" /> Delete Account
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
