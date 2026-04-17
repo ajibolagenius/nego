@@ -43,7 +43,10 @@ interface WalletData {
     escrow_balance: number
 }
 
-type ProfileWithWallet = Profile & { wallets?: WalletData[] }
+type ProfileWithWallet = Profile & { 
+    wallets?: WalletData[]
+    email?: string | null
+}
 
 interface TalentsClientProps {
     talents: ProfileWithWallet[]
@@ -112,6 +115,7 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                     full_name,
                     display_name,
                     avatar_url,
+                    email,
                     location,
                     bio,
                     is_verified,
@@ -155,6 +159,7 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                 talent.display_name,
                 talent.full_name,
                 talent.username,
+                talent.email,
                 talent.location,
                 talent.bio
             ].filter(Boolean).join(' ').toLowerCase()
@@ -652,6 +657,7 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white/5 p-6 rounded-2xl border border-white/5">
                                 <DetailItem label="Full Name" value={selectedTalent.full_name || '—'} />
+                                <DetailItem label="Email" value={selectedTalent.email || '—'} />
                                 <DetailItem label="Username" value={selectedTalent.username ? `@${selectedTalent.username}` : '—'} />
                                 <DetailItem label="Location" value={selectedTalent.location || '—'} icon={<MapPin size={14} />} />
                                 <DetailItem label="Gender" value={selectedTalent.gender || '—'} className="capitalize" />
@@ -697,6 +703,11 @@ export function TalentsClient({ talents: initialTalents }: TalentsClientProps) {
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
+                                <a href={`/t/${selectedTalent.username || selectedTalent.id}`} target="_blank" rel="noopener noreferrer" className="flex-1">
+                                    <Button disabled={isProcessing} className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white">
+                                        <Eye size={18} className="mr-2" /> Visit Profile
+                                    </Button>
+                                </a>
                                 {selectedTalent.is_verified ? (
                                     <Button onClick={() => { setShowDetailModal(false); handleUnverify(selectedTalent); }} disabled={isProcessing} variant="outline" className="flex-1 bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20">
                                         <ShieldSlash size={18} className="mr-2" /> Unverify

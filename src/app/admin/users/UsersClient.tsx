@@ -28,7 +28,10 @@ interface WalletData {
     escrow_balance: number
 }
 
-type ProfileWithWallet = Profile & { wallets?: WalletData[] }
+type ProfileWithWallet = Profile & { 
+    wallets?: WalletData[]
+    email?: string | null
+}
 
 interface UsersClientProps {
     users: ProfileWithWallet[]
@@ -69,6 +72,7 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                     full_name,
                     display_name,
                     avatar_url,
+                    email,
                     location,
                     bio,
                     is_verified,
@@ -108,6 +112,7 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                 user.display_name,
                 user.full_name,
                 user.username,
+                user.email,
                 user.location,
                 user.role
             ].filter(Boolean).join(' ').toLowerCase()
@@ -249,9 +254,6 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                             Balance
                                         </th>
                                         <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
-                                            Username
-                                        </th>
-                                        <th className="px-6 py-4 text-left text-xs font-medium text-white/60 uppercase tracking-wider">
                                             Joined
                                         </th>
                                         <th className="px-6 py-4 text-right text-xs font-medium text-white/60 uppercase tracking-wider">
@@ -297,9 +299,6 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                                     <Coins size={14} />
                                                     {user.wallets?.[0]?.balance?.toLocaleString() || '0'} Coins
                                                 </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-white/80">@{user.username || 'n/a'}</span>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-1 text-white/60">
@@ -351,7 +350,7 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                             </div>
                                             <div>
                                                 <p className="font-medium text-white">{user.display_name || user.full_name || 'No name'}</p>
-                                                <p className="text-xs text-[#df2531]">@{user.username || 'n/a'}</p>
+                                                <p className="text-xs text-white/50">{user.email || 'No email provided'}</p>
                                             </div>
                                         </div>
                                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
@@ -382,7 +381,7 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                                     <div className="flex items-center gap-2">
                                         <Button onClick={() => handleViewDetails(user)} variant="outline" className="flex-1 bg-white/5 border-white/10 text-white hover:bg-white/10 h-10">
                                             <Eye size={18} className="mr-2" />
-                                            Visit Profile
+                                            Details
                                         </Button>
                                         <Button
                                             onClick={() => handleDelete(user)}
@@ -470,6 +469,7 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white/5 p-6 rounded-2xl border border-white/5">
                                 <DetailItem label="Full Name" value={selectedUser.full_name || '—'} />
+                                <DetailItem label="Email" value={selectedUser.email || '—'} />
                                 <DetailItem label="Username" value={selectedUser.username ? `@${selectedUser.username}` : '—'} />
                                 <DetailItem label="Location" value={selectedUser.location || '—'} icon={<MapPin size={14} />} />
                                 <DetailItem label="Joined" value={formatDate(selectedUser.created_at)} icon={<Calendar size={14} />} />
@@ -477,6 +477,11 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
+                                <a href={`/t/${selectedUser.username}`} target="_blank" rel="noopener noreferrer" className="flex-1">
+                                    <Button disabled={isProcessing} className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white">
+                                        <Eye size={18} className="mr-2" /> Visit Profile
+                                    </Button>
+                                </a>
                                 <Button onClick={() => { setShowDetailModal(false); handleDelete(selectedUser); }} disabled={isProcessing} variant="outline" className="flex-1 bg-red-500/10 border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white">
                                     <Trash size={18} className="mr-2" /> Delete Account
                                 </Button>

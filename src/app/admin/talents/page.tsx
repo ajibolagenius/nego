@@ -27,6 +27,7 @@ export default async function TalentsPage() {
             full_name,
             display_name,
             avatar_url,
+            email,
             location,
             bio,
             is_verified,
