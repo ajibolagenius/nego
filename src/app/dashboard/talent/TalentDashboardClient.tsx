@@ -1754,18 +1754,18 @@ export function TalentDashboardClient({
 
                                 <Button
                                     onClick={() => setShowWithdrawalModal(true)}
-                                    disabled={(wallet?.balance || 0) < 10000}
-                                    aria-label={(wallet?.balance || 0) < 10000 ? 'Minimum withdrawal is 10,000 coins' : 'Request withdrawal'}
+                                    disabled={(wallet?.balance || 0) < 5000}
+                                    aria-label={(wallet?.balance || 0) < 5000 ? 'Minimum withdrawal is 5,000 coins' : 'Request withdrawal'}
                                     className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#df2531]/30 hover:shadow-[#df2531]/40 transition-all"
                                 >
                                     <Bank size={22} weight="duotone" className="mr-2" aria-hidden="true" />
                                     Request Withdrawal
                                 </Button>
-                                {(wallet?.balance || 0) < 10000 && (
+                                {(wallet?.balance || 0) < 5000 && (
                                     <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
                                         <Warning size={18} weight="duotone" className="text-amber-400 shrink-0" aria-hidden="true" />
                                         <p className="text-amber-400 text-sm">
-                                            Minimum withdrawal: <span className="font-semibold">10,000 coins</span>
+                                            Minimum withdrawal: <span className="font-semibold">5,000 coins</span>
                                         </p>
                                     </div>
                                 )}
@@ -1781,7 +1781,7 @@ export function TalentDashboardClient({
                                     <li className="flex items-start gap-3">
                                         <CheckCircle size={18} weight="duotone" className="text-green-400 shrink-0 mt-0.5" aria-hidden="true" />
                                         <div>
-                                            <span className="font-semibold">Minimum withdrawal:</span> {10000..toLocaleString()} coins (₦{(10000 * COIN_TO_NAIRA_RATE).toLocaleString()})
+                                            <span className="font-semibold">Minimum withdrawal:</span> {5000..toLocaleString()} coins (₦{(5000 * COIN_TO_NAIRA_RATE).toLocaleString()})
                                         </div>
                                     </li>
                                     <li className="flex items-start gap-3">
@@ -1933,12 +1933,12 @@ export function TalentDashboardClient({
                                         onChange={(e) => {
                                             const value = e.target.value
                                             const numValue = parseInt(value)
-                                            if (value === '' || (numValue >= 10000 && numValue <= (wallet?.balance || 0))) {
+                                            if (value === '' || (numValue >= 5000 && numValue <= (wallet?.balance || 0))) {
                                                 setWithdrawalAmount(value)
                                             }
                                         }}
-                                        placeholder="Enter amount (min: 10,000)"
-                                        min={10000}
+                                        placeholder="Enter amount (min: 5,000)"
+                                        min={5000}
                                         max={wallet?.balance || 0}
                                         aria-label="Withdrawal amount in coins"
                                         aria-describedby="available-balance"
@@ -1953,10 +1953,10 @@ export function TalentDashboardClient({
                                             You will receive: ₦{(parseInt(withdrawalAmount) * COIN_TO_NAIRA_RATE).toLocaleString()}
                                         </p>
                                     )}
-                                    {withdrawalAmount && parseInt(withdrawalAmount) < 10000 && (
+                                    {withdrawalAmount && parseInt(withdrawalAmount) < 5000 && (
                                         <p className="text-amber-400 text-xs mt-1.5 flex items-center gap-1.5" role="alert">
                                             <Warning size={14} weight="duotone" aria-hidden="true" />
-                                            Minimum withdrawal is 10,000 coins (₦{(10000 * COIN_TO_NAIRA_RATE).toLocaleString()})
+                                            Minimum withdrawal is 5,000 coins (₦{(5000 * COIN_TO_NAIRA_RATE).toLocaleString()})
                                         </p>
                                     )}
                                 </div>
@@ -2024,7 +2024,7 @@ export function TalentDashboardClient({
                                 {/* Submit Button - Enhanced */}
                                 <Button
                                     onClick={handleWithdrawal}
-                                    disabled={isWithdrawing || !withdrawalAmount || !bankName || !accountNumber || !accountName || parseInt(withdrawalAmount) < 10000}
+                                    disabled={isWithdrawing || !withdrawalAmount || !bankName || !accountNumber || !accountName || parseInt(withdrawalAmount) < 5000}
                                     aria-label={isWithdrawing ? 'Submitting withdrawal request...' : 'Submit withdrawal request'}
                                     className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed mt-4 shadow-lg shadow-[#df2531]/30 hover:shadow-[#df2531]/40 transition-all"
                                 >
