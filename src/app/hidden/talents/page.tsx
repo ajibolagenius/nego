@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { MapPin, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { MapPin, Image as ImageIcon } from 'lucide-react'
 import { Profile } from '@/types/database'
 
 interface TalentWithStats extends Profile {
