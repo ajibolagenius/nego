@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft, LockOpen, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { MediaLightbox } from '@/components/hidden/MediaLightbox'
 
 export default async function HiddenTalentMediaPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params
@@ -88,33 +89,7 @@ export default async function HiddenTalentMediaPage({ params }: { params: Promis
             No media found for this talent.
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {media.map((item) => (
-              <div key={item.id} className="relative aspect-[3/4] bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 group">
-                {item.type === 'video' ? (
-                  <video 
-                    src={item.url} 
-                    className="w-full h-full object-cover"
-                    controls
-                    preload="metadata"
-                  />
-                ) : (
-                  <img 
-                    src={item.url} 
-                    alt="Talent Media" 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                    loading="lazy"
-                  />
-                )}
-                
-                {item.is_premium && (
-                  <div className="absolute top-2 right-2 bg-amber-500 text-black text-[10px] font-bold px-2 py-1 rounded shadow-sm">
-                    PREMIUM
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <MediaLightbox media={media} />
         )}
       </div>
     </div>
