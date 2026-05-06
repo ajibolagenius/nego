@@ -124,6 +124,7 @@ export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
     const isLandingPage = pathname === '/'
     const isDashboardPage = pathname?.startsWith('/dashboard')
     const isAdminPage = pathname?.startsWith('/admin')
+    const isHiddenPage = pathname?.startsWith('/hidden')
 
     // Navigation links for landing page
     const landingNavLinks = [
@@ -154,8 +155,8 @@ export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
 
     const authNavLinks = role === 'talent' ? talentNavLinks : clientNavLinks
 
-    // Hide header completely on admin pages
-    if (isAdminPage) {
+    // Hide header completely on admin or hidden pages
+    if (isAdminPage || isHiddenPage) {
         return null
     }
 

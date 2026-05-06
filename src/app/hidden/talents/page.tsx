@@ -9,28 +9,19 @@ interface TalentWithStats extends Profile {
   free_media: number;
 }
 
-export default async function HiddenTalentsPage(
-  props: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }
-) {
-  const searchParams = await props.searchParams;
-  const pageStr = searchParams.page;
-  const page = typeof pageStr === 'string' ? parseInt(pageStr, 10) : 1;
-  const pageSize = 12;
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize - 1;
-
+export default async function HiddenTalentsPage() {
   const supabase = await createClient()
 
-  // Fetch all female talents from the new stats view
+  // Fetch all talents with media from the new stats view
   const { data, error, count } = await supabase
-    .from('female_talents_with_media_stats')
+    .from('talents_with_media_stats')
     .select('*', { count: 'exact' })
     .order('total_media', { ascending: false })
     .order('created_at', { ascending: false })
-    .range(start, end)
+    .limit(10000)
 
   if (error) {
-    console.error('Error fetching female talents:', error)
+    console.error('Error fetching talents:', error)
     return (
       <div className="flex justify-center items-center h-64 text-red-500">
         Failed to load talents. Please make sure the SQL view is created in Supabase.
@@ -40,25 +31,19 @@ export default async function HiddenTalentsPage(
 
   const talents = data as TalentWithStats[] | null;
   const totalItems = count || 0;
-  const totalPages = Math.ceil(totalItems / pageSize);
 
   if (!talents || talents.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-zinc-400">
-        <p className="text-xl">No female talents found on this page.</p>
-        {page > 1 && (
-          <Link href="/hidden/talents" className="mt-4 text-indigo-400 hover:text-indigo-300">
-            Return to first page
-          </Link>
-        )}
+        <p className="text-xl">No talents found.</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Female Talents</h1>
+        <h1 className="text-3xl font-bold">Talents with Media</h1>
         <span className="text-sm text-zinc-400 bg-zinc-800 px-3 py-1 rounded-full">
           {totalItems} Results
         </span>
@@ -150,41 +135,6 @@ export default async function HiddenTalentsPage(
           </Link>
         ))}
       </div>
-
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-8 pt-6 border-t border-zinc-800">
-          {page > 1 ? (
-            <Link 
-              href={`/hidden/talents?page=${page - 1}`}
-              className="flex items-center gap-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors text-sm font-medium"
-            >
-              <ChevronLeft className="w-4 h-4" /> Previous
-            </Link>
-          ) : (
-            <div className="flex items-center gap-1 px-4 py-2 bg-zinc-800/50 text-zinc-500 rounded-lg text-sm font-medium cursor-not-allowed">
-              <ChevronLeft className="w-4 h-4" /> Previous
-            </div>
-          )}
-          
-          <span className="text-zinc-400 text-sm font-medium">
-            Page {page} of {totalPages}
-          </span>
-          
-          {page < totalPages ? (
-            <Link 
-              href={`/hidden/talents?page=${page + 1}`}
-              className="flex items-center gap-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors text-sm font-medium"
-            >
-              Next <ChevronRight className="w-4 h-4" />
-            </Link>
-          ) : (
-            <div className="flex items-center gap-1 px-4 py-2 bg-zinc-800/50 text-zinc-500 rounded-lg text-sm font-medium cursor-not-allowed">
-              Next <ChevronRight className="w-4 h-4" />
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }

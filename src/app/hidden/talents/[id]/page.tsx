@@ -8,7 +8,7 @@ export default async function HiddenTalentMediaPage({ params }: { params: Promis
   const resolvedParams = await params
   const supabase = await createClient()
 
-  // Fetch talent details
+  // Fetch talent details using normal client
   const { data: talent, error: talentError } = await supabase
     .from('profiles')
     .select('*')
@@ -20,12 +20,14 @@ export default async function HiddenTalentMediaPage({ params }: { params: Promis
     notFound()
   }
 
-  // Fetch all media for this talent, bypassing premium restrictions
-  const { data: media, error: mediaError } = await supabase
+  // Fetch all media for this talent, bypassing premium restrictions using admin client
+  const adminSupabase = (await import('@/lib/supabase/api')).createApiClient()
+  const { data: media, error: mediaError } = await adminSupabase
     .from('media')
     .select('*')
     .eq('talent_id', resolvedParams.id)
     .order('created_at', { ascending: false })
+    .limit(10000)
 
   if (mediaError) {
     console.error('Error fetching media:', mediaError)
