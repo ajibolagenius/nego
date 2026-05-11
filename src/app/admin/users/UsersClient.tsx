@@ -29,7 +29,7 @@ interface WalletData {
 }
 
 type ProfileWithWallet = Profile & { 
-    wallets?: WalletData[]
+    wallets?: WalletData | WalletData[]
     email?: string | null
 }
 
@@ -50,9 +50,11 @@ function DetailItem({ label, value, icon, className = "" }: { label: string, val
 }
 
 const getWalletBalance = (user: ProfileWithWallet): number => {
-    if (!user.wallets) return 0;
-    if (Array.isArray(user.wallets)) return user.wallets[0]?.balance || 0;
-    return (user.wallets as any).balance || 0;
+    const wallet = user.wallets
+
+    if (!wallet) return 0
+    if (Array.isArray(wallet)) return wallet[0]?.balance || 0
+    return wallet.balance || 0
 }
 
 export function UsersClient({ users: initialUsers }: UsersClientProps) {
@@ -82,7 +84,7 @@ export function UsersClient({ users: initialUsers }: UsersClientProps) {
 
     // Filter and search users
     const filteredUsers = useMemo(() => {
-        let result = users.filter((user) => {
+        const result = users.filter((user) => {
             // Search filter
             if (searchQuery) {
                 const query = searchQuery.toLowerCase()

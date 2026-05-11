@@ -20,6 +20,14 @@ const EXPIRATION_RULES = {
     pending: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
 }
 
+type ExpirationResult = {
+    expired?: boolean
+    refunded?: boolean
+    notified?: boolean
+    skipped?: boolean
+    error?: string
+}
+
 export async function POST(request: NextRequest) {
     try {
         // Verify cron secret (optional security)
@@ -73,20 +81,37 @@ export async function POST(request: NextRequest) {
                 staleBookings.map(async (booking) => {
                     try {
                         // Update booking status to expired
-                        const { error: updateError } = await supabase
+                        const { data: updatedRows, error: updateError } = await supabase
                             .from('bookings')
                             .update({
                                 status: 'expired',
                                 updated_at: now.toISOString()
                             })
                             .eq('id', booking.id)
+                            .eq('status', status)
+                            .select('id')
 
                         if (updateError) {
                             throw new Error(`Failed to expire booking ${booking.id}: ${updateError.message}`)
                         }
 
+                        if (!updatedRows || updatedRows.length === 0) {
+                            return { skipped: true } satisfies ExpirationResult
+                        }
+
                         // If booking was payment_pending and coins were held in escrow, refund them
                         if (status === 'payment_pending' && booking.total_price > 0) {
+                            const { data: existingRefund } = await supabase
+                                .from('transactions')
+                                .select('id')
+                                .eq('reference_id', booking.id)
+                                .eq('type', 'refund')
+                                .maybeSingle()
+
+                            if (existingRefund) {
+                                return { expired: true, refunded: true, notified: false } satisfies ExpirationResult
+                            }
+
                             const { data: walletData, error: walletError } = await supabase
                                 .from('wallets')
                                 .select('balance, escrow_balance')
@@ -104,7 +129,7 @@ export async function POST(request: NextRequest) {
 
                                 if (!refundError) {
                                     // Create refund transaction (fire and forget)
-                                    supabase.from('transactions').insert({
+                                    await supabase.from('transactions').insert({
                                         user_id: booking.client_id,
                                         amount: 0,
                                         coins: booking.total_price,
@@ -112,9 +137,9 @@ export async function POST(request: NextRequest) {
                                         status: 'completed',
                                         description: `Refund for expired booking #${booking.id.slice(0, 8)}`,
                                         reference_id: booking.id
-                                    }).then(() => {})
+                                    })
                                     
-                                    return { expired: true, refunded: true }
+                                    return { expired: true, refunded: true, notified: false } satisfies ExpirationResult
                                 }
                             }
                         }
@@ -130,9 +155,9 @@ export async function POST(request: NextRequest) {
                             url: `/dashboard/bookings/${booking.id}`,
                         })
 
-                        return { expired: true, refunded: false, notified: true }
+                        return { expired: true, refunded: false, notified: true } satisfies ExpirationResult
                     } catch (err) {
-                        return { error: err instanceof Error ? err.message : String(err) }
+                        return { error: err instanceof Error ? err.message : String(err) } satisfies ExpirationResult
                     }
                 })
             )
@@ -140,9 +165,11 @@ export async function POST(request: NextRequest) {
             // Collect results
             processingResults.forEach((res) => {
                 if (res.status === 'fulfilled') {
-                    const val = res.value as any
+                    const val = res.value
                     if (val.error) {
                         results.errors.push(val.error)
+                    } else if ('skipped' in val) {
+                        return
                     } else {
                         if (val.expired) results.expired++
                         if (val.refunded) results.refunded++

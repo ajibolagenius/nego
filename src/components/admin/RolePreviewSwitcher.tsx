@@ -93,7 +93,7 @@ export function RolePreviewSwitcher({ currentRole }: RolePreviewSwitcherProps) {
 
 interface RoleButtonProps {
     active: boolean
-    icon: any
+    icon: typeof User
     label: string
     onClick: () => void
     disabled?: boolean

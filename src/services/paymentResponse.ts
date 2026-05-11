@@ -16,6 +16,49 @@ interface ProcessResult {
     newBalance?: number
 }
 
+async function sendPurchaseSuccessNotifications(
+    transaction: {
+        user_id: string
+        id: string
+        coins: number
+        amount: number
+        reference: string | null
+    },
+    provider: 'paystack' | 'segpay' | 'nowpayments',
+    newBalance: number
+) {
+    try {
+        await notifyUser({
+            userId: transaction.user_id,
+            type: 'purchase_success',
+            title: 'Purchase Successful! 🎉',
+            message: `Your purchase of ${transaction.coins.toLocaleString()} coins was successful via ${provider}. New balance: ${newBalance.toLocaleString()}.`,
+            data: {
+                transaction_id: transaction.id,
+                coins: transaction.coins,
+                amount: transaction.amount,
+                new_balance: newBalance,
+                reference: transaction.reference,
+                provider,
+            },
+            url: '/dashboard/wallet',
+        })
+
+        if (newBalance < 100) {
+            await notifyUser({
+                userId: transaction.user_id,
+                type: 'low_balance',
+                title: 'Low Balance Warning ⚠️',
+                message: `Your balance is low (${newBalance.toLocaleString()} coins).`,
+                data: { current_balance: newBalance, threshold: 100 },
+                url: '/dashboard/wallet',
+            })
+        }
+    } catch (notificationError) {
+        console.warn(`[${provider} Payment] Notification delivery failed after settlement:`, notificationError)
+    }
+}
+
 export async function processSuccessfulTransaction(
     reference: string,
     amountInNaira: number,
@@ -49,6 +92,50 @@ export async function processSuccessfulTransaction(
             })
             return { status: 'failed', error: 'Amount mismatch' }
         }
+
+        const { data: rpcData, error: rpcError } = await supabase.rpc('process_successful_transaction', {
+            p_reference: reference,
+            p_amount_in_naira: amountInNaira,
+            p_provider: provider,
+        })
+
+        if (!rpcError) {
+            const settlement = (typeof rpcData === 'string' ? JSON.parse(rpcData) : rpcData) as {
+                status?: string
+                message?: string
+                error?: string
+                new_balance?: number
+            } | null
+
+            if (!settlement || settlement.status === 'failed') {
+                return {
+                    status: 'failed',
+                    error: settlement?.error || 'Payment settlement failed',
+                }
+            }
+
+            if (settlement.message === 'Transaction already processed') {
+                return {
+                    status: 'success',
+                    message: settlement.message,
+                    newBalance: settlement.new_balance,
+                }
+            }
+
+            const newBalance = settlement.new_balance ?? 0
+
+            await sendPurchaseSuccessNotifications(transaction, provider, newBalance)
+
+            console.log(`[${provider} Payment] Successfully credited ${transaction.coins} coins to user ${transaction.user_id}`)
+            return { status: 'success', newBalance }
+        }
+
+        if (rpcError.code !== '42883' && !rpcError.message?.includes('process_successful_transaction')) {
+            console.error(`[${provider} Payment] RPC settlement failed:`, rpcError)
+            return { status: 'failed', error: rpcError.message }
+        }
+
+        console.warn(`[${provider} Payment] RPC settlement unavailable, falling back to legacy path`)
 
         // 3. Update transaction status to completed
         const { data: updatedTransaction, error: updateError } = await supabase
@@ -127,34 +214,7 @@ export async function processSuccessfulTransaction(
             return { status: 'failed', error: 'Credit failed' }
         }
 
-        await notifyUser({
-            userId: transaction.user_id,
-            type: 'purchase_success',
-            title: 'Purchase Successful! 🎉',
-            message: `Your purchase of ${transaction.coins.toLocaleString()} coins was successful via ${provider}. New balance: ${newBalance.toLocaleString()}.`,
-            data: {
-                transaction_id: transaction.id,
-                coins: transaction.coins,
-                amount: transaction.amount,
-                new_balance: newBalance,
-                reference: transaction.reference,
-                provider
-            },
-            url: '/dashboard/wallet',
-        })
-
-        // 6. Low Balance Warning
-        if (newBalance < 100) {
-            await notifyUser({
-                userId: transaction.user_id,
-                type: 'low_balance',
-                title: 'Low Balance Warning ⚠️',
-                message: `Your balance is low (${newBalance.toLocaleString()} coins).`,
-                data: { current_balance: newBalance, threshold: 100 },
-                url: '/dashboard/wallet',
-            })
-        }
-
+        await sendPurchaseSuccessNotifications(transaction, provider, newBalance)
         console.log(`[${provider} Payment] Successfully credited ${transaction.coins} coins to user ${transaction.user_id}`)
         return { status: 'success', newBalance }
 

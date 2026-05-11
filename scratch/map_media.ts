@@ -1,7 +1,7 @@
-import { createClient } from '@supabase/supabase-js'
-import dotenv from 'dotenv'
 import path from 'path'
 import fs from 'fs'
+import { createClient } from '@supabase/supabase-js'
+import dotenv from 'dotenv'
 
 // Load environment variables
 const envPath = path.join(process.cwd(), '.env.local')
@@ -106,7 +106,13 @@ async function mapMedia() {
         return
     }
 
-    const orphansToInsert: any[] = []
+    const orphansToInsert: Array<{
+        talent_id: string
+        url: string
+        type: 'image' | 'video'
+        is_premium: boolean
+        unlock_price: number
+    }> = []
 
     for (const folder of rootFolders) {
         if (folder.id) continue // Skip files in root

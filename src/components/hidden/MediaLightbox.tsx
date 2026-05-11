@@ -1,20 +1,31 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Media } from '@/types/database'
 
 export function MediaLightbox({ media }: { media: Media[] }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
 
+  useEffect(() => {
+    if (selectedIndex === null) {
+      return
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [selectedIndex])
+
   const openLightbox = (index: number) => {
     setSelectedIndex(index)
-    document.body.style.overflow = 'hidden' // Prevent background scrolling
   }
 
   const closeLightbox = () => {
     setSelectedIndex(null)
-    document.body.style.overflow = '' // Restore background scrolling
   }
 
   const goToNext = (e: React.MouseEvent) => {
