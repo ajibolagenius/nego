@@ -7,6 +7,15 @@ import { generateTalentOpenGraphMetadata } from '@/lib/og-metadata'
 import { generateSlug } from '@/lib/talent-url'
 import { createApiClient } from '@/lib/supabase/api'
 import { createClient, getServerProfile } from '@/lib/supabase/server'
+import type { Profile, Review, ServiceType, TalentMenu, Wallet } from '@/types/database'
+
+type TalentProfileRow = Profile & {
+    talent_menus?: Array<TalentMenu & { service_type?: ServiceType | null }>
+}
+
+type ReviewWithClient = Review & {
+    client?: Profile
+}
 
 // Create admin client lazily with service role key for bypassing RLS
 function getAdminClient() {
@@ -146,19 +155,19 @@ export default async function TalentProfileBySlugPage({ params }: { params: Prom
     ])
 
     const media = mediaResult.data
-    const allReviews = reviewsResult.data
-    const wallet = userContextResult as any
+    const allReviews = reviewsResult.data as ReviewWithClient[] | null
+    const wallet = userContextResult as Wallet | null
     let averageRating = 0
     let reviewCount = 0
     if (allReviews && allReviews.length > 0) {
         reviewCount = allReviews.length
-        averageRating = allReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviewCount
+        averageRating = allReviews.reduce((sum: number, r) => sum + r.rating, 0) / reviewCount
     }
 
     // Map talent_menus to expected structure
-    const mappedMenus = (talent.talent_menus || []).map((m: any) => ({
+    const mappedMenus = ((talent as TalentProfileRow).talent_menus || []).map((m) => ({
         ...m,
-        service_type: m.service_type
+        service_type: m.service_type || null
     }))
 
     const talentWithMedia = {
@@ -176,7 +185,7 @@ export default async function TalentProfileBySlugPage({ params }: { params: Prom
                 talent_id: talent.id,
                 viewer_id: user?.id || null,
                 viewer_role: user ? (currentUserProfile?.role || 'client') : 'anonymous'
-            }).then(({ error }: { error: any }) => {
+            }).then(({ error }: { error: Error | null }) => {
                 if (error) console.error('[TalentProfile] Error tracking view:', error)
             })
 
@@ -185,7 +194,7 @@ export default async function TalentProfileBySlugPage({ params }: { params: Prom
                 supabaseAdmin.from('profiles')
                     .update({ last_active_at: new Date().toISOString() })
                     .eq('id', user.id)
-                    .then(({ error }: { error: any }) => {
+                    .then(({ error }: { error: Error | null }) => {
                         if (error) console.error('[TalentProfile] Error updating activity:', error)
                     })
             }

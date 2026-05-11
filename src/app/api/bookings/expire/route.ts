@@ -166,8 +166,11 @@ export async function POST(request: NextRequest) {
             processingResults.forEach((res) => {
                 if (res.status === 'fulfilled') {
                     const val = res.value
-                    if (val.error) {
-                        results.errors.push(val.error)
+                    if ('error' in val) {
+                        const errorMessage = val.error
+                        if (errorMessage) {
+                            results.errors.push(errorMessage)
+                        }
                     } else if ('skipped' in val) {
                         return
                     } else {
