@@ -1,7 +1,7 @@
 'use client'
 
 import {
-    ArrowLeft, Bell, Lock, Envelope, Globe, SignOut, Trash, Warning,
+    ArrowLeft, Bell, Lock, Envelope, SignOut, Trash, Warning,
     CaretRight, ShieldCheck, Eye, EyeSlash, SpinnerGap, CheckCircle, X, Check, Circle
 } from '@phosphor-icons/react'
 import Link from 'next/link'
@@ -28,12 +28,8 @@ interface PasswordStrength {
 
 export function SettingsClient({ user, profile }: SettingsClientProps) {
     const router = useRouter()
-    const emailNotificationsEnabled = profile?.email_notifications_enabled !== false
-    const [notifications, setNotifications] = useState({
-        bookings: emailNotificationsEnabled,
-        messages: emailNotificationsEnabled,
-        promotions: emailNotificationsEnabled,
-    })
+    const [emailNotifications, setEmailNotifications] = useState(profile?.email_notifications_enabled !== false)
+    const [savingEmailNotifications, setSavingEmailNotifications] = useState(false)
     const [privacy, setPrivacy] = useState({
         showOnlineStatus: true,
         showLocation: true,
@@ -59,7 +55,6 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
     // Loading states for individual settings
-    const [savingNotifications, setSavingNotifications] = useState<string | null>(null)
     const [savingPrivacy, setSavingPrivacy] = useState<string | null>(null)
     const [togglingStatus, setTogglingStatus] = useState(false)
     const [isOnline, setIsOnline] = useState(profile?.status === 'online')
@@ -98,39 +93,30 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
         setTimeout(() => setErrorMessage(null), 5000)
     }, [])
 
-    // Save notification setting
-    const saveNotificationSetting = useCallback(async (key: keyof typeof notifications, value: boolean) => {
-        setSavingNotifications(key)
-        const previousNotifications = notifications
-
-        // We use a single profile flag for email notification consent.
-        const nextNotifications = {
-            bookings: value,
-            messages: value,
-            promotions: value,
-        }
-        setNotifications(nextNotifications)
+    // Toggle email notifications
+    const toggleEmailNotifications = useCallback(async () => {
+        const newValue = !emailNotifications
+        setSavingEmailNotifications(true)
 
         try {
             const supabase = createClient()
             const { error } = await supabase
                 .from('profiles')
                 .update({
-                    email_notifications_enabled: value,
+                    email_notifications_enabled: newValue,
                     updated_at: new Date().toISOString(),
                 })
                 .eq('id', user.id)
 
             if (error) throw error
-            showSuccess(`Email notifications ${value ? 'enabled' : 'disabled'}`)
+            setEmailNotifications(newValue)
+            showSuccess(`Email notifications ${newValue ? 'enabled' : 'disabled'}`)
         } catch (error) {
-            // Revert on error
-            setNotifications(previousNotifications)
             showError('Failed to update email notification setting')
         } finally {
-            setSavingNotifications(null)
+            setSavingEmailNotifications(false)
         }
-    }, [notifications, user.id, showSuccess, showError])
+    }, [emailNotifications, user.id, showSuccess, showError])
 
     // Save privacy setting
     const savePrivacySetting = useCallback(async (key: keyof typeof privacy, value: boolean) => {
@@ -392,7 +378,6 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
                     {/* Email Notifications Section */}
                     <div className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
                         <h2 className="text-sm font-bold text-white/50 uppercase tracking-wider mb-4">Email Notifications</h2>
-                        <p className="text-white/40 text-sm mb-4">Choose which email notifications you want to receive</p>
                         <div className="space-y-2">
                             <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300">
                                 <div className="flex items-center gap-4">
@@ -400,68 +385,46 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
                                         <Bell size={20} weight="duotone" className="text-[#df2531]" />
                                     </div>
                                     <div>
-                                        <p className="text-white font-medium">Booking Updates</p>
-                                        <p className="text-white/40 text-sm">Get notified about booking status changes and confirmations</p>
+                                        <p className="text-white font-medium">Email Notifications</p>
+                                        <p className="text-white/40 text-sm">Booking updates, messages, and promotional offers</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    {savingNotifications === 'bookings' && (
+                                    {savingEmailNotifications && (
                                         <SpinnerGap size={16} className="animate-spin text-white/40" aria-hidden="true" />
                                     )}
                                     <Toggle
-                                        enabled={notifications.bookings}
-                                        onChange={() => saveNotificationSetting('bookings', !notifications.bookings)}
-                                        disabled={savingNotifications === 'bookings'}
-                                        ariaLabel="Toggle booking email notifications"
+                                        enabled={emailNotifications}
+                                        onChange={toggleEmailNotifications}
+                                        disabled={savingEmailNotifications}
+                                        ariaLabel="Toggle email notifications"
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                                        <Envelope size={20} weight="duotone" className="text-white/60" />
-                                    </div>
-                                    <div>
-                                        <p className="text-white font-medium">Messages</p>
-                                        <p className="text-white/40 text-sm">New message notifications</p>
-                                    </div>
+                            {emailNotifications && (
+                                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                                    <p className="text-white/30 text-xs font-medium uppercase tracking-wider mb-3">You&apos;ll receive emails about:</p>
+                                    <ul className="space-y-2">
+                                        <li className="flex items-center gap-2 text-white/50 text-sm">
+                                            <Check size={14} className="text-[#df2531] shrink-0" aria-hidden="true" />
+                                            Booking confirmations and status changes
+                                        </li>
+                                        <li className="flex items-center gap-2 text-white/50 text-sm">
+                                            <Check size={14} className="text-[#df2531] shrink-0" aria-hidden="true" />
+                                            New messages and conversation updates
+                                        </li>
+                                        <li className="flex items-center gap-2 text-white/50 text-sm">
+                                            <Check size={14} className="text-[#df2531] shrink-0" aria-hidden="true" />
+                                            Promotions, offers, and platform news
+                                        </li>
+                                        <li className="flex items-center gap-2 text-white/50 text-sm">
+                                            <Check size={14} className="text-[#df2531] shrink-0" aria-hidden="true" />
+                                            Withdrawal and payment updates
+                                        </li>
+                                    </ul>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    {savingNotifications === 'messages' && (
-                                        <SpinnerGap size={16} className="animate-spin text-white/40" aria-hidden="true" />
-                                    )}
-                                    <Toggle
-                                        enabled={notifications.messages}
-                                        onChange={() => saveNotificationSetting('messages', !notifications.messages)}
-                                        disabled={savingNotifications === 'messages'}
-                                        ariaLabel="Toggle message email notifications"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                                        <Globe size={20} weight="duotone" className="text-white/60" />
-                                    </div>
-                                    <div>
-                                        <p className="text-white font-medium">Promotions</p>
-                                        <p className="text-white/40 text-sm">Offers and news updates</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    {savingNotifications === 'promotions' && (
-                                        <SpinnerGap size={16} className="animate-spin text-white/40" aria-hidden="true" />
-                                    )}
-                                    <Toggle
-                                        enabled={notifications.promotions}
-                                        onChange={() => saveNotificationSetting('promotions', !notifications.promotions)}
-                                        disabled={savingNotifications === 'promotions'}
-                                        ariaLabel="Toggle promotion email notifications"
-                                    />
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </div>
 

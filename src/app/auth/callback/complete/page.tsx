@@ -92,6 +92,11 @@ export default function AuthCallbackPage() {
 
                     setStatus('Redirecting...')
 
+                    // Request notification permission early (non-blocking)
+                    if ('Notification' in window && Notification.permission === 'default') {
+                        Notification.requestPermission().catch(() => {})
+                    }
+
                     // Redirect to dashboard (role-based routing handled by dashboard/middleware)
                     router.push('/dashboard')
                     router.refresh()
@@ -123,12 +128,21 @@ export default function AuthCallbackPage() {
                         }
 
                         setStatus('Redirecting...')
+
+                        if ('Notification' in window && Notification.permission === 'default') {
+                            Notification.requestPermission().catch(() => {})
+                        }
+
                         router.push('/dashboard')
                         router.refresh()
                         return
                     }
 
                     setStatus('Redirecting...')
+
+                    if ('Notification' in window && Notification.permission === 'default') {
+                        Notification.requestPermission().catch(() => {})
+                    }
 
                     // Redirect to dashboard (role-based routing handled by dashboard/middleware)
                     router.push('/dashboard')

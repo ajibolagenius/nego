@@ -301,6 +301,11 @@ export default function RegisterPage() {
 
             // Redirect based on session status
             if (data.user && data.session) {
+                // Request notification permission early (non-blocking)
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission().catch(() => {})
+                }
+
                 // User is logged in, redirect to dashboard (role-based routing happens there)
                 if (role === 'talent') {
                     router.push('/dashboard/talent')
