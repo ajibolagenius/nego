@@ -184,35 +184,30 @@ export function MessagesClient({ userId, conversations: initialConversations, us
         scrollToBottom()
 
         try {
-            const { data, error: sendError } = await supabase
-                .from('messages')
-                .insert({
-                    conversation_id: selectedConversation.id,
-                    sender_id: userId,
+            const response = await fetch('/api/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    conversationId: selectedConversation.id,
                     content: messageContent,
-                })
-                .select(`
-          *,
-          sender:profiles!messages_sender_id_fkey(id, display_name, avatar_url, is_verified)
-        `)
-                .single()
+                }),
+            })
 
-            if (sendError) throw sendError
+            const result = await response.json()
 
-            if (data) {
-                // Replace temp message with real one when received via real-time
-                // The real-time subscription will handle this, but we update optimistically
+            if (!response.ok || result.error) {
+                throw new Error(result.error || 'Failed to send message')
+            }
+
+            if (result.message) {
+                // Replace temp message with the server-returned message
                 setMessages(prev => {
                     const filtered = prev.filter(m => m.id !== tempMessage.id)
-                    const updated = [...filtered, data]
-                    // Sort to maintain order
+                    const updated = [...filtered, result.message]
                     return updated.sort((a, b) =>
                         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
                     )
                 })
-
-                // Note: last_message_at is updated by database trigger, but we can also update it here
-                // The conversations channel will handle real-time updates
             }
         } catch (err) {
             console.error('Error sending message:', err)

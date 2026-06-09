@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
-// SHA1 hash using Web Crypto API
 async function sha1(message: string): Promise<string> {
   const encoder = new TextEncoder()
   const data = encoder.encode(message)
@@ -11,19 +11,10 @@ async function sha1(message: string): Promise<string> {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication using cookies
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      return NextResponse.json({ error: 'Configuration error' }, { status: 500 })
-    }
-
-    // Get auth token from cookie
-    const cookieHeader = request.headers.get('cookie') || ''
-    const authToken = cookieHeader.split(';').find(c => c.trim().startsWith('sb-'))
-
-    if (!authToken) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -42,13 +33,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing publicId' }, { status: 400 })
     }
 
+    // Verify the user owns the media they're trying to delete
+    // Check profiles (avatar_url) and media table
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, avatar_url, role')
+      .eq('id', user.id)
+      .single()
+
+    const isAdmin = profile?.role === 'admin'
+    const ownsAvatar = profile?.avatar_url?.includes(publicId)
+
+    let ownsMedia = false
+    if (!ownsAvatar && !isAdmin) {
+      const { data: media } = await supabase
+        .from('media')
+        .select('id, talent_id')
+        .eq('talent_id', user.id)
+        .like('url', `%${publicId}%`)
+        .maybeSingle()
+
+      ownsMedia = !!media
+    }
+
+    if (!ownsAvatar && !ownsMedia && !isAdmin) {
+      return NextResponse.json({ error: 'You do not have permission to delete this asset' }, { status: 403 })
+    }
+
     const timestamp = Math.round(new Date().getTime() / 1000)
 
-    // Create signature for deletion
     const paramsToSign = `public_id=${publicId}&timestamp=${timestamp}`
     const signature = await sha1(paramsToSign + apiSecret)
 
-    // Call Cloudinary destroy API
     const formData = new URLSearchParams()
     formData.append('public_id', publicId)
     formData.append('timestamp', timestamp.toString())
@@ -83,4 +99,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'

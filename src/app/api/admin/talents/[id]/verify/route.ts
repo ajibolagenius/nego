@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { logAdminAction, getClientIP, getUserAgent } from '@/lib/admin/audit-log'
 import { validateAdmin } from '@/lib/admin/validation'
+import { notifyUser } from '@/lib/notifications'
 import { createApiClient } from '@/lib/supabase/api'
 import { stripAutoVerificationLock } from '@/lib/talent-verification'
 
@@ -97,6 +98,16 @@ export async function POST(
             ip_address: getClientIP(request.headers),
             user_agent: getUserAgent(request.headers),
         })
+
+        // Notify talent they've been verified
+        notifyUser({
+            userId: talentId,
+            type: 'talent_verified',
+            title: 'You\'re Verified! ✅',
+            message: 'Congratulations! Your profile has been verified by the Nego team. Clients can now see your verified badge.',
+            data: { talent_id: talentId },
+            url: '/dashboard/talent',
+        }).catch(err => console.error('[Talent Verify] Notification failed:', err))
 
         return NextResponse.json({
             success: true,

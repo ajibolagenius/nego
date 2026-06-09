@@ -32,7 +32,13 @@ export async function POST(request: NextRequest) {
 
         const internalSecret = process.env.NOTIFICATION_DISPATCH_SECRET
         const headerSecret = request.headers.get('x-notification-secret')
-        const isInternalRequest = Boolean(internalSecret && headerSecret === internalSecret)
+        const isInternalRequest = Boolean(
+            internalSecret &&
+            internalSecret.length > 0 &&
+            headerSecret &&
+            headerSecret.length === internalSecret.length &&
+            headerSecret === internalSecret
+        )
 
         if (!isInternalRequest) {
             const supabase = await createClient()
@@ -47,8 +53,17 @@ export async function POST(request: NextRequest) {
                 .eq('id', user.id)
                 .single()
 
-            if (profileError || profile?.role !== 'admin') {
+            if (profileError || !profile) {
                 return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+            }
+
+            // Admins can dispatch any notification
+            if (profile.role !== 'admin') {
+                // Non-admin users can only dispatch specific notification types
+                const allowedTypes = ['dispute_filed', 'review_received', 'message_received']
+                if (!allowedTypes.includes(type)) {
+                    return NextResponse.json({ error: 'Forbidden: non-admin users can only dispatch dispute, review, and message notifications' }, { status: 403 })
+                }
             }
         }
 

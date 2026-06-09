@@ -403,6 +403,20 @@ export function WriteReviewModal({ bookingId, talentId, clientId, onReviewSubmit
                 console.error('[WriteReviewModal] Failed to send review notification email:', emailError)
             }
 
+            // Send push notification to talent
+            fetch('/api/notifications/dispatch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'review_received',
+                    title: `New ${rating}-Star Review! ⭐`,
+                    message: `${clientData?.display_name || 'A client'} left you a ${rating}-star review.`,
+                    data: { booking_id: bookingId, rating, client_id: clientId },
+                    url: `/dashboard/talent`,
+                    targets: { userIds: [talentId] },
+                }),
+            }).catch(err => console.error('[WriteReviewModal] Push notification failed:', err))
+
             onReviewSubmit(data)
             onClose?.()
         } catch (err) {

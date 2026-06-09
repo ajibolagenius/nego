@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { logAdminAction, getClientIP, getUserAgent } from '@/lib/admin/audit-log'
 import { validateAdmin, validateVerification } from '@/lib/admin/validation'
+import { notifyUser } from '@/lib/notifications'
 import { createApiClient } from '@/lib/supabase/api'
 
 export async function POST(
@@ -78,6 +79,28 @@ export async function POST(
       ip_address: getClientIP(request.headers),
       user_agent: getUserAgent(request.headers),
     })
+
+    // Notify the client that their verification was approved
+    try {
+      const { data: booking } = await apiClient
+        .from('bookings')
+        .select('client_id')
+        .eq('id', bookingId)
+        .single()
+
+      if (booking?.client_id) {
+        notifyUser({
+          userId: booking.client_id,
+          type: 'verification_approved',
+          title: 'Verification Approved ✅',
+          message: 'Your booking verification has been approved. The talent can now review your booking request.',
+          data: { booking_id: bookingId },
+          url: `/dashboard/bookings/${bookingId}`,
+        }).catch(err => console.error('[Verification Approve] Notification failed:', err))
+      }
+    } catch (err) {
+      console.error('[Verification Approve] Failed to send notification:', err)
+    }
 
     return NextResponse.json({
       success: true,

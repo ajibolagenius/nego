@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { notifyUser } from '@/lib/notifications'
 import { createApiClient } from '@/lib/supabase/api'
 import { createClient } from '@/lib/supabase/server'
 
@@ -22,7 +23,7 @@ export async function POST(
         // Fetch the booking to verify ownership
         const { data: booking, error: fetchError } = await supabase
             .from('bookings')
-            .select('id, talent_id, total_price, status')
+            .select('id, talent_id, client_id, total_price, status')
             .eq('id', id)
             .single()
 
@@ -164,6 +165,16 @@ export async function POST(
         }
 
         const updatedBooking = updatedBookings[0]
+
+        // Notify client that their booking was accepted
+        notifyUser({
+            userId: booking.client_id,
+            type: 'booking_accepted',
+            title: 'Booking Accepted! ✅',
+            message: 'Your booking request has been accepted. Get ready for your appointment!',
+            data: { booking_id: id },
+            url: `/dashboard/bookings/${id}`,
+        }).catch(err => console.error('[Booking Accept] Notification failed:', err))
 
         return NextResponse.json({
             success: true,

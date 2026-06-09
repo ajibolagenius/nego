@@ -82,6 +82,25 @@ export function DisputesPageClient({ userId, disputes, bookings }: DisputesPageC
             if (error) throw error
 
             toast.success('Dispute filed successfully')
+
+            // Notify the other party and admins about the dispute
+            const otherPartyId = userId === booking.client_id ? booking.talent_id : booking.client_id
+            fetch('/api/notifications/dispatch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'dispute_filed',
+                    title: 'New Dispute Filed',
+                    message: `A dispute has been filed regarding booking. Title: ${formData.title}`,
+                    data: { booking_id: formData.booking_id, dispute_type: formData.dispute_type },
+                    url: `/dashboard/disputes`,
+                    targets: {
+                        userIds: [otherPartyId],
+                        roles: ['admin'],
+                    },
+                }),
+            }).catch(err => console.error('[Dispute] Notification dispatch failed:', err))
+
             setShowForm(false)
             setFormData({
                 booking_id: '',

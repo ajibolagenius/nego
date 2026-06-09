@@ -37,6 +37,14 @@ const notificationIcons: Record<NotificationType, Icon> = {
     media_unlocked: Info,
     gift_received: Info,
     gift_sent: Info,
+    message_received: Info,
+    dispute_filed: AlertCircle,
+    dispute_resolved: CheckCheck,
+    review_received: Info,
+    verification_approved: CheckCheck,
+    talent_verified: UserCheck,
+    talent_unverified: UserX,
+    media_deleted: AlertCircle,
     general: Info,
 }
 
@@ -55,6 +63,14 @@ const notificationColors: Record<NotificationType, string> = {
     media_unlocked: 'text-purple-500 bg-purple-500/10',
     gift_received: 'text-pink-500 bg-pink-500/10',
     gift_sent: 'text-pink-500 bg-pink-500/10',
+    message_received: 'text-blue-500 bg-blue-500/10',
+    dispute_filed: 'text-orange-500 bg-orange-500/10',
+    dispute_resolved: 'text-green-500 bg-green-500/10',
+    review_received: 'text-yellow-500 bg-yellow-500/10',
+    verification_approved: 'text-green-500 bg-green-500/10',
+    talent_verified: 'text-green-500 bg-green-500/10',
+    talent_unverified: 'text-orange-500 bg-orange-500/10',
+    media_deleted: 'text-red-500 bg-red-500/10',
     general: 'text-blue-500 bg-blue-500/10',
 }
 

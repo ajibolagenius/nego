@@ -26,8 +26,23 @@ const notificationIcons: Record<string, { icon: typeof Bell; color: string; bg: 
     booking_rejected: { icon: X, color: 'text-red-400', bg: 'bg-red-500/10' },
     booking_completed: { icon: Star, color: 'text-amber-400', bg: 'bg-amber-500/10' },
     booking_expired: { icon: Clock, color: 'text-white/40', bg: 'bg-white/5' },
+    booking_cancelled: { icon: X, color: 'text-red-400', bg: 'bg-red-500/10' },
     withdrawal_approved: { icon: Coin, color: 'text-green-400', bg: 'bg-green-500/10' },
     withdrawal_rejected: { icon: Coin, color: 'text-red-400', bg: 'bg-red-500/10' },
+    purchase_success: { icon: Coin, color: 'text-green-400', bg: 'bg-green-500/10' },
+    purchase_failed: { icon: Warning, color: 'text-red-400', bg: 'bg-red-500/10' },
+    low_balance: { icon: Warning, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+    media_unlocked: { icon: Bell, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    gift_received: { icon: Coin, color: 'text-pink-400', bg: 'bg-pink-500/10' },
+    gift_sent: { icon: Coin, color: 'text-pink-400', bg: 'bg-pink-500/10' },
+    message_received: { icon: BellRinging, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    dispute_filed: { icon: Warning, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+    dispute_resolved: { icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-500/10' },
+    review_received: { icon: Star, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+    verification_approved: { icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-500/10' },
+    talent_verified: { icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-500/10' },
+    talent_unverified: { icon: X, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+    media_deleted: { icon: Warning, color: 'text-red-400', bg: 'bg-red-500/10' },
     general: { icon: Bell, color: 'text-[#df2531]', bg: 'bg-[#df2531]/10' },
 }
 
@@ -392,12 +407,21 @@ export function NotificationsClient({ user, profile, notifications: initialNotif
                                 >
                                     <option value="all">All Types</option>
                                     <option value="booking_request">Booking Requests</option>
-                                    <option value="booking_accepted">Accepted</option>
-                                    <option value="booking_rejected">Rejected</option>
-                                    <option value="booking_completed">Completed</option>
-                                    <option value="booking_expired">Expired</option>
-                                    <option value="withdrawal_approved">Withdrawals Approved</option>
-                                    <option value="withdrawal_rejected">Withdrawals Rejected</option>
+                                    <option value="booking_accepted">Booking Accepted</option>
+                                    <option value="booking_rejected">Booking Rejected</option>
+                                    <option value="booking_completed">Booking Completed</option>
+                                    <option value="booking_expired">Booking Expired</option>
+                                    <option value="message_received">Messages</option>
+                                    <option value="review_received">Reviews</option>
+                                    <option value="dispute_filed">Disputes</option>
+                                    <option value="gift_received">Gifts Received</option>
+                                    <option value="gift_sent">Gifts Sent</option>
+                                    <option value="media_unlocked">Media Unlocked</option>
+                                    <option value="purchase_success">Purchases</option>
+                                    <option value="withdrawal_approved">Withdrawals</option>
+                                    <option value="verification_approved">Verifications</option>
+                                    <option value="talent_verified">Talent Verified</option>
+                                    <option value="media_deleted">Media Removed</option>
                                     <option value="general">General</option>
                                 </select>
                             </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { logAdminAction } from "@/lib/admin/audit-log";
 import { validateAdmin } from "@/lib/admin/validation";
+import { notifyUser } from "@/lib/notifications";
 import { createApiClient } from "@/lib/supabase/api";
 
 export async function DELETE(
@@ -58,6 +59,18 @@ export async function DELETE(
         media_url: media.url,
       },
     });
+
+    // 5. Notify the talent their media was removed
+    if (media.talent_id) {
+      notifyUser({
+        userId: media.talent_id,
+        type: 'media_deleted' as import('@/types/database').NotificationType,
+        title: 'Media Removed',
+        message: 'One of your media uploads has been removed by the moderation team. Please review our content guidelines.',
+        data: { media_id: mediaId, media_type: media.type },
+        url: '/dashboard/talent',
+      }).catch(err => console.error('[Admin Media Delete] Notification failed:', err));
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

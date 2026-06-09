@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { logAdminAction, getClientIP, getUserAgent } from '@/lib/admin/audit-log'
 import { validateAdmin } from '@/lib/admin/validation'
+import { notifyUser } from '@/lib/notifications'
 import { createApiClient } from '@/lib/supabase/api'
 import { addAutoVerificationLock } from '@/lib/talent-verification'
 
@@ -85,6 +86,16 @@ export async function POST(
             ip_address: getClientIP(request.headers),
             user_agent: getUserAgent(request.headers),
         })
+
+        // Notify talent they've been unverified
+        notifyUser({
+            userId: talentId,
+            type: 'talent_unverified',
+            title: 'Verification Status Updated',
+            message: 'Your verified status has been removed. Please contact support if you believe this was a mistake.',
+            data: { talent_id: talentId },
+            url: '/dashboard/talent',
+        }).catch(err => console.error('[Talent Unverify] Notification failed:', err))
 
         return NextResponse.json({
             success: true,

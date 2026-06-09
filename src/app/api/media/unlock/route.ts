@@ -9,20 +9,30 @@ export async function POST(request: NextRequest) {
         const supabase = await createClient() // For user session/auth if needed
         const apiClient = createApiClient() // For wallet operations to bypass RLS
 
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+        if (authError || !user) {
+            return NextResponse.json(
+                { success: false, error: 'Unauthorized' },
+                { status: 401 }
+            )
+        }
+
         const body = await request.json()
-        const { userId, mediaId, talentId, unlockPrice } = body
+        const { mediaId, talentId, unlockPrice } = body
+        const userId = user.id
 
         // Validate input
-        if (!userId || !mediaId || !talentId || unlockPrice === undefined || unlockPrice === null) {
+        if (!mediaId || !talentId || unlockPrice === undefined || unlockPrice === null) {
             return NextResponse.json(
-                { success: false, error: 'Missing required fields: userId, mediaId, talentId, and unlockPrice are required' },
+                { success: false, error: 'Missing required fields: mediaId, talentId, and unlockPrice are required' },
                 { status: 400 }
             )
         }
 
         // Validate UUIDs
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-        if (!uuidRegex.test(userId) || !uuidRegex.test(mediaId) || !uuidRegex.test(talentId)) {
+        if (!uuidRegex.test(mediaId) || !uuidRegex.test(talentId)) {
             return NextResponse.json(
                 { success: false, error: 'Invalid ID format. All IDs must be valid UUIDs' },
                 { status: 400 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { notifyUser } from '@/lib/notifications'
 import { createApiClient } from '@/lib/supabase/api'
 import { createClient } from '@/lib/supabase/server'
 
@@ -120,6 +121,16 @@ export async function POST(
     }
 
     const updatedBooking = updatedBookings[0]
+
+    // Notify client that their booking has been completed
+    notifyUser({
+      userId: booking.client_id,
+      type: 'booking_completed',
+      title: 'Booking Completed! 🎉',
+      message: 'Your booking has been completed. Don\'t forget to leave a review!',
+      data: { booking_id: id },
+      url: `/dashboard/bookings/${id}`,
+    }).catch(err => console.error('[Booking Complete] Notification failed:', err))
 
     console.log('[API] Starting escrow release process:', {
       bookingId: id,

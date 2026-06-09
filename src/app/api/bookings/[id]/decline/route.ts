@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { notifyUser } from '@/lib/notifications'
 import { createApiClient } from '@/lib/supabase/api'
 import { createClient } from '@/lib/supabase/server'
 
@@ -24,7 +25,7 @@ export async function POST(
         // Fetch the booking to verify ownership
         const { data: booking, error: fetchError } = await supabase
             .from('bookings')
-            .select('id, talent_id, status')
+            .select('id, talent_id, client_id, status')
             .eq('id', id)
             .single()
 
@@ -158,6 +159,18 @@ export async function POST(
         const updatedBooking = updatedBookings[0]
 
         // TODO: Refund client's coins in a production app
+
+        // Notify client that their booking was declined
+        notifyUser({
+            userId: booking.client_id,
+            type: 'booking_rejected',
+            title: 'Booking Declined',
+            message: reason
+                ? `Your booking was declined. Reason: ${reason}`
+                : 'Your booking request has been declined. Your coins will be refunded.',
+            data: { booking_id: id, reason: reason || null },
+            url: `/dashboard/bookings/${id}`,
+        }).catch(err => console.error('[Booking Decline] Notification failed:', err))
 
         return NextResponse.json({
             success: true,

@@ -12,7 +12,13 @@ export async function POST(request: NextRequest) {
     try {
         const internalSecret = process.env.NOTIFICATION_DISPATCH_SECRET
         const headerSecret = request.headers.get('x-notification-secret')
-        const isInternalRequest = Boolean(internalSecret && headerSecret === internalSecret)
+        const isInternalRequest = Boolean(
+            internalSecret &&
+            internalSecret.length > 0 &&
+            headerSecret &&
+            headerSecret.length === internalSecret.length &&
+            headerSecret === internalSecret
+        )
 
         const payload = await request.json()
         const { userId, title, body, icon, badge, tag, data, url } = payload

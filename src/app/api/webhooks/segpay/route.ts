@@ -1,28 +1,41 @@
+import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { processSuccessfulTransaction } from '@/services/paymentResponse'
 
-// Segpay Webhook/Postback Handler
-// Segpay typically sends data as x-www-form-urlencoded or JSON
-// Verification usually involves checking the referer headers or a specific hash/token
+const SEGPAY_SECRET = process.env.SEGPAY_WEBHOOK_SECRET
+
+function verifySegpaySignature(body: string, signature: string | null): boolean {
+    if (!SEGPAY_SECRET) {
+        console.error('[Segpay Webhook] SEGPAY_WEBHOOK_SECRET not configured - rejecting request')
+        return false
+    }
+    if (!signature) {
+        return false
+    }
+    const hash = crypto.createHmac('sha256', SEGPAY_SECRET).update(body).digest('hex')
+    return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(signature))
+}
+
 export async function POST(request: NextRequest) {
     try {
         const bodyText = await request.text()
+
+        const signature = request.headers.get('x-segpay-signature') || request.headers.get('x-signature')
+        if (!verifySegpaySignature(bodyText, signature)) {
+            console.error('[Segpay Webhook] Invalid or missing signature')
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
+        }
+
         const urlParams = new URLSearchParams(bodyText)
         const data = Object.fromEntries(urlParams.entries())
 
         console.log('[Segpay Webhook] Received:', data)
 
-        // TODO: Implement actual signature verification
-        // For now, we will verify loosely based on a secret token if available
-        // in a real scenario check `eticketid`, `transid` etc.
-        // Assuming we pass our transaction reference in `merchant_ref` or `desc` or `custom_field`
-        const reference = data.merchant_ref || data.ref || data.extra_info // Adjust based on direct Segpay config
-        // const _transactionId = data.transid
-        const status = data.stage // e.g. 'approved', 'declined'
+        const reference = data.merchant_ref || data.ref || data.extra_info
+        const status = data.stage
 
         if (!reference) {
             console.error('[Segpay Webhook] Missing reference')
-            // Return 200 OK to stop Segpay from retrying if it's just bad data
             return NextResponse.json({ status: 'ignored', message: 'Missing reference' })
         }
 
@@ -31,13 +44,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ status: 'ignored', message: 'Not approved' })
         }
 
-        // Amount handling - Segpay sends as string e.g. "10.00"
         const amount = parseFloat(data.amount || '0')
-        // Convert to Naira or assume default currency. 
-        // If Segpay charges in USD, this needs conversion logic.
-        // For this implementation, we assume the amount passed to Segpay was already in the target currency (or equivalent).
-        // WARNING: If Segpay is USD only, we need a fixed rate or dynamic rate here.
-        // Assuming 1:1 for now or that we charged in correct units.
 
         const result = await processSuccessfulTransaction(reference, amount, 'segpay')
 
@@ -45,7 +52,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: result.error }, { status: 400 })
         }
 
-        return new NextResponse('OK') // Segpay often expects just "OK" or similar text response
+        return new NextResponse('OK')
     } catch (error) {
         console.error('[Segpay Webhook] Error:', error)
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

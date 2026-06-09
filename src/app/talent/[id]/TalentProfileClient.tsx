@@ -808,7 +808,6 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    userId,
                     mediaId,
                     talentId: talent.id,
                     unlockPrice
