@@ -10,39 +10,39 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 
 // Shared email styles
 const styles = {
-  container: `
+    container: `
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     max-width: 600px;
     margin: 0 auto;
     background: linear-gradient(180deg, #0a0a0a 0%, #111111 100%);
     color: #ffffff;
   `,
-  header: `
+    header: `
     text-align: center;
     padding: 40px 40px 20px;
     border-bottom: 1px solid rgba(255,255,255,0.05);
   `,
-  logo: `
+    logo: `
     font-size: 28px;
     font-weight: 700;
     letter-spacing: -0.5px;
   `,
-  content: `
+    content: `
     padding: 40px;
   `,
-  heading: `
+    heading: `
     font-size: 24px;
     font-weight: 700;
     margin-bottom: 16px;
     color: #ffffff;
   `,
-  text: `
+    text: `
     font-size: 15px;
     line-height: 1.6;
     color: rgba(255,255,255,0.7);
     margin-bottom: 24px;
   `,
-  button: `
+    button: `
     display: inline-block;
     background: #df2531;
     color: #ffffff !important;
@@ -52,28 +52,28 @@ const styles = {
     font-weight: 600;
     font-size: 15px;
   `,
-  card: `
+    card: `
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 16px;
     padding: 24px;
     margin: 24px 0;
   `,
-  footer: `
+    footer: `
     text-align: center;
     padding: 32px 40px;
     border-top: 1px solid rgba(255,255,255,0.05);
   `,
-  footerText: `
+    footerText: `
     font-size: 12px;
     color: rgba(255,255,255,0.4);
     margin: 0;
   `,
-  highlight: `
+    highlight: `
     color: #df2531;
     font-weight: 600;
   `,
-  amount: `
+    amount: `
     font-size: 32px;
     font-weight: 700;
     color: #df2531;
@@ -120,9 +120,9 @@ const emailWrapper = (content: string) => `
 
 // Email templates
 export const emailTemplates = {
-  notification: (name: string, title: string, message: string, url?: string) => ({
-    subject: `Nego: ${title}`,
-    html: emailWrapper(`
+    notification: (name: string, title: string, message: string, url?: string) => ({
+        subject: `Nego: ${title}`,
+        html: emailWrapper(`
       <h1 style="${styles.heading}">${title}</h1>
 
       <p style="${styles.text}">
@@ -141,12 +141,12 @@ export const emailTemplates = {
         </a>
       </div>
     `),
-  }),
+    }),
 
-  // Welcome email for new users
-  welcome: (name: string, role: string) => ({
-    subject: 'Welcome to Nego! 🎉',
-    html: emailWrapper(`
+    // Welcome email for new users
+    welcome: (name: string, role: string) => ({
+        subject: 'Welcome to Nego! 🎉',
+        html: emailWrapper(`
       <h1 style="${styles.heading}">Welcome, ${name}!</h1>
 
       <p style="${styles.text}">
@@ -159,8 +159,8 @@ export const emailTemplates = {
         </p>
         <p style="color: #ffffff; font-size: 15px; margin: 0; line-height: 1.6;">
           ${role === 'talent'
-        ? '1. Complete your profile<br>2. Add your services<br>3. Start accepting bookings'
-        : '1. Browse our elite talent<br>2. Add coins to your wallet<br>3. Book your experience'}
+                ? '1. Complete your profile<br>2. Add your services<br>3. Start accepting bookings'
+                : '1. Browse our elite talent<br>2. Add coins to your wallet<br>3. Book your experience'}
         </p>
       </div>
 
@@ -174,12 +174,12 @@ export const emailTemplates = {
         If you have any questions, our support team is here to help.
       </p>
     `),
-  }),
+    }),
 
-  // New booking notification for talent
-  newBooking: (talentName: string, clientName: string, bookingAmount: number, bookingId: string) => ({
-    subject: '🔔 New Booking Request!',
-    html: emailWrapper(`
+    // New booking notification for talent
+    newBooking: (talentName: string, clientName: string, bookingAmount: number, bookingId: string) => ({
+        subject: '🔔 New Booking Request!',
+        html: emailWrapper(`
       <h1 style="${styles.heading}">New Booking Request!</h1>
 
       <p style="${styles.text}">
@@ -208,36 +208,36 @@ export const emailTemplates = {
         </a>
       </div>
     `),
-  }),
+    }),
 
-  // Booking status update for client
-  bookingUpdate: (clientName: string, talentName: string, status: string, bookingId: string) => {
-    const statusConfig: Record<string, { color: string; emoji: string; message: string; cta: string }> = {
-      confirmed: {
-        color: '#22c55e',
-        emoji: '✅',
-        message: 'Great news! Your booking has been accepted.',
-        cta: 'View Booking Details'
-      },
-      cancelled: {
-        color: '#ef4444',
-        emoji: '❌',
-        message: 'Unfortunately, your booking has been declined.',
-        cta: 'Browse Other Talent'
-      },
-      completed: {
-        color: '#3b82f6',
-        emoji: '🎉',
-        message: 'Your booking has been completed. We hope you had a great experience!',
-        cta: 'Leave a Review'
-      },
-    }
+    // Booking status update for client
+    bookingUpdate: (clientName: string, talentName: string, status: string, bookingId: string) => {
+        const statusConfig: Record<string, { color: string; emoji: string; message: string; cta: string }> = {
+            confirmed: {
+                color: '#22c55e',
+                emoji: '✅',
+                message: 'Great news! Your booking has been accepted.',
+                cta: 'View Booking Details'
+            },
+            cancelled: {
+                color: '#ef4444',
+                emoji: '❌',
+                message: 'Unfortunately, your booking has been declined.',
+                cta: 'Browse Other Talent'
+            },
+            completed: {
+                color: '#3b82f6',
+                emoji: '🎉',
+                message: 'Your booking has been completed. We hope you had a great experience!',
+                cta: 'Leave a Review'
+            },
+        }
 
-    const config = statusConfig[status] || { color: '#999', emoji: '📋', message: 'Your booking status has been updated.', cta: 'View Booking' }
+        const config = statusConfig[status] || { color: '#999', emoji: '📋', message: 'Your booking status has been updated.', cta: 'View Booking' }
 
-    return {
-      subject: `${config.emoji} Booking ${status.charAt(0).toUpperCase() + status.slice(1)} - ${talentName}`,
-      html: emailWrapper(`
+        return {
+            subject: `${config.emoji} Booking ${status.charAt(0).toUpperCase() + status.slice(1)} - ${talentName}`,
+            html: emailWrapper(`
         <div style="text-align: center; margin-bottom: 24px;">
           <span style="font-size: 48px;">${config.emoji}</span>
         </div>
@@ -265,13 +265,13 @@ export const emailTemplates = {
           </a>
         </div>
       `),
-    }
-  },
+        }
+    },
 
-  // Withdrawal approved notification
-  withdrawalApproved: (talentName: string, amount: number) => ({
-    subject: '💰 Withdrawal Approved!',
-    html: emailWrapper(`
+    // Withdrawal approved notification
+    withdrawalApproved: (talentName: string, amount: number) => ({
+        subject: '💰 Withdrawal Approved!',
+        html: emailWrapper(`
       <div style="text-align: center; margin-bottom: 24px;">
         <span style="font-size: 48px;">💰</span>
       </div>
@@ -309,12 +309,12 @@ export const emailTemplates = {
         </a>
       </div>
     `),
-  }),
+    }),
 
-  // Withdrawal rejected notification
-  withdrawalRejected: (talentName: string, amount: number, reason?: string) => ({
-    subject: '⚠️ Withdrawal Request Update',
-    html: emailWrapper(`
+    // Withdrawal rejected notification
+    withdrawalRejected: (talentName: string, amount: number, reason?: string) => ({
+        subject: '⚠️ Withdrawal Request Update',
+        html: emailWrapper(`
       <div style="text-align: center; margin-bottom: 24px;">
         <span style="font-size: 48px;">⚠️</span>
       </div>
@@ -348,16 +348,16 @@ export const emailTemplates = {
         </a>
       </div>
     `),
-  }),
+    }),
 
-  // Review received notification for talent
-  reviewReceived: (talentName: string, clientName: string, rating: number, comment: string) => {
-    const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating)
-    const ratingColor = rating >= 4 ? '#22c55e' : rating >= 3 ? '#f59e0b' : '#ef4444'
+    // Review received notification for talent
+    reviewReceived: (talentName: string, clientName: string, rating: number, comment: string) => {
+        const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating)
+        const ratingColor = rating >= 4 ? '#22c55e' : rating >= 3 ? '#f59e0b' : '#ef4444'
 
-    return {
-      subject: `⭐ New ${rating}-Star Review on Nego!`,
-      html: emailWrapper(`
+        return {
+            subject: `⭐ New ${rating}-Star Review on Nego!`,
+            html: emailWrapper(`
         <div style="text-align: center; margin-bottom: 24px;">
           <span style="font-size: 48px;">⭐</span>
         </div>
@@ -400,22 +400,22 @@ export const emailTemplates = {
           </a>
         </div>
       `),
-    }
-  },
+        }
+    },
 
-  // Weekly admin digest
-  adminDigest: (data: {
-    totalUsers: number
-    newUsersThisWeek: number
-    totalBookings: number
-    newBookingsThisWeek: number
-    pendingVerifications: number
-    pendingWithdrawals: number
-    totalRevenue: number
-    revenueThisWeek: number
-  }) => ({
-    subject: '📊 Nego Weekly Digest',
-    html: emailWrapper(`
+    // Weekly admin digest
+    adminDigest: (data: {
+        totalUsers: number
+        newUsersThisWeek: number
+        totalBookings: number
+        newBookingsThisWeek: number
+        pendingVerifications: number
+        pendingWithdrawals: number
+        totalRevenue: number
+        revenueThisWeek: number
+    }) => ({
+        subject: '📊 Nego Weekly Digest',
+        html: emailWrapper(`
       <h1 style="${styles.heading}; text-align: center;">
         Weekly Platform Digest
       </h1>
@@ -488,12 +488,12 @@ export const emailTemplates = {
         </a>
       </div>
     `),
-  }),
+    }),
 
-  // Email verification for clients
-  verifyEmail: (clientName: string, verificationUrl: string) => ({
-    subject: 'Verify Your Email - Nego',
-    html: emailWrapper(`
+    // Email verification for clients
+    verifyEmail: (clientName: string, verificationUrl: string) => ({
+        subject: 'Verify Your Email - Nego',
+        html: emailWrapper(`
       <div style="text-align: center; margin-bottom: 24px;">
         <span style="font-size: 48px;">✉️</span>
       </div>
@@ -533,12 +533,12 @@ export const emailTemplates = {
         This link will expire in 24 hours. If you didn't create an account, please ignore this email.
       </p>
     `),
-  }),
+    }),
 
-  // Email verified confirmation
-  emailVerified: (clientName: string) => ({
-    subject: '✅ Email Verified - Welcome to Nego!',
-    html: emailWrapper(`
+    // Email verified confirmation
+    emailVerified: (clientName: string) => ({
+        subject: '✅ Email Verified - Welcome to Nego!',
+        html: emailWrapper(`
       <div style="text-align: center; margin-bottom: 24px;">
         <span style="font-size: 48px;">✅</span>
       </div>
@@ -569,31 +569,391 @@ export const emailTemplates = {
         </a>
       </div>
     `),
-  }),
+    }),
+
+    // Booking status change (accept/decline/complete/cancel/expire)
+    bookingStatus: (name: string, type: string, message: string, bookingId?: string) => {
+        const config: Record<string, { color: string; emoji: string; heading: string; cta: string }> = {
+            booking_accepted: { color: '#22c55e', emoji: '✅', heading: 'Booking Confirmed', cta: 'View Booking' },
+            booking_rejected: { color: '#ef4444', emoji: '❌', heading: 'Booking Declined', cta: 'Browse Talent' },
+            booking_completed: { color: '#3b82f6', emoji: '🎉', heading: 'Booking Completed', cta: 'Leave a Review' },
+            booking_cancelled: { color: '#f59e0b', emoji: '🚫', heading: 'Booking Cancelled', cta: 'View Bookings' },
+            booking_expired: { color: '#6b7280', emoji: '⏰', heading: 'Booking Expired', cta: 'View Bookings' },
+        }
+        const c = config[type] || { color: '#999', emoji: '📋', heading: 'Booking Update', cta: 'View Booking' }
+
+        return {
+            subject: `${c.emoji} ${c.heading} - Nego`,
+            html: emailWrapper(`
+        <div style="text-align: center; margin-bottom: 24px;">
+          <span style="font-size: 48px;">${c.emoji}</span>
+        </div>
+
+        <h1 style="${styles.heading}; text-align: center; color: ${c.color};">
+          ${c.heading}
+        </h1>
+
+        <p style="${styles.text}; text-align: center;">
+          Hi ${name}, ${message}
+        </p>
+
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${APP_URL}${bookingId ? `/dashboard/bookings/${bookingId}` : '/dashboard/bookings'}" style="${styles.button}">
+            ${c.cta} →
+          </a>
+        </div>
+      `),
+        }
+    },
+
+    // Financial update (purchase success/failure, withdrawal approved/rejected)
+    financial: (name: string, type: string, message: string, data?: Record<string, unknown>) => {
+        const config: Record<string, { color: string; emoji: string; heading: string; url: string; cta: string }> = {
+            purchase_success: { color: '#22c55e', emoji: '💳', heading: 'Deposit Approved', url: '/dashboard', cta: 'View Wallet' },
+            purchase_failed: { color: '#ef4444', emoji: '❌', heading: 'Deposit Rejected', url: '/dashboard', cta: 'Try Again' },
+            withdrawal_approved: { color: '#22c55e', emoji: '💰', heading: 'Withdrawal Approved', url: '/dashboard/talent?tab=withdrawals', cta: 'View Status' },
+            withdrawal_rejected: { color: '#f59e0b', emoji: '⚠️', heading: 'Withdrawal Not Processed', url: '/dashboard/talent?tab=withdrawals', cta: 'Contact Support' },
+        }
+        const c = config[type] || { color: '#999', emoji: '💰', heading: 'Payment Update', url: '/dashboard', cta: 'View Wallet' }
+
+        const amount = data?.amount ? Number(data.amount).toLocaleString() : null
+
+        return {
+            subject: `${c.emoji} ${c.heading} - Nego`,
+            html: emailWrapper(`
+        <div style="text-align: center; margin-bottom: 24px;">
+          <span style="font-size: 48px;">${c.emoji}</span>
+        </div>
+
+        <h1 style="${styles.heading}; text-align: center; color: ${c.color};">
+          ${c.heading}
+        </h1>
+
+        <p style="${styles.text}; text-align: center;">
+          Hi ${name}, ${message}
+        </p>
+
+        ${amount ? `
+          <div style="${styles.card}; text-align: center;">
+            <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0 0 8px 0;">
+              AMOUNT
+            </p>
+            <p style="${styles.amount}">
+              ${amount} coins
+            </p>
+          </div>
+        ` : ''}
+
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${APP_URL}${c.url}" style="${styles.button}">
+            ${c.cta} →
+          </a>
+        </div>
+      `),
+        }
+    },
+
+    // New message notification
+    messageReceived: (name: string, senderName: string, messageContent: string, conversationId?: string) => ({
+        subject: `💬 New message from ${senderName} - Nego`,
+        html: emailWrapper(`
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 48px;">💬</span>
+      </div>
+
+      <h1 style="${styles.heading}; text-align: center;">
+        New Message
+      </h1>
+
+      <p style="${styles.text}; text-align: center;">
+        Hi ${name}, <span style="${styles.highlight}">${senderName}</span> sent you a message.
+      </p>
+
+      <div style="${styles.card}">
+        <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0 0 12px 0;">
+          MESSAGE
+        </p>
+        <p style="color: #ffffff; font-size: 15px; margin: 0; line-height: 1.6; font-style: italic;">
+          "${messageContent}"
+        </p>
+      </div>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}/dashboard/messages${conversationId ? `?conversation=${conversationId}` : ''}" style="${styles.button}">
+          Reply →
+        </a>
+      </div>
+    `),
+    }),
+
+    // Dispute filed notification
+    disputeFiled: (name: string, title: string, message: string, url?: string) => ({
+        subject: '⚖️ New Dispute Filed - Nego',
+        html: emailWrapper(`
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 48px;">⚖️</span>
+      </div>
+
+      <h1 style="${styles.heading}; text-align: center; color: #f59e0b;">
+        Dispute Filed
+      </h1>
+
+      <p style="${styles.text}; text-align: center;">
+        Hi ${name}, a dispute has been filed that involves you.
+      </p>
+
+      <div style="${styles.card}">
+        <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0 0 8px 0;">
+          DISPUTE TITLE
+        </p>
+        <p style="color: #ffffff; font-size: 16px; font-weight: 600; margin: 0 0 12px 0;">
+          ${title}
+        </p>
+        <p style="color: rgba(255,255,255,0.7); font-size: 14px; margin: 0; line-height: 1.6;">
+          ${message}
+        </p>
+      </div>
+
+      <p style="${styles.text}; text-align: center;">
+        Please review the dispute details and respond promptly. Our team will mediate the resolution.
+      </p>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}${url || '/dashboard/disputes'}" style="${styles.button}">
+          View Dispute →
+        </a>
+      </div>
+    `),
+    }),
+
+    // Gift sent/received notification
+    gift: (name: string, type: string, message: string) => {
+        const isSent = type === 'gift_sent'
+        return {
+            subject: isSent ? '🎁 Gift Sent - Nego' : '🎁 You Received a Gift! - Nego',
+            html: emailWrapper(`
+        <div style="text-align: center; margin-bottom: 24px;">
+          <span style="font-size: 48px;">🎁</span>
+        </div>
+
+        <h1 style="${styles.heading}; text-align: center; color: ${isSent ? '#3b82f6' : '#a855f7'};">
+          ${isSent ? 'Gift Sent!' : 'You Received a Gift!'}
+        </h1>
+
+        <p style="${styles.text}; text-align: center;">
+          Hi ${name}, ${message}
+        </p>
+
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${APP_URL}/dashboard" style="${styles.button}">
+            View Dashboard →
+          </a>
+        </div>
+      `),
+        }
+    },
+
+    // Media unlocked notification
+    mediaUnlocked: (name: string, message: string) => ({
+        subject: '🔓 Content Unlocked - Nego',
+        html: emailWrapper(`
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 48px;">🔓</span>
+      </div>
+
+      <h1 style="${styles.heading}; text-align: center; color: #22c55e;">
+        Content Unlocked!
+      </h1>
+
+      <p style="${styles.text}; text-align: center;">
+        Hi ${name}, ${message}
+      </p>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}/dashboard" style="${styles.button}">
+          View Content →
+        </a>
+      </div>
+    `),
+    }),
+
+    // Verification approved notification
+    verificationApproved: (name: string, message: string, bookingId?: string) => ({
+        subject: '✅ Verification Approved - Nego',
+        html: emailWrapper(`
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 48px;">✅</span>
+      </div>
+
+      <h1 style="${styles.heading}; text-align: center; color: #22c55e;">
+        Verification Approved
+      </h1>
+
+      <p style="${styles.text}; text-align: center;">
+        Hi ${name}, ${message}
+      </p>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}${bookingId ? `/dashboard/bookings/${bookingId}` : '/dashboard'}" style="${styles.button}">
+          Continue →
+        </a>
+      </div>
+    `),
+    }),
+
+    // Talent verified/unverified notification
+    talentVerification: (name: string, verified: boolean) => ({
+        subject: verified ? '✅ You\'re Verified on Nego!' : '⚠️ Verification Status Update - Nego',
+        html: emailWrapper(`
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 48px;">${verified ? '✅' : '⚠️'}</span>
+      </div>
+
+      <h1 style="${styles.heading}; text-align: center; color: ${verified ? '#22c55e' : '#f59e0b'};">
+        ${verified ? 'You\'re Verified!' : 'Verification Status Updated'}
+      </h1>
+
+      <p style="${styles.text}; text-align: center;">
+        Hi ${name}, ${verified
+                ? 'Congratulations! Your profile has been verified by the Nego team. Clients can now see your verified badge, boosting your visibility and trust.'
+                : 'Your verified status has been updated. Please contact support if you believe this was a mistake.'}
+      </p>
+
+      ${verified ? `
+        <div style="${styles.card}; text-align: center;">
+          <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin: 0 0 12px 0;">
+            BENEFITS
+          </p>
+          <p style="color: #ffffff; font-size: 15px; margin: 0; line-height: 1.6;">
+            • Verified badge on your profile<br>
+            • Higher visibility in search results<br>
+            • Increased client trust and bookings
+          </p>
+        </div>
+      ` : ''}
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${APP_URL}/dashboard/talent" style="${styles.button}">
+          View Profile →
+        </a>
+      </div>
+    `),
+    }),
+}
+
+// Notification types that should NOT trigger emails (push-only)
+const EMAIL_SKIPPED_TYPES = new Set([
+    'media_deleted',
+    'low_balance',
+    'general',
+])
+
+// Select the appropriate email template for a notification type
+export function getTemplateForNotification(
+    name: string,
+    payload: {
+        type: string
+        title: string
+        message: string
+        data?: Record<string, unknown>
+        url?: string
+    }
+): { subject: string; html: string } | null {
+    if (EMAIL_SKIPPED_TYPES.has(payload.type)) {
+        return null
+    }
+
+    const { type, title, message, data, url } = payload
+
+    switch (type) {
+        case 'booking_request':
+            return emailTemplates.newBooking(
+                name,
+                (data?.client_name as string) || 'A client',
+                (data?.amount as number) || 0,
+                (data?.booking_id as string) || ''
+            )
+
+        case 'booking_accepted':
+        case 'booking_rejected':
+        case 'booking_completed':
+        case 'booking_cancelled':
+        case 'booking_expired':
+            return emailTemplates.bookingStatus(
+                name, type, message,
+                (data?.booking_id as string) || undefined
+            )
+
+        case 'purchase_success':
+        case 'purchase_failed':
+        case 'withdrawal_approved':
+        case 'withdrawal_rejected':
+            return emailTemplates.financial(name, type, message, data)
+
+        case 'message_received': {
+            const senderMatch = title.match(/from (.+)/)
+            const senderName = senderMatch?.[1] ?? 'Someone'
+            return emailTemplates.messageReceived(
+                name, senderName, message,
+                (data?.conversation_id as string) || undefined
+            )
+        }
+
+        case 'dispute_filed':
+            return emailTemplates.disputeFiled(name, title, message, url)
+
+        case 'gift_sent':
+        case 'gift_received':
+            return emailTemplates.gift(name, type, message)
+
+        case 'media_unlocked':
+            return emailTemplates.mediaUnlocked(name, message)
+
+        case 'review_received': {
+            const rating = (data?.rating as number) || 5
+            const clientName = (data?.client_name as string) || 'A client'
+            return emailTemplates.reviewReceived(name, clientName, rating, '')
+        }
+
+        case 'verification_approved':
+            return emailTemplates.verificationApproved(
+                name, message,
+                (data?.booking_id as string) || undefined
+            )
+
+        case 'talent_verified':
+            return emailTemplates.talentVerification(name, true)
+
+        case 'talent_unverified':
+            return emailTemplates.talentVerification(name, false)
+
+        default:
+            return emailTemplates.notification(name, title, message, url)
+    }
 }
 
 // Send email function
 export async function sendEmail(to: string, template: { subject: string; html: string }) {
-  // Check if API key is configured
-  if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'your_resend_api_key') {
-    console.log('Resend API key not configured. Skipping email send.')
-    return { success: false, error: 'Email not configured' }
-  }
+    // Check if API key is configured
+    if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'your_resend_api_key') {
+        console.log('Resend API key not configured. Skipping email send.')
+        return { success: false, error: 'Email not configured' }
+    }
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
+    const resend = new Resend(process.env.RESEND_API_KEY)
 
-  try {
-    const data = await resend.emails.send({
-      from: SENDER_EMAIL,
-      to: [to],
-      subject: template.subject,
-      html: template.html,
-    })
+    try {
+        const data = await resend.emails.send({
+            from: SENDER_EMAIL,
+            to: [to],
+            subject: template.subject,
+            html: template.html,
+        })
 
-    console.log('Email sent successfully:', data)
-    return { success: true, data }
-  } catch (error) {
-    console.error('Failed to send email:', error)
-    return { success: false, error }
-  }
+        console.log('Email sent successfully:', data)
+        return { success: true, data }
+    } catch (error) {
+        console.error('Failed to send email:', error)
+        return { success: false, error }
+    }
 }

@@ -87,6 +87,8 @@ export async function POST(request: NextRequest) {
                 gender: gender || null,
                 is_verified: false,
                 status: 'offline',
+                email_notifications_enabled: true,
+                push_notifications_enabled: true,
             })
 
         if (profileError) {

@@ -1,4 +1,4 @@
-import { emailTemplates, sendEmail } from '@/lib/email'
+import { getTemplateForNotification, sendEmail } from '@/lib/email'
 import { sendPushNotification } from '@/lib/push/send-push'
 import { createApiClient } from '@/lib/supabase/api'
 import type { NotificationType, UserRole } from '@/types/database'
@@ -162,16 +162,26 @@ async function sendEmailToUsers(userIds: string[], payload: NotificationContent)
                 return
             }
 
+            const name = profile?.display_name || profile?.full_name || 'there'
+            const template = getTemplateForNotification(name, {
+                type: payload.type,
+                title: payload.title,
+                message: payload.message,
+                data: payload.data,
+                url: payload.url,
+            })
+
+            if (!template) {
+                return
+            }
+
             const userResponse = await supabase.auth.admin.getUserById(userId)
             const email = userResponse.data.user?.email
             if (!email) {
                 return
             }
 
-            const name = profile?.display_name || profile?.full_name || 'there'
-            const template = emailTemplates.notification(name, payload.title, payload.message, payload.url)
             const result = await sendEmail(email, template)
-
             if (!result.success) {
                 throw new Error('Email delivery failed')
             }
