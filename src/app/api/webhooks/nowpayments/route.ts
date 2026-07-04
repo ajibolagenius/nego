@@ -4,6 +4,33 @@ import { processSuccessfulTransaction } from '@/services/paymentResponse'
 
 const NOWPAYMENTS_IPN_SECRET = process.env.NOWPAYMENTS_IPN_SECRET!
 
+/**
+ * Recursively sort object keys so the JSON we hash matches how NOWPayments builds
+ * the signature. Per their IPN docs the signature is:
+ *   HMAC-SHA512( JSON.stringify(payload, Object.keys(payload).sort()) )
+ * with keys sorted at every level of nesting.
+ */
+function sortKeysDeep(value: unknown): unknown {
+    if (Array.isArray(value)) {
+        return value.map(sortKeysDeep)
+    }
+    if (value && typeof value === 'object') {
+        return Object.keys(value as Record<string, unknown>)
+            .sort()
+            .reduce((acc, key) => {
+                acc[key] = sortKeysDeep((value as Record<string, unknown>)[key])
+                return acc
+            }, {} as Record<string, unknown>)
+    }
+    return value
+}
+
+function timingSafeEqualHex(a: string, b: string): boolean {
+    const aBuf = Buffer.from(a)
+    const bBuf = Buffer.from(b)
+    return aBuf.length === bBuf.length && crypto.timingSafeEqual(aBuf, bBuf)
+}
+
 export async function POST(request: NextRequest) {
     try {
         const signature = request.headers.get('x-nowpayments-sig')
@@ -19,34 +46,32 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Server error' }, { status: 500 })
         }
 
-        // Verify signature
-        // Sort keys and create query string (NOWPayments specific sorting often required, checking docs or simple body hash)
-        // Docs say: hmac.update(JSON.stringify(request.body, Object.keys(request.body).sort()))
-        // But since we have raw body text, handling JSON parse order is tricky.
-        // Usually simply hashing the body works if they send consistent JSON.
-        // Let's try standard hmac of the body first.
+        // Parse first so we can canonicalize with sorted keys before hashing.
+        let event: Record<string, unknown>
+        try {
+            event = JSON.parse(bodyText)
+        } catch {
+            console.error('[NOWPayments Webhook] Invalid JSON body')
+            return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+        }
 
-        const hmac = crypto.createHmac('sha512', NOWPAYMENTS_IPN_SECRET)
-        hmac.update(bodyText)
-        const expectedSignature = hmac.digest('hex')
+        // Verify signature over the deeply key-sorted JSON, per NOWPayments IPN spec.
+        const canonicalBody = JSON.stringify(sortKeysDeep(event))
+        const expectedSignature = crypto
+            .createHmac('sha512', NOWPAYMENTS_IPN_SECRET)
+            .update(canonicalBody)
+            .digest('hex')
 
-        if (signature !== expectedSignature) {
-            // NOTE: NOWPayments sometimes sorts keys. If basic body mismatch, rigorous implementation would parse -> sort -> stringify
-            // For now, logging error.
+        if (!timingSafeEqualHex(signature, expectedSignature)) {
             console.error('[NOWPayments Webhook] Invalid signature')
             return NextResponse.json({ error: 'Invalid signature' }, { status: 403 })
         }
 
-        const event = JSON.parse(bodyText)
         console.log('[NOWPayments Webhook] Event:', event)
 
-        const {
-            payment_status,
-            order_id, // We use this as our reference
-            pay_amount: _pay_amount, // Amount user sent
-            price_amount, // Amount we asked for (fiat)
-            outcome_currency: _outcome_currency
-        } = event
+        const payment_status = String(event.payment_status ?? '')
+        const order_id = event.order_id != null ? String(event.order_id) : '' // We use this as our reference
+        const price_amount = event.price_amount // Amount we asked for (fiat)
 
         // Check if completed
         // specific 'finished' status means user paid and it's confirmed
@@ -58,7 +83,7 @@ export async function POST(request: NextRequest) {
         // processSuccessfulTransaction expects amount in Naira.
         // price_amount should be what we requested (e.g. 5000 NGN converted to USD? or purely NGN if supported)
         // Assuming we asked for 'price_amount' in key currency.
-        const amount = parseFloat(price_amount || '0')
+        const amount = parseFloat(String(price_amount ?? '0'))
         const reference = order_id
 
         if (!reference) {

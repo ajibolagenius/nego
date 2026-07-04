@@ -19,41 +19,67 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { mediaId, talentId, unlockPrice } = body
+        const { mediaId } = body
         const userId = user.id
 
         // Validate input
-        if (!mediaId || !talentId || unlockPrice === undefined || unlockPrice === null) {
+        if (!mediaId) {
             return NextResponse.json(
-                { success: false, error: 'Missing required fields: mediaId, talentId, and unlockPrice are required' },
+                { success: false, error: 'Missing required field: mediaId is required' },
                 { status: 400 }
             )
         }
 
-        // Validate UUIDs
+        // Validate UUID
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-        if (!uuidRegex.test(mediaId) || !uuidRegex.test(talentId)) {
+        if (!uuidRegex.test(mediaId)) {
             return NextResponse.json(
-                { success: false, error: 'Invalid ID format. All IDs must be valid UUIDs' },
+                { success: false, error: 'Invalid ID format. mediaId must be a valid UUID' },
                 { status: 400 }
             )
         }
 
-        // Validate unlock price
-        if (typeof unlockPrice !== 'number' || unlockPrice <= 0) {
+        // Look up the media server-side. The price and the owner (who gets paid) are
+        // authoritative from the database — never taken from the client. Trusting a
+        // client-supplied price/talentId would let a user unlock premium content for
+        // any amount (e.g. 1 coin) or redirect the payment to a wallet they control.
+        const { data: media, error: mediaError } = await apiClient
+            .from('media')
+            .select('id, talent_id, unlock_price, is_premium')
+            .eq('id', mediaId)
+            .maybeSingle()
+
+        if (mediaError || !media) {
             return NextResponse.json(
-                { success: false, error: 'Invalid unlock price. Must be a positive number' },
+                { success: false, error: 'Content not found' },
+                { status: 404 }
+            )
+        }
+
+        if (!media.is_premium || !media.unlock_price || media.unlock_price <= 0) {
+            return NextResponse.json(
+                { success: false, error: 'This content is not available for unlock' },
                 { status: 400 }
             )
         }
 
-        // Try database function first (most reliable)
-        // Use API client for RPC to ensure it bypasses RLS if needed
-        const { data: rpcData, error: rpcError } = await apiClient.rpc('unlock_media', {
+        const talentId = media.talent_id as string
+        const unlockPrice = media.unlock_price as number
+
+        // A user cannot unlock their own content — it would be a free self-transfer.
+        if (talentId === userId) {
+            return NextResponse.json(
+                { success: false, error: "You can't unlock your own content" },
+                { status: 400 }
+            )
+        }
+
+        // Try database function first (most reliable).
+        // Call via the user session client so the function can enforce p_user_id = auth.uid();
+        // the function is SECURITY DEFINER and still bypasses RLS for the wallet updates.
+        const { data: rpcData, error: rpcError } = await supabase.rpc('unlock_media', {
             p_user_id: userId,
-            p_media_id: mediaId,
-            p_talent_id: talentId,
-            p_unlock_price: unlockPrice
+            p_media_id: mediaId
         })
 
         // If RPC works, use its result

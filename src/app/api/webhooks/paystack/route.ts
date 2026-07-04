@@ -9,7 +9,13 @@ function verifyPaystackSignature(signature: string, body: string): boolean {
         .createHmac('sha512', PAYSTACK_SECRET)
         .update(body)
         .digest('hex')
-    return hash === signature
+    // Constant-time comparison to avoid leaking the signature via timing.
+    const hashBuffer = Buffer.from(hash)
+    const signatureBuffer = Buffer.from(signature)
+    return (
+        hashBuffer.length === signatureBuffer.length &&
+        crypto.timingSafeEqual(hashBuffer, signatureBuffer)
+    )
 }
 
 export async function POST(request: NextRequest) {

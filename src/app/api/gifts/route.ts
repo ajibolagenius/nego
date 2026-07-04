@@ -9,6 +9,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { validateGiftRequest, sanitizeGiftRequest } from '@/lib/gift-validation'
 import { notifyUser } from '@/lib/notifications'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 
 // Use Node.js runtime for better Supabase compatibility
 export const runtime = 'nodejs'
@@ -28,6 +29,15 @@ export async function POST(request: NextRequest) {
             return errorResponse('Server configuration error', 500)
         }
 
+        // Authenticate the caller. The sender is always the signed-in user —
+        // never a value taken from the request body, otherwise anyone could
+        // move coins out of any wallet by supplying another user's id.
+        const sessionSupabase = await createServerClient()
+        const { data: { user }, error: authError } = await sessionSupabase.auth.getUser()
+        if (authError || !user) {
+            return errorResponse('Unauthorized. Please sign in to continue.', 401)
+        }
+
         // Parse request body
         let body: Record<string, unknown>
         try {
@@ -36,6 +46,10 @@ export async function POST(request: NextRequest) {
             console.error('[Gift API] JSON parse error:', parseError)
             return errorResponse('Invalid request format', 400)
         }
+
+        // Force the sender to the authenticated user before validation/sanitization,
+        // so any client-supplied senderId is ignored.
+        body.senderId = user.id
 
         // Validate request using centralized validation
         const validation = validateGiftRequest(body)

@@ -1,15 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createApiClient } from '@/lib/supabase/api'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
     try {
+        // Require an authenticated session. The profile is always created for the
+        // signed-in user — the userId is taken from the session, never the body,
+        // so nobody can create or overwrite profiles / claim usernames for other users.
+        const sessionSupabase = await createServerClient()
+        const { data: { user }, error: authError } = await sessionSupabase.auth.getUser()
+        if (authError || !user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const body = await request.json()
-        const { userId, role, displayName, fullName, username, gender } = body
+        const { role, displayName, fullName, username, gender } = body
+        const userId = user.id
 
         // Validate required fields
-        if (!userId || !role) {
+        if (!role) {
             return NextResponse.json(
-                { error: 'Missing required fields: userId and role are required' },
+                { error: 'Missing required field: role is required' },
                 { status: 400 }
             )
         }
