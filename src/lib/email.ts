@@ -343,7 +343,7 @@ export const emailTemplates = {
       </p>
 
       <div style="text-align: center; margin: 32px 0;">
-        <a href="mailto:support@nego.app" style="${styles.button}">
+        <a href="mailto:support@negoempire.live" style="${styles.button}">
           Contact Support →
         </a>
       </div>

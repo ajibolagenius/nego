@@ -126,9 +126,9 @@ export function Footer({ variant = 'simple' }: FooterProps) {
           <div>
             <h4 className="text-white font-semibold mb-4">Contact</h4>
             <div className="flex flex-col gap-3">
-              <a href="mailto:support@nego.app" className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm">
+              <a href="mailto:support@negoempire.live" className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm">
                 <Envelope size={16} />
-                support@nego.app
+                support@negoempire.live
               </a>
               <div className="flex items-center gap-2 text-white/50 text-sm">
                 <MapPin size={16} />

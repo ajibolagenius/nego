@@ -39,7 +39,7 @@ async function initializeWebPush() {
 
         if (vapidPrivateKey && vapidPublicKey) {
             webpush.default.setVapidDetails(
-                `mailto:${process.env.VAPID_EMAIL || 'notifications@nego.app'}`,
+                `mailto:${process.env.VAPID_EMAIL || 'notifications@negoempire.live'}`,
                 vapidPublicKey,
                 vapidPrivateKey
             )
