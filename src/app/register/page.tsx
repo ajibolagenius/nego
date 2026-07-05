@@ -213,10 +213,22 @@ export default function RegisterPage() {
         setLoading(true)
         setError('')
 
-        // Validate all fields
-        const nameValidated = validateName(name)
-        const emailValidated = validateEmail(email)
-        const passwordStrong = isPasswordStrong(passwordRequirements)
+        // Read live DOM values as a fallback in case browser/OS autofill set the
+        // input's value without firing React's onChange, leaving `name`/`email`/
+        // `password` state stale even though the fields appear filled.
+        const form = e.currentTarget as HTMLFormElement
+        const liveName = (form.elements.namedItem('register-name') as HTMLInputElement)?.value ?? name
+        const liveEmail = (form.elements.namedItem('register-email') as HTMLInputElement)?.value ?? email
+        const livePassword = (form.elements.namedItem('register-password') as HTMLInputElement)?.value ?? password
+
+        if (liveName !== name) setName(liveName)
+        if (liveEmail !== email) setEmail(liveEmail)
+        if (livePassword !== password) setPassword(livePassword)
+
+        // Validate all fields using the live values, not potentially-stale state
+        const nameValidated = validateName(liveName)
+        const emailValidated = validateEmail(liveEmail)
+        const passwordStrong = isPasswordStrong(checkPasswordStrength(livePassword))
         const usernameValidated = role === 'talent' ? await validateUsername(username) : true
         const genderValidated = role === 'talent' ? !!gender : true
 
@@ -231,11 +243,11 @@ export default function RegisterPage() {
 
             // Sign up with role in metadata - DB trigger will handle profile creation
             const { data, error } = await supabase.auth.signUp({
-                email: email.trim().toLowerCase(),
-                password,
+                email: liveEmail.trim().toLowerCase(),
+                password: livePassword,
                 options: {
                     data: {
-                        full_name: name.trim(),
+                        full_name: liveName.trim(),
                         role: role,
                         username: role === 'talent' ? username.trim().toLowerCase() : null,
                         gender: role === 'talent' ? gender : null,
@@ -267,8 +279,12 @@ export default function RegisterPage() {
                 throw error
             }
 
-            // Ensure profile exists (fallback if database trigger failed)
-            if (data.user) {
+            // Ensure profile exists (fallback if database trigger failed).
+            // Only attempt this when a session exists - the API route requires an
+            // authenticated caller, so it always 401s during the email-confirmation
+            // flow (data.session is null right after signUp). The DB trigger already
+            // creates the profile/wallet in that case.
+            if (data.user && data.session) {
                 try {
                     // Use API route to create profile/wallet server-side (bypasses RLS)
                     const createProfileResponse = await fetch('/api/auth/create-profile', {
@@ -279,8 +295,8 @@ export default function RegisterPage() {
                         body: JSON.stringify({
                             userId: data.user.id,
                             role: role,
-                            displayName: name.trim(),
-                            fullName: name.trim(),
+                            displayName: liveName.trim(),
+                            fullName: liveName.trim(),
                             username: role === 'talent' ? username.trim().toLowerCase() : null,
                             gender: role === 'talent' ? gender : null,
                         }),
@@ -517,6 +533,7 @@ export default function RegisterPage() {
                                             type="text"
                                             value={name}
                                             onChange={handleNameChange}
+                                            onBlur={(e) => validateName(e.target.value)}
                                             placeholder="John Doe"
                                             autoComplete="name"
                                             required
@@ -649,6 +666,7 @@ export default function RegisterPage() {
                                             type="email"
                                             value={email}
                                             onChange={handleEmailChange}
+                                            onBlur={(e) => validateEmail(e.target.value)}
                                             placeholder="you@example.com"
                                             autoComplete="email"
                                             required
@@ -692,6 +710,7 @@ export default function RegisterPage() {
                                             type={showPassword ? 'text' : 'password'}
                                             value={password}
                                             onChange={handlePasswordChange}
+                                            onBlur={(e) => setPasswordRequirements(checkPasswordStrength(e.target.value))}
                                             placeholder="Create a strong password"
                                             autoComplete="new-password"
                                             required
@@ -773,7 +792,7 @@ export default function RegisterPage() {
                                 {/* Submit button */}
                                 <Button
                                     type="submit"
-                                    disabled={loading || !nameValid || !emailValid || !passwordStrong || (role === 'talent' && (!usernameValid || !gender)) || checkingUsername}
+                                    disabled={loading || checkingUsername || (role === 'talent' && (!usernameValid || !gender))}
                                     className="w-full bg-[#df2531] hover:bg-[#c41f2a] text-white font-bold py-3 rounded-xl transition-all duration-300 disabled:opacity-50"
                                     aria-label="Create account"
                                 >
