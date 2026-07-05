@@ -336,14 +336,7 @@ export function WriteReviewModal({ bookingId, talentId, clientId, onReviewSubmit
         try {
             const supabase = createClient()
 
-            // Get talent info for email
-            const { data: talentData } = await supabase
-                .from('profiles')
-                .select('id, display_name')
-                .eq('id', talentId)
-                .single()
-
-            // Get client info for email
+            // Get client info for the notification message
             const { data: clientData } = await supabase
                 .from('profiles')
                 .select('id, display_name')
@@ -374,36 +367,8 @@ export function WriteReviewModal({ bookingId, talentId, clientId, onReviewSubmit
                 return
             }
 
-            // Send email notification to talent
-            try {
-                // Get talent's email from auth
-                const { data: userData } = await supabase.auth.admin.getUserById(talentId)
-                const talentEmail = userData?.user?.email
-
-                if (talentEmail) {
-                    await fetch('/api/email/send', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            to: talentEmail,
-                            subject: `New ${rating}-Star Review on Nego!`,
-                            type: 'review_received',
-                            data: {
-                                talentName: talentData?.display_name || 'there',
-                                clientName: clientData?.display_name || 'A client',
-                                rating,
-                                comment: comment.trim() || 'No comment provided',
-                                bookingId,
-                            }
-                        })
-                    })
-                }
-            } catch (emailError) {
-                // Don't fail the review submission if email fails
-                console.error('[WriteReviewModal] Failed to send review notification email:', emailError)
-            }
-
-            // Send push notification to talent
+            // Notify the talent — one call covers in-app, push, and email,
+            // each gated by the talent's own notification preferences.
             fetch('/api/notifications/dispatch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -413,9 +378,8 @@ export function WriteReviewModal({ bookingId, talentId, clientId, onReviewSubmit
                     message: `${clientData?.display_name || 'A client'} left you a ${rating}-star review.`,
                     data: { booking_id: bookingId, rating, client_id: clientId },
                     url: `/dashboard/talent`,
-                    targets: { userIds: [talentId] },
                 }),
-            }).catch(err => console.error('[WriteReviewModal] Push notification failed:', err))
+            }).catch(err => console.error('[WriteReviewModal] Notification dispatch failed:', err))
 
             onReviewSubmit(data)
             onClose?.()

@@ -1,4 +1,4 @@
-import { getTemplateForNotification, sendEmail } from '@/lib/email'
+import { getTemplateForNotification, sendBatchEmails, sendEmail } from '@/lib/email'
 import { sendPushNotification } from '@/lib/push/send-push'
 import { createApiClient } from '@/lib/supabase/api'
 import type { NotificationType, UserRole } from '@/types/database'
@@ -35,6 +35,59 @@ interface NotificationResult {
     failedEmails: number
     notifications: Array<{ id: string; user_id: string }>
     error?: unknown
+}
+
+interface NotificationPreferences {
+    in_app_enabled: boolean
+    push_enabled: boolean
+    email_enabled: boolean
+    chat_enabled: boolean
+}
+
+const DEFAULT_PREFERENCES: NotificationPreferences = {
+    in_app_enabled: true,
+    push_enabled: true,
+    email_enabled: true,
+    chat_enabled: true,
+}
+
+// message_received is the only chat-delivered notification type today;
+// chat_enabled gates it across every channel, on top of the per-channel toggle.
+function isChatNotification(type: NotificationType): boolean {
+    return type === 'message_received'
+}
+
+async function getPreferencesByUser(userIds: string[]): Promise<Map<string, NotificationPreferences>> {
+    const map = new Map<string, NotificationPreferences>()
+    if (userIds.length === 0) {
+        return map
+    }
+
+    const supabase = createApiClient()
+    const { data, error } = await supabase
+        .from('notification_preferences')
+        .select('user_id, in_app_enabled, push_enabled, email_enabled, chat_enabled')
+        .in('user_id', userIds)
+
+    if (error) {
+        // Fail open: if preferences can't be read, don't silently drop notifications.
+        return map
+    }
+
+    for (const row of data || []) {
+        map.set(row.user_id as string, {
+            in_app_enabled: row.in_app_enabled !== false,
+            push_enabled: row.push_enabled !== false,
+            email_enabled: row.email_enabled !== false,
+            chat_enabled: row.chat_enabled !== false,
+        })
+    }
+
+    return map
+}
+
+function resolvePreferences(map: Map<string, NotificationPreferences>, userId: string): NotificationPreferences {
+    return map.get(userId) ?? DEFAULT_PREFERENCES
 }
 
 function dedupeIds(ids: string[] = []): string[] {
@@ -74,27 +127,12 @@ async function sendPushToUsers(userIds: string[], payload: NotificationContent):
         return { pushed: 0, failedPushes: 0 }
     }
 
-    const { data: profileRows } = await supabase
-        .from('profiles')
-        .select('id, push_notifications_enabled')
-        .in('id', userIds)
-
-    const pushEnabledByUser = new Map<string, boolean>(
-        (profileRows || []).map((row) => [row.id as string, Boolean((row as { push_notifications_enabled?: boolean }).push_notifications_enabled)])
-    )
-
-    const eligibleSubscriptions = subscriptions.filter((sub) => {
-        // If profile flag is missing, default to true to avoid silently dropping notifications.
-        const enabled = pushEnabledByUser.get(sub.user_id as string)
-        return enabled !== false
-    })
-
     let pushed = 0
     let failedPushes = 0
     const expiredEndpoints: string[] = []
 
     const results = await Promise.allSettled(
-        eligibleSubscriptions.map(async (sub) => {
+        subscriptions.map(async (sub) => {
             await sendPushNotification(
                 {
                     endpoint: sub.endpoint as string,
@@ -123,7 +161,7 @@ async function sendPushToUsers(userIds: string[], payload: NotificationContent):
         failedPushes += 1
         const reason = result.reason
         if (reason instanceof Error && (reason.message.includes('expired') || reason.message.includes('Invalid'))) {
-            expiredEndpoints.push(eligibleSubscriptions[index]!.endpoint as string)
+            expiredEndpoints.push(subscriptions[index]!.endpoint as string)
         }
     })
 
@@ -145,23 +183,16 @@ async function sendEmailToUsers(userIds: string[], payload: NotificationContent)
     const supabase = createApiClient()
     const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, display_name, full_name, email_notifications_enabled')
+        .select('id, display_name, full_name')
         .in('id', userIds)
 
-    const profileById = new Map<string, { display_name?: string | null; full_name?: string | null; email_notifications_enabled?: boolean | null }>(
-        (profiles || []).map((row) => [row.id as string, row as { display_name?: string | null; full_name?: string | null; email_notifications_enabled?: boolean | null }])
+    const profileById = new Map<string, { display_name?: string | null; full_name?: string | null }>(
+        (profiles || []).map((row) => [row.id as string, row as { display_name?: string | null; full_name?: string | null }])
     )
 
-    let emailed = 0
-    let failedEmails = 0
-
-    const results = await Promise.allSettled(
+    const resolved = await Promise.all(
         userIds.map(async (userId) => {
             const profile = profileById.get(userId)
-            if (profile?.email_notifications_enabled === false) {
-                return
-            }
-
             const name = profile?.display_name || profile?.full_name || 'there'
             const template = getTemplateForNotification(name, {
                 type: payload.type,
@@ -170,33 +201,41 @@ async function sendEmailToUsers(userIds: string[], payload: NotificationContent)
                 data: payload.data,
                 url: payload.url,
             })
-
             if (!template) {
-                return
+                return null
             }
 
             const userResponse = await supabase.auth.admin.getUserById(userId)
             const email = userResponse.data.user?.email
             if (!email) {
-                return
+                return null
             }
 
-            const result = await sendEmail(email, template)
-            if (!result.success) {
-                throw new Error('Email delivery failed')
-            }
+            return { email, template }
         })
     )
 
-    results.forEach((result) => {
-        if (result.status === 'fulfilled') {
-            emailed += 1
-        } else {
-            failedEmails += 1
-        }
-    })
+    const messages = resolved.filter((m): m is { email: string; template: { subject: string; html: string } } => m !== null)
+    if (messages.length === 0) {
+        return { emailed: 0, failedEmails: 0 }
+    }
 
-    return { emailed, failedEmails }
+    // A single recipient just sends directly; multiple recipients batch into
+    // one Resend API call instead of one request per user.
+    if (messages.length === 1) {
+        const result = await sendEmail(messages[0]!.email, messages[0]!.template)
+        if (!result.success) {
+            console.error('[Notifications] Email send failed:', result.error)
+            return { emailed: 0, failedEmails: 1 }
+        }
+        return { emailed: 1, failedEmails: 0 }
+    }
+
+    const batchResult = await sendBatchEmails(messages.map((m) => ({ to: m.email, template: m.template })))
+    if (!batchResult.success) {
+        console.error('[Notifications] Batch email send failed:', batchResult.error)
+    }
+    return { emailed: batchResult.sent, failedEmails: batchResult.failed }
 }
 
 export async function notifyTargets(params: NotifyTargetsParams): Promise<NotificationResult> {
@@ -218,34 +257,51 @@ export async function notifyTargets(params: NotifyTargetsParams): Promise<Notifi
         }
 
         const supabase = createApiClient()
-        const notificationRows = recipients.map((targetUserId) => ({
-            user_id: targetUserId,
-            type,
-            title,
-            message,
-            data: { ...data, url },
-            is_read: false,
-        }))
+        const preferences = await getPreferencesByUser(recipients)
+        const chatGated = isChatNotification(type)
 
-        const { data: insertedRows, error: insertError } = await supabase
-            .from('notifications')
-            .insert(notificationRows)
-            .select('id, user_id')
-
-        if (insertError) {
-            return {
-                success: false,
-                inserted: 0,
-                pushed: 0,
-                failedPushes: 0,
-                emailed: 0,
-                failedEmails: 0,
-                notifications: [],
-                error: insertError,
-            }
+        const isEligible = (userId: string, channel: keyof NotificationPreferences) => {
+            const prefs = resolvePreferences(preferences, userId)
+            return prefs[channel] && (!chatGated || prefs.chat_enabled)
         }
 
-        const { pushed, failedPushes } = await sendPushToUsers(recipients, {
+        const inAppRecipients = recipients.filter((id) => isEligible(id, 'in_app_enabled'))
+        const pushRecipients = recipients.filter((id) => isEligible(id, 'push_enabled'))
+        const emailRecipients = recipients.filter((id) => isEligible(id, 'email_enabled'))
+
+        let insertedRows: Array<{ id: string; user_id: string }> = []
+        if (inAppRecipients.length > 0) {
+            const notificationRows = inAppRecipients.map((targetUserId) => ({
+                user_id: targetUserId,
+                type,
+                title,
+                message,
+                data: { ...data, url },
+                is_read: false,
+            }))
+
+            const { data: rows, error: insertError } = await supabase
+                .from('notifications')
+                .insert(notificationRows)
+                .select('id, user_id')
+
+            if (insertError) {
+                return {
+                    success: false,
+                    inserted: 0,
+                    pushed: 0,
+                    failedPushes: 0,
+                    emailed: 0,
+                    failedEmails: 0,
+                    notifications: [],
+                    error: insertError,
+                }
+            }
+
+            insertedRows = (rows || []) as Array<{ id: string; user_id: string }>
+        }
+
+        const { pushed, failedPushes } = await sendPushToUsers(pushRecipients, {
             type,
             title,
             message,
@@ -254,7 +310,7 @@ export async function notifyTargets(params: NotifyTargetsParams): Promise<Notifi
         })
 
         // Email is best-effort; failures should not fail in-app or push delivery.
-        const { emailed, failedEmails } = await sendEmailToUsers(recipients, {
+        const { emailed, failedEmails } = await sendEmailToUsers(emailRecipients, {
             type,
             title,
             message,

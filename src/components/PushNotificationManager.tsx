@@ -157,9 +157,8 @@ export function PushNotificationManager({ userId, presentation = 'settings' }: P
             try {
                 const supabase = createClient()
                 const { error } = await supabase
-                    .from('profiles')
-                    .update({ push_notifications_enabled: true })
-                    .eq('id', userId)
+                    .from('notification_preferences')
+                    .upsert({ user_id: userId, push_enabled: true }, { onConflict: 'user_id' })
 
                 if (error) {
                     console.warn('[PushNotificationManager] Failed to update database preference:', error)
@@ -238,9 +237,8 @@ export function PushNotificationManager({ userId, presentation = 'settings' }: P
             try {
                 const supabase = createClient()
                 const { error } = await supabase
-                    .from('profiles')
-                    .update({ push_notifications_enabled: false })
-                    .eq('id', userId)
+                    .from('notification_preferences')
+                    .upsert({ user_id: userId, push_enabled: false }, { onConflict: 'user_id' })
 
                 if (error) {
                     console.warn('[PushNotificationManager] Failed to update database preference:', error)

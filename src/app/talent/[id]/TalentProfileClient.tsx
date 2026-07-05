@@ -988,6 +988,19 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                     description: `Booking with ${talent.display_name}`
                 })
 
+            // Notify the talent (in-app/push/email, gated by their notification preferences)
+            fetch('/api/notifications/dispatch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'booking_request',
+                    title: 'New Booking Request!',
+                    message: 'You have a new booking request. Check it out and respond!',
+                    data: { booking_id: booking.id, total_price: totalPrice },
+                    url: `/dashboard/bookings/${booking.id}`,
+                }),
+            }).catch(err => console.error('[TalentProfile] Booking notification dispatch failed:', err))
+
             // Close modal and redirect to verification page
             setShowBookingModal(false)
             router.push(`/dashboard/verify?booking=${booking.id}`)

@@ -4,12 +4,37 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {
     try {
+        // This endpoint can send an arbitrary templated email to an arbitrary
+        // address, so it's restricted to admins/internal callers only — it
+        // must never be reachable by an ordinary authenticated user, or any
+        // logged-in account could relay email to any inbox.
+        const internalSecret = process.env.NOTIFICATION_DISPATCH_SECRET
+        const headerSecret = request.headers.get('x-notification-secret')
+        const isInternalRequest = Boolean(
+            internalSecret &&
+            internalSecret.length > 0 &&
+            headerSecret &&
+            headerSecret.length === internalSecret.length &&
+            headerSecret === internalSecret
+        )
+
         const supabase = await createClient()
 
-        // Verify the user is authenticated
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        if (!isInternalRequest) {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+            }
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+
+            if (profile?.role !== 'admin') {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+            }
         }
 
         const body = await request.json()

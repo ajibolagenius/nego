@@ -11,12 +11,13 @@ import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { PushNotificationManager } from '@/components/PushNotificationManager'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile } from '@/types/database'
+import type { NotificationPreferences, Profile } from '@/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 interface SettingsClientProps {
     user: SupabaseUser
     profile: Profile | null
+    notificationPreferences: Pick<NotificationPreferences, 'in_app_enabled' | 'push_enabled' | 'email_enabled' | 'chat_enabled'> | null
 }
 
 interface PasswordStrength {
@@ -26,10 +27,14 @@ interface PasswordStrength {
     hasNumber: boolean
 }
 
-export function SettingsClient({ user, profile }: SettingsClientProps) {
+export function SettingsClient({ user, profile, notificationPreferences }: SettingsClientProps) {
     const router = useRouter()
-    const [emailNotifications, setEmailNotifications] = useState(profile?.email_notifications_enabled !== false)
+    const [emailNotifications, setEmailNotifications] = useState(notificationPreferences?.email_enabled !== false)
     const [savingEmailNotifications, setSavingEmailNotifications] = useState(false)
+    const [inAppNotifications, setInAppNotifications] = useState(notificationPreferences?.in_app_enabled !== false)
+    const [savingInAppNotifications, setSavingInAppNotifications] = useState(false)
+    const [chatNotifications, setChatNotifications] = useState(notificationPreferences?.chat_enabled !== false)
+    const [savingChatNotifications, setSavingChatNotifications] = useState(false)
     const [privacy, setPrivacy] = useState({
         showOnlineStatus: true,
         showLocation: true,
@@ -93,22 +98,22 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
         setTimeout(() => setErrorMessage(null), 5000)
     }, [])
 
+    const updateNotificationPreference = useCallback(async (field: 'email_enabled' | 'in_app_enabled' | 'chat_enabled', value: boolean) => {
+        const supabase = createClient()
+        const { error } = await supabase
+            .from('notification_preferences')
+            .upsert({ user_id: user.id, [field]: value }, { onConflict: 'user_id' })
+
+        if (error) throw error
+    }, [user.id])
+
     // Toggle email notifications
     const toggleEmailNotifications = useCallback(async () => {
         const newValue = !emailNotifications
         setSavingEmailNotifications(true)
 
         try {
-            const supabase = createClient()
-            const { error } = await supabase
-                .from('profiles')
-                .update({
-                    email_notifications_enabled: newValue,
-                    updated_at: new Date().toISOString(),
-                })
-                .eq('id', user.id)
-
-            if (error) throw error
+            await updateNotificationPreference('email_enabled', newValue)
             setEmailNotifications(newValue)
             showSuccess(`Email notifications ${newValue ? 'enabled' : 'disabled'}`)
         } catch (error) {
@@ -116,7 +121,39 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
         } finally {
             setSavingEmailNotifications(false)
         }
-    }, [emailNotifications, user.id, showSuccess, showError])
+    }, [emailNotifications, updateNotificationPreference, showSuccess, showError])
+
+    // Toggle in-app notifications
+    const toggleInAppNotifications = useCallback(async () => {
+        const newValue = !inAppNotifications
+        setSavingInAppNotifications(true)
+
+        try {
+            await updateNotificationPreference('in_app_enabled', newValue)
+            setInAppNotifications(newValue)
+            showSuccess(`In-app notifications ${newValue ? 'enabled' : 'disabled'}`)
+        } catch (error) {
+            showError('Failed to update in-app notification setting')
+        } finally {
+            setSavingInAppNotifications(false)
+        }
+    }, [inAppNotifications, updateNotificationPreference, showSuccess, showError])
+
+    // Toggle chat notifications
+    const toggleChatNotifications = useCallback(async () => {
+        const newValue = !chatNotifications
+        setSavingChatNotifications(true)
+
+        try {
+            await updateNotificationPreference('chat_enabled', newValue)
+            setChatNotifications(newValue)
+            showSuccess(`Chat notifications ${newValue ? 'enabled' : 'disabled'}`)
+        } catch (error) {
+            showError('Failed to update chat notification setting')
+        } finally {
+            setSavingChatNotifications(false)
+        }
+    }, [chatNotifications, updateNotificationPreference, showSuccess, showError])
 
     // Save privacy setting
     const savePrivacySetting = useCallback(async (key: keyof typeof privacy, value: boolean) => {
@@ -373,6 +410,60 @@ export function SettingsClient({ user, profile }: SettingsClientProps) {
                     <div className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
                         <h2 className="text-sm font-bold text-white/50 uppercase tracking-wider mb-4">Push Notifications</h2>
                         <PushNotificationManager userId={user.id} />
+                    </div>
+
+                    {/* In-App Notifications Section */}
+                    <div className="animate-fade-in-up" style={{ animationDelay: '0.22s' }}>
+                        <h2 className="text-sm font-bold text-white/50 uppercase tracking-wider mb-4">In-App Notifications</h2>
+                        <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-[#df2531]/10 flex items-center justify-center">
+                                    <Bell size={20} weight="duotone" className="text-[#df2531]" />
+                                </div>
+                                <div>
+                                    <p className="text-white font-medium">In-App Notifications</p>
+                                    <p className="text-white/40 text-sm">Show notifications in your notification bell</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {savingInAppNotifications && (
+                                    <SpinnerGap size={16} className="animate-spin text-white/40" aria-hidden="true" />
+                                )}
+                                <Toggle
+                                    enabled={inAppNotifications}
+                                    onChange={toggleInAppNotifications}
+                                    disabled={savingInAppNotifications}
+                                    ariaLabel="Toggle in-app notifications"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Chat Notifications Section */}
+                    <div className="animate-fade-in-up" style={{ animationDelay: '0.24s' }}>
+                        <h2 className="text-sm font-bold text-white/50 uppercase tracking-wider mb-4">Chat Notifications</h2>
+                        <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-[#df2531]/30 transition-all duration-300">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full bg-[#df2531]/10 flex items-center justify-center">
+                                    <Bell size={20} weight="duotone" className="text-[#df2531]" />
+                                </div>
+                                <div>
+                                    <p className="text-white font-medium">Chat Notifications</p>
+                                    <p className="text-white/40 text-sm">Get notified about new messages, across all channels</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {savingChatNotifications && (
+                                    <SpinnerGap size={16} className="animate-spin text-white/40" aria-hidden="true" />
+                                )}
+                                <Toggle
+                                    enabled={chatNotifications}
+                                    onChange={toggleChatNotifications}
+                                    disabled={savingChatNotifications}
+                                    ariaLabel="Toggle chat notifications"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Email Notifications Section */}

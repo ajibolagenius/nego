@@ -51,6 +51,16 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        const { data: preferences } = await supabase
+            .from('notification_preferences')
+            .select('push_enabled')
+            .eq('user_id', userId)
+            .single()
+
+        if (preferences?.push_enabled === false) {
+            return NextResponse.json({ success: true, sent: 0, total: 0, skipped: 'push_disabled' })
+        }
+
         // Get all push subscriptions for the user
         const { data: subscriptions, error: subError } = await supabase
             .from('push_subscriptions')

@@ -57,6 +57,14 @@ export interface Profile {
     updated_at: string
 }
 
+export interface NotificationPreferences {
+    user_id: string
+    in_app_enabled: boolean
+    push_enabled: boolean
+    email_enabled: boolean
+    chat_enabled: boolean
+}
+
 export interface Wallet {
     user_id: string
     balance: number

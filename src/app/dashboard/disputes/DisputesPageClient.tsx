@@ -83,8 +83,9 @@ export function DisputesPageClient({ userId, disputes, bookings }: DisputesPageC
 
             toast.success('Dispute filed successfully')
 
-            // Notify the other party and admins about the dispute
-            const otherPartyId = userId === booking.client_id ? booking.talent_id : booking.client_id
+            // Notify the other party and admins about the dispute. The server
+            // derives the actual target from the booking record itself rather
+            // than trusting client-supplied target ids.
             fetch('/api/notifications/dispatch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -94,10 +95,6 @@ export function DisputesPageClient({ userId, disputes, bookings }: DisputesPageC
                     message: `A dispute has been filed regarding booking. Title: ${formData.title}`,
                     data: { booking_id: formData.booking_id, dispute_type: formData.dispute_type },
                     url: `/dashboard/disputes`,
-                    targets: {
-                        userIds: [otherPartyId],
-                        roles: ['admin'],
-                    },
                 }),
             }).catch(err => console.error('[Dispute] Notification dispatch failed:', err))
 

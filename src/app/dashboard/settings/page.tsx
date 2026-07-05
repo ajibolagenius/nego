@@ -29,10 +29,17 @@ export default async function SettingsPage() {
         .eq('id', user.id)
         .single()
 
+    const { data: notificationPreferences } = await supabase
+        .from('notification_preferences')
+        .select('in_app_enabled, push_enabled, email_enabled, chat_enabled')
+        .eq('user_id', user.id)
+        .single()
+
     return (
         <SettingsClient
             user={user}
             profile={profile}
+            notificationPreferences={notificationPreferences}
         />
     )
 }

@@ -160,8 +160,20 @@ export async function POST(request: NextRequest) {
                 url: '/dashboard/gifts',
             })
 
-            // Notification for recipient (already handled by database trigger)
-            // No need to fetch recipientProfile again - already fetched above
+            // Notification for recipient
+            await notifyUser({
+                userId: sanitized.recipientId,
+                type: 'gift_received',
+                title: 'You received a gift! 🎁',
+                message: `You received ${sanitized.amount.toLocaleString()} coins as a gift.`,
+                data: {
+                    gift_id: resultObj.gift_id,
+                    sender_id: sanitized.senderId,
+                    amount: sanitized.amount,
+                    message: sanitized.message || null,
+                },
+                url: '/dashboard/gifts',
+            })
 
             // Check for low balance warning for sender
             if (resultObj.new_balance && resultObj.new_balance < 100) {

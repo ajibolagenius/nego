@@ -1,12 +1,26 @@
 import { Resend } from 'resend'
 import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 
-// Initialize Resend client only when needed to prevent build-time errors
-// const resend = new Resend(process.env.RESEND_API_KEY)
-
 // Sender email - use verified domain or Resend's test domain
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'Nego <onboarding@resend.dev>'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
+
+if (process.env.RESEND_API_KEY && !process.env.SENDER_EMAIL) {
+    console.warn('[Email] SENDER_EMAIL is not set — falling back to onboarding@resend.dev, which has low sending limits and hurts deliverability. Set SENDER_EMAIL to a verified domain address.')
+}
+
+// A single client is reused across calls instead of constructing a new one
+// per send, since it holds no per-request state.
+let resendClient: Resend | null = null
+function getResendClient(): Resend | null {
+    if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'your_resend_api_key') {
+        return null
+    }
+    if (!resendClient) {
+        resendClient = new Resend(process.env.RESEND_API_KEY)
+    }
+    return resendClient
+}
 
 // Shared email styles
 const styles = {
@@ -934,26 +948,69 @@ export function getTemplateForNotification(
 
 // Send email function
 export async function sendEmail(to: string, template: { subject: string; html: string }) {
-    // Check if API key is configured
-    if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === 'your_resend_api_key') {
+    const resend = getResendClient()
+    if (!resend) {
         console.log('Resend API key not configured. Skipping email send.')
         return { success: false, error: 'Email not configured' }
     }
 
-    const resend = new Resend(process.env.RESEND_API_KEY)
-
     try {
-        const data = await resend.emails.send({
+        const { data, error } = await resend.emails.send({
             from: SENDER_EMAIL,
             to: [to],
             subject: template.subject,
             html: template.html,
         })
 
+        if (error) {
+            console.error('Failed to send email:', error)
+            return { success: false, error }
+        }
+
         console.log('Email sent successfully:', data)
         return { success: true, data }
     } catch (error) {
         console.error('Failed to send email:', error)
         return { success: false, error }
+    }
+}
+
+// Send the same template to many recipients in one Resend API call instead
+// of one request per recipient — used for role-wide broadcasts (e.g. an
+// admin digest or a notifyRole fan-out) where each recipient's rendered
+// template can still differ.
+export async function sendBatchEmails(
+    messages: Array<{ to: string; template: { subject: string; html: string } }>
+): Promise<{ success: boolean; sent: number; failed: number; error?: unknown }> {
+    if (messages.length === 0) {
+        return { success: true, sent: 0, failed: 0 }
+    }
+
+    const resend = getResendClient()
+    if (!resend) {
+        console.log('Resend API key not configured. Skipping batch email send.')
+        return { success: false, sent: 0, failed: messages.length, error: 'Email not configured' }
+    }
+
+    try {
+        const { data, error } = await resend.batch.send(
+            messages.map((m) => ({
+                from: SENDER_EMAIL,
+                to: [m.to],
+                subject: m.template.subject,
+                html: m.template.html,
+            }))
+        )
+
+        if (error) {
+            console.error('Failed to send batch emails:', error)
+            return { success: false, sent: 0, failed: messages.length, error }
+        }
+
+        const sent = data?.data?.length ?? 0
+        return { success: true, sent, failed: messages.length - sent }
+    } catch (error) {
+        console.error('Failed to send batch emails:', error)
+        return { success: false, sent: 0, failed: messages.length, error }
     }
 }
