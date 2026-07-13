@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(cd /Users/ajibolagenius/Documents/Node/nego && npx eslint \"src/app/api/bookings/[id]/accept/route.ts\" \"src/app/api/bookings/[id]/decline/route.ts\" \"src/app/api/bookings/[id]/complete/route.ts\" \"src/app/api/admin/verifications/[id]/approve/route.ts\" \"src/app/api/admin/talents/[id]/verify/route.ts\" \"src/app/api/admin/talents/[id]/unverify/route.ts\" \"src/app/api/admin/media/[id]/route.ts\" \"src/app/api/push/send/route.ts\")",
-      "Bash(cd /Users/ajibolagenius/Documents/Node/nego && npx eslint \"src/components/NotificationBell.tsx\" \"src/components/Reviews.tsx\" \"src/app/dashboard/notifications/NotificationsClient.tsx\" \"src/app/dashboard/disputes/DisputesPageClient.tsx\" \"src/app/dashboard/messages/MessagesClient.tsx\" \"src/app/talent/[id]/TalentProfileClient.tsx\")"
-    ]
-  }
-}
