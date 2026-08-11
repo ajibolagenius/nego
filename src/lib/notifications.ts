@@ -295,6 +295,10 @@ export async function notifyTargets(params: NotifyTargetsParams): Promise<Notifi
         const emailRecipients = recipients.filter((id) => isEligible(id, 'email_enabled'))
 
         let insertedRows: Array<{ id: string; user_id: string }> = []
+        // Surfaced on the result so a caller (or an admin dispatch response) can
+        // still see that the in-app channel failed, even though delivery on the
+        // other channels continued.
+        let inAppError: unknown = null
         if (inAppRecipients.length > 0) {
             const notificationRows = inAppRecipients.map((targetUserId) => ({
                 user_id: targetUserId,
@@ -311,19 +315,24 @@ export async function notifyTargets(params: NotifyTargetsParams): Promise<Notifi
                 .select('id, user_id')
 
             if (insertError) {
-                return {
-                    success: false,
-                    inserted: 0,
-                    pushed: 0,
-                    failedPushes: 0,
-                    emailed: 0,
-                    failedEmails: 0,
-                    notifications: [],
-                    error: insertError,
-                }
+                // Do NOT return here. This used to abort the whole dispatch, so a
+                // problem with the in-app row — most notably a `type` value
+                // missing from the notification_type enum — also suppressed the
+                // push and the email. That turned one schema gap into total
+                // silence across every channel, which is exactly how
+                // `message_received` managed to deliver nothing at all for
+                // thousands of messages while every caller logged only a caught
+                // error. In-app is the least urgent channel; a talent being
+                // reached by a client is better served by a push that arrives
+                // than by an in-app row that would have been consistent.
+                inAppError = insertError
+                console.error(
+                    `[Notifications] In-app insert failed for type "${type}" — continuing with push/email:`,
+                    insertError
+                )
+            } else {
+                insertedRows = (rows || []) as Array<{ id: string; user_id: string }>
             }
-
-            insertedRows = (rows || []) as Array<{ id: string; user_id: string }>
         }
 
         const { pushed, failedPushes } = await sendPushToUsers(pushRecipients, {
@@ -344,13 +353,17 @@ export async function notifyTargets(params: NotifyTargetsParams): Promise<Notifi
         })
 
         return {
-            success: true,
+            // Delivery on at least one channel counts as success. Only report
+            // failure when in-app broke AND nothing else got through, so a
+            // caller is not told the dispatch failed after a push landed.
+            success: !inAppError || pushed > 0 || emailed > 0,
             inserted: insertedRows?.length || 0,
             pushed,
             failedPushes,
             emailed,
             failedEmails,
             notifications: (insertedRows || []) as Array<{ id: string; user_id: string }>,
+            ...(inAppError ? { error: inAppError } : {}),
         }
     } catch (error) {
         return {

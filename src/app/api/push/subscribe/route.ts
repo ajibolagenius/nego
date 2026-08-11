@@ -68,34 +68,42 @@ export async function POST(request: NextRequest) {
         // authenticated above.
         const admin = createApiClient()
 
-        // Retire the endpoint the browser just replaced, plus any stale
-        // attribution of the new endpoint to another account (shared device).
-        const endpointsToClear = [subscription.endpoint]
+        // Retire the endpoint the browser just replaced. Only ever the *old*
+        // endpoint — never the new one, so a failure below cannot leave the user
+        // with no subscription at all.
         if (oldEndpoint && oldEndpoint !== subscription.endpoint) {
-            endpointsToClear.push(oldEndpoint)
+            const { error: retireError } = await admin
+                .from('push_subscriptions')
+                .delete()
+                .eq('endpoint', oldEndpoint)
+
+            if (retireError) {
+                // The new subscription still needs saving; a leftover dead row
+                // just gets cleaned up on its next 410 Gone.
+                console.warn('[Push Subscribe] Failed to retire old endpoint:', retireError)
+            }
         }
 
-        const { error: clearError } = await admin
+        // Upsert on `endpoint`, which is now uniquely indexed. This reassigns the
+        // row to the current user in one statement, which is what makes a shared
+        // device safe: whoever last authenticated on this browser owns the
+        // endpoint, and the previous owner stops receiving pushes meant for them
+        // on a device they no longer control.
+        const { error: upsertError } = await admin
             .from('push_subscriptions')
-            .delete()
-            .in('endpoint', endpointsToClear)
+            .upsert(
+                {
+                    user_id: user.id,
+                    endpoint: subscription.endpoint,
+                    p256dh_key: p256dh,
+                    auth_key: auth,
+                    updated_at: new Date().toISOString(),
+                },
+                { onConflict: 'endpoint' }
+            )
 
-        if (clearError) {
-            throw clearError
-        }
-
-        const { error: insertError } = await admin
-            .from('push_subscriptions')
-            .insert({
-                user_id: user.id,
-                endpoint: subscription.endpoint,
-                p256dh_key: p256dh,
-                auth_key: auth,
-                updated_at: new Date().toISOString(),
-            })
-
-        if (insertError) {
-            throw insertError
+        if (upsertError) {
+            throw upsertError
         }
 
         // A stored subscription and `push_enabled = false` is a contradiction
