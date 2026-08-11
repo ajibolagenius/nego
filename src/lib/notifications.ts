@@ -112,6 +112,24 @@ async function resolveRoleTargets(roles: UserRole[]): Promise<string[]> {
     return (data || []).map((row) => row.id as string)
 }
 
+// Prefer an id from the payload so two different bookings (or gifts, or
+// messages) never share a tag. Falls back to a random suffix rather than a
+// constant, because a constant is what caused notifications to overwrite
+// each other.
+function buildPushTag(payload: NotificationContent): string {
+    const data = payload.data || {}
+    const idKeys = ['booking_id', 'message_id', 'gift_id', 'transaction_id', 'media_id', 'dispute_id', 'id']
+
+    for (const key of idKeys) {
+        const value = data[key]
+        if (typeof value === 'string' && value.length > 0) {
+            return `notification-${payload.type}-${value}`
+        }
+    }
+
+    return `notification-${payload.type}-${crypto.randomUUID()}`
+}
+
 async function sendPushToUsers(userIds: string[], payload: NotificationContent): Promise<{ pushed: number; failedPushes: number }> {
     if (userIds.length === 0) {
         return { pushed: 0, failedPushes: 0 }
@@ -144,7 +162,14 @@ async function sendPushToUsers(userIds: string[], payload: NotificationContent):
                 {
                     title: payload.title,
                     body: payload.message,
-                    tag: `notification-${payload.type}`,
+                    // A tag collapses notifications: a second push with the same
+                    // tag REPLACES the first in the tray. `notification-${type}`
+                    // meant a talent who received three booking requests while
+                    // away saw only the last one — the earlier clients simply
+                    // vanished. Scope the tag to the specific record so distinct
+                    // events stack, while a genuine retry of the same event
+                    // still de-duplicates.
+                    tag: buildPushTag(payload),
                     data: payload.data || {},
                     url: payload.url || '/dashboard/notifications',
                 }

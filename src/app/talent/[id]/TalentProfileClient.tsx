@@ -988,18 +988,31 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                     description: `Booking with ${talent.display_name}`
                 })
 
-            // Notify the talent (in-app/push/email, gated by their notification preferences)
-            fetch('/api/notifications/dispatch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: 'booking_request',
-                    title: 'New Booking Request!',
-                    message: 'You have a new booking request. Check it out and respond!',
-                    data: { booking_id: booking.id, total_price: totalPrice },
-                    url: `/dashboard/bookings/${booking.id}`,
-                }),
-            }).catch(err => console.error('[TalentProfile] Booking notification dispatch failed:', err))
+            // Notify the talent (in-app/push/email, gated by their notification preferences).
+            //
+            // Awaited, and with keepalive, on purpose. This used to be a bare
+            // fire-and-forget fetch immediately followed by the router.push
+            // below; the request was routinely abandoned mid-flight when the
+            // navigation tore down the page, so the talent was never told about
+            // the booking. A failure here must not block the client's booking —
+            // it is already committed — so the error is logged and swallowed,
+            // but we do wait for it to actually leave the browser.
+            try {
+                await fetch('/api/notifications/dispatch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    keepalive: true,
+                    body: JSON.stringify({
+                        type: 'booking_request',
+                        title: 'New Booking Request!',
+                        message: 'You have a new booking request. Check it out and respond!',
+                        data: { booking_id: booking.id, total_price: totalPrice },
+                        url: `/dashboard/bookings/${booking.id}`,
+                    }),
+                })
+            } catch (err) {
+                console.error('[TalentProfile] Booking notification dispatch failed:', err)
+            }
 
             // Close modal and redirect to verification page
             setShowBookingModal(false)

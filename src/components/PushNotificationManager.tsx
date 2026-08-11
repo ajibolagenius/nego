@@ -3,6 +3,7 @@
 import { Bell, BellRinging, BellSlash, Check, X, SpinnerGap } from '@phosphor-icons/react'
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { syncPushSubscription } from '@/lib/push/sync'
 import { urlBase64ToUint8Array } from '@/lib/push/vapid'
 import { createClient } from '@/lib/supabase/client'
 
@@ -64,11 +65,52 @@ export function PushNotificationManager({ userId, presentation = 'settings' }: P
         }
     }, [showPrompt, loading])
 
+    /**
+     * Determine whether push is genuinely working, not just whether the browser
+     * holds a subscription object.
+     *
+     * The previous implementation set `isSubscribed` from
+     * `pushManager.getSubscription()` alone. A browser subscription the server
+     * has no row for — or has a row for but with `push_enabled = false` —
+     * delivers nothing, yet rendered the green "Notifications Enabled" panel.
+     * That is why users reported notifications as silently broken: the app kept
+     * telling them they were on.
+     *
+     * So: ask the browser, ask the server, and repair the difference.
+     */
     const checkSubscription = async () => {
         try {
             const registration = await navigator.serviceWorker.ready
             const subscription = await registration.pushManager.getSubscription()
-            setIsSubscribed(!!subscription)
+
+            if (!subscription) {
+                setIsSubscribed(false)
+                return
+            }
+
+            const response = await fetch(
+                `/api/push/status?endpoint=${encodeURIComponent(subscription.endpoint)}`,
+                { cache: 'no-store' }
+            )
+
+            if (!response.ok) {
+                // Can't confirm server state (offline, or signed out). Fall back
+                // to the browser's view rather than wrongly showing "off".
+                setIsSubscribed(true)
+                return
+            }
+
+            const status = await response.json()
+
+            if (status.registered && status.pushEnabled) {
+                setIsSubscribed(true)
+                return
+            }
+
+            // Browser and server disagree — self-heal instead of asking the user
+            // to notice and re-enable it themselves.
+            const repair = await syncPushSubscription()
+            setIsSubscribed(repair.ok)
         } catch (error) {
             console.error('[PushNotificationManager] Error checking subscription:', error)
             // Non-critical error, continue without subscription
@@ -153,28 +195,23 @@ export function PushNotificationManager({ userId, presentation = 'settings' }: P
             setIsSubscribed(true)
             setShowPrompt(false)
 
-            // Store preference in database (non-blocking)
-            try {
-                const supabase = createClient()
-                const { error } = await supabase
-                    .from('notification_preferences')
-                    .upsert({ user_id: userId, push_enabled: true }, { onConflict: 'user_id' })
+            // /api/push/subscribe already set push_enabled = true with the
+            // service-role client, so there is no second write to make here.
+            // Doing it from the browser was also unreliable: the upsert needed
+            // an existing preferences row to satisfy RLS on some accounts, and
+            // its failure was only logged — leaving a saved subscription paired
+            // with push_enabled = false, which drops every push.
 
-                if (error) {
-                    console.warn('[PushNotificationManager] Failed to update database preference:', error)
-                    // Continue - notification permission is still granted
-                }
-            } catch (dbError) {
-                console.warn('[PushNotificationManager] Database update failed:', dbError)
-                // Continue - notification permission is still granted
-            }
-
-            // Show test notification
+            // Confirm through the service worker rather than `new Notification()`:
+            // the direct constructor throws "Illegal constructor" on Android
+            // Chrome, so mobile users — most of this app's users — silently got
+            // no confirmation that enabling had worked.
             try {
-                new Notification('Notifications Enabled! 🔔', {
+                await registration.showNotification('Notifications Enabled! 🔔', {
                     body: 'You will now receive notifications from Nego',
-                    icon: '/icon.svg',
-                    tag: 'nego-notification-enabled'
+                    icon: '/web-app-manifest-192x192.png',
+                    badge: '/web-app-manifest-192x192.png',
+                    tag: 'nego-notification-enabled',
                 })
             } catch (notifError) {
                 console.warn('[PushNotificationManager] Failed to show test notification:', notifError)

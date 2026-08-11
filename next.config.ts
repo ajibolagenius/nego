@@ -36,6 +36,37 @@ const nextConfig: NextConfig = {
     async headers() {
         return [
             {
+                // The service worker script must never be served from a cache.
+                // A cached /sw.js is the classic reason a PWA fix does not reach
+                // users: the browser compares the bytes it fetches against the
+                // installed worker, so if an intermediary hands back the old
+                // file, no update is ever detected and the stale worker keeps
+                // running indefinitely. `updateViaCache: 'none'` covers the HTTP
+                // cache on the registration side; this covers the CDN.
+                source: '/sw.js',
+                headers: [
+                    {
+                        key: 'Cache-Control',
+                        value: 'no-cache, no-store, must-revalidate',
+                    },
+                    {
+                        key: 'Service-Worker-Allowed',
+                        value: '/',
+                    },
+                ],
+            },
+            {
+                // Same reasoning: a stale manifest keeps the old icons, name and
+                // shortcuts on installed PWAs.
+                source: '/manifest.json',
+                headers: [
+                    {
+                        key: 'Cache-Control',
+                        value: 'no-cache, must-revalidate',
+                    },
+                ],
+            },
+            {
                 source: '/:path*',
                 headers: [
                     {

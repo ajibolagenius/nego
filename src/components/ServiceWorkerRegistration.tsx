@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { requestServiceWorkerPushSync, syncPushSubscription } from '@/lib/push/sync'
 
 /**
  * Component to register service worker on app load
@@ -29,6 +30,22 @@ export function ServiceWorkerRegistration() {
                 registrationRef.current = registration
                 console.log('[ServiceWorker] Registered successfully:', registration.scope)
 
+                // Repair a push subscription the server can no longer send to.
+                // Runs on every load because a subscription can be invalidated
+                // while the app is closed, and nothing else would notice: the
+                // browser keeps reporting an active subscription, so the user
+                // sees "Notifications Enabled" and receives nothing. No-ops
+                // unless permission is already granted.
+                syncPushSubscription()
+                    .then((result) => {
+                        if (result.reason !== 'already-registered' && result.reason !== 'permission-default') {
+                            console.log('[ServiceWorker] Push reconcile:', result.reason)
+                        }
+                    })
+                    .catch(() => { /* best-effort */ })
+
+                requestServiceWorkerPushSync()
+
                 // Handle service worker updates
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing
@@ -49,14 +66,31 @@ export function ServiceWorkerRegistration() {
                     }
                 })
 
-                // Check for updates periodically (every hour)
-                setInterval(async () => {
+                // Check for a new worker straight away, not only after the first
+                // hour has elapsed. Without this, an install that already has an
+                // old service worker keeps running it for up to an hour after a
+                // deploy — which for a notification fix means users stay broken
+                // long after it shipped.
+                const checkForUpdate = async () => {
                     try {
                         await registration.update()
                     } catch (error) {
                         console.error('[ServiceWorker] Error checking for updates:', error)
                     }
-                }, 60 * 60 * 1000) // 1 hour
+                }
+
+                checkForUpdate()
+
+                // Every 30 minutes while the tab is open...
+                setInterval(checkForUpdate, 30 * 60 * 1000)
+
+                // ...and whenever the user comes back to the app, which is what
+                // actually catches installed PWAs that are rarely reloaded.
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') {
+                        checkForUpdate()
+                    }
+                })
 
                 // Handle service worker controller change (update activated)
                 let refreshing = false
