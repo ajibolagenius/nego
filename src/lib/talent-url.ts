@@ -14,11 +14,17 @@ type TalentRef = {
     display_name?: string | null
 }
 
+// A username is usable as the URL as typed only if it survives a round trip and
+// carries at least one alphanumeric: '---' slugifies to nothing, so Postgres
+// indexes it as NULL, and keeping it here would put a key outside the reach of
+// profiles_talent_slug_unique.
+const URL_SAFE_USERNAME = /^(?=[a-z0-9_-]*[a-z0-9])[a-z0-9_-]+$/
+
 // Usernames are free text: some contain spaces, emoji or '@', which do not
 // survive a round trip through the URL. Everything that builds or resolves a
 // profile URL must agree on this one key.
 export function talentSlug(talent: TalentRef): string {
-    if (talent.username && /^[a-z0-9_-]+$/.test(talent.username)) {
+    if (talent.username && URL_SAFE_USERNAME.test(talent.username)) {
         return talent.username
     }
 
@@ -40,6 +46,14 @@ export function talentSlug(talent: TalentRef): string {
 export function getTalentUrl(talent: TalentRef): string {
     const slug = talentSlug(talent)
     return slug === talent.id ? `/talent/${talent.id}` : `/t/${slug}`
+}
+
+// A username is only ever stored if it can be the URL as typed. Enforced at
+// every write path and by the profiles_talent_slug_unique index in Postgres.
+export const USERNAME_PATTERN = /^(?=[a-z0-9_-]*[a-z0-9])[a-z0-9_-]{3,30}$/
+
+export function isValidUsername(username: string): boolean {
+    return USERNAME_PATTERN.test(username)
 }
 
 export function generateSlug(displayName: string): string {

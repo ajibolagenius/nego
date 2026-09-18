@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createApiClient } from '@/lib/supabase/api'
 import { createClient as createServerClient } from '@/lib/supabase/server'
+import { isValidUsername } from '@/lib/talent-url'
+
+// Postgres unique_violation: the profiles_talent_slug_unique index rejected the username.
+const USERNAME_TAKEN = '23505'
 
 export async function POST(request: NextRequest) {
     try {
@@ -33,6 +37,17 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // A username becomes the public profile URL, so it has to survive one:
+        // spaces, emoji and '@' used to be stored here and left the talent
+        // unreachable at /t/[slug].
+        const normalizedUsername = typeof username === 'string' ? username.trim().toLowerCase() : ''
+        if (role === 'talent' && normalizedUsername && !isValidUsername(normalizedUsername)) {
+            return NextResponse.json(
+                { error: 'Username must be 3-30 characters, using only lowercase letters, numbers, hyphens and underscores' },
+                { status: 400 }
+            )
+        }
+
         // Use API client (service role) to bypass RLS
         const supabase = createApiClient()
 
@@ -45,15 +60,19 @@ export async function POST(request: NextRequest) {
 
         if (existingProfile) {
             // Profile exists, update username if provided and role is talent
-            if (role === 'talent' && username) {
+            if (role === 'talent' && normalizedUsername) {
                 const { error: updateError } = await supabase
                     .from('profiles')
                     .update({
-                        username: username.trim().toLowerCase(),
+                        username: normalizedUsername,
                         gender: gender || null,
                         updated_at: new Date().toISOString()
                     })
                     .eq('id', userId)
+
+                if (updateError?.code === USERNAME_TAKEN) {
+                    return NextResponse.json({ error: 'That username is already taken' }, { status: 409 })
+                }
 
                 if (updateError) {
                     console.error('[Create Profile API] Error updating profile:', updateError)
@@ -94,13 +113,17 @@ export async function POST(request: NextRequest) {
                 role: role,
                 display_name: displayName || fullName || 'User',
                 full_name: fullName || displayName || null,
-                username: role === 'talent' && username ? username.trim().toLowerCase() : null,
+                username: role === 'talent' && normalizedUsername ? normalizedUsername : null,
                 gender: gender || null,
                 is_verified: false,
                 status: 'offline',
                 email_notifications_enabled: true,
                 push_notifications_enabled: true,
             })
+
+        if (profileError?.code === USERNAME_TAKEN) {
+            return NextResponse.json({ error: 'That username is already taken' }, { status: 409 })
+        }
 
         if (profileError) {
             console.error('[Create Profile API] Error creating profile:', profileError)

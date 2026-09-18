@@ -287,7 +287,7 @@ export function GiftHistoryClient({
                                     >
                                         {/* Avatar */}
                                         <Link
-                                            href={otherUser ? getTalentUrl(otherUser) : '#'}
+                                            href={otherUser?.role === 'talent' ? getTalentUrl(otherUser) : '#'}
                                             className="relative w-12 h-12 rounded-full overflow-hidden bg-white/10 flex-shrink-0"
                                             aria-label={`View ${otherUser?.display_name || 'user'} profile`}
                                         >

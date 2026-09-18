@@ -60,12 +60,12 @@ async function getTalentProfile(slug: string) {
         .maybeSingle()
 
     if (talent) {
-        return talent
+        return { talent, failed: false }
     }
 
     if (error) {
         console.error(`[TalentProfile] Database error for slug "${slug}":`, error)
-        return null
+        return { talent: null, failed: true }
     }
 
     // ponytail: scans every talent row (PostgREST caps this at 1000); swap for a
@@ -76,13 +76,13 @@ async function getTalentProfile(slug: string) {
         .eq('role', 'talent')
 
     if (candidatesError || !candidates) {
-        return null
+        return { talent: null, failed: true }
     }
 
     const matchedCandidate = candidates.find((candidate) => talentSlug(candidate) === slug)
 
     if (!matchedCandidate) {
-        return null
+        return { talent: null, failed: false }
     }
 
     const { data: fallbackTalent, error: fallbackError } = await supabase
@@ -93,22 +93,28 @@ async function getTalentProfile(slug: string) {
         .maybeSingle()
 
     if (fallbackError || !fallbackTalent) {
-        return null
+        return { talent: null, failed: Boolean(fallbackError) }
     }
 
-    return fallbackTalent
+    return { talent: fallbackTalent, failed: false }
 }
 
 const getCachedTalentProfile = async (slug: string) => {
+    // The key carries the shape version: entries written by an earlier shape
+    // outlive the deploy that changed it, and reading one as this shape turns
+    // every cached profile into a 404 for the rest of the hour.
     const cached = await unstable_cache(
         async () => getTalentProfile(slug),
-        ['talent-profile', slug],
+        ['talent-profile-v2', slug],
         { revalidate: 3600, tags: ['talents'] }
     )()
 
-    // Never trust a cached miss. getTalentProfile() returns null for a database
-    // error too, and caching that pinned live profiles to a 404 for a full hour.
-    return cached ?? getTalentProfile(slug)
+    // A cached "no such talent" is authoritative and stays cached. A cached
+    // failure is not: caching a transient database error as a miss pinned live
+    // profiles to a 404 for the full hour, so that one is read again.
+    const result = cached?.failed === false ? cached : await getTalentProfile(slug)
+
+    return result.talent
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {

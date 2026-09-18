@@ -20,7 +20,7 @@ import { useWallet } from '@/hooks/useWallet'
 import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
 import { NIGERIAN_LOCATIONS } from '@/lib/nigerian-locations'
 import { createClient } from '@/lib/supabase/client'
-import { getTalentUrl } from '@/lib/talent-url'
+import { getTalentUrl, isValidUsername } from '@/lib/talent-url'
 import { syncTalentVerification } from '@/lib/talent-verification-client'
 import type { Profile, Wallet, ServiceType, Booking } from '@/types/database'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
@@ -363,16 +363,9 @@ export function TalentDashboardClient({
             return false
         }
 
-        if (trimmed.length < 3) {
-            setUsernameError('Username must be at least 3 characters')
-            return false
-        }
-        if (trimmed.length > 30) {
-            setUsernameError('Username must be 30 characters or less')
-            return false
-        }
-        if (!/^[a-z0-9_-]+$/.test(trimmed)) {
-            setUsernameError('Username can only contain lowercase letters, numbers, hyphens, and underscores')
+        // Same rule the API and the unique index enforce
+        if (!isValidUsername(trimmed)) {
+            setUsernameError('Username must be 3-30 characters, using only lowercase letters, numbers, hyphens and underscores')
             return false
         }
 
@@ -461,7 +454,12 @@ export function TalentDashboardClient({
             setTimeout(() => setProfileSuccess(false), 3000)
         } catch (error) {
             console.error('Error updating profile:', error)
-            setProfileError('Failed to update profile. Please try again.')
+            // The availability check above races a second talent saving the same
+            // name; profiles_talent_slug_unique is what actually decides.
+            const taken = typeof error === 'object' && error !== null && (error as { code?: string }).code === '23505'
+            setProfileError(taken
+                ? 'That username was just taken. Please pick another.'
+                : 'Failed to update profile. Please try again.')
         } finally {
             setIsSaving(false)
         }
