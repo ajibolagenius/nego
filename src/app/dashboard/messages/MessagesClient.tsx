@@ -1032,7 +1032,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                                             <input
                                                 ref={fileInputRef}
                                                 type="file"
-                                                accept="image/*,video/*"
+                                                accept={CHAT_MEDIA_ACCEPT}
                                                 className="hidden"
                                                 onChange={handleFileSelect}
                                                 tabIndex={-1}
