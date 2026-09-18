@@ -11,7 +11,11 @@ CREATE TABLE IF NOT EXISTS messages (
     media_type TEXT CHECK (media_type IN ('image', 'video')),
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    CONSTRAINT check_content_or_media CHECK (COALESCE(content, '') <> '' OR media_url IS NOT NULL)
+    CONSTRAINT check_content_or_media CHECK (BTRIM(COALESCE(content, '')) <> '' OR media_url IS NOT NULL),
+    CONSTRAINT check_media_pair CHECK (
+        (media_url IS NULL AND media_type IS NULL) OR
+        (media_url IS NOT NULL AND media_type IS NOT NULL)
+    )
 );
 
 -- Conversations table (tracks chat between two users)

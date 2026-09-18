@@ -14,18 +14,39 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
         const { conversationId, content, mediaUrl, mediaType } = body
 
-        const trimmedContent = typeof content === 'string' ? content.trim() : ''
-
-        if (!conversationId || (!trimmedContent && !mediaUrl)) {
+        if (!conversationId || typeof conversationId !== 'string' || !conversationId.trim()) {
             return NextResponse.json(
-                { error: 'conversationId and either content or mediaUrl are required' },
+                { error: 'conversationId is required' },
                 { status: 400 }
             )
         }
 
-        if (mediaType && !['image', 'video'].includes(mediaType)) {
+        const trimmedContent = typeof content === 'string' ? content.trim() : ''
+        const rawMediaUrl = typeof mediaUrl === 'string' ? mediaUrl.trim() : ''
+        const rawMediaType = typeof mediaType === 'string' ? mediaType.trim() : ''
+
+        const hasContent = trimmedContent.length > 0
+        const hasMediaUrl = rawMediaUrl.length > 0
+        const hasMediaType = rawMediaType.length > 0
+
+        // Media pair validation: mediaUrl and mediaType must be both present or both absent
+        if (hasMediaUrl !== hasMediaType) {
+            return NextResponse.json(
+                { error: 'mediaUrl and mediaType must be provided together as a valid pair' },
+                { status: 400 }
+            )
+        }
+
+        if (hasMediaType && !['image', 'video'].includes(rawMediaType)) {
             return NextResponse.json(
                 { error: 'mediaType must be "image" or "video"' },
+                { status: 400 }
+            )
+        }
+
+        if (!hasContent && !hasMediaUrl) {
+            return NextResponse.json(
+                { error: 'Message content or a valid media attachment is required' },
                 { status: 400 }
             )
         }
@@ -46,6 +67,49 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
+        let resolvedMediaUrl: string | null = null
+        if (hasMediaUrl) {
+            // Reject external URLs, absolute protocols, or directory traversal
+            if (/^https?:\/\/|^\/\//i.test(rawMediaUrl) || rawMediaUrl.includes('..')) {
+                return NextResponse.json(
+                    { error: 'External or invalid media paths are not allowed' },
+                    { status: 400 }
+                )
+            }
+
+            // Must match conversation storage prefix: chat/<conversationId>/<filename>
+            const expectedPrefix = `chat/${conversationId}/`
+            if (!rawMediaUrl.startsWith(expectedPrefix) || rawMediaUrl.length <= expectedPrefix.length) {
+                return NextResponse.json(
+                    { error: 'Unauthorized media path for this conversation' },
+                    { status: 403 }
+                )
+            }
+
+            // Verify object exists in media bucket
+            const pathParts = rawMediaUrl.split('/')
+            const objectFolder = pathParts.slice(0, -1).join('/')
+            const objectName = pathParts[pathParts.length - 1]
+
+            const { data: objectList, error: listError } = await supabase.storage
+                .from('media')
+                .list(objectFolder, { search: objectName })
+
+            if (listError || !objectList || !objectList.some(item => item.name === objectName)) {
+                return NextResponse.json(
+                    { error: 'Media object not found in storage bucket' },
+                    { status: 400 }
+                )
+            }
+
+            // Generate public URL from validated storage path
+            const { data: urlData } = supabase.storage
+                .from('media')
+                .getPublicUrl(rawMediaUrl)
+
+            resolvedMediaUrl = urlData.publicUrl
+        }
+
         const recipientId = conversation.participant_1 === user.id
             ? conversation.participant_2
             : conversation.participant_1
@@ -56,9 +120,9 @@ export async function POST(request: NextRequest) {
             .insert({
                 conversation_id: conversationId,
                 sender_id: user.id,
-                content: trimmedContent,
-                media_url: mediaUrl || null,
-                media_type: mediaType || null,
+                content: hasContent ? trimmedContent : null,
+                media_url: resolvedMediaUrl,
+                media_type: hasMediaType ? (rawMediaType as 'image' | 'video') : null,
             })
             .select(`
                 *,

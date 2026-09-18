@@ -198,7 +198,7 @@ export interface Message {
     id: string
     conversation_id: string
     sender_id: string
-    content: string
+    content: string | null
     media_url?: string | null
     media_type?: 'image' | 'video' | null
     is_read: boolean

@@ -224,14 +224,13 @@ export function MessagesClient({ userId, conversations: initialConversations, us
         const currentFileType = fileType
 
         setNewMessage('')
-        clearSelectedFile()
 
-        // Optimistically add message to UI
+        // Optimistically add message to UI using preview URL
         const tempMessage: Message = {
             id: `temp-${Date.now()}`,
             conversation_id: selectedConversation.id,
             sender_id: userId,
-            content: messageContent,
+            content: messageContent || null,
             media_url: currentPreviewUrl || null,
             media_type: currentFileType || null,
             is_read: false,
@@ -248,10 +247,10 @@ export function MessagesClient({ userId, conversations: initialConversations, us
         scrollToBottom()
 
         try {
-            let uploadedMediaUrl: string | null = null
+            let storagePath: string | null = null
             if (currentFile) {
                 const cleanFileName = currentFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-                const storagePath = `chat/${selectedConversation.id}/${Date.now()}_${cleanFileName}`
+                storagePath = `chat/${selectedConversation.id}/${Date.now()}_${cleanFileName}`
                 const { error: uploadError } = await supabase.storage
                     .from('media')
                     .upload(storagePath, currentFile, {
@@ -263,15 +262,6 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                 if (uploadError) {
                     throw new Error(`Failed to upload media: ${uploadError.message}`)
                 }
-
-                const { data: urlData } = supabase.storage
-                    .from('media')
-                    .getPublicUrl(storagePath)
-
-                if (!urlData?.publicUrl) {
-                    throw new Error('Failed to get public URL for media')
-                }
-                uploadedMediaUrl = urlData.publicUrl
             }
 
             const response = await fetch('/api/messages', {
@@ -280,7 +270,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                 body: JSON.stringify({
                     conversationId: selectedConversation.id,
                     content: messageContent,
-                    mediaUrl: uploadedMediaUrl,
+                    mediaUrl: storagePath,
                     mediaType: currentFileType,
                 }),
             })
@@ -301,11 +291,15 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                     )
                 })
             }
+
+            // Revoke and clear attachment ONLY after successful send
+            clearSelectedFile()
         } catch (err) {
             console.error('Error sending message:', err)
             // Remove temp message on error
             setMessages(prev => prev.filter(m => m.id !== tempMessage.id))
-            setNewMessage(messageContent) // Restore message
+            // Restore text caption and retain selectedFile + previewUrl so user can retry
+            setNewMessage(messageContent)
             setError(err instanceof Error ? err.message : 'Failed to send message. Please try again.')
         } finally {
             setSending(false)
@@ -980,7 +974,8 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                                                 <button
                                                     type="button"
                                                     onClick={clearSelectedFile}
-                                                    className="p-1.5 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+                                                    disabled={sending}
+                                                    className="p-1.5 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                                     aria-label="Remove attachment"
                                                 >
                                                     <X size={16} />
