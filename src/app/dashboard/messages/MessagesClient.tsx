@@ -17,6 +17,18 @@ import { createClient } from '@/lib/supabase/client'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { Conversation, Message, Profile } from '@/types/database'
 
+const CHAT_MEDIA_ALLOWED_MIME_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+    'video/mp4',
+    'video/webm',
+    'video/quicktime',
+] as const
+
+const CHAT_MEDIA_ACCEPT = CHAT_MEDIA_ALLOWED_MIME_TYPES.join(',')
+
 interface MessagesClientProps {
     userId: string
     conversations: (Conversation & { other_user?: Profile | null })[]
@@ -62,6 +74,28 @@ export function MessagesClient({ userId, conversations: initialConversations, us
         }
     }, [])
 
+    // Resolve private storage paths to short-lived signed URLs for authenticated participants
+    const resolveMessageMediaUrl = useCallback(async (mediaPath: string | null | undefined): Promise<string | null> => {
+        if (!mediaPath) return null
+        if (mediaPath.startsWith('http://') || mediaPath.startsWith('https://') || mediaPath.startsWith('blob:')) {
+            return mediaPath
+        }
+        try {
+            const { data: signedData, error: signedError } = await supabase.storage
+                .from('media')
+                .createSignedUrl(mediaPath, 3600)
+
+            if (signedError || !signedData?.signedUrl) {
+                console.error('[Messages] Error creating signed URL:', signedError)
+                return mediaPath
+            }
+            return signedData.signedUrl
+        } catch (err) {
+            console.error('[Messages] Error resolving media URL:', err)
+            return mediaPath
+        }
+    }, [supabase])
+
     // Fetch messages for selected conversation
     const fetchMessages = useCallback(async (conversationId: string) => {
         setLoading(true)
@@ -79,8 +113,19 @@ export function MessagesClient({ userId, conversations: initialConversations, us
             if (messagesError) throw messagesError
 
             if (data) {
+                // Resolve short-lived signed URLs for private storage paths
+                const resolvedMessages = await Promise.all(
+                    data.map(async (msg) => {
+                        if (msg.media_url && !msg.media_url.startsWith('http') && !msg.media_url.startsWith('blob:')) {
+                            const resolved = await resolveMessageMediaUrl(msg.media_url)
+                            return { ...msg, media_url: resolved }
+                        }
+                        return msg
+                    })
+                )
+
                 // Sort messages by created_at to ensure proper order
-                const sortedMessages = [...data].sort((a, b) =>
+                const sortedMessages = [...resolvedMessages].sort((a, b) =>
                     new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
                 )
                 setMessages(sortedMessages)
@@ -103,7 +148,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
         } finally {
             setLoading(false)
         }
-    }, [supabase, userId])
+    }, [supabase, userId, resolveMessageMediaUrl])
 
     // Clear attachment selection
     const clearSelectedFile = useCallback(() => {
@@ -127,18 +172,17 @@ export function MessagesClient({ userId, conversations: initialConversations, us
         }
     }, [filePreviewUrl])
 
-    // Handle file selection
+    // Handle file selection validated against allowed MIME types
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
 
-        const isImg = file.type.startsWith('image/')
-        const isVid = file.type.startsWith('video/')
-        if (!isImg && !isVid) {
-            setError('Please select an image or video file.')
+        if (!CHAT_MEDIA_ALLOWED_MIME_TYPES.includes(file.type as (typeof CHAT_MEDIA_ALLOWED_MIME_TYPES)[number])) {
+            setError('Unsupported file type. Please select a JPEG, PNG, WebP, GIF, MP4, WebM, or QuickTime file.')
             return
         }
 
+        const isVid = file.type.startsWith('video/')
         const maxSize = isVid ? 25 * 1024 * 1024 : 10 * 1024 * 1024
         if (file.size > maxSize) {
             setError(`File size exceeds ${isVid ? '25MB' : '10MB'} limit.`)

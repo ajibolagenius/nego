@@ -42,12 +42,12 @@ BEGIN
         );
 END $$;
 
--- 4. Ensure storage bucket for media exists with size limit (25MB) and allowed MIME types
+-- 4. Ensure storage bucket for media exists with size limit (25MB), allowed MIME types, and private access
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
     'media',
     'media',
-    true,
+    false,
     26214400, -- 25 MB file size limit
     ARRAY[
         'image/jpeg',
@@ -60,6 +60,7 @@ VALUES (
     ]
 )
 ON CONFLICT (id) DO UPDATE SET
+    public = EXCLUDED.public,
     file_size_limit = EXCLUDED.file_size_limit,
     allowed_mime_types = EXCLUDED.allowed_mime_types;
 

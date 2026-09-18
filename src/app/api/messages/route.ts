@@ -102,19 +102,15 @@ export async function POST(request: NextRequest) {
                 )
             }
 
-            // Generate public URL from validated storage path
-            const { data: urlData } = supabase.storage
-                .from('media')
-                .getPublicUrl(rawMediaUrl)
-
-            resolvedMediaUrl = urlData.publicUrl
+            // Validated storage path is used directly to avoid persisting permanent public URLs
+            resolvedMediaUrl = rawMediaUrl
         }
 
         const recipientId = conversation.participant_1 === user.id
             ? conversation.participant_2
             : conversation.participant_1
 
-        // Insert the message
+        // Insert the message with private storage object path
         const { data: message, error: messageError } = await supabase
             .from('messages')
             .insert({
@@ -135,6 +131,16 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Failed to send message' }, { status: 500 })
         }
 
+        // Generate short-lived signed URL for sender response if media is present
+        let signedMediaUrl: string | null = null
+        if (resolvedMediaUrl) {
+            const { data: signedData } = await supabase.storage
+                .from('media')
+                .createSignedUrl(resolvedMediaUrl, 3600)
+
+            signedMediaUrl = signedData?.signedUrl || null
+        }
+
         // Send push notification to the other participant
         const { data: senderProfile } = await supabase
             .from('profiles')
@@ -145,7 +151,7 @@ export async function POST(request: NextRequest) {
         const senderName = senderProfile?.display_name || 'Someone'
         const notificationText = trimmedContent
             ? (trimmedContent.length > 100 ? trimmedContent.substring(0, 100) + '...' : trimmedContent)
-            : (mediaType === 'video' ? 'Sent a video 🎥' : 'Sent a photo 📷')
+            : (rawMediaType === 'video' ? 'Sent a video 🎥' : 'Sent a photo 📷')
 
         notifyUser({
             userId: recipientId,
@@ -160,7 +166,12 @@ export async function POST(request: NextRequest) {
             url: `/dashboard/messages?conversation=${conversationId}`,
         }).catch(err => console.error('[Message Send] Notification failed:', err))
 
-        return NextResponse.json({ message })
+        const responseMessage = {
+            ...message,
+            media_url: signedMediaUrl || message.media_url,
+        }
+
+        return NextResponse.json({ message: responseMessage })
     } catch (error) {
         console.error('[Message Send] Error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
