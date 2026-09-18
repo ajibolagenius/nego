@@ -151,17 +151,19 @@ export function MessagesClient({ userId, conversations: initialConversations, us
     }, [supabase, userId, resolveMessageMediaUrl])
 
     // Clear attachment selection
+    // Stable identity: depending on filePreviewUrl here re-runs every effect that
+    // uses it the moment a file is picked, which cleared the selection instantly.
     const clearSelectedFile = useCallback(() => {
-        if (filePreviewUrl) {
-            URL.revokeObjectURL(filePreviewUrl)
-        }
+        setFilePreviewUrl(prev => {
+            if (prev) URL.revokeObjectURL(prev)
+            return null
+        })
         setSelectedFile(null)
-        setFilePreviewUrl(null)
         setFileType(null)
         if (fileInputRef.current) {
             fileInputRef.current.value = ''
         }
-    }, [filePreviewUrl])
+    }, [])
 
     // Cleanup preview URL on unmount
     useEffect(() => {
@@ -210,6 +212,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
     // Auto-select conversation from URL parameter
     useEffect(() => {
         const conversationId = searchParams.get('conversation')
+        if (conversationId === selectedConversation?.id) return
         if (conversationId && conversations.length > 0) {
             const conv = conversations.find(c => c.id === conversationId)
             if (conv) {
@@ -252,7 +255,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
             }
             fetchNewConversation()
         }
-    }, [searchParams, conversations.length, handleSelectConversation, supabase, userId])
+    }, [searchParams, conversations.length, selectedConversation?.id, handleSelectConversation, supabase, userId])
 
     // Send a message
     const handleSendMessage = async (e: React.FormEvent) => {
