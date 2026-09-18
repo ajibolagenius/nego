@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+    // Pin the Turbopack root. A stray ~/package.json makes Next infer the
+    // workspace root one level up, so `@import "tailwindcss"` resolves from
+    // /Documents/Node/negos (no node_modules there) and Turbopack panics.
+    turbopack: {
+        root: __dirname,
+    },
+
     images: {
         loader: 'custom',
         loaderFile: './src/lib/image-loader.ts',
