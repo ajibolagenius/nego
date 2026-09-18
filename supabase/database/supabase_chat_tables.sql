@@ -6,9 +6,12 @@ CREATE TABLE IF NOT EXISTS messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     conversation_id UUID NOT NULL,
     sender_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
+    content TEXT DEFAULT '',
+    media_url TEXT,
+    media_type TEXT CHECK (media_type IN ('image', 'video')),
     is_read BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT check_content_or_media CHECK (COALESCE(content, '') <> '' OR media_url IS NOT NULL)
 );
 
 -- Conversations table (tracks chat between two users)

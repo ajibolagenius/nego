@@ -3,7 +3,7 @@
 import {
     ArrowLeft, PaperPlaneRight, User, Chat, MagnifyingGlass,
     SpinnerGap, CheckCircle, Checks,
-    CalendarPlus
+    CalendarPlus, Paperclip, X
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -29,6 +29,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
     // const _router = useRouter()
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     // Channel refs for real-time subscriptions
@@ -40,6 +41,10 @@ export function MessagesClient({ userId, conversations: initialConversations, us
     const [selectedConversation, setSelectedConversation] = useState<(Conversation & { other_user?: Profile | null }) | null>(null)
     const [messages, setMessages] = useState<Message[]>([])
     const [newMessage, setNewMessage] = useState('')
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null)
+    const [fileType, setFileType] = useState<'image' | 'video' | null>(null)
+    const [activeLightboxMedia, setActiveLightboxMedia] = useState<{ url: string; type: 'image' | 'video' } | null>(null)
     const [loading, setLoading] = useState(false)
     const [sending, setSending] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
@@ -100,12 +105,63 @@ export function MessagesClient({ userId, conversations: initialConversations, us
         }
     }, [supabase, userId])
 
+    // Clear attachment selection
+    const clearSelectedFile = useCallback(() => {
+        if (filePreviewUrl) {
+            URL.revokeObjectURL(filePreviewUrl)
+        }
+        setSelectedFile(null)
+        setFilePreviewUrl(null)
+        setFileType(null)
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''
+        }
+    }, [filePreviewUrl])
+
+    // Cleanup preview URL on unmount
+    useEffect(() => {
+        return () => {
+            if (filePreviewUrl) {
+                URL.revokeObjectURL(filePreviewUrl)
+            }
+        }
+    }, [filePreviewUrl])
+
+    // Handle file selection
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        const isImg = file.type.startsWith('image/')
+        const isVid = file.type.startsWith('video/')
+        if (!isImg && !isVid) {
+            setError('Please select an image or video file.')
+            return
+        }
+
+        const maxSize = isVid ? 25 * 1024 * 1024 : 10 * 1024 * 1024
+        if (file.size > maxSize) {
+            setError(`File size exceeds ${isVid ? '25MB' : '10MB'} limit.`)
+            return
+        }
+
+        if (filePreviewUrl) {
+            URL.revokeObjectURL(filePreviewUrl)
+        }
+
+        setSelectedFile(file)
+        setFileType(isVid ? 'video' : 'image')
+        setFilePreviewUrl(URL.createObjectURL(file))
+        setError(null)
+    }
+
     // Select a conversation
     const handleSelectConversation = useCallback((conv: Conversation & { other_user?: Profile | null }) => {
         setSelectedConversation(conv)
         fetchMessages(conv.id)
+        clearSelectedFile()
         inputRef.current?.focus()
-    }, [fetchMessages])
+    }, [fetchMessages, clearSelectedFile])
 
     // Auto-select conversation from URL parameter
     useEffect(() => {
@@ -157,12 +213,18 @@ export function MessagesClient({ userId, conversations: initialConversations, us
     // Send a message
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!newMessage.trim() || !selectedConversation) return
+        const messageContent = newMessage.trim()
+        if ((!messageContent && !selectedFile) || !selectedConversation) return
 
         setSending(true)
         setError(null)
-        const messageContent = newMessage.trim()
+
+        const currentFile = selectedFile
+        const currentPreviewUrl = filePreviewUrl
+        const currentFileType = fileType
+
         setNewMessage('')
+        clearSelectedFile()
 
         // Optimistically add message to UI
         const tempMessage: Message = {
@@ -170,6 +232,8 @@ export function MessagesClient({ userId, conversations: initialConversations, us
             conversation_id: selectedConversation.id,
             sender_id: userId,
             content: messageContent,
+            media_url: currentPreviewUrl || null,
+            media_type: currentFileType || null,
             is_read: false,
             created_at: new Date().toISOString(),
             sender: undefined
@@ -184,12 +248,40 @@ export function MessagesClient({ userId, conversations: initialConversations, us
         scrollToBottom()
 
         try {
+            let uploadedMediaUrl: string | null = null
+            if (currentFile) {
+                const cleanFileName = currentFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+                const storagePath = `chat/${selectedConversation.id}/${Date.now()}_${cleanFileName}`
+                const { error: uploadError } = await supabase.storage
+                    .from('media')
+                    .upload(storagePath, currentFile, {
+                        cacheControl: '31536000, public, immutable',
+                        upsert: false,
+                        contentType: currentFile.type,
+                    })
+
+                if (uploadError) {
+                    throw new Error(`Failed to upload media: ${uploadError.message}`)
+                }
+
+                const { data: urlData } = supabase.storage
+                    .from('media')
+                    .getPublicUrl(storagePath)
+
+                if (!urlData?.publicUrl) {
+                    throw new Error('Failed to get public URL for media')
+                }
+                uploadedMediaUrl = urlData.publicUrl
+            }
+
             const response = await fetch('/api/messages', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     conversationId: selectedConversation.id,
                     content: messageContent,
+                    mediaUrl: uploadedMediaUrl,
+                    mediaType: currentFileType,
                 }),
             })
 
@@ -214,7 +306,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
             // Remove temp message on error
             setMessages(prev => prev.filter(m => m.id !== tempMessage.id))
             setNewMessage(messageContent) // Restore message
-            setError('Failed to send message. Please try again.')
+            setError(err instanceof Error ? err.message : 'Failed to send message. Please try again.')
         } finally {
             setSending(false)
         }
@@ -795,19 +887,51 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                                         ) : (
                                             messages.map((message) => {
                                                 const isOwn = message.sender_id === userId
+                                                const hasMedia = Boolean(message.media_url)
+                                                const isVideo = message.media_type === 'video' || (message.media_url ? /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(message.media_url) : false)
+
                                                 return (
                                                     <div
                                                         key={message.id}
                                                         className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                                                     >
-                                                        <div className={`max-w-[70%] ${isOwn ? 'order-1' : ''}`}>
+                                                        <div className={`max-w-[78%] sm:max-w-[70%] ${isOwn ? 'order-1' : ''}`}>
                                                             <div
-                                                                className={`px-4 py-2.5 rounded-2xl ${isOwn
+                                                                className={`rounded-2xl overflow-hidden ${isOwn
                                                                     ? 'bg-[#df2531] text-white rounded-br-md'
                                                                     : 'bg-white/10 text-white rounded-bl-md'
-                                                                    }`}
+                                                                    } ${hasMedia && !message.content ? 'p-1.5' : 'px-4 py-2.5'}`}
                                                             >
-                                                                <p className="break-words">{message.content}</p>
+                                                                {hasMedia && message.media_url && (
+                                                                    <div className="rounded-xl overflow-hidden mb-2 last:mb-0 bg-black/20">
+                                                                        {isVideo ? (
+                                                                            <video
+                                                                                src={message.media_url}
+                                                                                controls
+                                                                                playsInline
+                                                                                preload="metadata"
+                                                                                className="max-h-72 w-full object-contain rounded-xl bg-black"
+                                                                            />
+                                                                        ) : (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => setActiveLightboxMedia({ url: message.media_url!, type: 'image' })}
+                                                                                className="block w-full text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/50 rounded-xl overflow-hidden group"
+                                                                                aria-label="View full image"
+                                                                            >
+                                                                                <img
+                                                                                    src={message.media_url}
+                                                                                    alt="Shared photo"
+                                                                                    loading="lazy"
+                                                                                    className="max-h-72 w-full object-cover rounded-xl transition-transform duration-200 group-hover:scale-[1.02]"
+                                                                                />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                                {message.content && (
+                                                                    <p className="break-words leading-relaxed">{message.content}</p>
+                                                                )}
                                                             </div>
                                                             <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : ''}`}>
                                                                 <span className="text-white/40 text-xs">
@@ -837,7 +961,57 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                                         className="fixed md:sticky bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/10 p-3 md:p-4"
                                         style={{ maxWidth: '100%' }}
                                     >
+                                        {/* Media Preview Drawer */}
+                                        {selectedFile && filePreviewUrl && (
+                                            <div className="max-w-7xl mx-auto mb-2 flex items-center gap-3 p-2 bg-white/5 border border-white/10 rounded-2xl">
+                                                <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-black/40 shrink-0 border border-white/10 flex items-center justify-center">
+                                                    {fileType === 'video' ? (
+                                                        <video src={filePreviewUrl} className="w-full h-full object-cover" muted />
+                                                    ) : (
+                                                        <img src={filePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-white text-xs font-medium truncate">{selectedFile.name}</p>
+                                                    <p className="text-white/40 text-[11px]">
+                                                        {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • {fileType}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={clearSelectedFile}
+                                                    className="p-1.5 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+                                                    aria-label="Remove attachment"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        )}
+
                                         <div className="max-w-7xl mx-auto flex items-center gap-2 md:gap-3">
+                                            {/* Hidden file input */}
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                accept="image/*,video/*"
+                                                className="hidden"
+                                                onChange={handleFileSelect}
+                                                tabIndex={-1}
+                                                aria-hidden="true"
+                                            />
+
+                                            {/* Attachment button */}
+                                            <button
+                                                type="button"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                disabled={sending}
+                                                className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white flex items-center justify-center transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                aria-label="Attach photo or video"
+                                                title="Attach photo or video"
+                                            >
+                                                <Paperclip size={18} className="md:w-5 md:h-5" />
+                                            </button>
+
                                             <label htmlFor="message-input" className="sr-only">Type your message</label>
                                             <input
                                                 id="message-input"
@@ -848,15 +1022,15 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                                                     setNewMessage(e.target.value)
                                                     handleTyping()
                                                 }}
-                                                placeholder="Type your message..."
+                                                placeholder={selectedFile ? "Add a caption..." : "Type your message..."}
                                                 autoComplete="off"
-                                                aria-label="Type your message"
+                                                aria-label={selectedFile ? "Add a caption" : "Type your message"}
                                                 className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 md:px-5 py-2.5 md:py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-[#df2531]/50 text-sm md:text-base"
                                                 data-testid="message-input"
                                             />
                                             <Button
                                                 type="submit"
-                                                disabled={!newMessage.trim() || sending}
+                                                disabled={(!newMessage.trim() && !selectedFile) || sending}
                                                 className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#df2531] hover:bg-[#df2531]/90 text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
                                                 data-testid="send-message-btn"
                                                 aria-label={sending ? 'Sending message' : 'Send message'}
@@ -891,6 +1065,42 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                     </div>
                 </div>
             </div>
+            {/* Media Lightbox */}
+            {activeLightboxMedia && (
+                <div
+                    className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
+                    onClick={() => setActiveLightboxMedia(null)}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Media preview"
+                >
+                    <button
+                        type="button"
+                        onClick={() => setActiveLightboxMedia(null)}
+                        className="absolute top-4 right-4 p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 z-10 transition-colors"
+                        aria-label="Close preview"
+                    >
+                        <X size={28} />
+                    </button>
+                    {activeLightboxMedia.type === 'video' ? (
+                        <video
+                            src={activeLightboxMedia.url}
+                            controls
+                            autoPlay
+                            playsInline
+                            className="max-w-full max-h-[85vh] rounded-xl shadow-2xl bg-black"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    ) : (
+                        <img
+                            src={activeLightboxMedia.url}
+                            alt="Enlarged shared photo"
+                            className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    )}
+                </div>
+            )}
             <MobileBottomNav userRole={userRole} />
         </>
     )

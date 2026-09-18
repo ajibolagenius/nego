@@ -12,11 +12,20 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { conversationId, content } = body
+        const { conversationId, content, mediaUrl, mediaType } = body
 
-        if (!conversationId || !content?.trim()) {
+        const trimmedContent = typeof content === 'string' ? content.trim() : ''
+
+        if (!conversationId || (!trimmedContent && !mediaUrl)) {
             return NextResponse.json(
-                { error: 'conversationId and content are required' },
+                { error: 'conversationId and either content or mediaUrl are required' },
+                { status: 400 }
+            )
+        }
+
+        if (mediaType && !['image', 'video'].includes(mediaType)) {
+            return NextResponse.json(
+                { error: 'mediaType must be "image" or "video"' },
                 { status: 400 }
             )
         }
@@ -47,7 +56,9 @@ export async function POST(request: NextRequest) {
             .insert({
                 conversation_id: conversationId,
                 sender_id: user.id,
-                content: content.trim(),
+                content: trimmedContent,
+                media_url: mediaUrl || null,
+                media_type: mediaType || null,
             })
             .select(`
                 *,
@@ -68,15 +79,15 @@ export async function POST(request: NextRequest) {
             .single()
 
         const senderName = senderProfile?.display_name || 'Someone'
-        const truncatedContent = content.length > 100
-            ? content.substring(0, 100) + '...'
-            : content
+        const notificationText = trimmedContent
+            ? (trimmedContent.length > 100 ? trimmedContent.substring(0, 100) + '...' : trimmedContent)
+            : (mediaType === 'video' ? 'Sent a video 🎥' : 'Sent a photo 📷')
 
         notifyUser({
             userId: recipientId,
             type: 'message_received',
             title: `New message from ${senderName}`,
-            message: truncatedContent,
+            message: notificationText,
             data: {
                 conversation_id: conversationId,
                 sender_id: user.id,
