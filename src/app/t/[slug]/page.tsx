@@ -4,9 +4,9 @@ import { unstable_cache } from 'next/cache'
 import { notFound } from 'next/navigation'
 import { TalentProfileClient } from '@/app/talent/[id]/TalentProfileClient'
 import { generateTalentOpenGraphMetadata } from '@/lib/og-metadata'
-import { generateSlug } from '@/lib/talent-url'
 import { createApiClient } from '@/lib/supabase/api'
 import { createClient, getServerProfile } from '@/lib/supabase/server'
+import { talentSlug } from '@/lib/talent-url'
 import type { Profile, Review, ServiceType, TalentMenu, Wallet } from '@/types/database'
 
 type TalentProfileRow = Profile & {
@@ -68,18 +68,18 @@ async function getTalentProfile(slug: string) {
         return null
     }
 
+    // ponytail: scans every talent row (PostgREST caps this at 1000); swap for a
+    // persisted, indexed slug column if the roster outgrows that.
     const { data: candidates, error: candidatesError } = await supabase
         .from('profiles')
-        .select('id, display_name')
+        .select('id, username, display_name')
         .eq('role', 'talent')
 
     if (candidatesError || !candidates) {
         return null
     }
 
-    const matchedCandidate = candidates.find((candidate) => {
-        return candidate.display_name ? generateSlug(candidate.display_name) === slug : false
-    })
+    const matchedCandidate = candidates.find((candidate) => talentSlug(candidate) === slug)
 
     if (!matchedCandidate) {
         return null
@@ -99,11 +99,17 @@ async function getTalentProfile(slug: string) {
     return fallbackTalent
 }
 
-const getCachedTalentProfile = (slug: string) => unstable_cache(
-    async () => getTalentProfile(slug),
-    ['talent-profile', slug],
-    { revalidate: 3600, tags: ['talents'] }
-)()
+const getCachedTalentProfile = async (slug: string) => {
+    const cached = await unstable_cache(
+        async () => getTalentProfile(slug),
+        ['talent-profile', slug],
+        { revalidate: 3600, tags: ['talents'] }
+    )()
+
+    // Never trust a cached miss. getTalentProfile() returns null for a database
+    // error too, and caching that pinned live profiles to a 404 for a full hour.
+    return cached ?? getTalentProfile(slug)
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params
