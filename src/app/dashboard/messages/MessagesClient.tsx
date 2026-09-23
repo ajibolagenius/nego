@@ -82,7 +82,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
         }
         try {
             const { data: signedData, error: signedError } = await supabase.storage
-                .from('media')
+                .from('chat-media')
                 .createSignedUrl(mediaPath, 3600)
 
             if (signedError || !signedData?.signedUrl) {
@@ -299,7 +299,7 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                 const cleanFileName = currentFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
                 storagePath = `chat/${selectedConversation.id}/${Date.now()}_${cleanFileName}`
                 const { error: uploadError } = await supabase.storage
-                    .from('media')
+                    .from('chat-media')
                     .upload(storagePath, currentFile, {
                         cacheControl: '31536000, public, immutable',
                         upsert: false,

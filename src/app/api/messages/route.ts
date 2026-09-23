@@ -86,13 +86,13 @@ export async function POST(request: NextRequest) {
                 )
             }
 
-            // Verify object exists in media bucket
+            // Verify object exists in chat-media bucket
             const pathParts = rawMediaUrl.split('/')
             const objectFolder = pathParts.slice(0, -1).join('/')
             const objectName = pathParts[pathParts.length - 1]
 
             const { data: objectList, error: listError } = await supabase.storage
-                .from('media')
+                .from('chat-media')
                 .list(objectFolder, { search: objectName })
 
             if (listError || !objectList || !objectList.some(item => item.name === objectName)) {
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
         let signedMediaUrl: string | null = null
         if (resolvedMediaUrl) {
             const { data: signedData } = await supabase.storage
-                .from('media')
+                .from('chat-media')
                 .createSignedUrl(resolvedMediaUrl, 3600)
 
             signedMediaUrl = signedData?.signedUrl || null
