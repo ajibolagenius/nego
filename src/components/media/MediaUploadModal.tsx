@@ -4,10 +4,15 @@ import {
     Upload, X, Warning, Crown
 } from '@phosphor-icons/react'
 import Image from 'next/image'
-import { useState, useRef, useCallback } from 'react'
-import { compressImage } from '@/lib/media-utils'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { compressImage, compressVideo } from '@/lib/media-utils'
 import { createClient } from '@/lib/supabase/client'
 import { syncTalentVerification } from '@/lib/talent-verification-client'
+
+// Mirrors the 'media' bucket's allowed_mime_types (see 202609180001_add_chat_media.sql)
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime']
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024 // bucket file_size_limit
 
 interface MediaUploadModalProps {
     talentId: string,
@@ -26,11 +31,19 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
     const [isPremium, setIsPremium] = useState(initialIsPremium)
     const [unlockPrice, setUnlockPrice] = useState('50')
+    const [compressing, setCompressing] = useState(false)
 
     const fileInputRef = useRef<HTMLInputElement>(null)
 
+    // Object URLs aren't garbage collected; release each one when it's replaced or the modal closes
+    useEffect(() => () => {
+        if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }, [previewUrl])
+
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
+        // Clear so re-picking the same file after a rejection fires onChange again
+        e.target.value = ''
         if (!file) return
 
         // Validate file type
@@ -42,22 +55,16 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
             return
         }
 
-        // Validate file size (max 25MB for Supabase Storage)
-        const maxSize = 25 * 1024 * 1024 // 25MB
-        if (file.size > maxSize) {
-            setUploadError(`File size must be less than ${(maxSize / 1024 / 1024).toFixed(0)}MB`)
+        // Videos are compressed at upload time, so only images are size-checked up front
+        if (isImage && file.size > MAX_UPLOAD_BYTES) {
+            setUploadError(`File size must be less than ${MAX_UPLOAD_BYTES / 1024 / 1024}MB`)
             return
         }
 
         setSelectedFile(file)
         setUploadError('')
-
-        // Create preview
-        const reader = new FileReader()
-        reader.onload = (e) => {
-            setPreviewUrl(e.target?.result as string)
-        }
-        reader.readAsDataURL(file)
+        // Object URL, not a data URL: base64-encoding a large video can crash mobile browsers
+        setPreviewUrl(URL.createObjectURL(file))
     }, [])
 
     const handleUpload = async () => {
@@ -86,8 +93,8 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
             const isImage = selectedFile.type.startsWith('image/')
 
             let fileToUpload = selectedFile
-            let fileName = ''
-            let contentType = selectedFile.type
+            // Supabase rejects keys with characters like #, %, accents or emoji
+            let safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
 
             // Compress images before upload
             if (isImage) {
@@ -95,20 +102,42 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
                 try {
                     fileToUpload = await compressImage(selectedFile, 1080, 0.75)
                     setUploadProgress(20)
-                    fileName = `${talentId}/${Date.now()}_${selectedFile.name.replace(/\.[^/.]+$/, '')}.webp`
-                    contentType = 'image/webp'
+                    safeName = safeName.replace(/\.[^/.]+$/, '') + '.webp'
                 } catch (compressError) {
                     console.warn('[MediaManager] Compression failed, uploading original:', compressError)
-                    // Continue with original file if compression fails
-                    fileName = `${talentId}/${Date.now()}_${selectedFile.name}`
+                    // Original goes up unconverted (e.g. HEIC the browser can't decode), so it must be bucket-allowed
+                    if (!ALLOWED_IMAGE_TYPES.includes(selectedFile.type)) {
+                        throw new Error('Unsupported image format. Please upload a JPG, PNG, WebP or GIF image.')
+                    }
                 }
             } else if (isVideo) {
-                fileName = `${talentId}/${Date.now()}_${selectedFile.name}`
+                setCompressing(true)
+                try {
+                    const compressed = await compressVideo(selectedFile, MAX_UPLOAD_BYTES, (p) => setUploadProgress(Math.round(p * 30)))
+                    // Already-small clips can grow when re-encoded; keep whichever is smaller
+                    if (compressed.size < selectedFile.size) {
+                        fileToUpload = compressed
+                        safeName = safeName.replace(/\.[^/.]+$/, '') + '.mp4'
+                    }
+                } catch (compressError) {
+                    console.warn('[MediaManager] Video compression failed, trying original:', compressError)
+                    // Original can still go up if the bucket accepts it as-is
+                    if (selectedFile.size > MAX_UPLOAD_BYTES || !ALLOWED_VIDEO_TYPES.includes(selectedFile.type)) {
+                        throw compressError instanceof Error && compressError.message.startsWith('Video is too long')
+                            ? compressError
+                            : new Error('This video could not be compressed on your device. Please upload an MP4, MOV or WebM video under 25MB.')
+                    }
+                } finally {
+                    setCompressing(false)
+                }
             } else {
                 throw new Error('Unsupported file type')
             }
 
             setUploadProgress(30)
+
+            const contentType = fileToUpload.type
+            let fileName = `${talentId}/${Date.now()}_${safeName}`
 
             // Upload to Supabase Storage
             const { error: uploadError } = await supabase.storage
@@ -123,7 +152,7 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
                 // Check if it's a duplicate file error
                 if (uploadError.message.includes('already exists')) {
                     // Try with a different filename
-                    fileName = `${talentId}/${Date.now()}_${Math.random().toString(36).substring(7)}_${selectedFile.name}`
+                    fileName = `${talentId}/${Date.now()}_${Math.random().toString(36).substring(7)}_${safeName}`
                     const { error: retryError } = await supabase.storage
                         .from('media')
                         .upload(fileName, fileToUpload, {
@@ -272,7 +301,7 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
                         >
                             <Upload size={56} weight="duotone" className="text-white/30 mx-auto mb-4" aria-hidden="true" />
                             <p className="text-white/70 mb-2 font-medium">Click to select a file</p>
-                            <p className="text-white/40 text-sm">Maximum 50MB • Images & Videos supported</p>
+                            <p className="text-white/40 text-sm">Images up to 25MB • Videos are compressed automatically</p>
                             <input
                                 ref={fileInputRef}
                                 type="file"
@@ -357,7 +386,7 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
                                         />
                                     </div>
                                     <p className="text-white/70 text-sm mt-2 font-medium">
-                                        Uploading... {uploadProgress}%
+                                        {compressing ? 'Compressing video' : 'Uploading'}... {uploadProgress}%
                                     </p>
                                 </div>
                             ) : (

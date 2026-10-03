@@ -137,3 +137,4 @@ lerna-debug.log*
 secrets/
 .secrets/
 full_backup.sql
+graphify-out/
