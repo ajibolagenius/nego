@@ -11,9 +11,15 @@
     "type-check": "tsc --noEmit",
     "build:analyze": "ANALYZE=true next build",
     "populate-talents": "tsx scripts/populate-talents.ts",
-    "update-talents": "tsx scripts/populate-talents.ts --update"
+    "update-talents": "tsx scripts/populate-talents.ts --update",
+    "dev:vinext": "vite dev --port 3001",
+    "build:vinext": "vite build",
+    "start:vinext": "vite preview",
+    "deploy:vinext": "vinext-cloudflare deploy",
+    "deploy:response-store": "cf deploy --prebuilt --mode production --worker frontend-response-store"
   },
   "dependencies": {
+    "@cloudflare/workers-response-store": "^1.2.0",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -45,6 +51,7 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",
     "@types/cheerio": "^0.22.35",
+    "@vinext/cloudflare": "^1.4.0",
     "cheerio": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.8.0",
@@ -54,28 +61,36 @@
     "mediabunny": "^1.61.0",
     "next": "16.1.1",
     "next-themes": "^0.4.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-server-dom-webpack": "^19.3.1",
     "react-webcam": "^7.2.0",
     "resend": "^6.7.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "uuid": "^13.0.0",
+    "vinext": "^1.4.6",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^2.0.0-rc.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
     "@types/web-push": "^3.6.4",
+    "@vitejs/plugin-react": "^6.3.0",
+    "@vitejs/plugin-rsc": "^0.5.39",
+    "cf": "^1.0.0-rc.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5"
-  }
+    "typescript": "^5",
+    "vite": "^8.3.0"
+  },
+  "type": "module"
 }

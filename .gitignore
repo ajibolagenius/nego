@@ -138,3 +138,5 @@ secrets/
 .secrets/
 full_backup.sql
 graphify-out/
+.vinext/
+.cloudflare/
