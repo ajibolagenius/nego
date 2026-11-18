@@ -237,3 +237,71 @@ export function extractSupabaseStorageObject(url: string): { bucket: string; obj
         return null
     }
 }
+
+const R2_ALLOWED_PREFIXES = ['avatars/', 'media/'] as const
+
+function normalizeR2Key(rawPath: string): string | null {
+    const trimmed = rawPath.replace(/^\/+/, '')
+    if (!trimmed) return null
+    let decoded: string
+    try {
+        decoded = trimmed
+            .split('/')
+            .map((segment) => decodeURIComponent(segment))
+            .join('/')
+    } catch {
+        return null
+    }
+    if (decoded.includes('..') || decoded.includes('\\')) return null
+    if (!R2_ALLOWED_PREFIXES.some((prefix) => decoded.startsWith(prefix))) {
+        return null
+    }
+    return decoded
+}
+
+/**
+ * Extracts the R2 object key (`avatars/...` or `media/...`) from a public R2 URL,
+ * custom media domain URL (`NEXT_PUBLIC_R2_PUBLIC_URL`), or `/api/storage/object/...` URL.
+ */
+export function extractR2ObjectKey(url: string): string | null {
+    if (!url) return null
+
+    const objectRoutePrefix = '/api/storage/object/'
+    if (url.startsWith(objectRoutePrefix)) {
+        return normalizeR2Key(url.slice(objectRoutePrefix.length).split('?')[0] || '')
+    }
+
+    try {
+        const parsed = new URL(url)
+
+        if (parsed.pathname.startsWith(objectRoutePrefix)) {
+            return normalizeR2Key(parsed.pathname.slice(objectRoutePrefix.length))
+        }
+
+        const configuredBase = process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.trim().replace(/\/+$/, '')
+        if (configuredBase) {
+            try {
+                const baseUrl = new URL(configuredBase)
+                if (parsed.origin === baseUrl.origin) {
+                    const basePath = baseUrl.pathname.replace(/\/+$/, '')
+                    const relPath = basePath && parsed.pathname.startsWith(`${basePath}/`)
+                        ? parsed.pathname.slice(basePath.length + 1)
+                        : parsed.pathname
+                    return normalizeR2Key(relPath)
+                }
+            } catch {
+                // Ignore malformed NEXT_PUBLIC_R2_PUBLIC_URL
+            }
+        }
+
+        if (parsed.hostname.endsWith('.r2.dev')) {
+            return normalizeR2Key(parsed.pathname)
+        }
+
+        return null
+    } catch {
+        return null
+    }
+}
+
+export const isR2Url = (url: string): boolean => extractR2ObjectKey(url) !== null

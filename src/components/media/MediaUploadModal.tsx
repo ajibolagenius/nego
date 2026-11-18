@@ -5,8 +5,8 @@ import {
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { uploadMedia } from '@/lib/cloudinary'
 import { compressImage, compressVideo } from '@/lib/media-utils'
+import { uploadToR2 } from '@/lib/r2'
 import { createClient } from '@/lib/supabase/client'
 import { syncTalentVerification } from '@/lib/talent-verification-client'
 
@@ -131,12 +131,12 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
 
             setUploadProgress(30)
 
-            // Upload directly to Cloudinary to offload storage and CDN egress from Supabase
-            const uploadResult = await uploadMedia(fileToUpload, `media/${talentId}`, (pct) => {
+            // Upload to Cloudflare R2 to offload storage and CDN egress from Supabase
+            const uploadResult = await uploadToR2(fileToUpload, `media/${talentId}`, (pct) => {
                 setUploadProgress(30 + Math.round(pct * 0.5))
             })
 
-            if (!uploadResult?.secure_url) {
+            if (!uploadResult?.url) {
                 throw new Error('Failed to get uploaded media URL')
             }
 
@@ -147,7 +147,7 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
                 .from('media')
                 .insert({
                     talent_id: talentId,
-                    url: uploadResult.secure_url,
+                    url: uploadResult.url,
                     type: isVideo ? 'video' : 'image',
                     is_premium: isPremium,
                     unlock_price: isPremium ? parseInt(unlockPrice) || 50 : 0,

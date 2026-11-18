@@ -34,6 +34,18 @@ const nextConfig: NextConfig = {
             },
             {
                 protocol: 'https',
+                hostname: '*.r2.dev',
+            },
+            {
+                protocol: 'https',
+                hostname: '*.negoempire.live',
+            },
+            {
+                protocol: 'https',
+                hostname: '*.negotivity.com',
+            },
+            {
+                protocol: 'https',
                 hostname: 'via.placeholder.com',
             },
         ],

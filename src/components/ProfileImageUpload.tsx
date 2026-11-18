@@ -4,8 +4,13 @@ import { Camera, X, SpinnerGap, Check, User, Warning, Info } from '@phosphor-ico
 import Image from 'next/image'
 import { useState, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { deleteAsset, uploadImage } from '@/lib/cloudinary'
-import { extractSupabaseStorageObject, getCloudinaryAssetInfo } from '@/lib/media-utils'
+import { deleteAsset } from '@/lib/cloudinary'
+import {
+    extractR2ObjectKey,
+    extractSupabaseStorageObject,
+    getCloudinaryAssetInfo,
+} from '@/lib/media-utils'
+import { deleteFromR2, uploadToR2 } from '@/lib/r2'
 import { createClient } from '@/lib/supabase/client'
 import { syncTalentVerification } from '@/lib/talent-verification-client'
 
@@ -183,12 +188,12 @@ export function ProfileImageUpload({
             const compressedFile = await compressImage(selectedFile, 400, 0.75)
             setUploadProgress(30)
 
-            // Upload new avatar to Cloudinary to avoid Supabase Storage/Egress consumption
-            const uploadResult = await uploadImage(compressedFile, `avatars/${userId}`, (pct) => {
+            // Upload new avatar to Cloudflare R2 to avoid Supabase Storage/Egress consumption
+            const uploadResult = await uploadToR2(compressedFile, `avatars/${userId}`, (pct) => {
                 setUploadProgress(30 + Math.round(pct * 0.5))
             })
 
-            if (!uploadResult?.secure_url) {
+            if (!uploadResult?.url) {
                 throw new Error('Failed to upload profile photo')
             }
 
@@ -198,7 +203,7 @@ export function ProfileImageUpload({
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update({
-                    avatar_url: uploadResult.secure_url,
+                    avatar_url: uploadResult.url,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', userId)
@@ -206,15 +211,20 @@ export function ProfileImageUpload({
             if (updateError) throw updateError
 
             // Clean up old avatar best-effort
-            if (currentImageUrl && currentImageUrl !== uploadResult.secure_url) {
+            if (currentImageUrl && currentImageUrl !== uploadResult.url) {
                 try {
-                    const oldCloudinary = getCloudinaryAssetInfo(currentImageUrl)
-                    if (oldCloudinary) {
-                        await deleteAsset(oldCloudinary.publicId, oldCloudinary.resourceType)
+                    const oldR2Key = extractR2ObjectKey(currentImageUrl)
+                    if (oldR2Key) {
+                        await deleteFromR2(oldR2Key)
                     } else {
-                        const oldSupabase = extractSupabaseStorageObject(currentImageUrl)
-                        if (oldSupabase) {
-                            await supabase.storage.from(oldSupabase.bucket).remove([oldSupabase.objectPath]).catch(() => { })
+                        const oldCloudinary = getCloudinaryAssetInfo(currentImageUrl)
+                        if (oldCloudinary) {
+                            await deleteAsset(oldCloudinary.publicId, oldCloudinary.resourceType)
+                        } else {
+                            const oldSupabase = extractSupabaseStorageObject(currentImageUrl)
+                            if (oldSupabase) {
+                                await supabase.storage.from(oldSupabase.bucket).remove([oldSupabase.objectPath]).catch(() => { })
+                            }
                         }
                     }
                 } catch (deleteError) {
@@ -225,7 +235,7 @@ export function ProfileImageUpload({
             setUploadProgress(100)
 
             await syncTalentVerification()
-            onUploadComplete(uploadResult.secure_url)
+            onUploadComplete(uploadResult.url)
 
             setShowModal(false)
             setPreview(null)

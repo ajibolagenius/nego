@@ -1,12 +1,12 @@
-import { bindings, defineConfig, defineWorker } from "cf/config";
 import { createWorkersResponseStoreServiceBindingConfig } from "@vinext/cloudflare/cache/config";
+import { bindings, defineConfig, defineWorker } from "cf/config";
 
 const responseStore = await createWorkersResponseStoreServiceBindingConfig({
   worker: {
-    name: "frontend-response-store",
+    name: "nego-response-store",
     compatibilityDate: "2026-11-18",
   },
-  bucket: "frontend-response-store-cache-bodies",
+  bucket: "nego-response-store-cache-bodies",
 });
 
 export const responseStoreServiceBinding = responseStore.serviceBindingWorker;
@@ -14,7 +14,7 @@ export const responseStoreServiceBinding = responseStore.serviceBindingWorker;
 export default defineConfig({
   worker: defineWorker({
     ...responseStore.applicationWorker,
-    name: "frontend",
+    name: "nego",
     entrypoint: "vinext/server/fetch-handler",
     compatibilityDate: "2026-11-18",
     assets: {
@@ -25,6 +25,7 @@ export default defineConfig({
     env: {
       ...responseStore.applicationWorker.env,
       ASSETS: bindings.assets(),
+      MEDIA_BUCKET: bindings.r2({ name: "nego-media" }),
     },
   }),
 });

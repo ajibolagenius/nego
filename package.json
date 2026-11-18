@@ -16,7 +16,7 @@
     "build:vinext": "vite build",
     "start:vinext": "vite preview",
     "deploy:vinext": "vinext-cloudflare deploy",
-    "deploy:response-store": "cf deploy --prebuilt --mode production --worker frontend-response-store"
+    "deploy:response-store": "cf deploy --prebuilt --mode production --worker nego-response-store"
   },
   "dependencies": {
     "@cloudflare/workers-response-store": "^1.2.0",

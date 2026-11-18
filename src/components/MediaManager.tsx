@@ -7,7 +7,12 @@ import {
 import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { deleteAsset } from '@/lib/cloudinary'
-import { extractSupabaseStorageObject, getCloudinaryAssetInfo } from '@/lib/media-utils'
+import {
+    extractR2ObjectKey,
+    extractSupabaseStorageObject,
+    getCloudinaryAssetInfo,
+} from '@/lib/media-utils'
+import { deleteFromR2 } from '@/lib/r2'
 import { createClient } from '@/lib/supabase/client'
 import { MediaFilterPanel } from './media/MediaFilterPanel'
 import { MediaGallery } from './media/MediaGallery'
@@ -63,8 +68,9 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
         setDeletingId(mediaItem.id)
 
         try {
-            const cloudinaryAsset = getCloudinaryAssetInfo(mediaItem.url)
-            const supabaseObject = cloudinaryAsset ? null : extractSupabaseStorageObject(mediaItem.url)
+            const r2Key = extractR2ObjectKey(mediaItem.url)
+            const cloudinaryAsset = r2Key ? null : getCloudinaryAssetInfo(mediaItem.url)
+            const supabaseObject = r2Key || cloudinaryAsset ? null : extractSupabaseStorageObject(mediaItem.url)
 
             // Delete from database first
             const { error: deleteErr } = await supabase
@@ -74,8 +80,14 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
 
             if (deleteErr) throw deleteErr
 
-            // Clean up backing asset from Cloudinary or legacy Supabase Storage
-            if (cloudinaryAsset) {
+            // Clean up backing asset from Cloudflare R2, legacy Cloudinary, or legacy Supabase Storage
+            if (r2Key) {
+                try {
+                    await deleteFromR2(r2Key)
+                } catch (r2Err) {
+                    console.warn('[MediaManager] Failed to delete from R2:', r2Err)
+                }
+            } else if (cloudinaryAsset) {
                 try {
                     await deleteAsset(cloudinaryAsset.publicId, cloudinaryAsset.resourceType)
                 } catch (cloudErr) {
