@@ -39,6 +39,18 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Fast-path when there is no Supabase auth cookie at all: avoid instantiating
+  // the client and calling supabase.auth.getUser() for unauthenticated traffic.
+  const hasAuthCookie = request.cookies.getAll().some((cookie) => cookie.name.startsWith('sb-'))
+  if (!hasAuthCookie) {
+    if (isProtectedRoute) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })

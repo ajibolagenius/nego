@@ -5,6 +5,7 @@ import {
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { uploadMedia } from '@/lib/cloudinary'
 import { compressImage, compressVideo } from '@/lib/media-utils'
 import { createClient } from '@/lib/supabase/client'
 import { syncTalentVerification } from '@/lib/talent-verification-client'
@@ -93,8 +94,6 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
             const isImage = selectedFile.type.startsWith('image/')
 
             let fileToUpload = selectedFile
-            // Supabase rejects keys with characters like #, %, accents or emoji
-            let safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
 
             // Compress images before upload
             if (isImage) {
@@ -102,10 +101,8 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
                 try {
                     fileToUpload = await compressImage(selectedFile, 1080, 0.75)
                     setUploadProgress(20)
-                    safeName = safeName.replace(/\.[^/.]+$/, '') + '.webp'
                 } catch (compressError) {
                     console.warn('[MediaManager] Compression failed, uploading original:', compressError)
-                    // Original goes up unconverted (e.g. HEIC the browser can't decode), so it must be bucket-allowed
                     if (!ALLOWED_IMAGE_TYPES.includes(selectedFile.type)) {
                         throw new Error('Unsupported image format. Please upload a JPG, PNG, WebP or GIF image.')
                     }
@@ -117,11 +114,9 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
                     // Already-small clips can grow when re-encoded; keep whichever is smaller
                     if (compressed.size < selectedFile.size) {
                         fileToUpload = compressed
-                        safeName = safeName.replace(/\.[^/.]+$/, '') + '.mp4'
                     }
                 } catch (compressError) {
                     console.warn('[MediaManager] Video compression failed, trying original:', compressError)
-                    // Original can still go up if the bucket accepts it as-is
                     if (selectedFile.size > MAX_UPLOAD_BYTES || !ALLOWED_VIDEO_TYPES.includes(selectedFile.type)) {
                         throw compressError instanceof Error && compressError.message.startsWith('Video is too long')
                             ? compressError
@@ -136,45 +131,13 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
 
             setUploadProgress(30)
 
-            const contentType = fileToUpload.type
-            let fileName = `${talentId}/${Date.now()}_${safeName}`
+            // Upload directly to Cloudinary to offload storage and CDN egress from Supabase
+            const uploadResult = await uploadMedia(fileToUpload, `media/${talentId}`, (pct) => {
+                setUploadProgress(30 + Math.round(pct * 0.5))
+            })
 
-            // Upload to Supabase Storage
-            const { error: uploadError } = await supabase.storage
-                .from('media')
-                .upload(fileName, fileToUpload, {
-                    cacheControl: '31536000, public, immutable',
-                    upsert: false,
-                    contentType: contentType,
-                })
-
-            if (uploadError) {
-                // Check if it's a duplicate file error
-                if (uploadError.message.includes('already exists')) {
-                    // Try with a different filename
-                    fileName = `${talentId}/${Date.now()}_${Math.random().toString(36).substring(7)}_${safeName}`
-                    const { error: retryError } = await supabase.storage
-                        .from('media')
-                        .upload(fileName, fileToUpload, {
-                            cacheControl: '31536000, public, immutable',
-                            upsert: false,
-                            contentType: contentType,
-                        })
-                    if (retryError) throw retryError
-                } else {
-                    throw uploadError
-                }
-            }
-
-            setUploadProgress(60)
-
-            // Get public URL
-            const { data: urlData } = supabase.storage
-                .from('media')
-                .getPublicUrl(fileName)
-
-            if (!urlData?.publicUrl) {
-                throw new Error('Failed to get public URL')
+            if (!uploadResult?.secure_url) {
+                throw new Error('Failed to get uploaded media URL')
             }
 
             setUploadProgress(80)
@@ -184,7 +147,7 @@ export function MediaUploadModal({ talentId, initialIsPremium, onClose, onSucces
                 .from('media')
                 .insert({
                     talent_id: talentId,
-                    url: urlData.publicUrl,
+                    url: uploadResult.secure_url,
                     type: isVideo ? 'video' : 'image',
                     is_premium: isPremium,
                     unlock_price: isPremium ? parseInt(unlockPrice) || 50 : 0,

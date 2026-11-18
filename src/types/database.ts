@@ -53,6 +53,7 @@ export interface Profile {
     suspension_reason?: string | null
     suspended_at?: string | null
     suspended_by?: string | null
+    last_active_at?: string | null
     created_at: string
     updated_at: string
 }

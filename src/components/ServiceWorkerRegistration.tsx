@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { requestServiceWorkerPushSync, syncPushSubscription } from '@/lib/push/sync'
+import { syncPushSubscription } from '@/lib/push/sync'
+
+const UPDATE_CHECK_COOLDOWN_MS = 60 * 60 * 1000 // 1 hour
 
 /**
  * Component to register service worker on app load
@@ -12,117 +14,118 @@ export function ServiceWorkerRegistration() {
 
     useEffect(() => {
         if (typeof window === 'undefined') return
+        if (!('serviceWorker' in navigator)) return
 
-        // Check if service workers are supported
-        if (!('serviceWorker' in navigator)) {
-            console.log('[ServiceWorker] Service workers are not supported')
-            return
+        let updateInterval: ReturnType<typeof setInterval> | null = null
+        let lastUpdateCheckAt = 0
+        let disposed = false
+
+        const checkForUpdate = async () => {
+            const registration = registrationRef.current
+            if (!registration) return
+            const now = Date.now()
+            if (now - lastUpdateCheckAt < UPDATE_CHECK_COOLDOWN_MS) return
+            lastUpdateCheckAt = now
+
+            try {
+                await registration.update()
+            } catch (error) {
+                console.error('[ServiceWorker] Error checking for updates:', error)
+            }
         }
 
-        // Register service worker
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                void checkForUpdate()
+            }
+        }
+
+        let refreshing = false
+        const handleControllerChange = () => {
+            if (!refreshing) {
+                refreshing = true
+                console.log('[ServiceWorker] New service worker activated')
+                const updateDismissed = sessionStorage.getItem('sw-update-dismissed')
+                if (!updateDismissed) {
+                    window.location.reload()
+                }
+            }
+        }
+
+        const handleSwMessage = (event: MessageEvent) => {
+            if (event.data && event.data.type === 'SW_UPDATED') {
+                window.dispatchEvent(new CustomEvent('sw-update-available'))
+            }
+        }
+
         const registerServiceWorker = async () => {
             try {
                 const registration = await navigator.serviceWorker.register('/sw.js', {
                     scope: '/',
-                    updateViaCache: 'none', // Always check for updates
+                    updateViaCache: 'none',
                 })
 
+                if (disposed) return
                 registrationRef.current = registration
                 console.log('[ServiceWorker] Registered successfully:', registration.scope)
 
-                // Repair a push subscription the server can no longer send to.
-                // Runs on every load because a subscription can be invalidated
-                // while the app is closed, and nothing else would notice: the
-                // browser keeps reporting an active subscription, so the user
-                // sees "Notifications Enabled" and receives nothing. No-ops
-                // unless permission is already granted.
+                // Reconcile push subscription (throttled per user+endpoint for 12h,
+                // and skipped entirely for unauthenticated visitors).
                 syncPushSubscription()
                     .then((result) => {
-                        if (result.reason !== 'already-registered' && result.reason !== 'permission-default') {
+                        if (
+                            result.reason !== 'already-registered' &&
+                            result.reason !== 'permission-default' &&
+                            result.reason !== 'unauthenticated'
+                        ) {
                             console.log('[ServiceWorker] Push reconcile:', result.reason)
                         }
                     })
                     .catch(() => { /* best-effort */ })
 
-                requestServiceWorkerPushSync()
-
-                // Handle service worker updates
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing
                     if (newWorker) {
                         newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed') {
-                                if (navigator.serviceWorker.controller) {
-                                    // New service worker available - will be activated on next page load
-                                    console.log('[ServiceWorker] New service worker available, will activate on next page load')
-                                    // Dispatch custom event for update prompt
-                                    window.dispatchEvent(new CustomEvent('sw-update-available'))
-                                } else {
-                                    // First time installation
-                                    console.log('[ServiceWorker] Service worker installed for the first time')
-                                }
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                window.dispatchEvent(new CustomEvent('sw-update-available'))
                             }
                         })
                     }
                 })
 
-                // Check for a new worker straight away, not only after the first
-                // hour has elapsed. Without this, an install that already has an
-                // old service worker keeps running it for up to an hour after a
-                // deploy — which for a notification fix means users stay broken
-                // long after it shipped.
-                const checkForUpdate = async () => {
-                    try {
-                        await registration.update()
-                    } catch (error) {
-                        console.error('[ServiceWorker] Error checking for updates:', error)
-                    }
-                }
+                // Mark initial registration check timestamp so focus/interval checks
+                // don't immediately re-fetch /sw.js.
+                lastUpdateCheckAt = Date.now()
+                updateInterval = setInterval(() => {
+                    void checkForUpdate()
+                }, UPDATE_CHECK_COOLDOWN_MS)
 
-                checkForUpdate()
-
-                // Every 30 minutes while the tab is open...
-                setInterval(checkForUpdate, 30 * 60 * 1000)
-
-                // ...and whenever the user comes back to the app, which is what
-                // actually catches installed PWAs that are rarely reloaded.
-                document.addEventListener('visibilitychange', () => {
-                    if (document.visibilityState === 'visible') {
-                        checkForUpdate()
-                    }
-                })
-
-                // Handle service worker controller change (update activated)
-                let refreshing = false
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (!refreshing) {
-                        refreshing = true
-                        console.log('[ServiceWorker] New service worker activated')
-                        // Only auto-reload if user hasn't dismissed the update prompt
-                        const updateDismissed = sessionStorage.getItem('sw-update-dismissed')
-                        if (!updateDismissed) {
-                            window.location.reload()
-                        }
-                    }
-                })
-
-                // Listen for messages from service worker
-                navigator.serviceWorker.addEventListener('message', (event) => {
-                    console.log('[ServiceWorker] Message from service worker:', event.data)
-                    if (event.data && event.data.type === 'SW_UPDATED') {
-                        window.dispatchEvent(new CustomEvent('sw-update-available'))
-                    }
-                })
+                document.addEventListener('visibilitychange', handleVisibilityChange)
+                navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange)
+                navigator.serviceWorker.addEventListener('message', handleSwMessage)
             } catch (error) {
                 console.error('[ServiceWorker] Registration failed:', error)
             }
         }
 
-        // Register on page load
+        const handleLoad = () => {
+            void registerServiceWorker()
+        }
+
         if (document.readyState === 'complete') {
-            registerServiceWorker()
+            void registerServiceWorker()
         } else {
-            window.addEventListener('load', registerServiceWorker)
+            window.addEventListener('load', handleLoad)
+        }
+
+        return () => {
+            disposed = true
+            window.removeEventListener('load', handleLoad)
+            if (updateInterval) clearInterval(updateInterval)
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+            navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange)
+            navigator.serviceWorker.removeEventListener('message', handleSwMessage)
         }
     }, [])
 

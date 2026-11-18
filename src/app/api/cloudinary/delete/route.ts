@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { destroyCloudinaryAsset } from '@/lib/cloudinary-server'
 import { createClient } from '@/lib/supabase/server'
-
-async function sha1(message: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(message)
-  const hashBuffer = await crypto.subtle.digest('SHA-1', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,14 +9,6 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-    const apiKey = process.env.CLOUDINARY_API_KEY
-    const apiSecret = process.env.CLOUDINARY_API_SECRET
-
-    if (!cloudName || !apiKey || !apiSecret) {
-      return NextResponse.json({ error: 'Cloudinary configuration missing' }, { status: 500 })
     }
 
     const body = await request.json()
@@ -60,34 +45,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'You do not have permission to delete this asset' }, { status: 403 })
     }
 
-    const timestamp = Math.round(new Date().getTime() / 1000)
-
-    const paramsToSign = `public_id=${publicId}&timestamp=${timestamp}`
-    const signature = await sha1(paramsToSign + apiSecret)
-
-    const formData = new URLSearchParams()
-    formData.append('public_id', publicId)
-    formData.append('timestamp', timestamp.toString())
-    formData.append('api_key', apiKey)
-    formData.append('signature', signature)
-
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/destroy`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData.toString()
-      }
+    const result = await destroyCloudinaryAsset(
+      publicId,
+      resourceType === 'video' ? 'video' : 'image'
     )
 
-    const result = await response.json()
-
-    if (result.result === 'ok' || result.result === 'not found') {
+    if (result.ok) {
       return NextResponse.json({ success: true })
     }
 
     return NextResponse.json(
-      { error: 'Failed to delete asset', details: result },
+      { error: 'Failed to delete asset', details: result.details },
       { status: 500 }
     )
   } catch (error) {

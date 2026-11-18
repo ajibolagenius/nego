@@ -1,10 +1,10 @@
-import { ROLE_PREVIEW_COOKIE, getOverriddenProfile, PreviewRole } from '@/lib/admin/role-preview'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { cache } from 'react'
+import { ROLE_PREVIEW_COOKIE, getOverriddenProfile, PreviewRole } from '@/lib/admin/role-preview'
 import { createApiClient } from '@/lib/supabase/api'
-
 import type { Profile } from '@/types/database'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -35,8 +35,9 @@ export async function createClient() {
 
 /**
  * Centered helper to get the current user's profile with support for admin role preview.
+ * Wrapped in React cache() so multiple callers within the same request share one auth/DB lookup.
  */
-export async function getServerProfile(): Promise<{ profile: Profile | null, user: SupabaseUser | null }> {
+export const getServerProfile = cache(async (): Promise<{ profile: Profile | null, user: SupabaseUser | null }> => {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -122,4 +123,4 @@ export async function getServerProfile(): Promise<{ profile: Profile | null, use
     const profile = getOverriddenProfile(profileData, previewRole)
 
     return { profile, user }
-}
+})

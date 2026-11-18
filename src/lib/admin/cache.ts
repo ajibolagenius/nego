@@ -36,6 +36,9 @@ class SimpleCache {
      * Set cache entry with TTL
      */
     set<T>(key: string, data: T, ttlMs: number = 5 * 60 * 1000): void {
+        if (this.cache.size > 100) {
+            this.cleanup()
+        }
         this.cache.set(key, {
             data,
             timestamp: Date.now(),
@@ -70,16 +73,8 @@ class SimpleCache {
     }
 }
 
-// Singleton instance
+// Singleton instance (expired entries are cleaned up lazily on get/set without a background timer)
 export const cache = new SimpleCache()
-
-// Cleanup expired entries every 5 minutes
-if (typeof window === 'undefined') {
-    // Server-side only
-    setInterval(() => {
-        cache.cleanup()
-    }, 5 * 60 * 1000)
-}
 
 /**
  * Cache keys for analytics data

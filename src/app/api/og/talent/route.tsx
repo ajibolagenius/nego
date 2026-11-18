@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
                 .select('display_name, username, avatar_url, bio')
                 .eq('role', 'talent')
                 .eq('username', username)
-                .single()
+                .maybeSingle()
             talent = data
         } else if (talentId) {
             const { data } = await supabase
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
                 .select('display_name, username, avatar_url, bio')
                 .eq('role', 'talent')
                 .eq('id', talentId)
-                .single()
+                .maybeSingle()
             talent = data
         }
 
@@ -55,8 +55,16 @@ export async function GET(request: NextRequest) {
         let avatarDataUri: string | null = null
         if (avatarUrl) {
             try {
-                // Fetch the avatar image
-                const avatarResponse = await fetch(avatarUrl, {
+                // Request a resized Cloudinary avatar when available to stay well under 500KB
+                let optimizedAvatarUrl = avatarUrl
+                if (avatarUrl.includes('res.cloudinary.com') && avatarUrl.includes('/image/upload/')) {
+                    optimizedAvatarUrl = avatarUrl.replace(
+                        '/image/upload/',
+                        '/image/upload/w_400,h_400,c_fill,q_auto,f_jpg/'
+                    )
+                }
+
+                const avatarResponse = await fetch(optimizedAvatarUrl, {
                     headers: {
                         'User-Agent': 'Mozilla/5.0',
                     },
@@ -266,6 +274,9 @@ export async function GET(request: NextRequest) {
             {
                 width: 1200,
                 height: 630,
+                headers: {
+                    'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+                },
             }
         )
     } catch (error) {
@@ -292,6 +303,9 @@ export async function GET(request: NextRequest) {
             {
                 width: 1200,
                 height: 630,
+                headers: {
+                    'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+                },
             }
         )
     }

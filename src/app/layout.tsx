@@ -1,5 +1,5 @@
-import type { Metadata, Viewport } from "next"
 import "./globals.css"
+import { AdminRolePreviewBar } from "@/components/admin/AdminRolePreviewBar"
 import { AppHeader } from "@/components/AppHeader"
 import { NetworkStatus } from "@/components/NetworkStatus"
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt"
@@ -7,6 +7,7 @@ import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt"
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration"
 import { fontVariables } from "@/lib/fonts"
 import { generateOpenGraphMetadata } from "@/lib/og-metadata"
+import type { Metadata, Viewport } from "next"
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://negoempire.live'
 
@@ -56,34 +57,11 @@ export const viewport: Viewport = {
     ],
 }
 
-import { cookies } from "next/headers"
-import { createClient } from "@/lib/supabase/server"
-import { ROLE_PREVIEW_COOKIE, PreviewRole } from "@/lib/admin/role-preview"
-import { RolePreviewSwitcher } from "@/components/admin/RolePreviewSwitcher"
-
-export default async function RootLayout({
+export default function RootLayout({
     children,
 }: Readonly<{
     children: React.ReactNode
 }>) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    // Fetch profile if user is logged in
-    let profile = null
-    if (user) {
-        const { data } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single()
-        profile = data
-    }
-
-    const isAdmin = profile?.role === 'admin'
-    const cookieStore = await cookies()
-    const previewRole = cookieStore.get(ROLE_PREVIEW_COOKIE)?.value as PreviewRole || 'admin'
-
     return (
         <html lang="en" data-scroll-behavior="smooth" className={fontVariables}>
             <head>
@@ -97,7 +75,7 @@ export default async function RootLayout({
                 <NetworkStatus />
                 <AppHeader />
                 {children}
-                {isAdmin && <RolePreviewSwitcher currentRole={previewRole} />}
+                <AdminRolePreviewBar />
                 <PWAInstallPrompt />
                 <PWAUpdatePrompt />
             </body>

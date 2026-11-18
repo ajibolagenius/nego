@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
 // Allowed folders for uploads
 const ALLOWED_FOLDERS = ['users', 'talents', 'media', 'avatars', 'profiles', 'uploads']
 
-// SHA1 hash using Web Crypto API (works in Edge runtime)
+// SHA1 hash using Web Crypto API
 async function sha1(message: string): Promise<string> {
   const encoder = new TextEncoder()
   const data = encoder.encode(message)
@@ -14,6 +15,13 @@ async function sha1(message: string): Promise<string> {
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
     const apiKey = process.env.CLOUDINARY_API_KEY
     const apiSecret = process.env.CLOUDINARY_API_SECRET
@@ -37,9 +45,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Validate folder (basic security check)
-    const folderBase = folder.split('/')[0] ?? ''
-    if (!folderBase || !ALLOWED_FOLDERS.includes(folderBase)) {
+    // Validate folder (basic security check + scope user subpaths when present)
+    const folderParts = folder.split('/')
+    const folderBase = folderParts[0] ?? ''
+    if (!folderBase || !ALLOWED_FOLDERS.includes(folderBase) || folder.includes('..')) {
       return NextResponse.json(
         { error: 'Invalid folder path' },
         { status: 400 }
@@ -69,5 +78,4 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Ensure this runs on Edge runtime for better compatibility
-export const runtime = 'edge'
+export const runtime = 'nodejs'

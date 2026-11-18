@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { logAdminAction } from "@/lib/admin/audit-log";
 import { validateAdmin } from "@/lib/admin/validation";
+import { destroyCloudinaryAsset } from "@/lib/cloudinary-server";
+import { extractSupabaseStorageObject, getCloudinaryAssetInfo } from "@/lib/media-utils";
 import { notifyUser } from "@/lib/notifications";
 import { createApiClient } from "@/lib/supabase/api";
 
@@ -45,6 +47,22 @@ export async function DELETE(
         { error: `Failed to delete media: ${deleteError.message}` },
         { status: 500 }
       );
+    }
+
+    // Best-effort storage cleanup on Cloudinary or legacy Supabase Storage
+    const cloudinaryAsset = getCloudinaryAssetInfo(media.url);
+    if (cloudinaryAsset) {
+      await destroyCloudinaryAsset(cloudinaryAsset.publicId, cloudinaryAsset.resourceType).catch((err) =>
+        console.warn("[Admin Media Delete] Cloudinary cleanup failed:", err)
+      );
+    } else {
+      const supabaseObject = extractSupabaseStorageObject(media.url);
+      if (supabaseObject) {
+        await apiClient.storage
+          .from(supabaseObject.bucket)
+          .remove([supabaseObject.objectPath])
+          .catch((err) => console.warn("[Admin Media Delete] Supabase storage cleanup failed:", err));
+      }
     }
 
     // 4. Log the action

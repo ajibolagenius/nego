@@ -51,30 +51,17 @@ export function usePWA(): UsePWAReturn {
         }
     }, [])
 
-    // Listen for service worker updates
+    // Listen for service worker updates (update polling is handled once in ServiceWorkerRegistration)
     useEffect(() => {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                setUpdateAvailable(true)
-            })
+        if (!('serviceWorker' in navigator)) return
 
-            // Check for updates periodically
-            const checkUpdates = async () => {
-                try {
-                    const registration = await navigator.serviceWorker.getRegistration()
-                    if (registration) {
-                        await registration.update()
-                    }
-                } catch (error) {
-                    console.error('[usePWA] Error checking for updates:', error)
-                }
-            }
+        const handleControllerChange = () => {
+            setUpdateAvailable(true)
+        }
 
-            // Check immediately and then every 5 minutes
-            checkUpdates()
-            const interval = setInterval(checkUpdates, 5 * 60 * 1000)
-
-            return () => clearInterval(interval)
+        navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange)
+        return () => {
+            navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange)
         }
     }, [])
 

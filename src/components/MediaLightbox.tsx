@@ -3,6 +3,7 @@
 import { X } from '@phosphor-icons/react'
 import Image from 'next/image'
 import { useEffect } from 'react'
+import { isVideo } from '@/lib/media-utils'
 import type { Media } from '@/types/database'
 
 interface MediaLightboxProps {
@@ -22,10 +23,6 @@ export function MediaLightbox({
     hasNext = false,
     hasPrevious = false
 }: MediaLightboxProps) {
-    const isVideo = (url: string) => {
-        return url.match(/\.(mp4|webm|ogg|mov)$/i) !== null
-    }
-
     // Handle Escape key to close
     useEffect(() => {
         if (!media) return

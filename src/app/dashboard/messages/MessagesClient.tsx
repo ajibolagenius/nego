@@ -540,10 +540,79 @@ export function MessagesClient({ userId, conversations: initialConversations, us
             supabase.removeChannel(conversationsChannelRef.current)
         }
 
-        // Conversations channel - subscribes to INSERT and UPDATE events
-        // We subscribe to all conversations and filter in the handler
+        const handleConversationInsert = async (payload: { new: Record<string, unknown> }) => {
+            const rawConv = payload.new
+            const isParticipant = rawConv.participant_1 === userId || rawConv.participant_2 === userId
+            if (!isParticipant) return
+
+            console.log('[Real-time] New conversation created:', rawConv.id)
+
+            try {
+                const otherUserId = rawConv.participant_1 === userId
+                    ? (rawConv.participant_2 as string)
+                    : (rawConv.participant_1 as string)
+
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('id, display_name, avatar_url, role, is_verified')
+                    .eq('id', otherUserId)
+                    .single()
+
+                if (profileError) {
+                    console.error('[Real-time] Error fetching profile for new conversation:', profileError)
+                    return
+                }
+
+                const conversationData = rawConv as unknown as Conversation
+                if (!conversationData.id || !conversationData.participant_1 || !conversationData.participant_2) {
+                    console.error('[Real-time] Invalid conversation data:', conversationData)
+                    return
+                }
+
+                const newConversation = {
+                    ...conversationData,
+                    other_user: profile || null
+                } as Conversation & { other_user?: Profile | null }
+
+                setConversations(prev => {
+                    if (prev.find(c => c.id === newConversation.id)) {
+                        return prev
+                    }
+                    const updated = [newConversation, ...prev]
+                    return updated.sort((a, b) => {
+                        const aTime = a.last_message_at || a.created_at
+                        const bTime = b.last_message_at || b.created_at
+                        return new Date(bTime).getTime() - new Date(aTime).getTime()
+                    })
+                })
+            } catch (err) {
+                console.error('[Real-time] Error processing new conversation:', err)
+            }
+        }
+
+        const handleConversationUpdate = (payload: { new: Record<string, unknown> }) => {
+            const rawConv = payload.new
+            const isParticipant = rawConv.participant_1 === userId || rawConv.participant_2 === userId
+            if (!isParticipant) return
+
+            console.log('[Real-time] Conversation UPDATE received:', rawConv.id, 'last_message_at:', rawConv.last_message_at)
+
+            setConversations(prev => {
+                const updated = prev.map(conv =>
+                    conv.id === rawConv.id
+                        ? { ...conv, ...rawConv }
+                        : conv
+                )
+                return updated.sort((a, b) =>
+                    new Date(b.last_message_at || b.created_at).getTime() -
+                    new Date(a.last_message_at || a.created_at).getTime()
+                )
+            })
+        }
+
+        // Server-side filtered Realtime subscriptions for user's conversations
         const conversationsChannel = supabase
-            .channel('conversations:user', {
+            .channel(`conversations:user:${userId}`, {
                 config: {
                     broadcast: { self: true }
                 }
@@ -554,60 +623,19 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                     event: 'INSERT',
                     schema: 'public',
                     table: 'conversations',
+                    filter: `participant_1=eq.${userId}`,
                 },
-                async (payload) => {
-                    // Filter to only process conversations where user is a participant
-                    const isParticipant = payload.new.participant_1 === userId || payload.new.participant_2 === userId
-                    if (!isParticipant) return
-
-                    console.log('[Real-time] New conversation created:', payload.new.id)
-
-                    try {
-                        // Fetch the other user's profile
-                        const otherUserId = payload.new.participant_1 === userId
-                            ? payload.new.participant_2
-                            : payload.new.participant_1
-
-                        const { data: profile, error: profileError } = await supabase
-                            .from('profiles')
-                            .select('id, display_name, avatar_url, role, is_verified')
-                            .eq('id', otherUserId)
-                            .single()
-
-                        if (profileError) {
-                            console.error('[Real-time] Error fetching profile for new conversation:', profileError)
-                            return
-                        }
-
-                        // Ensure payload.new has all required Conversation properties
-                        const conversationData = payload.new as Conversation
-                        if (!conversationData.id || !conversationData.participant_1 || !conversationData.participant_2) {
-                            console.error('[Real-time] Invalid conversation data:', conversationData)
-                            return
-                        }
-
-                        const newConversation = {
-                            ...conversationData,
-                            other_user: profile || null
-                        } as Conversation & { other_user?: Profile | null }
-
-                        setConversations(prev => {
-                            // Check for duplicates
-                            if (prev.find(c => c.id === newConversation.id)) {
-                                return prev
-                            }
-                            // Add new conversation and sort by last_message_at
-                            const updated = [newConversation, ...prev]
-                            return updated.sort((a, b) => {
-                                const aTime = a.last_message_at || a.created_at
-                                const bTime = b.last_message_at || b.created_at
-                                return new Date(bTime).getTime() - new Date(aTime).getTime()
-                            })
-                        })
-                    } catch (err) {
-                        console.error('[Real-time] Error processing new conversation:', err)
-                    }
-                }
+                handleConversationInsert
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'conversations',
+                    filter: `participant_2=eq.${userId}`,
+                },
+                handleConversationInsert
             )
             .on(
                 'postgres_changes',
@@ -615,28 +643,19 @@ export function MessagesClient({ userId, conversations: initialConversations, us
                     event: 'UPDATE',
                     schema: 'public',
                     table: 'conversations',
+                    filter: `participant_1=eq.${userId}`,
                 },
-                (payload) => {
-                    // Filter to only process conversations where user is a participant
-                    const isParticipant = payload.new.participant_1 === userId || payload.new.participant_2 === userId
-                    if (!isParticipant) return
-
-                    console.log('[Real-time] Conversation UPDATE received:', payload.new.id, 'last_message_at:', payload.new.last_message_at)
-
-                    // Update conversation in list (e.g., last_message_at)
-                    setConversations(prev => {
-                        const updated = prev.map(conv =>
-                            conv.id === payload.new.id
-                                ? { ...conv, ...payload.new }
-                                : conv
-                        )
-                        // Re-sort by last_message_at descending
-                        return updated.sort((a, b) =>
-                            new Date(b.last_message_at || b.created_at).getTime() -
-                            new Date(a.last_message_at || a.created_at).getTime()
-                        )
-                    })
-                }
+                handleConversationUpdate
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'conversations',
+                    filter: `participant_2=eq.${userId}`,
+                },
+                handleConversationUpdate
             )
             .subscribe((status) => {
                 console.log('[Real-time] Conversations channel subscription status:', status)

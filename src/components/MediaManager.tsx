@@ -6,6 +6,8 @@ import {
 } from '@phosphor-icons/react'
 import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
+import { deleteAsset } from '@/lib/cloudinary'
+import { extractSupabaseStorageObject, getCloudinaryAssetInfo } from '@/lib/media-utils'
 import { createClient } from '@/lib/supabase/client'
 import { MediaFilterPanel } from './media/MediaFilterPanel'
 import { MediaGallery } from './media/MediaGallery'
@@ -61,9 +63,8 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
         setDeletingId(mediaItem.id)
 
         try {
-            // Extract file path from URL
-            const urlParts = new URL(mediaItem.url)
-            const pathMatch = urlParts.pathname.match(/\/media\/(.+)$/)
+            const cloudinaryAsset = getCloudinaryAssetInfo(mediaItem.url)
+            const supabaseObject = cloudinaryAsset ? null : extractSupabaseStorageObject(mediaItem.url)
 
             // Delete from database first
             const { error: deleteErr } = await supabase
@@ -73,12 +74,18 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
 
             if (deleteErr) throw deleteErr
 
-            // Delete from Supabase Storage if we can extract the path
-            if (pathMatch) {
+            // Clean up backing asset from Cloudinary or legacy Supabase Storage
+            if (cloudinaryAsset) {
+                try {
+                    await deleteAsset(cloudinaryAsset.publicId, cloudinaryAsset.resourceType)
+                } catch (cloudErr) {
+                    console.warn('[MediaManager] Failed to delete from Cloudinary:', cloudErr)
+                }
+            } else if (supabaseObject) {
                 try {
                     const { error: storageError } = await supabase.storage
-                        .from('media')
-                        .remove([pathMatch[1]!])
+                        .from(supabaseObject.bucket)
+                        .remove([supabaseObject.objectPath])
 
                     if (storageError) {
                         console.warn('[MediaManager] Failed to delete from storage:', storageError)

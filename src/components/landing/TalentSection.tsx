@@ -10,8 +10,13 @@ import { createClient } from '@/lib/supabase/client'
 import { getTalentUrl } from '@/lib/talent-url'
 import type { Profile } from '@/types/database'
 
+export type PublicTalentPreview = Pick<
+    Profile,
+    'id' | 'role' | 'username' | 'display_name' | 'avatar_url' | 'location' | 'is_verified' | 'status' | 'starting_price'
+>
+
 interface TalentCardProps {
-    talent: Profile
+    talent: PublicTalentPreview
     index: number
     isVisible: boolean
 }
@@ -103,21 +108,28 @@ function TalentCard({ talent, index, isVisible }: TalentCardProps) {
 }
 
 // Mock data for landing page (before auth)
-const mockTalents: Profile[] = [
-    { id: '1', role: 'talent', username: null, full_name: null, display_name: 'Adaeze', avatar_url: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80', location: 'Lagos', bio: null, is_verified: true, status: 'online', starting_price: 120000, admin_notes: null, created_at: '', updated_at: '' },
-    { id: '2', role: 'talent', username: null, full_name: null, display_name: 'Chidinma', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80', location: 'Abuja', bio: null, is_verified: true, status: 'online', starting_price: 180000, admin_notes: null, created_at: '', updated_at: '' },
-    { id: '3', role: 'talent', username: null, full_name: null, display_name: 'Folake', avatar_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80', location: 'Port Harcourt', bio: null, is_verified: true, status: 'offline', starting_price: 150000, admin_notes: null, created_at: '', updated_at: '' },
-    { id: '4', role: 'talent', username: null, full_name: null, display_name: 'Grace', avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80', location: 'Lagos', bio: null, is_verified: true, status: 'online', starting_price: 100000, admin_notes: null, created_at: '', updated_at: '' },
-    { id: '5', role: 'talent', username: null, full_name: null, display_name: 'Halima', avatar_url: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&q=80', location: 'Kano', bio: null, is_verified: true, status: 'offline', starting_price: 130000, admin_notes: null, created_at: '', updated_at: '' },
-    { id: '6', role: 'talent', username: null, full_name: null, display_name: 'Ify', avatar_url: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&q=80', location: 'Enugu', bio: null, is_verified: true, status: 'online', starting_price: 160000, admin_notes: null, created_at: '', updated_at: '' },
-    { id: '7', role: 'talent', username: null, full_name: null, display_name: 'Jessica', avatar_url: 'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=400&q=80', location: 'Lagos', bio: null, is_verified: true, status: 'booked', starting_price: 140000, admin_notes: null, created_at: '', updated_at: '' },
-    { id: '8', role: 'talent', username: null, full_name: null, display_name: 'Kemi', avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80', location: 'Ibadan', bio: null, is_verified: true, status: 'online', starting_price: 110000, admin_notes: null, created_at: '', updated_at: '' },
+const mockTalents: PublicTalentPreview[] = [
+    { id: '1', role: 'talent', username: null, display_name: 'Adaeze', avatar_url: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80', location: 'Lagos', is_verified: true, status: 'online', starting_price: 120000 },
+    { id: '2', role: 'talent', username: null, display_name: 'Chidinma', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80', location: 'Abuja', is_verified: true, status: 'online', starting_price: 180000 },
+    { id: '3', role: 'talent', username: null, display_name: 'Folake', avatar_url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80', location: 'Port Harcourt', is_verified: true, status: 'offline', starting_price: 150000 },
+    { id: '4', role: 'talent', username: null, display_name: 'Grace', avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80', location: 'Lagos', is_verified: true, status: 'online', starting_price: 100000 },
+    { id: '5', role: 'talent', username: null, display_name: 'Halima', avatar_url: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&q=80', location: 'Kano', is_verified: true, status: 'offline', starting_price: 130000 },
+    { id: '6', role: 'talent', username: null, display_name: 'Ify', avatar_url: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&q=80', location: 'Enugu', is_verified: true, status: 'online', starting_price: 160000 },
+    { id: '7', role: 'talent', username: null, display_name: 'Jessica', avatar_url: 'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=400&q=80', location: 'Lagos', is_verified: true, status: 'booked', starting_price: 140000 },
+    { id: '8', role: 'talent', username: null, display_name: 'Kemi', avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80', location: 'Ibadan', is_verified: true, status: 'online', starting_price: 110000 },
 ]
 
-export function TalentSection() {
+interface TalentSectionProps {
+    initialTalents?: PublicTalentPreview[]
+}
+
+export function TalentSection({ initialTalents }: TalentSectionProps) {
+    const hasInitialTalents = Boolean(initialTalents && initialTalents.length > 0)
     const [isVisible, setIsVisible] = useState(false)
-    const [talents, setTalents] = useState<Profile[]>([])
-    const [loading, setLoading] = useState(true)
+    const [talents, setTalents] = useState<PublicTalentPreview[]>(() =>
+        hasInitialTalents ? [...initialTalents!, ...initialTalents!] : []
+    )
+    const [loading, setLoading] = useState(!hasInitialTalents)
     const [isPaused, setIsPaused] = useState(false)
     const sectionRef = useRef<HTMLElement>(null)
     const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -133,18 +145,20 @@ export function TalentSection() {
     }, [])
 
     useEffect(() => {
+        if (hasInitialTalents) return
+
         const fetchTalents = async () => {
             try {
                 const supabase = createClient()
                 const { data, error } = await supabase
                     .from('profiles')
-                    .select('*')
+                    .select('id, role, username, display_name, avatar_url, location, is_verified, status, starting_price')
                     .eq('role', 'talent')
                     .limit(8)
 
                 if (error) throw error
                 // Duplicate talents for seamless infinite scroll
-                const fetchedTalents = data && data.length > 0 ? data : mockTalents
+                const fetchedTalents = data && data.length > 0 ? (data as PublicTalentPreview[]) : mockTalents
                 setTalents([...fetchedTalents, ...fetchedTalents])
             } catch (error) {
                 console.error('Failed to fetch talents:', error)
@@ -154,7 +168,7 @@ export function TalentSection() {
             }
         }
         fetchTalents()
-    }, [])
+    }, [hasInitialTalents])
 
     // Auto-scroll animation
     useEffect(() => {

@@ -547,10 +547,8 @@ export function WalletClient({ user, profile, wallet: initialWallet, transaction
             }
         }
 
-        // Refresh on mount and every 30 seconds
+        // Fetch latest coin packages on mount (no aggressive 30s background polling)
         refreshPackages()
-        const interval = setInterval(refreshPackages, 30000)
-        return () => clearInterval(interval)
     }, [supabase])
 
     // Manual refresh function (includes transactions)

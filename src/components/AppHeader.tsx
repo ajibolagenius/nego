@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react'
 import { NotificationBell } from '@/components/NotificationBell'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
+import { clearBrowserAuthCache, getBrowserAuthState, subscribeBrowserAuthState } from '@/lib/supabase/client-session'
 import { NotificationProvider } from '@/providers/NotificationProvider'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
@@ -28,49 +29,16 @@ export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
     const [isLoading, setIsLoading] = useState(!initialUser)
     const [role, setRole] = useState<string | null>(userRole || null)
 
-    // Check auth state
+    const isAdminPage = pathname?.startsWith('/admin')
+    const isHiddenPage = pathname?.startsWith('/hidden')
+
+    // Check auth state via shared, session-cookie-first browser helper
     useEffect(() => {
-        const supabase = createClient()
-
-        const checkUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            setUser(user)
-
-            // Only fetch role if not already provided and user exists
-            if (user && !userRole && !role) {
-                try {
-                    const { data: profile, error } = await supabase
-                        .from('profiles')
-                        .select('role')
-                        .eq('id', user.id)
-                        .maybeSingle()
-
-                    if (error) {
-                        // Only log non-404 errors (PGRST116 is expected when profile doesn't exist)
-                        if (error.code !== 'PGRST116') {
-                            console.error('[AppHeader] Error fetching profile:', error)
-                        }
-                        // Fallback to 'client' if query fails or profile doesn't exist
-                        setRole('client')
-                    } else {
-                        setRole(profile?.role || 'client')
-                    }
-                } catch (err) {
-                    console.error('[AppHeader] Exception fetching profile:', err)
-                    setRole('client')
-                }
-            } else if (userRole) {
-                // Use provided role if available
-                setRole(userRole)
-            }
-
-            setIsLoading(false)
+        if (isAdminPage || isHiddenPage) {
+            return
         }
 
-        if (!initialUser) {
-            checkUser()
-        } else if (userRole) {
-            // If initialUser is provided, set role from prop
+        if (initialUser && userRole) {
             const timer = setTimeout(() => {
                 setRole(userRole)
                 setIsLoading(false)
@@ -78,12 +46,36 @@ export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
             return () => clearTimeout(timer)
         }
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user || null)
+        let active = true
+
+        if (!initialUser) {
+            getBrowserAuthState().then((state) => {
+                if (!active) return
+                setUser(state.user)
+                setRole(userRole || state.role)
+                setIsLoading(false)
+            })
+        } else {
+            getBrowserAuthState().then((state) => {
+                if (!active) return
+                setRole(userRole || state.role)
+                setIsLoading(false)
+            })
+        }
+
+        const unsubscribe = subscribeBrowserAuthState((state) => {
+            if (!active) return
+            setUser(state.user)
+            if (!userRole) {
+                setRole(state.role)
+            }
         })
 
-        return () => subscription.unsubscribe()
-    }, [initialUser, userRole])
+        return () => {
+            active = false
+            unsubscribe()
+        }
+    }, [initialUser, userRole, isAdminPage, isHiddenPage])
 
     // Scroll handler for landing page
     useEffect(() => {
@@ -117,14 +109,13 @@ export function AppHeader({ initialUser, userRole }: AppHeaderProps) {
     const handleLogout = async () => {
         const supabase = createClient()
         await supabase.auth.signOut()
+        clearBrowserAuthCache()
         setUser(null)
         window.location.href = '/'
     }
 
     const isLandingPage = pathname === '/'
     const isDashboardPage = pathname?.startsWith('/dashboard')
-    const isAdminPage = pathname?.startsWith('/admin')
-    const isHiddenPage = pathname?.startsWith('/hidden')
 
     // Navigation links for landing page
     const landingNavLinks = [

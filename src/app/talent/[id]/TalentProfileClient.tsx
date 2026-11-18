@@ -21,6 +21,11 @@ import { Button } from '@/components/ui/button'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useWallet } from '@/hooks/useWallet'
 import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
+import {
+    getCloudinaryBlurredImageUrl,
+    getCloudinaryVideoPosterUrl,
+    isVideo as isVideoMedia,
+} from '@/lib/media-utils'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, ServiceType, TalentMenu, Media, Wallet, Review } from '@/types/database'
 import type { Icon } from '@phosphor-icons/react'
@@ -137,8 +142,6 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
             const success = await onUnlock(item.id, item.unlock_price)
             if (success) {
                 setUnlockedMedia(prev => new Set([...prev, item.id]))
-                // Refresh page to show unlocked content
-                window.location.reload()
             }
         } catch (err) {
             console.error('[GallerySection] Unlock failed:', err)
@@ -159,9 +162,7 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
         }
     }
 
-    const isVideo = (url: string) => {
-        return url.match(/\.(mp4|webm|ogg|mov)$/i) !== null
-    }
+    const isVideo = isVideoMedia
 
     return (
         <div className="mb-8" data-testid="talent-gallery">
@@ -245,6 +246,12 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
                             const unlocked = isUnlocked(item.id)
                             const showBlur = item.is_premium && !unlocked
                             const canOpen = !item.is_premium || unlocked
+                            const blurredPreviewUrl = showBlur && !isVideo(item.url)
+                                ? getCloudinaryBlurredImageUrl(item.url)
+                                : null
+                            const videoPosterUrl = !showBlur && isVideo(item.url)
+                                ? getCloudinaryVideoPosterUrl(item.url, 480)
+                                : null
 
                             return (
                                 <div
@@ -252,20 +259,46 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
                                     className={`aspect-square rounded-xl overflow-hidden relative group ${canOpen ? 'cursor-pointer' : ''}`}
                                     onClick={() => canOpen && handleOpenLightbox(item)}
                                 >
-                                    {isVideo(item.url) ? (
-                                        <video
-                                            src={item.url}
-                                            className={`w-full h-full object-cover transition-all ${showBlur ? 'blur-xl scale-110' : ''}`}
-                                            muted
-                                            playsInline
-                                        />
+                                    {showBlur ? (
+                                        blurredPreviewUrl ? (
+                                            <Image
+                                                src={blurredPreviewUrl}
+                                                alt="Locked premium content"
+                                                fill
+                                                sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                                                className="object-cover blur-xl scale-110"
+                                            />
+                                        ) : (
+                                            <div
+                                                className="w-full h-full bg-gradient-to-br from-amber-500/20 via-zinc-900 to-black"
+                                                aria-hidden="true"
+                                            />
+                                        )
+                                    ) : isVideo(item.url) ? (
+                                        videoPosterUrl ? (
+                                            <Image
+                                                src={videoPosterUrl}
+                                                alt="Video preview"
+                                                fill
+                                                sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                                                className="object-cover"
+                                            />
+                                        ) : (
+                                            <video
+                                                src={`${item.url}#t=0.1`}
+                                                className="w-full h-full object-cover transition-all"
+                                                muted
+                                                playsInline
+                                                preload="metadata"
+                                            />
+                                        )
                                     ) : (
                                         <Image
                                             src={item.url}
                                             alt="Gallery"
                                             fill
                                             sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                                            className={`object-cover transition-all ${showBlur ? 'blur-xl scale-110' : ''}`}
+                                            className="object-cover transition-all"
                                         />
                                     )}
 
@@ -392,8 +425,9 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
     const [lightboxIndex, setLightboxIndex] = useState<number>(-1)
     const [unlockedMediaIds, setUnlockedMediaIds] = useState<Set<string>>(new Set())
 
-    // Real-time profile synchronization - updates when talent edits profile in dashboard
+    // Real-time profile synchronization - only open Realtime channels for authenticated users
     useEffect(() => {
+        if (!userId) return
         const talentId = talent.id
 
         // Cleanup existing channels
@@ -609,7 +643,7 @@ export function TalentProfileClient({ talent: initialTalent, currentUser, wallet
                 servicesChannelRef.current = null
             }
         }
-    }, [talent.id, supabase])
+    }, [talent.id, supabase, userId])
 
     // Fetch unlocked media on mount to support lightbox navigation
     useEffect(() => {

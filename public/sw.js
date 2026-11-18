@@ -2,18 +2,14 @@
 // Version: 3.0.0 - Push subscription self-healing (pushsubscriptionchange +
 //                  SYNC_PUSH_SUBSCRIPTION), forced activation on update.
 
-const SW_VERSION = '3.0.0';
-const CACHE_VERSION = 'nego-pwa-v3.0.0';
+const SW_VERSION = '3.1.0';
+const CACHE_VERSION = 'nego-pwa-v3.1.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
-const API_CACHE = `${CACHE_VERSION}-api`;
 
-// Assets to cache on install
+// Assets to cache on install (pages are cached dynamically as visited)
 const STATIC_ASSETS = [
-    '/',
-    '/login',
-    '/register',
     '/offline',
     '/manifest.json',
 ];
@@ -106,9 +102,8 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // API routes - Network first, fallback to cache
+    // API routes - pass straight through to avoid stale auth/push/payment caches
     if (url.pathname.startsWith('/api/')) {
-        event.respondWith(networkFirstStrategy(request, API_CACHE));
         return;
     }
 
@@ -367,6 +362,14 @@ async function saveSubscriptionToServer(subscription, oldEndpoint) {
     return response;
 }
 
+async function checkPushStatusOnServer(endpoint) {
+    const query = endpoint ? `?endpoint=${encodeURIComponent(endpoint)}` : '';
+    return fetch(`/api/push/status${query}`, {
+        credentials: 'same-origin',
+        cache: 'no-store',
+    });
+}
+
 /**
  * Make the server's stored subscription match this browser's actual one.
  *
@@ -393,6 +396,20 @@ async function syncPushSubscription(reason, oldSubscription) {
         }
 
         let subscription = await self.registration.pushManager.getSubscription();
+
+        // Check server registration/auth BEFORE subscribing or writing so we never
+        // fire redundant POST /api/push/subscribe writes or 401s when logged out.
+        const statusResponse = await checkPushStatusOnServer(subscription?.endpoint);
+        if (statusResponse.status === 401) {
+            return { ok: false, reason: 'unauthenticated' };
+        }
+
+        if (subscription && statusResponse.ok) {
+            const status = await statusResponse.json();
+            if (status.registered && status.pushEnabled) {
+                return { ok: true, reason: 'already-registered', endpoint: subscription.endpoint };
+            }
+        }
 
         // A rotation fires pushsubscriptionchange with the old subscription
         // already gone, so re-subscribe with the current server key.

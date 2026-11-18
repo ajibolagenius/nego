@@ -3,7 +3,7 @@
 import { Bell, BellRinging, BellSlash, Check, X, SpinnerGap } from '@phosphor-icons/react'
 import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { syncPushSubscription } from '@/lib/push/sync'
+import { clearPushSyncCache, markPushSyncVerified, syncPushSubscription } from '@/lib/push/sync'
 import { urlBase64ToUint8Array } from '@/lib/push/vapid'
 import { createClient } from '@/lib/supabase/client'
 
@@ -84,36 +84,29 @@ export function PushNotificationManager({ userId, presentation = 'settings' }: P
             const subscription = await registration.pushManager.getSubscription()
 
             if (!subscription) {
+                clearPushSyncCache()
                 setIsSubscribed(false)
                 return
             }
 
-            const response = await fetch(
-                `/api/push/status?endpoint=${encodeURIComponent(subscription.endpoint)}`,
-                { cache: 'no-store' }
-            )
+            // Reuses the 12h localStorage cache & in-flight promise on dashboard,
+            // while Settings forces a fresh check so users see true server status.
+            const result = await syncPushSubscription({
+                force: presentation === 'settings',
+            })
 
-            if (!response.ok) {
+            if (result.ok) {
+                setIsSubscribed(true)
+            } else if (result.reason === 'unauthenticated' || result.reason === 'error') {
                 // Can't confirm server state (offline, or signed out). Fall back
                 // to the browser's view rather than wrongly showing "off".
                 setIsSubscribed(true)
-                return
+            } else {
+                clearPushSyncCache()
+                setIsSubscribed(false)
             }
-
-            const status = await response.json()
-
-            if (status.registered && status.pushEnabled) {
-                setIsSubscribed(true)
-                return
-            }
-
-            // Browser and server disagree — self-heal instead of asking the user
-            // to notice and re-enable it themselves.
-            const repair = await syncPushSubscription()
-            setIsSubscribed(repair.ok)
         } catch (error) {
             console.error('[PushNotificationManager] Error checking subscription:', error)
-            // Non-critical error, continue without subscription
         }
     }
 
@@ -192,6 +185,7 @@ export function PushNotificationManager({ userId, presentation = 'settings' }: P
                 throw new Error('Failed to save push subscription')
             }
 
+            markPushSyncVerified(userId, subscription.endpoint)
             setIsSubscribed(true)
             setShowPrompt(false)
 
@@ -268,6 +262,7 @@ export function PushNotificationManager({ userId, presentation = 'settings' }: P
                 }
             }
 
+            clearPushSyncCache()
             setIsSubscribed(false)
 
             // Update database (non-blocking)

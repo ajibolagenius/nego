@@ -152,6 +152,9 @@ export async function GET(request: NextRequest) {
             {
                 width: 1200,
                 height: 630,
+                headers: {
+                    'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+                },
             }
         )
     } catch (error) {
@@ -178,6 +181,9 @@ export async function GET(request: NextRequest) {
             {
                 width: 1200,
                 height: 630,
+                headers: {
+                    'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+                },
             }
         )
     }

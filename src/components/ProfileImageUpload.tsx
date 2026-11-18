@@ -4,6 +4,8 @@ import { Camera, X, SpinnerGap, Check, User, Warning, Info } from '@phosphor-ico
 import Image from 'next/image'
 import { useState, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
+import { deleteAsset, uploadImage } from '@/lib/cloudinary'
+import { extractSupabaseStorageObject, getCloudinaryAssetInfo } from '@/lib/media-utils'
 import { createClient } from '@/lib/supabase/client'
 import { syncTalentVerification } from '@/lib/talent-verification-client'
 
@@ -181,81 +183,49 @@ export function ProfileImageUpload({
             const compressedFile = await compressImage(selectedFile, 400, 0.75)
             setUploadProgress(30)
 
-            // Generate unique filename
-            const fileName = `${userId}/avatar_${Date.now()}.jpg`
+            // Upload new avatar to Cloudinary to avoid Supabase Storage/Egress consumption
+            const uploadResult = await uploadImage(compressedFile, `avatars/${userId}`, (pct) => {
+                setUploadProgress(30 + Math.round(pct * 0.5))
+            })
 
-            // Delete old avatar if exists
-            if (currentImageUrl) {
-                try {
-                    // Extract path from URL
-                    const urlParts = currentImageUrl.split('/')
-                    const oldFileName = urlParts[urlParts.length - 1]
-                    const oldPath = `${userId}/${oldFileName}`
-
-                    // Try to delete from both buckets
-                    await supabase.storage.from('avatars').remove([oldPath]).catch(() => { })
-                    await supabase.storage.from('profiles').remove([oldPath]).catch(() => { })
-                } catch (deleteError) {
-                    console.warn('[ProfileImageUpload] Failed to delete old avatar:', deleteError)
-                    // Continue with upload even if deletion fails
-                }
+            if (!uploadResult?.secure_url) {
+                throw new Error('Failed to upload profile photo')
             }
-            setUploadProgress(40)
-
-            // Upload to Supabase Storage
-            let uploadBucket = 'avatars'
-            let uploadError = null
-
-            const { error: avatarsError } = await supabase.storage
-                .from('avatars')
-                .upload(fileName, compressedFile, {
-                    cacheControl: '31536000, public, immutable',
-                    upsert: true
-                })
-
-            if (avatarsError) {
-                // If bucket doesn't exist, try profiles bucket
-                uploadBucket = 'profiles'
-                const { error: profilesError } = await supabase.storage
-                    .from('profiles')
-                    .upload(fileName, compressedFile, {
-                        cacheControl: '31536000, public, immutable',
-                        upsert: true
-                    })
-
-                if (profilesError) {
-                    uploadError = profilesError
-                }
-            }
-
-            if (uploadError) {
-                throw new Error(`Upload failed: ${uploadError.message}`)
-            }
-
-            setUploadProgress(70)
-
-            // Get public URL
-            const { data: urlData } = supabase.storage
-                .from(uploadBucket)
-                .getPublicUrl(fileName)
 
             setUploadProgress(85)
 
-            // Update profile
+            // Update profile first so a failed write never orphans a deleted old avatar
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update({
-                    avatar_url: urlData.publicUrl,
+                    avatar_url: uploadResult.secure_url,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', userId)
 
             if (updateError) throw updateError
 
+            // Clean up old avatar best-effort
+            if (currentImageUrl && currentImageUrl !== uploadResult.secure_url) {
+                try {
+                    const oldCloudinary = getCloudinaryAssetInfo(currentImageUrl)
+                    if (oldCloudinary) {
+                        await deleteAsset(oldCloudinary.publicId, oldCloudinary.resourceType)
+                    } else {
+                        const oldSupabase = extractSupabaseStorageObject(currentImageUrl)
+                        if (oldSupabase) {
+                            await supabase.storage.from(oldSupabase.bucket).remove([oldSupabase.objectPath]).catch(() => { })
+                        }
+                    }
+                } catch (deleteError) {
+                    console.warn('[ProfileImageUpload] Failed to delete old avatar:', deleteError)
+                }
+            }
+
             setUploadProgress(100)
 
             await syncTalentVerification()
-            onUploadComplete(urlData.publicUrl)
+            onUploadComplete(uploadResult.secure_url)
 
             setShowModal(false)
             setPreview(null)

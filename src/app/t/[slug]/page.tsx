@@ -1,13 +1,13 @@
-import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { Metadata } from 'next'
 import { unstable_cache } from 'next/cache'
+import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { TalentProfileClient } from '@/app/talent/[id]/TalentProfileClient'
 import { generateTalentOpenGraphMetadata } from '@/lib/og-metadata'
 import { createApiClient } from '@/lib/supabase/api'
 import { createClient, getServerProfile } from '@/lib/supabase/server'
 import { talentSlug } from '@/lib/talent-url'
-import type { Profile, Review, ServiceType, TalentMenu, Wallet } from '@/types/database'
+import type { Media, Profile, Review, ServiceType, TalentMenu, Wallet } from '@/types/database'
 
 type TalentProfileRow = Profile & {
     talent_menus?: Array<TalentMenu & { service_type?: ServiceType | null }>
@@ -17,24 +17,67 @@ type ReviewWithClient = Review & {
     client?: Profile
 }
 
-// Create admin client lazily with service role key for bypassing RLS
-function getAdminClient() {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const BOT_USER_AGENT_REGEX = /bot|crawler|spider|slurp|facebookexternalhit|twitterbot|whatsapp|telegram|discord|linkedinbot|headless|curl|wget|python-requests|go-http-client|axios|node-fetch|postman|insomnia/i
+const LAST_ACTIVE_THROTTLE_MS = 5 * 60 * 1000
 
-    if (!supabaseUrl || !serviceRoleKey) {
-        console.error('Missing Supabase env vars for admin client')
-        return null
-    }
-
-    return createAdminClient(supabaseUrl, serviceRoleKey, {
-        auth: { persistSession: false }
+function recordProfileVisit(
+    talentId: string,
+    userId: string | undefined,
+    viewerRole: string | undefined,
+    lastActiveAt: string | null | undefined
+) {
+    const supabaseAdmin = createApiClient()
+    supabaseAdmin.from('profile_views').insert({
+        talent_id: talentId,
+        viewer_id: userId || null,
+        viewer_role: userId ? (viewerRole || 'client') : 'anonymous',
+    }).then(({ error }) => {
+        if (error) console.error('[TalentProfile] Error tracking view:', error)
     })
+
+    if (userId) {
+        const lastActiveMs = lastActiveAt ? new Date(lastActiveAt).getTime() : 0
+        if (!lastActiveMs || Date.now() - lastActiveMs > LAST_ACTIVE_THROTTLE_MS) {
+            supabaseAdmin.from('profiles')
+                .update({ last_active_at: new Date().toISOString() })
+                .eq('id', userId)
+                .then(({ error }) => {
+                    if (error) console.error('[TalentProfile] Error updating activity:', error)
+                })
+        }
+    }
 }
+
+const getCachedTalentSlugMap = unstable_cache(
+    async (): Promise<Record<string, string>> => {
+        const supabase = createApiClient()
+        const { data: candidates, error } = await supabase
+            .from('profiles')
+            .select('id, username, display_name')
+            .eq('role', 'talent')
+
+        if (error || !candidates) {
+            throw error || new Error('Failed to load talent slug map')
+        }
+
+        const slugMap: Record<string, string> = {}
+        for (const candidate of candidates) {
+            slugMap[talentSlug(candidate)] = candidate.id
+        }
+        return slugMap
+    },
+    ['talent-slug-map-v1'],
+    { revalidate: 3600, tags: ['talents'] }
+)
 
 // Cache talent profile data for 1 hour
 // This includes basic profile and their service menus
 async function getTalentProfile(slug: string) {
+    // Reject obvious bot/scanner probes (valid talent slugs never contain dots)
+    if (!slug || slug.includes('.')) {
+        return { talent: null, failed: false }
+    }
+
     const supabase = createApiClient()
 
     const talentProfileQuery = `
@@ -68,20 +111,15 @@ async function getTalentProfile(slug: string) {
         return { talent: null, failed: true }
     }
 
-    // ponytail: scans every talent row (PostgREST caps this at 1000); swap for a
-    // persisted, indexed slug column if the roster outgrows that.
-    const { data: candidates, error: candidatesError } = await supabase
-        .from('profiles')
-        .select('id, username, display_name')
-        .eq('role', 'talent')
-
-    if (candidatesError || !candidates) {
+    let matchedId: string | undefined
+    try {
+        const slugMap = await getCachedTalentSlugMap()
+        matchedId = slugMap[slug]
+    } catch {
         return { talent: null, failed: true }
     }
 
-    const matchedCandidate = candidates.find((candidate) => talentSlug(candidate) === slug)
-
-    if (!matchedCandidate) {
+    if (!matchedId) {
         return { talent: null, failed: false }
     }
 
@@ -89,7 +127,7 @@ async function getTalentProfile(slug: string) {
         .from('profiles')
         .select(talentProfileQuery)
         .eq('role', 'talent')
-        .eq('id', matchedCandidate.id)
+        .eq('id', matchedId)
         .maybeSingle()
 
     if (fallbackError || !fallbackTalent) {
@@ -98,6 +136,48 @@ async function getTalentProfile(slug: string) {
 
     return { talent: fallbackTalent, failed: false }
 }
+
+const getCachedTalentMedia = unstable_cache(
+    async (talentId: string, includePremium: boolean): Promise<Media[]> => {
+        const supabase = createApiClient()
+        let query = supabase
+            .from('media')
+            .select('id, talent_id, url, type, is_premium, unlock_price, created_at')
+            .eq('talent_id', talentId)
+            .or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending')
+            .order('created_at', { ascending: false })
+
+        if (!includePremium) {
+            query = query.eq('is_premium', false)
+        }
+
+        const { data, error } = await query
+        if (error) {
+            throw error
+        }
+        return (data ?? []) as Media[]
+    },
+    ['talent-media-v1'],
+    { revalidate: 120, tags: ['talents'] }
+)
+
+const getCachedTalentReviews = unstable_cache(
+    async (talentId: string): Promise<ReviewWithClient[]> => {
+        const supabase = createApiClient()
+        const { data, error } = await supabase
+            .from('reviews')
+            .select(`*, client:profiles!reviews_client_id_fkey(id, display_name, avatar_url)`)
+            .eq('talent_id', talentId)
+            .order('created_at', { ascending: false })
+
+        if (error) {
+            throw error
+        }
+        return (data ?? []) as ReviewWithClient[]
+    },
+    ['talent-reviews-v1'],
+    { revalidate: 300, tags: ['talents'] }
+)
 
 const getCachedTalentProfile = async (slug: string) => {
     // The key carries the shape version: entries written by an earlier shape
@@ -135,10 +215,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function TalentProfileBySlugPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
-    const supabase = await createClient()
+    const requestHeaders = await headers()
+    const userAgent = requestHeaders.get('user-agent') || ''
+    const isBot = BOT_USER_AGENT_REGEX.test(userAgent)
 
-    // Get session and profile (with override)
-    const { profile: currentUserProfile, user } = await getServerProfile()
+    // Skip auth/wallet lookup for bots/crawlers so link previews cost zero auth calls
+    const { profile: currentUserProfile, user } = isBot
+        ? { profile: null, user: null }
+        : await getServerProfile()
 
     // Get cached talent profile (includes menus)
     const talent = await getCachedTalentProfile(slug)
@@ -147,28 +231,17 @@ export default async function TalentProfileBySlugPage({ params }: { params: Prom
         notFound()
     }
 
-    // Fetch remaining data in parallel
-    const [mediaResult, reviewsResult, userContextResult] = await Promise.all([
-        // 1. Fetch media (respecting RLS or using admin if authenticated)
+    // Fetch remaining data in parallel (cached media & reviews; uncached wallet only for signed-in users)
+    const [media, allReviews, wallet] = await Promise.all([
+        getCachedTalentMedia(talent.id, Boolean(user)).catch(() => [] as Media[]),
+        getCachedTalentReviews(talent.id).catch(() => [] as ReviewWithClient[]),
         user ? (async () => {
-            const supabaseAdmin = getAdminClient()
-            if (!supabaseAdmin) return supabase.from('media').select('id, talent_id, url, type, is_premium, unlock_price, created_at').eq('talent_id', talent.id).or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending').order('created_at', { ascending: false })
-            return supabaseAdmin.from('media').select('id, talent_id, url, type, is_premium, unlock_price, created_at').eq('talent_id', talent.id).or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending').order('created_at', { ascending: false })
-        })() : supabase.from('media').select('id, talent_id, url, type, is_premium, unlock_price, created_at').eq('talent_id', talent.id).or('moderation_status.is.null,moderation_status.eq.approved,moderation_status.eq.pending').order('created_at', { ascending: false }),
-
-        // 2. Fetch reviews
-        supabase.from('reviews').select(`*, client:profiles!reviews_client_id_fkey(id, display_name, avatar_url)`).eq('talent_id', talent.id).order('created_at', { ascending: false }),
-
-        // 3. Fetch current user context
-        user ? (async () => {
-            const { data: wallet } = await supabase.from('wallets').select('*').eq('user_id', user.id).single()
-            return wallet
-        })() : Promise.resolve(null)
+            const supabase = await createClient()
+            const { data } = await supabase.from('wallets').select('*').eq('user_id', user.id).single()
+            return data as Wallet | null
+        })() : Promise.resolve(null),
     ])
 
-    const media = mediaResult.data
-    const allReviews = reviewsResult.data as ReviewWithClient[] | null
-    const wallet = userContextResult as Wallet | null
     let averageRating = 0
     let reviewCount = 0
     if (allReviews && allReviews.length > 0) {
@@ -188,29 +261,9 @@ export default async function TalentProfileBySlugPage({ params }: { params: Prom
         talent_menus: mappedMenus
     }
 
-    // Track profile view and update activity status (async/background)
-    if (talent.id) {
-        const supabaseAdmin = getAdminClient()
-        if (supabaseAdmin) {
-            // Record view
-            supabaseAdmin.from('profile_views').insert({
-                talent_id: talent.id,
-                viewer_id: user?.id || null,
-                viewer_role: user ? (currentUserProfile?.role || 'client') : 'anonymous'
-            }).then(({ error }: { error: Error | null }) => {
-                if (error) console.error('[TalentProfile] Error tracking view:', error)
-            })
-
-            // Update viewer activity
-            if (user?.id) {
-                supabaseAdmin.from('profiles')
-                    .update({ last_active_at: new Date().toISOString() })
-                    .eq('id', user.id)
-                    .then(({ error }: { error: Error | null }) => {
-                        if (error) console.error('[TalentProfile] Error updating activity:', error)
-                    })
-            }
-        }
+    // Track profile view and throttled activity status for human visitors only
+    if (talent.id && !isBot) {
+        recordProfileVisit(talent.id, user?.id, currentUserProfile?.role, currentUserProfile?.last_active_at)
     }
 
     return (
