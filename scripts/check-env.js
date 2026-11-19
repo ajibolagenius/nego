@@ -27,11 +27,9 @@ const requiredVars = {
         'SENDER_EMAIL',
     ],
 
-    // Cloudinary (Required for media)
-    cloudinary: [
-        'NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME',
-        'CLOUDINARY_API_KEY',
-        'CLOUDINARY_API_SECRET',
+    // Cloudflare R2 (Required for media)
+    r2: [
+        'NEXT_PUBLIC_R2_PUBLIC_URL',
     ],
 
     // Push Notifications (Optional)
