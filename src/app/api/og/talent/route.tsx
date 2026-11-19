@@ -55,16 +55,7 @@ export async function GET(request: NextRequest) {
         let avatarDataUri: string | null = null
         if (avatarUrl) {
             try {
-                // Request a resized Cloudinary avatar when available to stay well under 500KB
-                let optimizedAvatarUrl = avatarUrl
-                if (avatarUrl.includes('res.cloudinary.com') && avatarUrl.includes('/image/upload/')) {
-                    optimizedAvatarUrl = avatarUrl.replace(
-                        '/image/upload/',
-                        '/image/upload/w_400,h_400,c_fill,q_auto,f_jpg/'
-                    )
-                }
-
-                const avatarResponse = await fetch(optimizedAvatarUrl, {
+                const avatarResponse = await fetch(avatarUrl, {
                     headers: {
                         'User-Agent': 'Mozilla/5.0',
                     },

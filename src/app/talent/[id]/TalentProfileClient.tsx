@@ -21,11 +21,7 @@ import { Button } from '@/components/ui/button'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useWallet } from '@/hooks/useWallet'
 import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
-import {
-    getCloudinaryBlurredImageUrl,
-    getCloudinaryVideoPosterUrl,
-    isVideo as isVideoMedia,
-} from '@/lib/media-utils'
+import { isVideo as isVideoMedia } from '@/lib/media-utils'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, ServiceType, TalentMenu, Media, Wallet, Review } from '@/types/database'
 import type { Icon } from '@phosphor-icons/react'
@@ -246,12 +242,6 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
                             const unlocked = isUnlocked(item.id)
                             const showBlur = item.is_premium && !unlocked
                             const canOpen = !item.is_premium || unlocked
-                            const blurredPreviewUrl = showBlur && !isVideo(item.url)
-                                ? getCloudinaryBlurredImageUrl(item.url)
-                                : null
-                            const videoPosterUrl = !showBlur && isVideo(item.url)
-                                ? getCloudinaryVideoPosterUrl(item.url, 480)
-                                : null
 
                             return (
                                 <div
@@ -260,38 +250,18 @@ function GallerySection({ media, userId, userBalance, talentName, onUnlock, onOp
                                     onClick={() => canOpen && handleOpenLightbox(item)}
                                 >
                                     {showBlur ? (
-                                        blurredPreviewUrl ? (
-                                            <Image
-                                                src={blurredPreviewUrl}
-                                                alt="Locked premium content"
-                                                fill
-                                                sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                                                className="object-cover blur-xl scale-110"
-                                            />
-                                        ) : (
-                                            <div
-                                                className="w-full h-full bg-gradient-to-br from-amber-500/20 via-zinc-900 to-black"
-                                                aria-hidden="true"
-                                            />
-                                        )
+                                        <div
+                                            className="w-full h-full bg-gradient-to-br from-amber-500/20 via-zinc-900 to-black"
+                                            aria-hidden="true"
+                                        />
                                     ) : isVideo(item.url) ? (
-                                        videoPosterUrl ? (
-                                            <Image
-                                                src={videoPosterUrl}
-                                                alt="Video preview"
-                                                fill
-                                                sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                                                className="object-cover"
-                                            />
-                                        ) : (
-                                            <video
-                                                src={`${item.url}#t=0.1`}
-                                                className="w-full h-full object-cover transition-all"
-                                                muted
-                                                playsInline
-                                                preload="metadata"
-                                            />
-                                        )
+                                        <video
+                                            src={`${item.url}#t=0.1`}
+                                            className="w-full h-full object-cover transition-all"
+                                            muted
+                                            playsInline
+                                            preload="metadata"
+                                        />
                                     ) : (
                                         <Image
                                             src={item.url}

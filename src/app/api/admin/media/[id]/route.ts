@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 import { logAdminAction } from "@/lib/admin/audit-log";
 import { validateAdmin } from "@/lib/admin/validation";
-import { destroyCloudinaryAsset } from "@/lib/cloudinary-server";
 import {
   extractR2ObjectKey,
   extractSupabaseStorageObject,
-  getCloudinaryAssetInfo,
 } from "@/lib/media-utils";
 import { notifyUser } from "@/lib/notifications";
 import { deleteR2Object } from "@/lib/r2-server";
@@ -29,7 +27,7 @@ export async function DELETE(
 
     const apiClient = createApiClient();
 
-    // 2. Get media details for logging and Cloudinary cleanup
+    // 2. Get media details for logging and storage cleanup
     const { data: media } = await apiClient
       .from("media")
       .select("url, type, talent_id")
@@ -54,26 +52,19 @@ export async function DELETE(
       );
     }
 
-    // Best-effort storage cleanup on Cloudflare R2, legacy Cloudinary, or legacy Supabase Storage
+    // Best-effort storage cleanup on Cloudflare R2 or legacy Supabase Storage
     const r2Key = extractR2ObjectKey(media.url);
     if (r2Key) {
       await deleteR2Object(r2Key).catch((err) =>
         console.warn("[Admin Media Delete] R2 cleanup failed:", err)
       );
     } else {
-      const cloudinaryAsset = getCloudinaryAssetInfo(media.url);
-      if (cloudinaryAsset) {
-        await destroyCloudinaryAsset(cloudinaryAsset.publicId, cloudinaryAsset.resourceType).catch((err) =>
-          console.warn("[Admin Media Delete] Cloudinary cleanup failed:", err)
-        );
-      } else {
-        const supabaseObject = extractSupabaseStorageObject(media.url);
-        if (supabaseObject) {
-          await apiClient.storage
-            .from(supabaseObject.bucket)
-            .remove([supabaseObject.objectPath])
-            .catch((err) => console.warn("[Admin Media Delete] Supabase storage cleanup failed:", err));
-        }
+      const supabaseObject = extractSupabaseStorageObject(media.url);
+      if (supabaseObject) {
+        await apiClient.storage
+          .from(supabaseObject.bucket)
+          .remove([supabaseObject.objectPath])
+          .catch((err) => console.warn("[Admin Media Delete] Supabase storage cleanup failed:", err));
       }
     }
 

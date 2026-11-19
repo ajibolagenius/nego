@@ -4,11 +4,9 @@ import { Camera, X, SpinnerGap, Check, User, Warning, Info } from '@phosphor-ico
 import Image from 'next/image'
 import { useState, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { deleteAsset } from '@/lib/cloudinary'
 import {
     extractR2ObjectKey,
     extractSupabaseStorageObject,
-    getCloudinaryAssetInfo,
 } from '@/lib/media-utils'
 import { deleteFromR2, uploadToR2 } from '@/lib/r2'
 import { createClient } from '@/lib/supabase/client'
@@ -217,14 +215,9 @@ export function ProfileImageUpload({
                     if (oldR2Key) {
                         await deleteFromR2(oldR2Key)
                     } else {
-                        const oldCloudinary = getCloudinaryAssetInfo(currentImageUrl)
-                        if (oldCloudinary) {
-                            await deleteAsset(oldCloudinary.publicId, oldCloudinary.resourceType)
-                        } else {
-                            const oldSupabase = extractSupabaseStorageObject(currentImageUrl)
-                            if (oldSupabase) {
-                                await supabase.storage.from(oldSupabase.bucket).remove([oldSupabase.objectPath]).catch(() => { })
-                            }
+                        const oldSupabase = extractSupabaseStorageObject(currentImageUrl)
+                        if (oldSupabase) {
+                            await supabase.storage.from(oldSupabase.bucket).remove([oldSupabase.objectPath]).catch(() => { })
                         }
                     }
                 } catch (deleteError) {

@@ -6,7 +6,7 @@ import {
 } from '@phosphor-icons/react'
 import Image from 'next/image'
 import { COIN_TO_NAIRA_RATE } from '@/lib/coinPackages'
-import { getCloudinaryVideoPosterUrl, isVideo } from '@/lib/media-utils'
+import { isVideo } from '@/lib/media-utils'
 import { TalentMedia, ViewMode } from './types'
 
 interface MediaGalleryProps {
@@ -29,24 +29,14 @@ export function MediaGallery({ items, viewMode, deletingId, onDelete }: MediaGal
                         {/* Thumbnail */}
                         <div className="w-20 h-20 rounded-lg overflow-hidden bg-white/10 flex-shrink-0 relative">
                              {isVideo(item.url) ? (
-                                getCloudinaryVideoPosterUrl(item.url, 160) ? (
-                                    <Image
-                                        src={getCloudinaryVideoPosterUrl(item.url, 160)!}
-                                        alt="Video thumbnail"
-                                        fill
-                                        sizes="80px"
-                                        className="object-cover"
-                                    />
-                                ) : (
-                                    <video
-                                        src={`${item.url}#t=0.1`}
-                                        className="w-full h-full object-cover"
-                                        muted
-                                        playsInline
-                                        preload="metadata"
-                                        aria-label="Video thumbnail"
-                                    />
-                                )
+                                <video
+                                    src={`${item.url}#t=0.1`}
+                                    className="w-full h-full object-cover"
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                    aria-label="Video thumbnail"
+                                />
                             ) : (
                                 <Image
                                     src={item.url}
@@ -119,24 +109,14 @@ export function MediaGallery({ items, viewMode, deletingId, onDelete }: MediaGal
                     data-testid={`media-item-${item.id}`}
                 >
                     {isVideo(item.url) ? (
-                        getCloudinaryVideoPosterUrl(item.url, 480) ? (
-                            <Image
-                                src={getCloudinaryVideoPosterUrl(item.url, 480)!}
-                                alt={`${item.is_premium ? 'Premium' : 'Free'} video`}
-                                fill
-                                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                className="object-cover"
-                            />
-                        ) : (
-                            <video
-                                src={`${item.url}#t=0.1`}
-                                className="w-full h-full object-cover"
-                                muted
-                                playsInline
-                                preload="metadata"
-                                aria-label={`${item.is_premium ? 'Premium' : 'Free'} video`}
-                            />
-                        )
+                        <video
+                            src={`${item.url}#t=0.1`}
+                            className="w-full h-full object-cover"
+                            muted
+                            playsInline
+                            preload="metadata"
+                            aria-label={`${item.is_premium ? 'Premium' : 'Free'} video`}
+                        />
                     ) : (
                         <Image
                             src={item.url}

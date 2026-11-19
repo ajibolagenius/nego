@@ -6,11 +6,9 @@ import {
 } from '@phosphor-icons/react'
 import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { deleteAsset } from '@/lib/cloudinary'
 import {
     extractR2ObjectKey,
     extractSupabaseStorageObject,
-    getCloudinaryAssetInfo,
 } from '@/lib/media-utils'
 import { deleteFromR2 } from '@/lib/r2'
 import { createClient } from '@/lib/supabase/client'
@@ -69,8 +67,7 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
 
         try {
             const r2Key = extractR2ObjectKey(mediaItem.url)
-            const cloudinaryAsset = r2Key ? null : getCloudinaryAssetInfo(mediaItem.url)
-            const supabaseObject = r2Key || cloudinaryAsset ? null : extractSupabaseStorageObject(mediaItem.url)
+            const supabaseObject = r2Key ? null : extractSupabaseStorageObject(mediaItem.url)
 
             // Delete from database first
             const { error: deleteErr } = await supabase
@@ -80,18 +77,12 @@ export function MediaManager({ talentId, media, onRefresh }: MediaManagerProps) 
 
             if (deleteErr) throw deleteErr
 
-            // Clean up backing asset from Cloudflare R2, legacy Cloudinary, or legacy Supabase Storage
+            // Clean up backing asset from Cloudflare R2 or legacy Supabase Storage
             if (r2Key) {
                 try {
                     await deleteFromR2(r2Key)
                 } catch (r2Err) {
                     console.warn('[MediaManager] Failed to delete from R2:', r2Err)
-                }
-            } else if (cloudinaryAsset) {
-                try {
-                    await deleteAsset(cloudinaryAsset.publicId, cloudinaryAsset.resourceType)
-                } catch (cloudErr) {
-                    console.warn('[MediaManager] Failed to delete from Cloudinary:', cloudErr)
                 }
             } else if (supabaseObject) {
                 try {
