@@ -1,5 +1,5 @@
 import { createWorkersResponseStoreServiceBindingConfig } from "@vinext/cloudflare/cache/config";
-import { bindings, defineConfig, defineWorker } from "cf/config";
+import { bindings, defineConfig, defineWorker, triggers } from "cf/config";
 
 const responseStore = await createWorkersResponseStoreServiceBindingConfig({
   worker: {
@@ -15,9 +15,13 @@ export default defineConfig({
   worker: defineWorker({
     ...responseStore.applicationWorker,
     name: "nego",
-    entrypoint: "vinext/server/fetch-handler",
+    entrypoint: "./worker/index.ts",
     compatibilityDate: "2026-11-18",
     domains: ["www.negoempire.live", "negoempire.live"],
+    triggers: [
+      triggers.scheduled({ schedule: "0 0 * * *" }),
+      triggers.scheduled({ schedule: "0 9 * * 1" }),
+    ],
     assets: {
       htmlHandling: "none",
       notFoundHandling: "none",
