@@ -17,6 +17,7 @@ export default defineConfig({
     name: "nego",
     entrypoint: "vinext/server/fetch-handler",
     compatibilityDate: "2026-11-18",
+    domains: ["www.negoempire.live", "negoempire.live"],
     assets: {
       htmlHandling: "none",
       notFoundHandling: "none",
